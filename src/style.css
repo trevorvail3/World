@@ -243,6 +243,134 @@ body {
   color: var(--ink-dim);
 }
 
+/* --- Title screen (matches the "Varath" idle game's look) --- */
+.title-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  overflow: hidden;
+  /* Warm near-black backdrop with a soft vignette, like the idle game. */
+  background: radial-gradient(
+    120% 90% at 50% 42%,
+    #1c1510 0%,
+    #140f0b 45%,
+    #0c0907 100%
+  );
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+
+.title-screen.leaving {
+  opacity: 0;
+}
+
+/* A slow ember bloom behind the wordmark. */
+.title-glow {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 60vmin;
+  height: 60vmin;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(210, 116, 44, 0.16) 0%,
+    rgba(210, 116, 44, 0) 65%
+  );
+  filter: blur(6px);
+  animation: title-pulse 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes title-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+.title-inner {
+  position: relative;
+  text-align: center;
+  width: 100%;
+  max-width: 560px;
+  padding: 0 24px;
+}
+
+.title-word {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  color: #c8802f;
+  font-size: clamp(30px, 10.5vw, 90px);
+  letter-spacing: 0.14em;
+  /* text-indent balances the trailing letter-spacing so the word is truly
+     centred (letter-spacing adds a gap after the final letter). */
+  text-indent: 0.14em;
+  margin: 0;
+  line-height: 1;
+  text-shadow: 0 0 26px rgba(210, 116, 44, 0.35), 0 2px 2px rgba(0, 0, 0, 0.6);
+}
+
+.title-sub {
+  margin-top: 14px;
+  font-family: "Cinzel", serif;
+  font-weight: 500;
+  font-size: clamp(11px, 3vw, 15px);
+  letter-spacing: 0.42em;
+  color: var(--ink-dim);
+}
+
+.title-tagline {
+  margin: 18px auto 0;
+  max-width: 30ch;
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: clamp(15px, 4.4vw, 19px);
+  color: #9a9088;
+}
+
+.title-enter {
+  margin-top: 40px;
+  padding: 13px 34px;
+  font-family: "Cinzel", serif;
+  font-variant: small-caps;
+  font-size: clamp(16px, 4.5vw, 19px);
+  letter-spacing: 0.14em;
+  color: #f0c187;
+  cursor: pointer;
+  border: 1px solid #c8853a;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #9a6328 0%, #623f17 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 213, 150, 0.25);
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+.title-enter:hover {
+  filter: brightness(1.12);
+}
+
+.title-enter:active {
+  transform: translateY(1px);
+}
+
+.title-footer {
+  margin-top: 26px;
+  font-family: "EB Garamond", serif;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: #6f655a;
+}
+
 @media (max-width: 520px) {
   .hud-log {
     max-height: 120px;
