@@ -22,6 +22,7 @@ import type {
   TileType,
   Vec2,
   WorldEvent,
+  WorldObjectDef,
   WorldState,
 } from "../core/types.ts";
 import { ContextMenu, type MenuItem } from "./contextMenu.ts";
@@ -85,11 +86,11 @@ const VERB: Record<ObjKind, string> = {
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
-  tree: "A hardy ashwood — good timber for the axe.",
-  rock: "A knobbly outcrop streaked with knucklestone ore.",
-  fishing_spot: "Dark ripples; ashfin are moving below.",
-  npc: "Aldric, weathered warden of the hills.",
-  monster: "A bristling boar with a foul temper.",
+  tree: "A pale ashwood — common as dirt, and the forester's first tree.",
+  rock: "Soft grey-brown knucklestone, worked easily by any hand.",
+  fishing_spot: "Dark ripples at the head of the Redrun; ashfin move below.",
+  npc: "Aldric, a Man of the Knuckle Hills, mending a wall.",
+  monster: "A wild thing of the hills.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -97,7 +98,7 @@ const EXAMINE_TILE: Record<TileType, string> = {
   dirt: "Bare, trodden earth.",
   path: "A worn stone path.",
   stone: "Cold grey stone underfoot.",
-  water: "Cold, dark water.",
+  water: "The cold head of the Redrun, where the hill-streams braid.",
 };
 
 export class Game {
@@ -429,7 +430,7 @@ export class Game {
       items.push({
         label: "Examine",
         target: obj.name,
-        onSelect: () => this.hud.log(EXAMINE_OBJECT[obj.kind]),
+        onSelect: () => this.hud.log(this.examineObject(obj)),
       });
     } else {
       title = "Ground";
@@ -453,6 +454,15 @@ export class Game {
     return this.bridge.content.objects.find(
       (o) => o.x === tile.x && o.y === tile.y,
     );
+  }
+
+  /** Examine text: a monster shows its canon description; others use the map. */
+  private examineObject(obj: WorldObjectDef): string {
+    if (obj.kind === "monster" && obj.monster) {
+      const stats = this.bridge.content.monsters[obj.monster];
+      if (stats) return stats.desc;
+    }
+    return EXAMINE_OBJECT[obj.kind];
   }
 
   private tileType(tile: Vec2): TileType {

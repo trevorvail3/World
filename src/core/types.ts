@@ -34,7 +34,22 @@ export interface Ctx {
 // Skills + items (the *names* are data; see src/content).
 // ---------------------------------------------------------------------------
 
-export type SkillId = "forestry" | "mining" | "fishing" | "combat";
+/**
+ * Skills, named per the Varath canon. The three gathering skills plus the
+ * combat trio (Vitality = health, Edge = accuracy, Vigour = damage). Ward
+ * (defence) and Draw (ranged) exist in the wider game and will join once
+ * armour and bows do.
+ */
+export type SkillId =
+  | "mining"
+  | "forestry"
+  | "fishing"
+  | "vitality"
+  | "edge"
+  | "vigour";
+
+/** The combat skills that train on every kill. */
+export const COMBAT_SKILLS: SkillId[] = ["vitality", "edge", "vigour"];
 
 /** One unlocked skill on the player: how much XP, and the level it implies. */
 export interface SkillState {
@@ -45,9 +60,15 @@ export interface SkillState {
 export type ItemId =
   | "ashwood_log"
   | "knucklestone_ore"
-  | "ashfin"
-  | "boar_hide"
-  | "worn_coin";
+  | "ashfin_raw"
+  | "raw_rat_meat"
+  | "raw_hide"
+  | "rat_tail"
+  | "raw_wolf_meat"
+  | "wolf_pelt"
+  | "wolf_fang"
+  | "worn_coin"
+  | "shard_of_orun";
 
 /** A static description of an item. Lives in src/content/items.ts. */
 export interface ItemDef {
@@ -96,8 +117,34 @@ export interface WorldObjectDef {
   /** Tile coordinates of the object. */
   x: number;
   y: number;
-  /** Display name, e.g. "Aldric" or "Knuckle Boar". */
+  /** Display name, e.g. "Aldric" or "Hill Wolf". */
   name: string;
+  /** Monsters only: which MonsterStats (in Content.monsters) this uses. */
+  monster?: string;
+}
+
+/** One possible drop from a monster: an item with an independent roll chance. */
+export interface Drop {
+  item: ItemId;
+  /** Probability in [0, 1] that this item drops on a kill. */
+  chance: number;
+  /** Optional quantity range (defaults to 1). */
+  min?: number;
+  max?: number;
+}
+
+/** The combat stats + loot table for a kind of monster (pure data). */
+export interface MonsterStats {
+  id: string;
+  name: string;
+  level: number;
+  hp: number;
+  /** Highest damage the monster can deal in one hit. */
+  maxHit: number;
+  /** Combat XP granted (to each combat skill) on a kill. */
+  xp: number;
+  drops: Drop[];
+  desc: string;
 }
 
 /** The mutable runtime state for a single world object. */
@@ -234,6 +281,8 @@ export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
   items: Record<ItemId, ItemDef>;
+  /** Monster combat stats + loot, keyed by MonsterStats id. */
+  monsters: Record<string, MonsterStats>;
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name, etc.). */

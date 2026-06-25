@@ -1,15 +1,17 @@
 /**
  * src/content/skills.ts
  * ---------------------
- * Player-facing metadata for each skill (just a display name for now).
- * The list of skill IDs themselves lives in the SkillId type in core/types.ts.
+ * Player-facing skill metadata, named per Varath canon. The combat trio —
+ * Vitality (health), Edge (accuracy), Vigour (damage) — trains on every kill.
  */
 
 import type { SkillId } from "../core/types.ts";
 
 export const skills: Record<SkillId, { name: string }> = {
-  forestry: { name: "Forestry" },
   mining: { name: "Mining" },
+  forestry: { name: "Forestry" },
   fishing: { name: "Fishing" },
-  combat: { name: "Combat" },
+  vitality: { name: "Vitality" },
+  edge: { name: "Edge" },
+  vigour: { name: "Vigour" },
 };
