@@ -62,7 +62,17 @@ if (!canvas || !hudRoot || !app) {
   throw new Error("Missing #game / #hud / #app elements in index.html");
 }
 
-const hud = new Hud(hudRoot, content);
+// --- Reset: wipe the save and reload (lives in the Settings tab). ---
+function resetProgress(): void {
+  const ok = window.confirm(
+    "Reset Varath World? This erases your skills, levels and pack for good.",
+  );
+  if (!ok) return;
+  clearSave();
+  window.location.reload();
+}
+
+const hud = new Hud(hudRoot, content, resetProgress);
 const dialogue = new Dialogue(app);
 const game = new Game(canvas, bridge, hud, dialogue, app);
 
@@ -75,22 +85,6 @@ window.addEventListener("pagehide", persist);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") persist();
 });
-
-// --- Reset button: wipe the save and reload to a clean world. ---
-const resetBtn = document.createElement("button");
-resetBtn.className = "reset-btn";
-resetBtn.type = "button";
-resetBtn.textContent = "⟲ Reset";
-resetBtn.title = "Erase all saved progress and start over";
-resetBtn.addEventListener("click", () => {
-  const ok = window.confirm(
-    "Reset Varath World? This erases your skills, levels and pack for good.",
-  );
-  if (!ok) return;
-  clearSave();
-  window.location.reload();
-});
-app.appendChild(resetBtn);
 
 // The world starts running immediately (it animates softly), but the title
 // screen sits on top and captures taps until the player chooses to enter.
