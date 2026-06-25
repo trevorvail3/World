@@ -57,13 +57,18 @@ export class Hud {
   private tabPanels = new Map<TabId, HTMLElement>();
   private tabButtons = new Map<TabId, HTMLElement>();
   private activeTab: TabId = "inventory";
+  private collapsed = false;
+  private dock!: HTMLElement;
 
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
   private charHp!: HTMLElement;
 
-  constructor(root: HTMLElement, content: Content) {
+  private onReset: () => void;
+
+  constructor(root: HTMLElement, content: Content, onReset: () => void = () => {}) {
     this.content = content;
+    this.onReset = onReset;
     this.build(root);
   }
 
@@ -86,6 +91,7 @@ export class Hud {
 
     // --- Tabbed dock (bottom-right); tab column up the left side ---
     const dock = panel("hud-panel hud-dock");
+    this.dock = dock;
     const tabsCol = document.createElement("div");
     tabsCol.className = "dock-tabs";
     const body = document.createElement("div");
@@ -112,7 +118,7 @@ export class Hud {
     dock.appendChild(body);
     root.appendChild(dock);
 
-    this.setTab(this.activeTab);
+    this.applyTabState(); // start expanded on the default tab
   }
 
   private buildTab(id: TabId, title: string, p: HTMLElement): void {
@@ -169,17 +175,39 @@ export class Hud {
         break;
       }
       case "settings": {
-        p.appendChild(note("Settings coming soon — audio, display and more."));
-        p.appendChild(note("Reset progress is the ⟲ button, top-right."));
+        p.appendChild(note("More settings coming soon — audio, display and more."));
+        const reset = document.createElement("button");
+        reset.type = "button";
+        reset.className = "settings-reset";
+        reset.textContent = "⟲ Reset progress";
+        reset.title = "Erase all saved progress and start over";
+        reset.addEventListener("click", () => this.onReset());
+        p.appendChild(reset);
         break;
       }
     }
   }
 
   private setTab(id: TabId): void {
-    this.activeTab = id;
-    this.tabPanels.forEach((p, key) => p.classList.toggle("active", key === id));
-    this.tabButtons.forEach((b, key) => b.classList.toggle("active", key === id));
+    // Tapping the already-open tab collapses the dock to just its tab column.
+    if (id === this.activeTab && !this.collapsed) {
+      this.collapsed = true;
+    } else {
+      this.activeTab = id;
+      this.collapsed = false;
+    }
+    this.applyTabState();
+  }
+
+  /** Reflect the current active-tab / collapsed state in the DOM. */
+  private applyTabState(): void {
+    this.dock.classList.toggle("collapsed", this.collapsed);
+    this.tabPanels.forEach((p, key) =>
+      p.classList.toggle("active", key === this.activeTab && !this.collapsed),
+    );
+    this.tabButtons.forEach((b, key) =>
+      b.classList.toggle("active", key === this.activeTab),
+    );
   }
 
   log(message: string): void {

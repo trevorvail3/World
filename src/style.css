@@ -466,30 +466,45 @@ body {
   color: #6f655a;
 }
 
-/* --- Reset button (bottom-right) --- */
-.reset-btn {
-  position: absolute;
-  right: 10px;
+/* --- Minimap (top-right) --- */
+.hud-minimap {
   top: 10px;
-  z-index: 30;
-  pointer-events: auto;
-  font-family: "Cinzel", serif;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: var(--ink-dim);
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 7px;
-  padding: 7px 12px;
-  cursor: pointer;
-  backdrop-filter: blur(2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  right: 10px;
+  padding: 5px;
 }
 
-.reset-btn:hover,
-.reset-btn:active {
-  color: #e0b54a;
-  border-color: var(--gold);
+.minimap-canvas {
+  display: block;
+  border-radius: 4px;
+  border: 1px solid rgba(74, 61, 44, 0.6);
+}
+
+/* --- Collapsed dock: hide the body, keep the tab column --- */
+.hud-dock.collapsed .dock-body {
+  display: none;
+}
+
+/* --- Reset button inside the Settings tab --- */
+.settings-reset {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 10px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #e0a07a;
+  background: rgba(90, 30, 22, 0.35);
+  border: 1px solid #7d3a2a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.settings-reset:hover,
+.settings-reset:active {
+  color: #f0c187;
+  border-color: #c44a3a;
+  background: rgba(120, 40, 28, 0.45);
 }
 
 /* --- Long-press / right-click action menu --- */

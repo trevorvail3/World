@@ -28,6 +28,7 @@ import type {
 import { ContextMenu, type MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import { Hud } from "./hud.ts";
+import { Minimap } from "./minimap.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
@@ -108,6 +109,7 @@ export class Game {
   private camInitialised = false;
 
   private menu: ContextMenu;
+  private minimap: Minimap;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -124,6 +126,7 @@ export class Game {
     if (!g) throw new Error("Could not get a 2D canvas context.");
     this.g = g;
     this.menu = new ContextMenu(uiRoot);
+    this.minimap = new Minimap(uiRoot);
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -163,8 +166,15 @@ export class Game {
     this.drawHighlights(now);
     this.drawFloats(now);
 
-    // 4) Refresh the HUD readouts.
+    // 4) Refresh the HUD readouts and the minimap.
     this.hud.update(this.bridge.state);
+    this.minimap.draw(
+      this.bridge.state,
+      this.bridge.content,
+      this.cam,
+      this.canvas.width,
+      this.canvas.height,
+    );
   }
 
   private followCamera(): void {
