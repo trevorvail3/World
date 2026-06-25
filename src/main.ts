@@ -59,7 +59,7 @@ if (!canvas || !hudRoot || !app) {
 
 const hud = new Hud(hudRoot, content);
 const dialogue = new Dialogue(app);
-const game = new Game(canvas, bridge, hud, dialogue);
+const game = new Game(canvas, bridge, hud, dialogue, app);
 
 // The world starts running immediately (it animates softly), but the title
 // screen sits on top and captures taps until the player chooses to enter.

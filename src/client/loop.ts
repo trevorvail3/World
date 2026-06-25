@@ -7,15 +7,24 @@
  * (tick), react to the events the core returns (log lines, dialogue, hit
  * numbers), move the camera, and paint. Taps are turned into INTENTS and
  * handed to the core — the loop NEVER edits world state itself (RULE 2).
+ *
+ * Input is OSRS-flavoured:
+ *   - a short tap does the obvious thing (walk there / interact with that),
+ *   - a long press (or right-click) opens an action menu (Interact / Walk
+ *     here / Examine),
+ *   - a marker shows where you tapped, and the thing you're busy with glows.
  */
 
 import type {
   Content,
   Intent,
+  ObjKind,
+  TileType,
   Vec2,
   WorldEvent,
   WorldState,
 } from "../core/types.ts";
+import { ContextMenu, type MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import { Hud } from "./hud.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
@@ -42,25 +51,87 @@ interface FloatText {
   born: number;
 }
 
+interface Marker {
+  x: number;
+  y: number;
+  born: number;
+}
+
+interface TapFlash {
+  objId: string;
+  born: number;
+}
+
+interface Press {
+  startX: number;
+  startY: number;
+  tile: Vec2;
+  longFired: boolean;
+  moved: boolean;
+}
+
+const LONG_PRESS_MS = 330;
+const MOVE_CANCEL_PX = 12;
+const MARKER_LIFE = 600;
+const FLASH_LIFE = 450;
+
+/** The verb shown for interacting with each kind of object. */
+const VERB: Record<ObjKind, string> = {
+  tree: "Chop",
+  rock: "Mine",
+  fishing_spot: "Fish",
+  npc: "Talk to",
+  monster: "Attack",
+};
+
+const EXAMINE_OBJECT: Record<ObjKind, string> = {
+  tree: "A hardy ashwood — good timber for the axe.",
+  rock: "A knobbly outcrop streaked with knucklestone ore.",
+  fishing_spot: "Dark ripples; ashfin are moving below.",
+  npc: "Aldric, weathered warden of the hills.",
+  monster: "A bristling boar with a foul temper.",
+};
+
+const EXAMINE_TILE: Record<TileType, string> = {
+  grass: "Tufts of pale hill grass.",
+  dirt: "Bare, trodden earth.",
+  path: "A worn stone path.",
+  stone: "Cold grey stone underfoot.",
+  water: "Cold, dark water.",
+};
+
 export class Game {
   private g: CanvasRenderingContext2D;
   private cam: Camera = { x: 0, y: 0 };
   private floats: FloatText[] = [];
   private camInitialised = false;
 
+  private menu: ContextMenu;
+  private press: Press | null = null;
+  private longTimer: number | null = null;
+  private marker: Marker | null = null;
+  private tapFlash: TapFlash | null = null;
+
   constructor(
     private canvas: HTMLCanvasElement,
     private bridge: CoreBridge,
     private hud: Hud,
     private dialogue: Dialogue,
+    uiRoot: HTMLElement,
   ) {
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D canvas context.");
     this.g = g;
+    this.menu = new ContextMenu(uiRoot);
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
-    canvas.addEventListener("pointerdown", (e) => this.onTap(e));
+
+    canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
+    window.addEventListener("pointermove", (e) => this.onPointerMove(e));
+    window.addEventListener("pointerup", (e) => this.onPointerUp(e));
+    // Suppress the browser's own right-click menu; we provide our own.
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   start(): void {
@@ -85,8 +156,10 @@ export class Game {
     // 2) Camera follows the player.
     this.followCamera();
 
-    // 3) Paint.
+    // 3) Paint the world, then the input overlays on top.
     drawWorld(this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now);
+    this.drawMarker(now);
+    this.drawHighlights(now);
     this.drawFloats(now);
 
     // 4) Refresh the HUD readouts.
@@ -155,6 +228,88 @@ export class Game {
     return def ? { x: def.x, y: def.y } : null;
   }
 
+  // --- Drawing overlays --------------------------------------------------
+
+  private toScreen(tileX: number, tileY: number): Vec2 {
+    return {
+      x: tileX * TILE + TILE / 2 - this.cam.x,
+      y: tileY * TILE + TILE / 2 - this.cam.y,
+    };
+  }
+
+  private drawMarker(now: number): void {
+    if (!this.marker) return;
+    const age = now - this.marker.born;
+    if (age >= MARKER_LIFE) {
+      this.marker = null;
+      return;
+    }
+    const t = age / MARKER_LIFE;
+    const { x: cx, y: cy } = this.toScreen(this.marker.x, this.marker.y);
+    const alpha = 1 - t;
+
+    // An expanding ember ring...
+    this.g.globalAlpha = alpha * 0.7;
+    this.g.strokeStyle = "#e0b54a";
+    this.g.lineWidth = 2;
+    this.g.beginPath();
+    this.g.arc(cx, cy, TILE * (0.18 + t * 0.3), 0, Math.PI * 2);
+    this.g.stroke();
+
+    // ...with a shrinking gold cross at the centre (the classic walk marker).
+    const s = TILE * 0.26 * (1 - 0.45 * t);
+    this.g.globalAlpha = alpha;
+    this.g.strokeStyle = "#f2cf6b";
+    this.g.lineWidth = 3;
+    this.g.beginPath();
+    this.g.moveTo(cx - s, cy - s);
+    this.g.lineTo(cx + s, cy + s);
+    this.g.moveTo(cx - s, cy + s);
+    this.g.lineTo(cx + s, cy - s);
+    this.g.stroke();
+    this.g.globalAlpha = 1;
+  }
+
+  private drawHighlights(now: number): void {
+    const player = this.bridge.state.player;
+
+    // Persistent glow on whatever the player is busy with (or walking to).
+    const targetId = player.activity.targetId ?? player.pendingInteractId;
+    if (targetId) {
+      const pos = this.positionOf(targetId);
+      if (pos) {
+        const { x: cx, y: cy } = this.toScreen(pos.x, pos.y);
+        const pulse = 0.45 + 0.3 * Math.sin(now / 200);
+        this.g.globalAlpha = pulse;
+        this.g.strokeStyle = "#d2742c";
+        this.g.lineWidth = 2.5;
+        this.g.strokeRect(cx - TILE * 0.46, cy - TILE * 0.46, TILE * 0.92, TILE * 0.92);
+        this.g.globalAlpha = 1;
+      }
+    }
+
+    // A brief ring when an object is tapped.
+    if (this.tapFlash) {
+      const age = now - this.tapFlash.born;
+      if (age >= FLASH_LIFE) {
+        this.tapFlash = null;
+      } else {
+        const pos = this.positionOf(this.tapFlash.objId);
+        if (pos) {
+          const t = age / FLASH_LIFE;
+          const { x: cx, y: cy } = this.toScreen(pos.x, pos.y);
+          this.g.globalAlpha = 1 - t;
+          this.g.strokeStyle = "#f2cf6b";
+          this.g.lineWidth = 2;
+          this.g.beginPath();
+          this.g.arc(cx, cy, TILE * (0.3 + t * 0.35), 0, Math.PI * 2);
+          this.g.stroke();
+          this.g.globalAlpha = 1;
+        }
+      }
+    }
+  }
+
   private drawFloats(now: number): void {
     const LIFE = 900;
     this.floats = this.floats.filter((f) => now - f.born < LIFE);
@@ -176,44 +331,169 @@ export class Game {
 
   // --- Input -------------------------------------------------------------
 
-  private onTap(e: PointerEvent): void {
+  private tileAtScreen(clientX: number, clientY: number): Vec2 {
+    const rect = this.canvas.getBoundingClientRect();
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    return {
+      x: Math.floor((sx + this.cam.x) / TILE),
+      y: Math.floor((sy + this.cam.y) / TILE),
+    };
+  }
+
+  private onPointerDown(e: PointerEvent): void {
     e.preventDefault();
 
-    // A tap closes / advances dialogue first.
+    // A tap closes / advances dialogue first; no menu while talking.
     if (this.dialogue.isOpen()) {
       this.dialogue.advance();
       return;
     }
+    if (this.menu.isOpen()) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const tx = Math.floor((sx + this.cam.x) / TILE);
-    const ty = Math.floor((sy + this.cam.y) / TILE);
+    const tile = this.tileAtScreen(e.clientX, e.clientY);
+    this.press = {
+      startX: e.clientX,
+      startY: e.clientY,
+      tile,
+      longFired: false,
+      moved: false,
+    };
 
-    // Did we tap an interactive object?
-    const obj = this.bridge.content.objects.find((o) => o.x === tx && o.y === ty);
-    if (obj) {
-      this.handleObjectTap(obj.id, { x: obj.x, y: obj.y });
+    // Right-click opens the menu immediately; touch/left-click waits for a hold.
+    if (e.button === 2) {
+      this.openMenu(e.clientX, e.clientY, tile);
+      this.press.longFired = true;
       return;
     }
+    this.longTimer = window.setTimeout(() => {
+      if (this.press && !this.press.moved) {
+        this.press.longFired = true;
+        this.openMenu(e.clientX, e.clientY, tile);
+      }
+    }, LONG_PRESS_MS);
+  }
 
-    // Otherwise, try to walk there.
+  private onPointerMove(e: PointerEvent): void {
+    if (!this.press) return;
+    const dx = e.clientX - this.press.startX;
+    const dy = e.clientY - this.press.startY;
+    if (dx * dx + dy * dy > MOVE_CANCEL_PX * MOVE_CANCEL_PX) {
+      this.press.moved = true;
+      this.clearLongTimer();
+    }
+  }
+
+  private onPointerUp(_e: PointerEvent): void {
+    this.clearLongTimer();
+    const press = this.press;
+    this.press = null;
+    if (!press || press.longFired || press.moved) return;
+    this.defaultAction(press.tile);
+  }
+
+  private clearLongTimer(): void {
+    if (this.longTimer !== null) {
+      window.clearTimeout(this.longTimer);
+      this.longTimer = null;
+    }
+  }
+
+  /** A plain tap: do the obvious thing for whatever was under the finger. */
+  private defaultAction(tile: Vec2): void {
+    const obj = this.objectAt(tile);
+    if (obj) {
+      this.interactObject(obj.id, { x: obj.x, y: obj.y });
+      return;
+    }
+    this.walkTo(tile);
+  }
+
+  private openMenu(screenX: number, screenY: number, tile: Vec2): void {
+    const obj = this.objectAt(tile);
+    const items: MenuItem[] = [];
+    let title: string;
+
+    if (obj) {
+      title = obj.name;
+      items.push({
+        label: VERB[obj.kind],
+        target: obj.name,
+        tone: "action",
+        onSelect: () => this.interactObject(obj.id, { x: obj.x, y: obj.y }),
+      });
+      items.push({
+        label: "Walk here",
+        onSelect: () => this.walkBeside({ x: obj.x, y: obj.y }),
+      });
+      items.push({
+        label: "Examine",
+        target: obj.name,
+        onSelect: () => this.hud.log(EXAMINE_OBJECT[obj.kind]),
+      });
+    } else {
+      title = "Ground";
+      if (this.bridge.walkable(tile.x, tile.y)) {
+        items.push({
+          label: "Walk here",
+          tone: "action",
+          onSelect: () => this.walkTo(tile),
+        });
+      }
+      items.push({
+        label: "Examine",
+        onSelect: () => this.hud.log(EXAMINE_TILE[this.tileType(tile)]),
+      });
+    }
+
+    this.menu.show(screenX, screenY, title, items);
+  }
+
+  private objectAt(tile: Vec2) {
+    return this.bridge.content.objects.find(
+      (o) => o.x === tile.x && o.y === tile.y,
+    );
+  }
+
+  private tileType(tile: Vec2): TileType {
+    const m = this.bridge.state.map;
+    if (tile.x < 0 || tile.y < 0 || tile.x >= m.width || tile.y >= m.height) {
+      return "grass";
+    }
+    return m.tiles[tile.y * m.width + tile.x]!;
+  }
+
+  private setMarker(tile: Vec2): void {
+    this.marker = { x: tile.x, y: tile.y, born: performance.now() };
+  }
+
+  private walkTo(tile: Vec2): void {
     const player = this.bridge.state.player;
-    if (!this.bridge.walkable(tx, ty)) {
+    if (!this.bridge.walkable(tile.x, tile.y)) {
       this.hud.log("You can't walk there.");
       return;
     }
-    const path = findPath(this.bridge.walkable, player.pos, { x: tx, y: ty });
-    if (path.length === 0) {
-      return; // already there, or unreachable
-    }
+    const path = findPath(this.bridge.walkable, player.pos, tile);
+    if (path.length === 0) return; // already there, or unreachable
+    this.setMarker(tile);
     this.bridge.send({ type: "MOVE", path });
   }
 
-  private handleObjectTap(objId: string, tile: Vec2): void {
+  private walkBeside(tile: Vec2): void {
     const player = this.bridge.state.player;
     const { path, reachable, alreadyAdjacent } = pathToAdjacent(
+      this.bridge.walkable,
+      player.pos,
+      tile,
+    );
+    if (!reachable || alreadyAdjacent) return;
+    this.setMarker(path[path.length - 1] ?? tile);
+    this.bridge.send({ type: "MOVE", path });
+  }
+
+  private interactObject(objId: string, tile: Vec2): void {
+    const player = this.bridge.state.player;
+    const { path, reachable } = pathToAdjacent(
       this.bridge.walkable,
       player.pos,
       tile,
@@ -222,8 +502,8 @@ export class Game {
       this.hud.log("You can't reach that.");
       return;
     }
-    // Empty path + alreadyAdjacent → interact immediately; otherwise walk then act.
-    void alreadyAdjacent;
+    this.setMarker(tile);
+    this.tapFlash = { objId, born: performance.now() };
     this.bridge.send({ type: "INTERACT", objId, path });
   }
 }

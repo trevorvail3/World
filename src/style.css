@@ -371,6 +371,67 @@ body {
   color: #6f655a;
 }
 
+/* --- Long-press / right-click action menu --- */
+.ctx-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: auto;
+}
+
+.ctx-backdrop.hidden {
+  display: none;
+}
+
+.ctx-menu {
+  position: absolute;
+  min-width: 168px;
+  background: rgba(20, 16, 12, 0.96);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.ctx-title {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-transform: uppercase;
+  padding: 6px 10px 7px;
+  border-bottom: 1px solid rgba(201, 162, 74, 0.25);
+  margin-bottom: 3px;
+}
+
+.ctx-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 10px;
+  font-family: "EB Garamond", serif;
+  font-size: 16px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.ctx-item:hover,
+.ctx-item:active {
+  background: rgba(210, 116, 44, 0.16);
+}
+
+.ctx-action .ctx-verb {
+  color: var(--ember);
+}
+
+.ctx-target {
+  color: var(--ink-dim);
+}
+
 @media (max-width: 520px) {
   .hud-log {
     max-height: 120px;
@@ -378,5 +439,9 @@ body {
   .skill-row,
   .dialogue-text {
     font-size: 14px;
+  }
+  .ctx-item {
+    font-size: 17px; /* easier touch targets on phones */
+    padding: 11px 12px;
   }
 }
