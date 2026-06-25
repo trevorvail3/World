@@ -1,0 +1,66 @@
+name: Deploy Varath World to GitHub Pages
+
+# Builds the game and publishes /dist to GitHub Pages so it can be played
+# online (great for trying it on a phone — no terminal needed).
+#
+# It runs automatically whenever this branch or main is updated, and can also
+# be started by hand from the repo's "Actions" tab ("Run workflow").
+
+on:
+  push:
+    branches:
+      - main
+      - claude/varath-world-scaffold-gm33wt
+  workflow_dispatch:
+
+# Permissions the deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let only one deploy run at a time; newer pushes cancel older in-progress ones.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the game
+        run: npm run build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        # enablement: true turns Pages on for the repo automatically on first run.
+        with:
+          enablement: true
+
+      - name: Upload the built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
