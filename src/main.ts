@@ -21,9 +21,11 @@ import {
   createWorld,
   tick,
 } from "./core/worldCore.ts";
+import { hydratePlayer, serializePlayer } from "./core/save.ts";
 import { Dialogue } from "./client/dialogue.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
+import { clearSave, readSave, writeSave } from "./client/storage.ts";
 import { TitleScreen } from "./client/titleScreen.ts";
 
 // --- The client supplies time + randomness (the core never does). ---
@@ -35,6 +37,9 @@ function ctxAt(nowMs: number): Ctx {
 const startNow = performance.now();
 const state = createWorld(content, playerStart, ctxAt(startNow));
 const walkable = buildWalkability(content);
+
+// Lay any saved progress back onto the fresh world (ignored if missing/invalid).
+const restored = hydratePlayer(state, content, readSave());
 
 // --- The local bridge: turn client calls into core calls. ---
 const bridge: CoreBridge = {
@@ -61,9 +66,39 @@ const hud = new Hud(hudRoot, content);
 const dialogue = new Dialogue(app);
 const game = new Game(canvas, bridge, hud, dialogue, app);
 
+// --- Autosave: persist progress periodically and whenever the tab is hidden. ---
+function persist(): void {
+  writeSave(serializePlayer(state.player));
+}
+window.setInterval(persist, 4000);
+window.addEventListener("pagehide", persist);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") persist();
+});
+
+// --- Reset button: wipe the save and reload to a clean world. ---
+const resetBtn = document.createElement("button");
+resetBtn.className = "reset-btn";
+resetBtn.type = "button";
+resetBtn.textContent = "⟲ Reset";
+resetBtn.title = "Erase all saved progress and start over";
+resetBtn.addEventListener("click", () => {
+  const ok = window.confirm(
+    "Reset Varath World? This erases your skills, levels and pack for good.",
+  );
+  if (!ok) return;
+  clearSave();
+  window.location.reload();
+});
+app.appendChild(resetBtn);
+
 // The world starts running immediately (it animates softly), but the title
 // screen sits on top and captures taps until the player chooses to enter.
 game.start();
 new TitleScreen(app, () => {
-  hud.log("You step into The Knuckle Hills.");
+  hud.log(
+    restored
+      ? "You return to The Knuckle Hills. Your progress is as you left it."
+      : "You step into The Knuckle Hills.",
+  );
 });

@@ -371,6 +371,32 @@ body {
   color: #6f655a;
 }
 
+/* --- Reset button (bottom-right) --- */
+.reset-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 30;
+  pointer-events: auto;
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.reset-btn:hover,
+.reset-btn:active {
+  color: #e0b54a;
+  border-color: var(--gold);
+}
+
 /* --- Long-press / right-click action menu --- */
 .ctx-backdrop {
   position: absolute;
