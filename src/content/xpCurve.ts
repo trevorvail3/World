@@ -1,41 +1,40 @@
 /**
  * src/content/xpCurve.ts
  * ----------------------
- * The classic Old-School RuneScape experience curve.
+ * The Varath experience curve — ported exactly from the idle game so the two
+ * games share one sense of progression. It is the classic summed-exponential
+ * curve, but with a 1/7 exponent (steeper than OSRS's 1/8), then rescaled so
+ * that reaching level 100 costs exactly 15,000,000 XP.
  *
- * This is DATA, not logic: we pre-compute, once, the total XP required to
- * reach each level from 1 to 99. The core then just looks numbers up in this
- * table. Keeping it here (in src/content) honours RULE 3 — content is data.
- *
- * The OSRS formula for the XP needed to reach level L is:
- *
- *     xp(L) = floor( (1/4) * sum_{n=1..L-1} floor( n + 300 * 2^(n/8) ) )
- *
- * which gives the familiar 0, 83, 174, 276, ... curve.
+ * This is DATA (RULE 3): we precompute the whole table once and the core just
+ * looks numbers up in it.
  */
 
-export const MAX_LEVEL = 99;
+export const LEVEL_CAP = 110; // playable ceiling; the table is built past it
+const TABLE_MAX = 125;
 
 function buildXpTable(): number[] {
-  // table[level] = total XP needed to *be* that level.
-  // Index 0 is unused; level 1 needs 0 XP.
-  const table: number[] = [0, 0];
-  let points = 0;
-  for (let level = 1; level < MAX_LEVEL; level++) {
-    points += Math.floor(level + 300 * Math.pow(2, level / 8));
-    table[level + 1] = Math.floor(points / 4);
+  // raw[L] = cumulative XP to reach level L on the unscaled curve.
+  const raw: number[] = [0, 0];
+  let sum = 0;
+  for (let n = 1; n <= TABLE_MAX; n++) {
+    sum += Math.floor(n + 300 * Math.pow(2, n / 7));
+    raw[n + 1] = Math.floor(sum / 4);
   }
+  // Normalise the whole table so level 100 lands exactly on 15,000,000 XP.
+  const k = 15_000_000 / raw[100]!;
+  const table = raw.map((v) => Math.floor(v * k));
+  table[100] = 15_000_000; // force the anchor (guard against floor drift)
   return table;
 }
 
-/** xpForLevel[L] = total XP required to reach level L (1..99). */
+/** xpForLevel[L] = total XP required to reach level L. */
 export const xpForLevel: number[] = buildXpTable();
 
 /** Given a total XP amount, return the level it corresponds to. */
 export function levelForXp(xp: number): number {
-  let level = 1;
-  while (level < MAX_LEVEL && xpForLevel[level + 1]! <= xp) {
-    level++;
+  for (let L = LEVEL_CAP; L >= 1; L--) {
+    if (xp >= (xpForLevel[L] ?? Infinity)) return L;
   }
-  return level;
+  return 1;
 }

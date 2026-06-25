@@ -13,9 +13,15 @@ const MAX_LOG_LINES = 8;
 const ITEM_COLORS: Record<ItemId, string> = {
   ashwood_log: "#8a6a44",
   knucklestone_ore: "#6f7079",
-  ashfin: "#5d7488",
-  boar_hide: "#7a5638",
+  ashfin_raw: "#5d7488",
+  raw_rat_meat: "#9c6b5a",
+  raw_hide: "#7a5638",
+  rat_tail: "#866a54",
+  raw_wolf_meat: "#8a4f44",
+  wolf_pelt: "#8f8a7e",
+  wolf_fang: "#d8d2c2",
   worn_coin: "#c9a24a",
+  shard_of_orun: "#2a2320",
 };
 
 export class Hud {

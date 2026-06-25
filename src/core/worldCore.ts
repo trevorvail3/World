@@ -24,6 +24,7 @@ import type {
   Ctx,
   Intent,
   ItemId,
+  MonsterStats,
   Player,
   SkillId,
   Vec2,
@@ -32,6 +33,7 @@ import type {
   WorldObjectState,
   WorldState,
 } from "./types.ts";
+import { COMBAT_SKILLS } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // Tunable game constants. These are behaviour, so they live here (not content).
@@ -50,9 +52,6 @@ const PLAYER_RESPAWN = 4000;
 const COMBAT = {
   attackInterval: 1200,
   playerMaxHit: 3,
-  boarMaxHit: 1,
-  boarMaxHp: 8,
-  xpPerKill: 45,
   respawn: 9000,
 };
 
@@ -104,7 +103,7 @@ export function createWorld(
       available: true,
       respawnAt: 0,
     };
-    if (def.kind === "monster") base.hp = COMBAT.boarMaxHp;
+    if (def.kind === "monster") base.hp = monsterFor(content, def)?.hp ?? 1;
     objects[def.id] = base;
   }
 
@@ -141,6 +140,14 @@ export function createWorld(
 
 function findObjectDef(content: Content, id: string): WorldObjectDef | undefined {
   return content.objects.find((o) => o.id === id);
+}
+
+/** The combat stats for a monster object, or undefined for non-monsters. */
+function monsterFor(
+  content: Content,
+  def: WorldObjectDef,
+): MonsterStats | undefined {
+  return def.monster ? content.monsters[def.monster] : undefined;
 }
 
 function levelFromXp(xpTable: number[], xp: number): number {
@@ -292,9 +299,10 @@ function startInteraction(
         type: "DIALOGUE",
         npc: def.name,
         lines: [
-          "Well met, traveller. The Knuckle Hills are quiet today.",
-          "Mind the boars on the grass — ill-tempered, the lot of them.",
-          "There's good timber in the grove and ore in the stones, if you've the arms for it.",
+          "Ash and knuckle — that's all these hills are. Pale stone and pale wood.",
+          "I'll not pretend it's much. But a man can make a start here: timber in the grove, ore in the stones, fish at the head of the Redrun.",
+          "Mind the moor rats, and the wolves when the cold sets in. Humble hunting, but it bites back.",
+          "Orun's been dead since before my grandfather's grandfather. Whatever he needs can wait. The east wall can't.",
         ],
       });
       break;
@@ -361,7 +369,7 @@ export function tick(
     if (!obj || obj.available) continue;
     if (ctx.now >= obj.respawnAt) {
       obj.available = true;
-      if (def.kind === "monster") obj.hp = COMBAT.boarMaxHp;
+      if (def.kind === "monster") obj.hp = monsterFor(content, def)?.hp ?? 1;
       events.push({ type: "OBJECT_RESPAWNED", objId: def.id });
     }
   }
@@ -436,7 +444,7 @@ function processActivity(
       if (ctx.rng() < MINING.success) {
         grantXp(state, content, "mining", MINING.xp, events);
         addItem(player, "knucklestone_ore", 1, events);
-        events.push({ type: "LOG", message: "You mine some Knucklestone Ore." });
+        events.push({ type: "LOG", message: "You mine some Knucklestone." });
         obj.available = false;
         obj.respawnAt = ctx.now + MINING.respawn;
         events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
@@ -450,7 +458,7 @@ function processActivity(
     case "fishing": {
       if (ctx.rng() < FISHING.success) {
         grantXp(state, content, "fishing", FISHING.xp, events);
-        addItem(player, "ashfin", 1, events);
+        addItem(player, "ashfin_raw", 1, events);
         events.push({ type: "LOG", message: "You catch an Ashfin." });
       }
       act.nextActionAt = ctx.now + FISHING.interval; // continuous
@@ -473,7 +481,8 @@ function resolveCombatSwing(
   events: WorldEvent[],
 ): void {
   const { player } = state;
-  if (!obj.available || obj.hp === undefined) {
+  const stats = monsterFor(content, def);
+  if (!obj.available || obj.hp === undefined || !stats) {
     clearActivity(player);
     return;
   }
@@ -487,9 +496,11 @@ function resolveCombatSwing(
     obj.hp = 0;
     obj.available = false;
     obj.respawnAt = ctx.now + COMBAT.respawn;
-    grantXp(state, content, "combat", COMBAT.xpPerKill, events);
-    addItem(player, "boar_hide", 1, events);
-    addItem(player, "worn_coin", 1 + Math.floor(ctx.rng() * 5), events);
+    // Combat trains the whole trio (Vitality, Edge, Vigour) on a kill.
+    for (const skill of COMBAT_SKILLS) {
+      grantXp(state, content, skill, stats.xp, events);
+    }
+    rollDrops(player, stats, ctx, events);
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
     clearActivity(player);
@@ -497,7 +508,7 @@ function resolveCombatSwing(
   }
 
   // Monster hits back.
-  const back = Math.floor(ctx.rng() * (COMBAT.boarMaxHit + 1));
+  const back = Math.floor(ctx.rng() * (stats.maxHit + 1));
   player.hp -= back;
   events.push({ type: "DAMAGE", targetId: "player", amount: back });
 
@@ -517,4 +528,26 @@ function resolveCombatSwing(
 
 function act_continue(player: Player, ctx: Ctx): void {
   player.activity.nextActionAt = ctx.now + COMBAT.attackInterval;
+}
+
+/** Roll a monster's loot table; each drop is an independent chance. */
+function rollDrops(
+  player: Player,
+  stats: MonsterStats,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  for (const drop of stats.drops) {
+    if (ctx.rng() >= drop.chance) continue;
+    const min = drop.min ?? 1;
+    const max = drop.max ?? min;
+    const qty = min + Math.floor(ctx.rng() * (max - min + 1));
+    addItem(player, drop.item, qty, events);
+    if (drop.item === "shard_of_orun") {
+      events.push({
+        type: "LOG",
+        message: "A Shard of Orun — warm and black. The hills give one up.",
+      });
+    }
+  }
 }
