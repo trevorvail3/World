@@ -7,7 +7,13 @@
  * Palette: dark aged stone, ember and iron.
  */
 
-import type { Content, TileType, Vec2, WorldState } from "../core/types.ts";
+import type {
+  Content,
+  TileType,
+  Vec2,
+  WorldObjectDef,
+  WorldState,
+} from "../core/types.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -93,7 +99,7 @@ export function drawWorld(
     const px = def.x * TILE - cam.x;
     const py = def.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w || py > h) continue;
-    drawObject(g, def.kind, obj.available, px, py, now);
+    drawObject(g, def, obj.available, px, py, now);
     // Name label
     if (def.kind === "npc" || def.kind === "monster") {
       label(g, def.name, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
@@ -108,7 +114,7 @@ export function drawWorld(
 
 function drawObject(
   g: CanvasRenderingContext2D,
-  kind: string,
+  def: WorldObjectDef,
   available: boolean,
   px: number,
   py: number,
@@ -116,77 +122,219 @@ function drawObject(
 ): void {
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
-  switch (kind) {
-    case "tree": {
-      if (available) {
-        g.fillStyle = "#3d2c1c"; // trunk
-        g.fillRect(cx - 3, cy, 6, TILE / 2 - 2);
-        g.fillStyle = "#54632f"; // canopy
-        circle(g, cx, cy - 4, 13);
-        g.fillStyle = "#43521f";
-        circle(g, cx - 6, cy, 8);
-        circle(g, cx + 6, cy, 8);
+  switch (def.kind) {
+    case "tree":
+      drawTree(g, cx, cy, available);
+      break;
+    case "rock":
+      drawRock(g, cx, cy, available);
+      break;
+    case "fishing_spot":
+      drawFishingSpot(g, cx, cy, now);
+      break;
+    case "npc":
+      drawNpc(g, cx, cy, now);
+      break;
+    case "monster":
+      if (!available) {
+        drawRespawning(g, cx, cy);
+      } else if (def.monster === "hill_wolf") {
+        drawWolf(g, cx, cy, now);
       } else {
-        g.fillStyle = "#3d2c1c";
-        g.fillRect(cx - 4, cy + 6, 8, 6); // stump
+        drawRat(g, cx, cy, now);
       }
       break;
-    }
-    case "rock": {
-      if (available) {
-        g.fillStyle = "#5b5c64";
-        circle(g, cx, cy, 12);
-        g.fillStyle = "#74757d";
-        circle(g, cx - 3, cy - 3, 4);
-        g.fillStyle = EMBER;
-        g.globalAlpha = 0.5;
-        circle(g, cx + 4, cy + 2, 2);
-        g.globalAlpha = 1;
-      } else {
-        g.fillStyle = "#46474e";
-        circle(g, cx - 4, cy + 4, 4);
-        circle(g, cx + 4, cy + 4, 3);
-      }
-      break;
-    }
-    case "fishing_spot": {
-      const r = 8 + 3 * Math.sin(now / 300);
-      g.strokeStyle = "rgba(180,210,230,0.7)";
-      g.lineWidth = 2;
-      g.beginPath();
-      g.arc(cx, cy, r, 0, Math.PI * 2);
-      g.stroke();
-      g.beginPath();
-      g.arc(cx, cy, r / 2, 0, Math.PI * 2);
-      g.stroke();
-      break;
-    }
-    case "npc": {
-      g.fillStyle = "#4b5563"; // robe
-      g.fillRect(cx - 7, cy - 6, 14, 18);
-      g.fillStyle = "#caa472"; // head
-      circle(g, cx, cy - 12, 6);
-      break;
-    }
-    case "monster": {
-      if (available) {
-        g.fillStyle = "#5a3f2a"; // boar body
-        g.beginPath();
-        g.ellipse(cx, cy, 14, 9, 0, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = "#3d2a1b";
-        circle(g, cx - 12, cy - 2, 5); // snout
-        g.fillStyle = "#d9d2c2";
-        circle(g, cx - 15, cy + 1, 1.5); // tusk glint
-      } else {
-        g.fillStyle = "rgba(120,90,60,0.25)";
-        g.beginPath();
-        g.ellipse(cx, cy, 10, 6, 0, 0, Math.PI * 2);
-        g.fill();
-      }
-      break;
-    }
   }
+}
+
+/** A soft contact shadow under a sprite. */
+function shadow(g: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number): void {
+  g.fillStyle = "rgba(0,0,0,0.3)";
+  g.beginPath();
+  g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  g.fill();
+}
+
+// --- Ashwood tree: pale trunk, layered grey-green canopy ---
+function drawTree(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+  if (!available) {
+    shadow(g, cx, cy + 10, 7, 3);
+    g.fillStyle = "#7c6e54";
+    g.fillRect(cx - 5, cy + 4, 10, 7); // pale stump
+    g.fillStyle = "#9a8a6e";
+    g.fillRect(cx - 5, cy + 4, 10, 2);
+    g.fillStyle = "#5a4b34";
+    circle(g, cx - 9, cy + 9, 1.6);
+    circle(g, cx + 8, cy + 10, 1.4);
+    return;
+  }
+  shadow(g, cx, cy + 12, 12, 4);
+  g.fillStyle = "#8d7e60"; // pale ashwood trunk
+  g.fillRect(cx - 3, cy, 6, TILE / 2 - 2);
+  g.fillStyle = "#a99a78";
+  g.fillRect(cx - 3, cy, 2, TILE / 2 - 2);
+  g.fillStyle = "#3f4d2a"; // canopy, layered
+  circle(g, cx - 7, cy - 2, 9);
+  circle(g, cx + 7, cy - 2, 9);
+  g.fillStyle = "#4e5f34";
+  circle(g, cx, cy - 8, 12);
+  g.fillStyle = "#5d6e3e";
+  circle(g, cx - 3, cy - 11, 7);
+  g.fillStyle = "rgba(184,192,150,0.5)"; // pale highlight
+  circle(g, cx - 4, cy - 12, 3);
+}
+
+// --- Knucklestone: faceted grey-brown boulder with a warm fleck ---
+function drawRock(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+  if (!available) {
+    shadow(g, cx, cy + 8, 9, 3);
+    g.fillStyle = "#4f4a44";
+    circle(g, cx - 4, cy + 4, 4);
+    circle(g, cx + 5, cy + 5, 3);
+    circle(g, cx, cy + 6, 3);
+    return;
+  }
+  shadow(g, cx, cy + 9, 13, 4);
+  g.fillStyle = "#5c5650";
+  g.beginPath();
+  g.moveTo(cx - 13, cy + 6);
+  g.lineTo(cx - 9, cy - 7);
+  g.lineTo(cx + 2, cy - 11);
+  g.lineTo(cx + 12, cy - 4);
+  g.lineTo(cx + 13, cy + 7);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#766e62"; // lit facet
+  g.beginPath();
+  g.moveTo(cx - 9, cy - 7);
+  g.lineTo(cx + 2, cy - 11);
+  g.lineTo(cx + 1, cy + 1);
+  g.lineTo(cx - 7, cy + 2);
+  g.closePath();
+  g.fill();
+  g.strokeStyle = "#3c3833"; // crevice
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.moveTo(cx + 2, cy - 11);
+  g.lineTo(cx + 1, cy + 1);
+  g.lineTo(cx + 9, cy + 5);
+  g.stroke();
+  g.fillStyle = EMBER; // geothermal warmth
+  g.globalAlpha = 0.5;
+  circle(g, cx + 6, cy + 2, 1.6);
+  g.globalAlpha = 1;
+}
+
+// --- Fishing spot: animated ripples with a fish glint ---
+function drawFishingSpot(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const r = 8 + 3 * Math.sin(now / 300);
+  g.strokeStyle = "rgba(170,205,225,0.7)";
+  g.lineWidth = 2;
+  g.beginPath();
+  g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.stroke();
+  g.beginPath();
+  g.arc(cx, cy, r * 0.5, 0, Math.PI * 2);
+  g.stroke();
+  g.fillStyle = "rgba(205,222,235,0.6)";
+  circle(g, cx + Math.cos(now / 500) * 4, cy + Math.sin(now / 380) * 2, 1.6);
+}
+
+// --- Aldric: a man in an earthy tunic ---
+function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 600) * 0.8;
+  shadow(g, cx, cy + 12, 8, 3);
+  g.fillStyle = "#3a2f23"; // legs
+  g.fillRect(cx - 5, cy + 6 + bob, 4, 7);
+  g.fillRect(cx + 1, cy + 6 + bob, 4, 7);
+  g.fillStyle = "#5a5238"; // tunic
+  g.fillRect(cx - 6, cy - 6 + bob, 12, 14);
+  g.fillStyle = "#6b6344";
+  g.fillRect(cx - 6, cy - 6 + bob, 12, 3);
+  g.fillStyle = "#3a2f23"; // belt
+  g.fillRect(cx - 6, cy + 4 + bob, 12, 2);
+  g.fillStyle = "#caa472"; // head
+  circle(g, cx, cy - 11 + bob, 5);
+  g.fillStyle = "#5b4a33"; // hair
+  g.beginPath();
+  g.arc(cx, cy - 12 + bob, 5, Math.PI, 0);
+  g.fill();
+}
+
+// --- Moor Rat: small, long-tailed ---
+function drawRat(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 200) * 0.6;
+  shadow(g, cx, cy + 7, 8, 3);
+  g.strokeStyle = "#7a6a55"; // tail
+  g.lineWidth = 1.6;
+  g.beginPath();
+  g.moveTo(cx + 8, cy + bob);
+  g.quadraticCurveTo(cx + 16, cy - 2 + bob, cx + 14, cy - 8 + bob);
+  g.stroke();
+  g.fillStyle = "#6b5d4a"; // body
+  g.beginPath();
+  g.ellipse(cx, cy + bob, 9, 6, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#766857"; // head
+  circle(g, cx - 8, cy - 1 + bob, 4.5);
+  g.fillStyle = "#8a7a64"; // ear
+  circle(g, cx - 9, cy - 5 + bob, 2.2);
+  g.fillStyle = "#c89a9a"; // nose
+  circle(g, cx - 12, cy + 1 + bob, 1.3);
+  g.fillStyle = "#1a140f"; // eye
+  circle(g, cx - 8, cy - 2 + bob, 1);
+}
+
+// --- Hill Wolf: larger, lean and grey ---
+function drawWolf(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 240) * 0.7;
+  shadow(g, cx, cy + 9, 12, 4);
+  g.strokeStyle = "#5f6168"; // tail
+  g.lineWidth = 3;
+  g.beginPath();
+  g.moveTo(cx + 11, cy + 1 + bob);
+  g.quadraticCurveTo(cx + 18, cy - 3 + bob, cx + 15, cy - 8 + bob);
+  g.stroke();
+  g.fillStyle = "#4c4e54"; // legs
+  g.fillRect(cx - 6, cy + 4 + bob, 2.5, 6);
+  g.fillRect(cx + 4, cy + 4 + bob, 2.5, 6);
+  g.fillStyle = "#6f7178"; // body
+  g.beginPath();
+  g.ellipse(cx, cy + bob, 12, 7, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#80828a"; // back highlight
+  g.beginPath();
+  g.ellipse(cx, cy - 2 + bob, 10, 3.5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#6a6c73"; // head
+  circle(g, cx - 11, cy - 2 + bob, 5.5);
+  g.fillStyle = "#5c5e64"; // snout
+  g.beginPath();
+  g.ellipse(cx - 16, cy + bob, 3.5, 2.2, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#5c5e64"; // ears
+  g.beginPath();
+  g.moveTo(cx - 13, cy - 7 + bob);
+  g.lineTo(cx - 11, cy - 12 + bob);
+  g.lineTo(cx - 9, cy - 7 + bob);
+  g.closePath();
+  g.fill();
+  g.beginPath();
+  g.moveTo(cx - 9, cy - 7 + bob);
+  g.lineTo(cx - 7, cy - 11 + bob);
+  g.lineTo(cx - 6, cy - 6 + bob);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#d8b24a"; // eye
+  circle(g, cx - 12, cy - 2 + bob, 1.1);
+}
+
+// --- A faint mark where a monster will respawn ---
+function drawRespawning(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  g.fillStyle = "rgba(120,110,100,0.22)";
+  g.beginPath();
+  g.ellipse(cx, cy, 9, 5, 0, 0, Math.PI * 2);
+  g.fill();
 }
 
 function drawPlayer(
