@@ -81,11 +81,19 @@ body {
   padding-bottom: 4px;
 }
 
-/* --- Skills + HP (top-left) --- */
-.hud-skills {
+/* --- Hitpoints (always-on, top-left) --- */
+.hud-vitals {
   top: 10px;
   left: 10px;
-  min-width: 150px;
+  min-width: 160px;
+}
+
+.vitals-label {
+  font-size: 13px;
+  color: var(--ink-dim);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
 }
 
 .skill-row {
@@ -104,19 +112,6 @@ body {
   font-family: "Cinzel", serif;
   color: var(--ember);
   font-weight: 600;
-}
-
-.hp-wrap {
-  margin-top: 8px;
-  border-top: 1px solid rgba(74, 61, 44, 0.6);
-  padding-top: 6px;
-}
-
-.hp-label {
-  font-size: 13px;
-  color: var(--ink-dim);
-  display: flex;
-  justify-content: space-between;
 }
 
 .hp-text {
@@ -139,10 +134,110 @@ body {
   transition: width 0.2s ease;
 }
 
-/* --- Inventory (right) --- */
-.hud-inventory {
-  top: 10px;
+/* --- Tabbed dock (bottom-right); tab column up the left side --- */
+.hud-dock {
+  bottom: 10px;
   right: 10px;
+  padding: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.dock-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 5px;
+  background: rgba(0, 0, 0, 0.28);
+  border-right: 1px solid var(--panel-edge);
+}
+
+.dock-tab {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.dock-tab:hover {
+  background: rgba(210, 116, 44, 0.14);
+}
+
+.dock-tab.active {
+  background: rgba(210, 116, 44, 0.22);
+  border-color: var(--ember);
+}
+
+.dock-body {
+  padding: 8px 10px;
+  min-width: 152px;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-note {
+  font-size: 13px;
+  color: var(--ink-dim);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+/* Equipment placeholder */
+.equip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 10px;
+}
+
+.equip-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equip-slot {
+  width: 22px;
+  height: 22px;
+  border: 1px dashed #4a3f30;
+  border-radius: 4px;
+  background: rgba(10, 8, 6, 0.5);
+  flex: none;
+}
+
+.equip-name {
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+/* Character sheet */
+.char-name {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.char-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.char-row span:last-child {
+  font-family: "Cinzel", serif;
+  color: var(--ember);
 }
 
 .inv-grid {
@@ -185,8 +280,8 @@ body {
 .hud-log {
   bottom: 10px;
   left: 10px;
-  width: min(360px, 70vw);
-  max-height: 168px;
+  width: min(300px, 50vw);
+  max-height: 150px;
   overflow: hidden;
   padding-top: 8px;
 }
@@ -375,7 +470,7 @@ body {
 .reset-btn {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: 10px;
   z-index: 30;
   pointer-events: auto;
   font-family: "Cinzel", serif;
