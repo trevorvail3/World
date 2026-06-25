@@ -24,6 +24,7 @@ import {
 import { Dialogue } from "./client/dialogue.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
+import { TitleScreen } from "./client/titleScreen.ts";
 
 // --- The client supplies time + randomness (the core never does). ---
 function ctxAt(nowMs: number): Ctx {
@@ -59,4 +60,10 @@ if (!canvas || !hudRoot || !app) {
 const hud = new Hud(hudRoot, content);
 const dialogue = new Dialogue(app);
 const game = new Game(canvas, bridge, hud, dialogue);
+
+// The world starts running immediately (it animates softly), but the title
+// screen sits on top and captures taps until the player chooses to enter.
 game.start();
+new TitleScreen(app, () => {
+  hud.log("You step into The Knuckle Hills.");
+});
