@@ -11,10 +11,12 @@ import type {
   Content,
   TileType,
   Vec2,
+  WorldMap,
   WorldObjectDef,
   WorldState,
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
+import { tileAt } from "../content/map.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -49,6 +51,223 @@ function hash(x: number, y: number): number {
   return n - Math.floor(n);
 }
 
+/** Paint one terrain tile, base fill plus type-specific detail. */
+function paintTile(
+  g: CanvasRenderingContext2D,
+  tile: TileType,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+  now: number,
+  map: WorldMap,
+): void {
+  const [base, accent] = TILE_COLORS[tile];
+  g.fillStyle = base;
+  g.fillRect(px, py, TILE, TILE);
+  const hv = hash(x, y);
+
+  switch (tile) {
+    case "wall":
+      drawWall(g, px, py, x, y, map);
+      return; // walls draw their own edges
+    case "water":
+    case "deep": {
+      // Layered ripples that drift, plus a hashed glint.
+      g.fillStyle = accent;
+      for (let i = 0; i < 2; i++) {
+        const sh = 0.5 + 0.5 * Math.sin(now / 620 + x * 1.3 + y * 0.7 + i * 2);
+        g.globalAlpha = 0.18 + 0.16 * sh;
+        g.fillRect(px, py + TILE * (0.18 + 0.3 * i + 0.12 * hv), TILE, 2.5);
+      }
+      g.globalAlpha = 0.5 + 0.3 * Math.sin(now / 500 + x + y);
+      g.fillStyle = tile === "deep" ? "#2b4a6e" : "#3f6488";
+      g.fillRect(px + TILE * (0.3 + 0.4 * hv), py + TILE * 0.4, 3, 3);
+      g.globalAlpha = 1;
+      return;
+    }
+    case "mountain": {
+      // A raised peak: dark rock pyramid with a pale, snow-lit crown.
+      const cxp = px + TILE / 2;
+      g.fillStyle = "#2a2a31";
+      g.beginPath();
+      g.moveTo(cxp, py + 4); g.lineTo(px + TILE - 3, py + TILE - 3); g.lineTo(px + 3, py + TILE - 3);
+      g.closePath(); g.fill();
+      g.fillStyle = "#5a5b66";
+      g.beginPath();
+      g.moveTo(cxp, py + 4); g.lineTo(cxp, py + TILE - 3); g.lineTo(px + 3, py + TILE - 3);
+      g.closePath(); g.fill();
+      g.fillStyle = "#d8dde6";
+      g.beginPath();
+      g.moveTo(cxp, py + 4); g.lineTo(cxp + 5, py + 12); g.lineTo(cxp - 5, py + 12);
+      g.closePath(); g.fill();
+      return; // no grid on busy peaks
+    }
+    case "grass":
+    case "moss": {
+      // Scattered blade-tufts; moss also gets a darker damp patch.
+      if (tile === "moss" && hv > 0.5) {
+        g.fillStyle = "#243020";
+        g.beginPath();
+        g.ellipse(px + TILE * (0.3 + 0.4 * hv), py + TILE * 0.5, 7, 5, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.strokeStyle = accent;
+      g.lineWidth = 1.4;
+      for (let i = 0; i < 4; i++) {
+        const hx = hash(x * 3 + i, y * 5 - i);
+        const hy = hash(x * 7 - i, y * 2 + i);
+        const bx = px + 5 + hx * (TILE - 10);
+        const by = py + 8 + hy * (TILE - 14);
+        g.beginPath();
+        g.moveTo(bx, by);
+        g.lineTo(bx + (hx - 0.5) * 4, by - 5);
+        g.stroke();
+      }
+      break;
+    }
+    case "dirt":
+    case "ash": {
+      // Clods / cracked warm ground: a few light and dark flecks.
+      for (let i = 0; i < 5; i++) {
+        const hx = hash(x * 5 + i, y * 3 + i);
+        const hy = hash(x * 2 - i, y * 9 + i);
+        g.fillStyle = i % 2 ? accent : "rgba(0,0,0,0.18)";
+        g.fillRect(px + hx * (TILE - 5), py + hy * (TILE - 5), 4, 3);
+      }
+      if (tile === "ash" && hv > 0.6) { // a warm ember crack
+        g.strokeStyle = "rgba(210,116,44,0.25)"; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(px + 6, py + TILE * hv); g.lineTo(px + TILE - 6, py + TILE * hv - 6); g.stroke();
+      }
+      break;
+    }
+    case "path": {
+      // Worn cobbles: rounded stones with a lighter trodden centre.
+      g.fillStyle = "rgba(255,240,210,0.06)";
+      g.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
+      g.fillStyle = accent;
+      for (let i = 0; i < 5; i++) {
+        const hx = hash(x * 4 + i, y * 6 + i);
+        const hy = hash(x * 8 - i, y * 3 + i);
+        const s = 4 + hx * 3;
+        g.globalAlpha = 0.5;
+        g.fillRect(px + 3 + hx * (TILE - 9), py + 3 + hy * (TILE - 9), s, s - 1);
+      }
+      g.globalAlpha = 1;
+      break;
+    }
+    case "stone": {
+      // Dressed flagstones: a couple of mortar cracks + a lit block.
+      g.strokeStyle = "rgba(0,0,0,0.22)"; g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(px, py + TILE * (0.35 + 0.3 * hv)); g.lineTo(px + TILE, py + TILE * (0.35 + 0.3 * hv));
+      g.moveTo(px + TILE * (0.4 + 0.2 * hv), py); g.lineTo(px + TILE * (0.4 + 0.2 * hv), py + TILE * 0.4);
+      g.stroke();
+      g.fillStyle = accent; g.globalAlpha = 0.4;
+      g.fillRect(px + 4, py + 4, TILE * 0.4, TILE * 0.25);
+      g.globalAlpha = 1;
+      break;
+    }
+    case "bog": {
+      // Murky ground with a dark standing-water blotch.
+      if (hv > 0.45) {
+        g.fillStyle = "rgba(20,30,28,0.55)";
+        g.beginPath();
+        g.ellipse(px + TILE * (0.4 + 0.3 * hv), py + TILE * 0.55, 8, 5, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "rgba(90,120,110,0.18)";
+        g.fillRect(px + TILE * 0.35, py + TILE * 0.5, 8, 1.5);
+      }
+      break;
+    }
+    case "snow": {
+      // Bright with a couple of sparkle flecks.
+      g.fillStyle = "rgba(255,255,255,0.7)";
+      for (let i = 0; i < 3; i++) {
+        const hx = hash(x * 6 + i, y * 4 + i);
+        if (hx > 0.5) g.fillRect(px + hx * (TILE - 4), py + hash(x, y + i) * (TILE - 4), 2, 2);
+      }
+      break;
+    }
+    case "cave":
+    case "cave_wall": {
+      g.fillStyle = accent; g.globalAlpha = 0.6;
+      for (let i = 0; i < 3; i++) {
+        const hx = hash(x * 5 + i, y * 7 + i);
+        g.fillRect(px + hx * (TILE - 4), py + hash(x + i, y) * (TILE - 4), 3, 3);
+      }
+      g.globalAlpha = 1;
+      if (tile === "cave_wall") { g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(px, py, TILE, 2); }
+      break;
+    }
+  }
+
+  // Faint grid for ground tiles (walls/mountain/water handle their own look).
+  g.strokeStyle = "rgba(0,0,0,0.1)";
+  g.lineWidth = 1;
+  g.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
+}
+
+/**
+ * Dressed-stone city wall: warm masonry in a brick bond, with battlement teeth
+ * (merlons) along any edge that faces open ground, and a cast shadow where it
+ * drops to the ground below. Reads as a real rampart, not a grey block.
+ */
+function drawWall(
+  g: CanvasRenderingContext2D,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+  map: WorldMap,
+): void {
+  const isWall = (dx: number, dy: number): boolean => tileAt(map, x + dx, y + dy) === "wall";
+  const openN = !isWall(0, -1), openS = !isWall(0, 1);
+  const openW = !isWall(-1, 0), openE = !isWall(1, 0);
+
+  // Masonry body: brick bond with mortar lines.
+  g.fillStyle = "#5d544b";
+  g.fillRect(px, py, TILE, TILE);
+  const rows = 3;
+  const rh = TILE / rows;
+  for (let r = 0; r < rows; r++) {
+    const ry = py + r * rh;
+    const off = (r % 2) * (TILE / 4);
+    for (let b = -1; b < 3; b++) {
+      const bx = px + off + b * (TILE / 2);
+      // lit top-left, shaded bottom-right per brick
+      g.fillStyle = "#776c5e";
+      g.fillRect(bx + 1.5, ry + 1.5, TILE / 2 - 3, rh - 3);
+      g.fillStyle = "rgba(0,0,0,0.18)";
+      g.fillRect(bx + 1.5, ry + rh - 3, TILE / 2 - 3, 1.5);
+      g.fillStyle = "rgba(255,240,210,0.10)";
+      g.fillRect(bx + 1.5, ry + 1.5, TILE / 2 - 3, 1.2);
+    }
+  }
+
+  // Battlement merlons along edges that face open ground (the rampart top).
+  g.fillStyle = "#857a6c";
+  const tooth = TILE / 4;
+  if (openN) {
+    for (let i = 0; i < 4; i += 2) g.fillRect(px + i * tooth, py, tooth, 5);
+    g.fillStyle = "rgba(255,245,220,0.18)"; g.fillRect(px, py, TILE, 2); g.fillStyle = "#857a6c";
+  }
+  if (openS) {
+    for (let i = 1; i < 4; i += 2) g.fillRect(px + i * tooth, py + TILE - 5, tooth, 5);
+  }
+  if (openW) for (let i = 0; i < 4; i += 2) g.fillRect(px, py + i * tooth, 5, tooth);
+  if (openE) for (let i = 1; i < 4; i += 2) g.fillRect(px + TILE - 5, py + i * tooth, 5, tooth);
+
+  // Cast shadow where the wall drops to open ground on its south side.
+  if (openS) {
+    const grad = g.createLinearGradient(0, py + TILE - 6, 0, py + TILE + 4);
+    grad.addColorStop(0, "rgba(0,0,0,0.0)");
+    grad.addColorStop(1, "rgba(0,0,0,0.32)");
+    g.fillStyle = grad;
+    g.fillRect(px, py + TILE - 6, TILE, 10);
+  }
+}
+
 export interface Camera {
   x: number; // top-left of the view, in pixels
   y: number;
@@ -78,62 +297,9 @@ export function drawWorld(
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       const tile = map.tiles[y * map.width + x]!;
-      const [base, accent] = TILE_COLORS[tile];
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
-      g.fillStyle = base;
-      g.fillRect(px, py, TILE, TILE);
-
-      // Speckle for texture.
-      const hv = hash(x, y);
-      g.fillStyle = accent;
-      if (tile === "water" || tile === "deep") {
-        // gentle animated shimmer
-        const shimmer = 0.5 + 0.5 * Math.sin(now / 600 + x + y);
-        g.globalAlpha = 0.25 + 0.2 * shimmer;
-        g.fillRect(px, py + TILE * (0.2 + 0.5 * hv), TILE, 3);
-        g.globalAlpha = 1;
-      } else if (tile === "cave_wall") {
-        // a solid dark rock block with a faint top edge
-        g.globalAlpha = 0.5;
-        g.fillRect(px, py, TILE, 3);
-        g.globalAlpha = 1;
-      } else if (tile === "mountain") {
-        // A raised peak: a dark rock pyramid with a pale, snow-lit crown.
-        const cxp = px + TILE / 2;
-        g.fillStyle = "#2a2a31";
-        g.beginPath();
-        g.moveTo(cxp, py + 4);
-        g.lineTo(px + TILE - 3, py + TILE - 3);
-        g.lineTo(px + 3, py + TILE - 3);
-        g.closePath();
-        g.fill();
-        g.fillStyle = "#5a5b66"; // lit face
-        g.beginPath();
-        g.moveTo(cxp, py + 4);
-        g.lineTo(cxp, py + TILE - 3);
-        g.lineTo(px + 3, py + TILE - 3);
-        g.closePath();
-        g.fill();
-        g.fillStyle = "#d8dde6"; // snow cap
-        g.beginPath();
-        g.moveTo(cxp, py + 4);
-        g.lineTo(cxp + 5, py + 12);
-        g.lineTo(cxp - 5, py + 12);
-        g.closePath();
-        g.fill();
-      } else {
-        g.globalAlpha = 0.5;
-        g.fillRect(px + TILE * hv * 0.7, py + TILE * (hv * 0.5), 4, 4);
-        g.globalAlpha = 1;
-      }
-
-      // faint grid line (skip on the busy mountain tiles)
-      if (tile !== "mountain") {
-        g.strokeStyle = "rgba(0,0,0,0.12)";
-        g.lineWidth = 1;
-        g.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
-      }
+      paintTile(g, tile, px, py, x, y, now, map);
     }
   }
 
