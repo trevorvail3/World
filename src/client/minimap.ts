@@ -24,6 +24,7 @@ const MM_TILE: Record<TileType, string> = {
   cave: "#16151c",
   cave_wall: "#0b0a0f",
   deep: "#101d30",
+  wall: "#736857",
 };
 
 const MM_OBJ: Record<ObjKind, string> = {

@@ -126,6 +126,7 @@ const EXAMINE_TILE: Record<TileType, string> = {
   cave: "The dark floor of the Marrow Deeps. Your torchlight finds no far wall.",
   cave_wall: "Dressed cave rock — too smooth, in places, to be only the dark's work.",
   deep: "The open grey of the Eyeless Sea. It gives back no landmark.",
+  wall: "Ironvale's dressed-stone rampart. Old work, and still sound.",
 };
 
 /** Examine flavour for the tree species. */

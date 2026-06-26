@@ -20,26 +20,31 @@ import type { TileType, WorldMap } from "../core/types.ts";
 const WIDTH = 64;
 const HEIGHT = 56;
 
-// --- The Knuckle Hills, drawn by hand (rows 0–17, cols 0–27) ---
+// --- The Knuckle Hills + Ironvale, drawn by hand (rows 0–17, cols 0–27) ---
+// Ironvale is the walled central city: dressed-stone ramparts ('W') with a
+// north and a south gate on the main road, a flag-stoned market plaza inside
+// (where the bank, smithy and shops sit), a lake on its west flank, the dirt
+// grove and the knucklestone outcrop to the north, and the roads leaving
+// through the gates to the Spine, Greyoak and the south.
 const HILL_ROWS: string[] = [
   "............................", // 0
-  "..,,,,,,,,,.......#########..", // 1  dirt grove + stone outcrop
-  "..,,,,,,,,,.......#########..", // 2
-  "..,,,,,,,,,.......#########..", // 3
-  "..,,,,,,,,,.......#########..", // 4
-  ".............==.............", // 5
-  "....====================....", // 6  the main path
-  ".............==.............", // 7
-  ".............==.............", // 8  Aldric
-  ".............==.............", // 9
-  ".............==.............", // 10
-  ".............==.............", // 11
-  "......~~~~~~~==.............", // 12  head of the Redrun (pond)
-  "......~~~~~~~==.............", // 13
-  "......~~~~~~~==.............", // 14
-  "......~~~~~~~==.............", // 15
-  "......~~~~~~~==.............", // 16
-  ".............==.............", // 17  the road leaves south
+  "..,,,,,,,,.......#########...", // 1  dirt grove + knucklestone outcrop
+  "..,,,,,,,,.......#########...", // 2
+  "..,,,,,,,,.......#########...", // 3
+  "..,,,,,,,,.......#########...", // 4
+  ".............==.............", // 5  the road approaches Ironvale
+  "....====================....", // 6  the main road (east to the Spine)
+  ".........WWWW==WWWWWWWWWW....", // 7  north wall + gate
+  ".........WWW#==#######WWW...", // 8  ramparts; plaza within (Aldric on the street)
+  ".........WWW#==#######WWW...", // 9  Vorn, Berric
+  ".........WWW#==#######WWW...", // 10 Sera, the bank, the furnace
+  ".........W###==#########W...", // 11 the fire, the anvil
+  "....~~~~~W###==#########W...", // 12 lake on the west flank; market plaza
+  "....~~~~~W###==#########W...", // 13 the shops
+  "....~~~~~WWWW==WWWWWWWWWW....", // 14 south wall + gate
+  "....~~~~~....==.............", // 15 the road leaves south for Greyoak
+  ".............==.............", // 16
+  ".............==.............", // 17
 ];
 
 const CHAR_TO_TILE: Record<string, TileType> = {
@@ -48,6 +53,7 @@ const CHAR_TO_TILE: Record<string, TileType> = {
   "=": "path",
   "#": "stone",
   "~": "water",
+  "W": "wall",
 };
 
 /** A cheap, stable pseudo-noise so terrain is fixed (not random). */

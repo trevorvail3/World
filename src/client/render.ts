@@ -36,6 +36,8 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   cave: ["#1c1a22", "#26232e"],
   cave_wall: ["#0e0d12", "#15131a"],
   deep: ["#14233a", "#1a2c46"],
+  // Ironvale's dressed-stone walls and buildings — warm masonry, lit.
+  wall: ["#6b6157", "#7c7165"],
 };
 
 const EMBER = "#d2742c";

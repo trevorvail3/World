@@ -118,8 +118,8 @@ new TitleScreen(app, () => {
   new Intro(app, INTRO_LINES, () => {
     hud.log(
       restored
-        ? "You return to The Knuckle Hills. Your progress is as you left it."
-        : "You step into The Knuckle Hills.",
+        ? "You return to Ironvale, in the Knuckle Hills. Your progress is as you left it."
+        : "You step into Ironvale, the walled city in the Knuckle Hills.",
     );
     if (!restored) guide.start();
   });

@@ -658,7 +658,9 @@ export type TileType =
   | "cave"
   | "cave_wall"
   // The Eyeless Sea: deep open water (impassable, like water).
-  | "deep";
+  | "deep"
+  // Ironvale: dressed-stone city walls and buildings (impassable).
+  | "wall";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {

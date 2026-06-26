@@ -28,15 +28,50 @@ export const objects: WorldObjectDef[] = [
   { id: "rock_2", kind: "rock", x: 23, y: 3, name: "Knucklestone Rock", resource: "mine_knucklestone" },
   { id: "rock_3", kind: "rock", x: 21, y: 4, name: "Knucklestone Rock", resource: "mine_knucklestone" },
 
-  // --- Fishing on the head of the Redrun (these sit on water) ---
+  // --- Fishing on the lake along Ironvale's west wall (these sit on water) ---
   { id: "fish_1", kind: "fishing_spot", x: 7, y: 12, name: "Fishing Spot", resource: "fish_ashfin" },
-  { id: "fish_2", kind: "fishing_spot", x: 10, y: 12, name: "Fishing Spot", resource: "fish_ashfin" },
+  { id: "fish_2", kind: "fishing_spot", x: 5, y: 12, name: "Fishing Spot", resource: "fish_ashfin" },
 
-  // --- The camp: bank chest, cooking fire, furnace, and a forge anvil ---
+  // --- Ironvale's market: bank chest, cooking fire, furnace, and the anvil ---
   { id: "bank_1", kind: "bank", x: 16, y: 10, name: "Bank Chest" },
   { id: "fire_1", kind: "fire", x: 17, y: 11, name: "Cooking Fire" },
   { id: "furnace_1", kind: "furnace", x: 18, y: 10, name: "Furnace" },
   { id: "anvil_1", kind: "anvil", x: 19, y: 11, name: "Anvil" },
+
+  // --- The Ironvale market traders (shops to come) ---
+  {
+    id: "shop_quartermaster",
+    kind: "npc",
+    x: 15,
+    y: 12,
+    name: "Hespa, Quartermaster",
+    lines: [
+      "Ironvale's market, friend. Cramped, loud, and the only honest counter for three days' walk.",
+      "Tools, packs, rations — I'll stock the lot once the road's safe enough to bring it in. Come back and the stall'll be full.",
+    ],
+  },
+  {
+    id: "shop_armourer",
+    kind: "npc",
+    x: 20,
+    y: 13,
+    name: "Doran, Armourer",
+    lines: [
+      "You stand like someone who's been hit before. Good — means you'll buy mail and mean it.",
+      "Shields, helms, plate — Ashforge work, when I've a case to sell from. Mind the anvil's busy; Vorn doesn't share the fire.",
+    ],
+  },
+  {
+    id: "shop_trader",
+    kind: "npc",
+    x: 11,
+    y: 13,
+    name: "Skritt",
+    lines: [
+      "Pssst. Goblin prices, friend — better than honest, worse than fair.",
+      "Skritt buys what others won't, sells what others can't. The warm stone especially. Skritt is always interested in the warm stone.",
+    ],
+  },
 
   // --- Aldric, on the path ---
   {
@@ -96,10 +131,10 @@ export const objects: WorldObjectDef[] = [
     ],
   },
 
-  // --- Monsters (Combat) ---
-  { id: "rat_1", kind: "monster", monster: "moor_rat", x: 19, y: 10, name: "Moor Rat" },
-  { id: "rat_2", kind: "monster", monster: "moor_rat", x: 22, y: 12, name: "Moor Rat" },
-  { id: "wolf_1", kind: "monster", monster: "hill_wolf", x: 24, y: 9, name: "Hill Wolf" },
+  // --- Monsters (Combat) — kept outside Ironvale's walls, in the hills ---
+  { id: "rat_1", kind: "monster", monster: "moor_rat", x: 20, y: 5, name: "Moor Rat" },
+  { id: "rat_2", kind: "monster", monster: "moor_rat", x: 22, y: 5, name: "Moor Rat" },
+  { id: "wolf_1", kind: "monster", monster: "hill_wolf", x: 18, y: 16, name: "Hill Wolf" },
 
   // === GREYOAK WOOD ==========================================================
 

@@ -164,7 +164,7 @@ export function buildWalkability(
   return (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
     const tile = map.tiles[y * map.width + x];
-    if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep") {
+    if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep" || tile === "wall") {
       return false;
     }
     if (blocked.has(`${x},${y}`)) return false;
@@ -988,7 +988,7 @@ function baseWalkable(content: Content): (x: number, y: number) => boolean {
   fn = (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
     const tile = map.tiles[y * map.width + x];
-    if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep") {
+    if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep" || tile === "wall") {
       return false;
     }
     return !blocked.has(`${x},${y}`);
