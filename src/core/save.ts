@@ -115,7 +115,7 @@ export function hydratePlayer(
     player.bank = bank;
   }
 
-  // --- Equipment (only items that exist and fit the slot they claim) ---
+  // --- Equipment (only items that exist and sit in the slot they claim) ---
   const savedEquip = raw["equipment"];
   if (isRecord(savedEquip)) {
     const equipment: Player["equipment"] = {};
@@ -123,7 +123,7 @@ export function hydratePlayer(
       const id = savedEquip[slot];
       if (typeof id !== "string" || !(id in content.items)) continue;
       const def = content.items[id as ItemId];
-      if (def.equip === slot) equipment[slot as EquipSlot] = id as ItemId;
+      if (def.slot === slot) equipment[slot as EquipSlot] = id as ItemId;
     }
     player.equipment = equipment;
   }

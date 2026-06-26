@@ -1,8 +1,8 @@
 /**
  * src/client/itemColors.ts
  * ------------------------
- * The swatch colour used to draw each item's icon in the HUD inventory and
- * bank. GENERATED with items.ts — one entry per ItemId, coloured by category.
+ * The swatch colour used to draw each item's icon. GENERATED with items.ts —
+ * one entry per ItemId, coloured by category.
  */
 
 import type { ItemId } from "../core/types.ts";
@@ -473,10 +473,6 @@ export const ITEM_COLORS: Record<ItemId, string> = {
   berric_ledger: "#c9a24a",
   warden_longbow: "#b8bcc6",
   chronicler_seal: "#c9a24a",
-  knucklestone_dagger: "#b8bcc6",
-  knucklestone_helm: "#a7adb6",
-  knucklestone_shield: "#a7adb6",
-  knucklestone_mail: "#a7adb6",
   ironbark_shard: "#c98a3a",
   heartoak_amber: "#c98a3a",
 };

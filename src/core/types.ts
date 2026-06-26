@@ -548,18 +548,24 @@ export type ItemId =
   | "berric_ledger"
   | "warden_longbow"
   | "chronicler_seal"
-  | "knucklestone_dagger"
-  | "knucklestone_helm"
-  | "knucklestone_shield"
-  | "knucklestone_mail"
   | "ironbark_shard"
   | "heartoak_amber";
 
 /**
- * The wearable slots. A piece of gear declares which one it fills (see
- * ItemDef.equip); the player can wear one item per slot at a time.
+ * The wearable equipment slots, named per the idle game's canon `equip` values.
+ * A piece of gear declares which one it fills via ItemDef.slot; the player wears
+ * one item per slot. (Tool/meta slots like pickaxe/mount aren't worn here yet.)
  */
-export type EquipSlot = "weapon" | "helmet" | "body" | "shield";
+export type EquipSlot =
+  | "mainhand"
+  | "offhand"
+  | "helmet"
+  | "armor"
+  | "legs"
+  | "boots"
+  | "ring"
+  | "necklace"
+  | "cape";
 
 /**
  * A static description of an item. Lives in src/content/items.ts.
@@ -584,12 +590,13 @@ export interface ItemDef {
   /** Food only: hit points restored when eaten. */
   heals?: number;
 
-  // --- Our equipment system (the transitional forged gear) ---
-  /** Which of OUR equipment slots this item fills when worn. */
-  equip?: EquipSlot;
-
-  // --- Canon gear data (not yet wired into the equip system) ---
-  /** Canon equip/tool slot string: "mainhand", "armor", "helmet", "pickaxe"… */
+  // --- Gear ---
+  /**
+   * Canon equip/tool slot string: "mainhand", "armor", "helmet", "legs",
+   * "boots", "offhand", "ring", "necklace", "cape" (wearable) or "pickaxe"/
+   * "hatchet"/"rod"/"ranged"/"ammo"/"mount"/"companion" (not worn here yet).
+   * An item is equippable when this matches one of the EquipSlot values.
+   */
   slot?: string;
   /** Tier on the canon material ladder (1–10). */
   tier?: number;
