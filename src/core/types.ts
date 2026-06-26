@@ -735,7 +735,9 @@ export type ObjKind =
   /** A directional signpost at a junction (examine for the way). */
   | "signpost"
   /** A waystone: pay the Courier's toll to fast-travel between them. */
-  | "waystone";
+  | "waystone"
+  /** An Agility obstacle: one leg of a training circuit (traverse for XP). */
+  | "agility_obstacle";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -767,6 +769,19 @@ export interface WorldObjectDef {
   target?: Vec2;
   /** Boss-dungeon entrance only: the dungeon id it leads to (for display). */
   dungeon?: string;
+  // --- Agility obstacles ---
+  /** Which course this obstacle belongs to. */
+  course?: string;
+  /** Position in the circuit (0 = the start; must be cleared in order). */
+  order?: number;
+  /** Where the player lands after traversing (the far side of the obstacle). */
+  exit?: Vec2;
+  /** Agility XP for clearing this obstacle. */
+  xp?: number;
+  /** Minimum Agility level to attempt the obstacle (gates the whole course). */
+  levelReq?: number;
+  /** Visual variant: "log" | "net" | "rope" | "wall" | "stones" | "beam". */
+  obstacle?: string;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -982,6 +997,11 @@ export interface Player {
   running: boolean;
   /** Run energy, 0–100. Drains while sprinting, regenerates otherwise. */
   energy: number;
+  /**
+   * Progress on the current Agility circuit: the course id and the next
+   * obstacle order expected. Null when not mid-lap. Transient (not persisted).
+   */
+  agilityLap: { course: string; next: number } | null;
   /**
    * Set when energy hits 0; forces walking until energy recovers a little, so
    * the player doesn't micro-stutter between sprint and walk on an empty bar.

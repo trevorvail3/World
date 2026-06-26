@@ -448,6 +448,20 @@ export const objects: WorldObjectDef[] = [
   { id: "tree_heartoak_2", kind: "tree", x: 30, y: 55, name: "Heartoak", resource: "fell_heartoak", species: "heartoak" },
   { id: "tree_deeproot_1", kind: "tree", x: 23, y: 59, name: "Deeproot", resource: "fell_deeproot", species: "deeproot" },
   { id: "tree_deeproot_2", kind: "tree", x: 24, y: 59, name: "Deeproot", resource: "fell_deeproot", species: "deeproot" },
+
+  // --- Agility courses: two circuits trained by clearing each leg in order ---
+  // A beginner yard just outside Ironvale (NE), and a tougher Knuckle Hills
+  // scramble (NW, Agility 20+). Tiles + exits validated reachable.
+  { id: "course_yard_0", kind: "agility_obstacle", x: 73, y: 31, name: "Ironvale Training Yard: Balance Log", course: "course_yard", order: 0, exit: { x: 74, y: 31 }, xp: 40, levelReq: 1, obstacle: "log" },
+  { id: "course_yard_1", kind: "agility_obstacle", x: 75, y: 32, name: "Ironvale Training Yard: Climbing Net", course: "course_yard", order: 1, exit: { x: 75, y: 33 }, xp: 40, levelReq: 1, obstacle: "net" },
+  { id: "course_yard_2", kind: "agility_obstacle", x: 75, y: 37, name: "Ironvale Training Yard: Rope Swing", course: "course_yard", order: 2, exit: { x: 74, y: 37 }, xp: 40, levelReq: 1, obstacle: "rope" },
+  { id: "course_yard_3", kind: "agility_obstacle", x: 71, y: 37, name: "Ironvale Training Yard: Wall Scramble", course: "course_yard", order: 3, exit: { x: 71, y: 36 }, xp: 40, levelReq: 1, obstacle: "wall" },
+  { id: "course_yard_4", kind: "agility_obstacle", x: 70, y: 33, name: "Ironvale Training Yard: Stepping Stones", course: "course_yard", order: 4, exit: { x: 71, y: 33 }, xp: 40, levelReq: 1, obstacle: "stones" },
+  { id: "course_scramble_0", kind: "agility_obstacle", x: 18, y: 21, name: "Knuckle Hills Scramble: Balance Log", course: "course_scramble", order: 0, exit: { x: 19, y: 21 }, xp: 100, levelReq: 20, obstacle: "log" },
+  { id: "course_scramble_1", kind: "agility_obstacle", x: 21, y: 23, name: "Knuckle Hills Scramble: Climbing Net", course: "course_scramble", order: 1, exit: { x: 21, y: 24 }, xp: 100, levelReq: 20, obstacle: "net" },
+  { id: "course_scramble_2", kind: "agility_obstacle", x: 20, y: 27, name: "Knuckle Hills Scramble: Rope Swing", course: "course_scramble", order: 2, exit: { x: 19, y: 27 }, xp: 100, levelReq: 20, obstacle: "rope" },
+  { id: "course_scramble_3", kind: "agility_obstacle", x: 16, y: 27, name: "Knuckle Hills Scramble: Wall Scramble", course: "course_scramble", order: 3, exit: { x: 16, y: 26 }, xp: 100, levelReq: 20, obstacle: "wall" },
+  { id: "course_scramble_4", kind: "agility_obstacle", x: 15, y: 23, name: "Knuckle Hills Scramble: Stepping Stones", course: "course_scramble", order: 4, exit: { x: 16, y: 23 }, xp: 100, levelReq: 20, obstacle: "stones" },
 ];
 
 /** Where the player first appears — the civic yard at the heart of Ironvale. */

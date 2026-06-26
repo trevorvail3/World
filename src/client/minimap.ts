@@ -55,6 +55,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   lamppost: "", // street dressing — not marked
   signpost: "#caa05a",
   waystone: "#d2742c",
+  agility_obstacle: "#b6d24a",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

@@ -139,6 +139,7 @@ const VERB: Record<ObjKind, string> = {
   lamppost: "Examine",
   signpost: "Read",
   waystone: "Travel from",
+  agility_obstacle: "Traverse",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -167,6 +168,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   lamppost: "An iron lamp on a tall post. Lit against the dark by whoever walks the rounds.",
   signpost: "A weathered fingerpost, its boards pointing the old roads.",
   waystone: "A Courier waystone. Pay the toll and a rider will see you to another.",
+  agility_obstacle: "Part of a training circuit. Clear each leg in turn to build your Agility.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {

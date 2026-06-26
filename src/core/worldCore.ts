@@ -62,7 +62,9 @@ const ENERGY_RECOVER = 20; // after running dry, you must regen this much before
 // (runs last ~2× longer) and regen is doubled (recovers ~2× faster).
 const AGILITY_DRAIN_REDUCTION = 0.5;
 const AGILITY_REGEN_BONUS = 1.0;
-const AGILITY_XP_PER_TILE = 4; // run-energy spent travelling also trains Agility
+// Agility is trained on obstacle courses; clearing a full lap pays a bonus equal
+// to this multiple of the course's total per-obstacle XP.
+const AGILITY_LAP_BONUS_MULT = 1.0;
 
 // Predators that strike when you stray too close (everything else waits to be
 // attacked). Kept here rather than in content so it's easy to tune.
@@ -289,6 +291,7 @@ export function createWorld(
     running: true,
     energy: ENERGY_MAX,
     winded: false,
+    agilityLap: null,
     quests: {},
     questsDone: [],
     flags: [],
@@ -1241,6 +1244,10 @@ function startInteraction(
       events.push({ type: "OPEN_TRAVEL", objId });
       break;
 
+    case "agility_obstacle":
+      traverseObstacle(state, content, def, events);
+      break;
+
     case "monster": {
       if (!obj.available) {
         events.push({ type: "LOG", message: "There is nothing here to fight." });
@@ -1409,6 +1416,61 @@ function travelTo(
   events.push({ type: "LOG", message: `You pay the Courier ${fare}g and ride to ${def.name}.` });
 }
 
+/**
+ * Clear one leg of an Agility circuit. Obstacles must be taken in order; the
+ * first (order 0) starts a lap, the last pays a lap-completion bonus. Each clear
+ * grants Agility XP and hops the player to the obstacle's far side.
+ */
+function traverseObstacle(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const course = def.course;
+  const order = def.order ?? 0;
+  if (!course) return;
+
+  // Course-wide level gate (every obstacle carries the requirement).
+  const req = def.levelReq ?? 1;
+  if (skillLvl(player, "agility") < req) {
+    events.push({ type: "LOG", message: `You need Agility level ${req} to train here.` });
+    return;
+  }
+
+  const lap = player.agilityLap;
+  const isStart = order === 0;
+  const inSequence = lap && lap.course === course && lap.next === order;
+  if (!isStart && !inSequence) {
+    events.push({ type: "LOG", message: `Start at the beginning of the ${def.name.replace(/:.*$/, "")} course.` });
+    return;
+  }
+
+  // The obstacles of this course, to know where the lap ends.
+  const legs = content.objects.filter((o) => o.kind === "agility_obstacle" && o.course === course);
+  const lastOrder = legs.reduce((m, o) => Math.max(m, o.order ?? 0), 0);
+
+  grantXp(state, content, "agility", def.xp ?? 10, events);
+  // Hop to the far side (and re-arm the run clock so a hop never feels stuck).
+  if (def.exit) {
+    player.pos = { x: def.exit.x, y: def.exit.y };
+    player.path = [];
+    player.pendingInteractId = null;
+  }
+
+  if (order >= lastOrder) {
+    // Lap complete — pay the bonus and reset for another circuit.
+    const total = legs.reduce((s, o) => s + (o.xp ?? 0), 0);
+    const bonus = Math.round(total * AGILITY_LAP_BONUS_MULT);
+    if (bonus > 0) grantXp(state, content, "agility", bonus, events);
+    player.agilityLap = null;
+    events.push({ type: "LOG", message: "Lap complete! You catch your breath, pleased with the run." });
+  } else {
+    player.agilityLap = { course, next: order + 1 };
+  }
+}
+
 /** A portal teleports the player to its paired destination (boss arena ↔ home). */
 function usePortal(
   state: WorldState,
@@ -1523,10 +1585,7 @@ export function tick(
     // 2) Movement. Sprinting drains run energy; otherwise it recovers.
     const wasMoving = player.path.length > 0;
     const sprintTiles = wasMoving ? stepMovement(player, dt) : 0;
-    if (sprintTiles > 0) {
-      // Running trains Agility — distance covered while sprinting.
-      grantXp(state, content, "agility", sprintTiles * AGILITY_XP_PER_TILE, events);
-    } else {
+    if (sprintTiles <= 0) {
       if (player.energy < ENERGY_MAX) {
         const regen = (ENERGY_REGEN * agilityRegenMult(player) * dt) / 1000;
         player.energy = Math.min(ENERGY_MAX, player.energy + regen);

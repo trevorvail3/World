@@ -638,7 +638,67 @@ function drawObject(
     case "waystone":
       drawWaystone(g, cx, cy, now);
       break;
+    case "agility_obstacle":
+      drawObstacle(g, def.obstacle, cx, cy);
+      break;
   }
+}
+
+/** An Agility obstacle, drawn by its variant (log, net, rope, wall, stones, beam). */
+function drawObstacle(
+  g: CanvasRenderingContext2D,
+  variant: string | undefined,
+  cx: number,
+  cy: number,
+): void {
+  shadow(g, cx, cy + 11, 9, 3);
+  const wood = "#7a5a36", woodDk = "#5a4026", rope = "#b59a5e";
+  switch (variant) {
+    case "net": { // a climbing net on a frame
+      g.strokeStyle = woodDk; g.lineWidth = 2.5;
+      g.strokeRect(cx - 11, cy - 12, 22, 24);
+      g.strokeStyle = rope; g.lineWidth = 1;
+      for (let i = 1; i < 5; i++) { g.beginPath(); g.moveTo(cx - 11 + i * 4.4, cy - 12); g.lineTo(cx - 11 + i * 4.4, cy + 12); g.stroke(); }
+      for (let j = 1; j < 5; j++) { g.beginPath(); g.moveTo(cx - 11, cy - 12 + j * 4.8); g.lineTo(cx + 11, cy - 12 + j * 4.8); g.stroke(); }
+      break;
+    }
+    case "rope": { // a rope swing from a beam
+      g.strokeStyle = woodDk; g.lineWidth = 3; g.beginPath(); g.moveTo(cx - 12, cy - 12); g.lineTo(cx + 12, cy - 12); g.stroke();
+      g.strokeStyle = rope; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(cx, cy - 12); g.lineTo(cx - 4, cy + 9); g.stroke();
+      g.fillStyle = wood; g.fillRect(cx - 7, cy + 9, 8, 2.5); // the swing seat
+      break;
+    }
+    case "wall": { // a wall to scramble over
+      g.fillStyle = "#8a8278"; g.fillRect(cx - 11, cy - 9, 22, 20);
+      g.strokeStyle = "#5b554c"; g.lineWidth = 1;
+      g.strokeRect(cx - 11, cy - 9, 22, 20);
+      g.beginPath(); g.moveTo(cx - 11, cy - 2); g.lineTo(cx + 11, cy - 2); g.moveTo(cx - 11, cy + 5); g.lineTo(cx + 11, cy + 5);
+      g.moveTo(cx, cy - 9); g.lineTo(cx, cy - 2); g.moveTo(cx - 5, cy - 2); g.lineTo(cx - 5, cy + 5); g.moveTo(cx + 5, cy + 5); g.lineTo(cx + 5, cy + 11); g.stroke();
+      break;
+    }
+    case "stones": { // stepping stones across a gap
+      g.fillStyle = "#6fa0c0"; g.globalAlpha = 0.35; g.fillRect(cx - 12, cy - 6, 24, 14); g.globalAlpha = 1;
+      g.fillStyle = "#9a9080";
+      for (const [dx, dy] of [[-8, 4], [-2, -2], [4, 3], [9, -1]] as const) {
+        g.beginPath(); g.ellipse(cx + dx, cy + dy, 3.4, 2.6, 0, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "beam": { // a high tightrope/beam
+      g.strokeStyle = woodDk; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - 11, cy + 9); g.lineTo(cx - 8, cy - 6); g.moveTo(cx + 11, cy + 9); g.lineTo(cx + 8, cy - 6); g.stroke();
+      g.strokeStyle = rope; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - 9, cy - 6); g.lineTo(cx + 9, cy - 6); g.stroke();
+      break;
+    }
+    default: { // "log" — a balance log over a dip
+      g.fillStyle = wood; g.strokeStyle = woodDk; g.lineWidth = 1;
+      g.fillRect(cx - 12, cy - 2, 24, 5); g.strokeRect(cx - 12, cy - 2, 24, 5);
+      g.fillStyle = woodDk; g.beginPath(); g.ellipse(cx + 12, cy + 0.5, 1.6, 2.6, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = rope; g.lineWidth = 0.8; g.beginPath(); g.moveTo(cx - 12, cy + 0.5); g.lineTo(cx + 12, cy + 0.5); g.stroke();
+    }
+  }
+  // A small footworn marker so the circuit reads as a course.
+  g.fillStyle = "rgba(182,210,74,0.5)"; g.beginPath(); g.arc(cx, cy + 10, 1.6, 0, Math.PI * 2); g.fill();
 }
 
 /** A street lamp: tall post with an iron lantern (its glow is in the night pass). */

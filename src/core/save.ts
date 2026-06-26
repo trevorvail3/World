@@ -196,6 +196,7 @@ export function hydratePlayer(
   const savedEnergy = raw["energy"];
   if (finiteNum(savedEnergy)) player.energy = Math.max(0, Math.min(100, savedEnergy));
   player.winded = player.energy <= 0;
+  player.agilityLap = null; // lap progress is transient — start fresh on load
   // Tools are wielded in the mainhand now. Make sure the player still owns each
   // basic tool so saves from before this change can gather: if they hold no
   // tool of a kind anywhere (hand, pack or bank), drop a tier-1 one in the pack.
