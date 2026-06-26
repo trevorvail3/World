@@ -265,7 +265,44 @@ function drawObject(
     case "workbench":
       drawWorkbench(g, cx, cy);
       break;
+    case "crafting_table":
+      drawCraftingTable(g, cx, cy);
+      break;
   }
+}
+
+/** A Crafting table: a tanning frame with a stretched hide and a jeweller's lamp. */
+function drawCraftingTable(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 10, 13, 4);
+  // Table legs + top.
+  g.fillStyle = "#3a2c1d";
+  g.fillRect(cx - 11, cy + 1, 3, 10);
+  g.fillRect(cx + 8, cy + 1, 3, 10);
+  g.fillStyle = "#6f5436";
+  g.fillRect(cx - 13, cy - 3, 26, 6);
+  g.fillStyle = "#7d6040";
+  g.fillRect(cx - 13, cy - 3, 26, 2);
+  // A hide stretched on a frame at the back.
+  g.fillStyle = "#3a2c1d";
+  g.fillRect(cx - 10, cy - 12, 2, 9);
+  g.fillRect(cx + 1, cy - 12, 2, 9);
+  g.fillStyle = "#b89a6a";
+  g.beginPath();
+  g.moveTo(cx - 8, cy - 11);
+  g.lineTo(cx + 1, cy - 11);
+  g.lineTo(cx - 0.5, cy - 4);
+  g.lineTo(cx - 6.5, cy - 4);
+  g.closePath();
+  g.fill();
+  // A small jeweller's lamp glint on the right.
+  g.fillStyle = "#caa05a";
+  g.beginPath();
+  g.arc(cx + 7, cy - 6, 2.4, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "rgba(245,210,130,0.8)";
+  g.beginPath();
+  g.arc(cx + 7, cy - 6, 1.1, 0, Math.PI * 2);
+  g.fill();
 }
 
 /** A Herblore cauldron: a black pot over coals with a faint green simmer. */

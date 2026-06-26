@@ -572,7 +572,11 @@ export type EquipSlot =
   | "ring"
   | "necklace"
   | "cape"
-  | "companion";
+  | "companion"
+  // Gathering tools — wielded to gather (and required for it).
+  | "pickaxe"
+  | "hatchet"
+  | "rod";
 
 /**
  * A static description of an item. Lives in src/content/items.ts.
@@ -706,7 +710,9 @@ export type ObjKind =
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
-  | "workbench";
+  | "workbench"
+  /** A Crafting table: tan leather, blow glass, cut gems and make jewellery. */
+  | "crafting_table";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it

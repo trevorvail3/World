@@ -95,9 +95,11 @@ export function stationActions(content: Content, station: string): SkillAction[]
     if (station === "anvil") {
       return a.skill === "smithing" && !a.id.startsWith("smelt_") && !a.meltAll;
     }
-    // The cauldron brews all Herblore; the workbench builds all Construction.
+    // The cauldron brews all Herblore; the workbench builds all Construction;
+    // the crafting table tans leather, blows glass and makes jewellery.
     if (station === "cauldron") return a.skill === "herblore";
     if (station === "workbench") return a.skill === "construction";
+    if (station === "crafting_table") return a.skill === "crafting";
     return false;
   });
 }
@@ -156,6 +158,7 @@ const BLOCKING_KINDS = new Set([
   "bounty_board",
   "cauldron",
   "workbench",
+  "crafting_table",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -238,7 +241,9 @@ export function createWorld(
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},
-    equipment: {},
+    // Start with the basic tier-1 tools wielded, so gathering works from the
+    // off (and there's a clear upgrade path as the gathering skills climb).
+    equipment: { hatchet: "hatchet_1", pickaxe: "pickaxe_1", rod: "rod_1" },
     combatStyle: "vigour",
     quests: {},
     questsDone: [],
@@ -318,15 +323,36 @@ function beginGather(
     });
     return false;
   }
+  // This kind of gathering needs the matching tool wielded; a better tool tier
+  // gathers faster. (Trapping needs no tool.)
+  const toolSlot = GATHER_TOOL[kind];
+  let speedMult = 1;
+  if (toolSlot) {
+    const toolId = player.equipment[toolSlot];
+    if (!toolId) {
+      events.push({ type: "LOG", message: TOOL_MISSING[toolSlot] ?? "You need the right tool for that." });
+      return false;
+    }
+    const tier = content.items[toolId]?.tier ?? 1;
+    speedMult = TOOL_TIER_SPEED[tier] ?? 1;
+  }
+  const stepInterval = Math.round(interval * speedMult);
   player.activity = {
     kind,
     targetId: objId,
     actionId: action.id,
-    nextActionAt: ctx.now + interval,
-    actionInterval: interval,
+    nextActionAt: ctx.now + stepInterval,
+    actionInterval: stepInterval,
   };
   return true;
 }
+
+/** What to tell the player when they try to gather without the right tool. */
+const TOOL_MISSING: Record<string, string> = {
+  hatchet: "You need a hatchet equipped to chop here.",
+  pickaxe: "You need a pickaxe equipped to mine here.",
+  rod: "You need a fishing rod equipped to fish here.",
+};
 
 function levelFromXp(xpTable: number[], xp: number): number {
   let level = 1;
@@ -631,6 +657,9 @@ const EQUIP_SLOTS = new Set<string>([
   "necklace",
   "cape",
   "companion",
+  "pickaxe",
+  "hatchet",
+  "rod",
 ]);
 
 /** Chance, per successful skill action, of a matching skilling-pet companion. */
@@ -676,6 +705,46 @@ function tryPetDrop(
 /** Combat level needed to equip each gear tier (idle game GEAR_TIER_REQS). */
 const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
 
+/** Which gathering skill each tool slot trains/serves. */
+const TOOL_SLOT_SKILL: Partial<Record<string, SkillId>> = {
+  hatchet: "forestry",
+  pickaxe: "mining",
+  rod: "fishing",
+};
+
+/** The gather-activity kind each tool slot powers. */
+const GATHER_TOOL: Partial<Record<string, "hatchet" | "pickaxe" | "rod">> = {
+  woodcutting: "hatchet",
+  mining: "pickaxe",
+  fishing: "rod",
+};
+
+/** Gathering-skill level needed to wield each tool tier (index = tier 1–10). */
+const TOOL_TIER_REQS = [0, 1, 10, 15, 30, 40, 45, 55, 60, 60, 75];
+
+/** Tool tier → gather-interval multiplier: better tools gather faster. */
+const TOOL_TIER_SPEED = [1, 1, 0.95, 0.9, 0.82, 0.77, 0.72, 0.68, 0.65, 0.62, 0.55];
+
+/**
+ * The skill + level a piece of gear or a tool needs before it can be worn.
+ * Tools gate on their gathering skill; combat gear gates on combat level.
+ * Exported so the UI can show the same requirement the equip check enforces.
+ */
+export function equipRequirement(
+  content: Content,
+  itemId: ItemId,
+): { skill: SkillId | "combat"; level: number } | null {
+  const def = content.items[itemId];
+  if (!def || def.tier === undefined) return null;
+  const toolSkill = def.slot ? TOOL_SLOT_SKILL[def.slot] : undefined;
+  if (toolSkill) {
+    const level = TOOL_TIER_REQS[def.tier] ?? 1;
+    return level > 1 ? { skill: toolSkill, level } : null;
+  }
+  const level = GEAR_TIER_REQS[def.tier] ?? 0;
+  return level > 1 ? { skill: "combat", level } : null;
+}
+
 /** The player's combat level (idle game formula). */
 function combatLevel(player: Player): number {
   const e = skillLvl(player, "edge");
@@ -701,13 +770,16 @@ function equipSlot(
     events.push({ type: "LOG", message: `You can't wear the ${def.name}.` });
     return;
   }
-  // Honour the gear-tier combat-level requirement.
-  if (def.tier !== undefined) {
-    const req = GEAR_TIER_REQS[def.tier] ?? 0;
-    if (combatLevel(player) < req) {
+  // Honour the level requirement: tools gate on their gathering skill, combat
+  // gear on combat level (e.g. a Ribstone Pickaxe needs Mining 30 to wield).
+  const req = equipRequirement(content, data.item);
+  if (req) {
+    const have = req.skill === "combat" ? combatLevel(player) : skillLvl(player, req.skill);
+    if (have < req.level) {
+      const what = req.skill === "combat" ? "combat" : content.skills[req.skill].name;
       events.push({
         type: "LOG",
-        message: `You need combat level ${req} to wield the ${def.name}.`,
+        message: `You need ${what} level ${req.level} to wield the ${def.name}.`,
       });
       return;
     }
@@ -989,6 +1061,7 @@ function startInteraction(
     case "anvil":
     case "cauldron":
     case "workbench":
+    case "crafting_table":
       events.push({ type: "OPEN_CRAFT", station: def.kind, objId });
       break;
 
@@ -1441,7 +1514,8 @@ function gatherStep(
       return;
     }
   }
-  act.nextActionAt = ctx.now + beh.interval;
+  // Use the activity's interval (already adjusted for tool tier), not the base.
+  act.nextActionAt = ctx.now + (act.actionInterval || beh.interval);
 }
 
 /**

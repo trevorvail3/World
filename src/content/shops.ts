@@ -42,6 +42,9 @@ export const shops: ShopDef[] = [
       { item: "rod_1", price: 65, qty: 1 },
       { item: "pickaxe_3", price: 104, qty: 1 },
       { item: "hatchet_3", price: 104, qty: 1 },
+      // Better rods (Woodcraft makes its own once that bench is open).
+      { item: "rod_2", price: 130, qty: 1 },
+      { item: "rod_3", price: 240, qty: 1 },
     ],
   },
   {

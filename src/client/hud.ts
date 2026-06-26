@@ -25,7 +25,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { ITEM_COLORS } from "./itemColors.ts";
-import { evalAchievement } from "../core/worldCore.ts";
+import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
@@ -81,6 +81,9 @@ const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "necklace", name: "Amulet" },
   { slot: "cape", name: "Cape" },
   { slot: "companion", name: "Companion" },
+  { slot: "hatchet", name: "Hatchet" },
+  { slot: "pickaxe", name: "Pickaxe" },
+  { slot: "rod", name: "Rod" },
 ];
 
 /** Canon slot strings this UI can wear (matches EquipSlot). */
@@ -441,7 +444,17 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "EQUIP", slot: index }),
       });
     }
-    this.menu.show(screenX, screenY, def.name, items, gearLine(def) || def.description);
+    this.menu.show(screenX, screenY, def.name, items, this.gearDesc(data.item));
+  }
+
+  /** Gear tooltip: stat line plus any level requirement to wield it. */
+  private gearDesc(id: ItemId): string {
+    const def = this.content.items[id];
+    const base = gearLine(def) || def.description;
+    const req = equipRequirement(this.content, id);
+    if (!req) return base;
+    const what = req.skill === "combat" ? "Combat" : this.content.skills[req.skill].name;
+    return `${base} · Requires ${what} ${req.level}`;
   }
 
   /** Long-press a worn slot to inspect it, with the option to take it off. */
@@ -462,7 +475,7 @@ export class Hud {
           onSelect: () => this.dispatch({ type: "UNEQUIP", equipSlot: slot }),
         },
       ],
-      gearLine(def) || def.description,
+      this.gearDesc(id),
     );
   }
 
@@ -784,6 +797,9 @@ const SLOT_LABEL: Record<string, string> = {
   ring: "Ring",
   necklace: "Amulet",
   cape: "Cape",
+  hatchet: "Hatchet",
+  pickaxe: "Pickaxe",
+  rod: "Fishing Rod",
 };
 
 /** A one-line "Weapon · +2 damage" summary for a piece of gear (or ""). */

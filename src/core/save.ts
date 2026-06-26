@@ -170,6 +170,19 @@ export function hydratePlayer(
     }
     player.equipment = equipment;
   }
+  // Gathering now needs a tool wielded. Backfill any empty tool slot with the
+  // basic tier-1 tool so saves from before this change can still gather.
+  const STARTER_TOOLS: Partial<Record<EquipSlot, ItemId>> = {
+    hatchet: "hatchet_1" as ItemId,
+    pickaxe: "pickaxe_1" as ItemId,
+    rod: "rod_1" as ItemId,
+  };
+  for (const slot of Object.keys(STARTER_TOOLS) as EquipSlot[]) {
+    const fallback = STARTER_TOOLS[slot];
+    if (!player.equipment[slot] && fallback && fallback in content.items) {
+      player.equipment[slot] = fallback;
+    }
+  }
 
   // --- Combat style (preference) ---
   const style = raw["combatStyle"];

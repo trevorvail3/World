@@ -106,6 +106,7 @@ const VERB: Record<ObjKind, string> = {
   bounty_board: "Read",
   cauldron: "Brew at",
   workbench: "Build at",
+  crafting_table: "Craft at",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -126,6 +127,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
+  crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {

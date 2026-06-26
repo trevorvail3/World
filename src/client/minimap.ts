@@ -46,6 +46,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   bounty_board: "#c8a24a",
   cauldron: "#6f8a6a",
   workbench: "#9a7b4e",
+  crafting_table: "#a98a6a",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */
