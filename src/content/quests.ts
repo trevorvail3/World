@@ -696,4 +696,144 @@ export const quests: QuestDef[] = [
       flags: ["varath_main_story_complete"],
     },
   },
+
+  // ===========================================================================
+  // LANDMARK SIDE-QUESTS — small, self-contained tasks tied to the gazetteer's
+  // named places (World Bible §X). Each hangs off an NPC already out in that
+  // region; none touch the main line. Offered once that giver's main quest (if
+  // any) is done.
+  // ===========================================================================
+
+  {
+    id: "q_rooks_wolf",
+    name: "The Wolf That Isn't",
+    giver: "rook",
+    intro: [
+      "There's a wolf working these hills that doesn't move like a wolf. Old. Lame. Clever as a person.",
+      "The shepherds tell it three ways and all of them are wrong. Thin the pack a while and you'll find the truth's plainer than the rumour — and harder.",
+      "Put a few of the hill wolves down. The lame one shows itself when the young ones are gone.",
+    ],
+    steps: [
+      { type: "kill", monster: "hill_wolf", count: 5, text: "Thin the hill wolves (0/5)" },
+      { type: "talk", npc: "rook", text: "Tell Rook what you found" },
+    ],
+    outro: [
+      "Lame back leg, half its teeth, and it had learned to wait. Not a monster. Just old, and clever, and hungry. That's the worst kind of plain.",
+      "You did it clean. Take this — field rations, for the next cold watch.",
+    ],
+    reward: {
+      xp: [{ skill: "vigour", amount: 350 }, { skill: "vitality", amount: 150 }],
+      items: [{ item: "battle_ration", qty: 2 }],
+    },
+  },
+
+  {
+    id: "q_charburner_fuel",
+    name: "Fuel for the Mound",
+    giver: "charburner",
+    intro: [
+      "The mound's hungry and my back's gone. Turf-capped, slow-burning — it eats wood faster than I can cut it.",
+      "Bring me six good ashwood logs and I'll cap a fresh burn. I'll pay you in charcoal — better than coin out here, if you ask the smiths.",
+    ],
+    steps: [
+      { type: "deliver", npc: "charburner", item: "ashwood_log", count: 6, text: "Bring the charburner 6 ashwood logs" },
+    ],
+    outro: [
+      "That'll see the mound through the week. Here — six measures of charcoal, clean-burned. Burns hot and quiet.",
+      "Come back when you've news. The wood's gone quiet and I like to know who's still walking it.",
+    ],
+    reward: {
+      xp: [{ skill: "survivalist", amount: 280 }],
+      items: [{ item: "charcoal", qty: 6 }],
+    },
+  },
+
+  {
+    id: "q_lenne_trapline",
+    name: "Lenne's Trapline",
+    giver: "lenne",
+    intro: [
+      "I'm working the deep wood and my line's gone untended three days. The boar have been at it — fouling the snares, springing them for nothing.",
+      "Put a few of them down so the line runs clean again. Mind the understory; they don't give ground.",
+    ],
+    steps: [
+      { type: "kill", monster: "wild_boar", count: 4, text: "Clear the boar from the trapline (0/4)" },
+      { type: "talk", npc: "lenne", text: "Report back to Lenne" },
+    ],
+    outro: [
+      "Good. The line'll hold now. One of them had been at the same snare every night — habit, not hunger. Animals have habits, same as us.",
+      "Take the meat off them; I've no use for it deep in. Quiet roads to you.",
+    ],
+    reward: {
+      xp: [{ skill: "hunter", amount: 320 }, { skill: "draw", amount: 120 }],
+      items: [{ item: "raw_boar_meat", qty: 3 }],
+    },
+  },
+
+  {
+    id: "q_ashfen_witness",
+    name: "Witness the Heat",
+    giver: "ashfen_tender",
+    intro: [
+      "You feel it through your boots — warmer the deeper you cut. I won't ask you to help. Only to witness.",
+      "Cut eight measures of embercite from the warm seam and bring them up. Not for me. For the doing of it, and what the doing tells you. The discomfort is the point.",
+    ],
+    steps: [
+      { type: "gather", item: "embercite_ore", count: 8, text: "Cut 8 Embercite from the warm seam" },
+      { type: "talk", npc: "ashfen_tender", text: "Return to the Cult Tender" },
+    ],
+    outro: [
+      "You felt it, then. Whether the warmth is a god or only the ground, you carry the question out the same as I do. That is the whole of it.",
+      "Keep the embercite. And take these — flasks, for whatever you brew with what you've learned.",
+    ],
+    reward: {
+      xp: [{ skill: "smithing", amount: 300 }, { skill: "herblore", amount: 200 }],
+      items: [{ item: "glass_flask", qty: 3 }],
+    },
+  },
+
+  {
+    id: "q_marrow_marks",
+    name: "The Masons' Marks",
+    giver: "marrow_keeper",
+    intro: [
+      "You came down the long dark and the door let you. While you are here — there are marks on the smooth walls. Tool-dressed stone, older than any living hand.",
+      "The crawlers nest thick between here and the dressed stone. Clear them, and look on the marks. Tell me if they carry the spine-shape — the shape on the coins the hills keep giving up.",
+    ],
+    steps: [
+      { type: "kill", monster: "cave_crawler", count: 5, text: "Clear a path to the Smooth Walls (0/5)" },
+      { type: "talk", npc: "marrow_keeper", text: "Tell the Keeper what the marks carry" },
+    ],
+    outro: [
+      "The spine-shape. You saw it too. It proves nothing — a mason's habit, a thousand years of the same hand. Or it proves everything. I have stood here long enough not to need the answer.",
+      "You walked where few do, and came back. That is worth something. Take it, and go up to the light.",
+    ],
+    reward: {
+      xp: [{ skill: "ward", amount: 400 }, { skill: "vitality", amount: 200 }],
+      items: [{ item: "battle_ration", qty: 3 }],
+    },
+  },
+
+  {
+    id: "q_calder_peat",
+    name: "What the Bog Kept",
+    requires: "q_first_shard",
+    giver: "calder",
+    intro: [
+      "A cutter's spade turned something up in the peat cuttings — something the bog kept whole, longer than the bog's been here.",
+      "The lurkers have the cuttings now and the cutters won't go back. Make it safe to work. Then we'll see what the moor gave up, and whether it's ours to name.",
+    ],
+    steps: [
+      { type: "kill", monster: "marsh_lurker", count: 4, text: "Make the peat cuttings safe (0/4)" },
+      { type: "talk", npc: "calder", text: "Return to Calder at the moor's edge" },
+    ],
+    outro: [
+      "The cutters can work again. As for what the spade turned up — we covered it back over. Some things the bog kept for a reason, and naming them isn't always a kindness.",
+      "You did right by the moor's-edge fire. There's always a meal here for you. Go warm.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 350 }, { skill: "ward", amount: 150 }],
+      items: [{ item: "battle_ration", qty: 2 }],
+    },
+  },
 ];
