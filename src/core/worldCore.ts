@@ -49,7 +49,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 const MOVE_SPEED = 3.5; // tiles per second
-const MOUNT_SPEED_MULT = 1.45; // a worn mount makes overworld travel this much faster
+const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost (a sprint/walk system comes later)
 
 // Predators that strike when you stray too close (everything else waits to be
 // attacked). Kept here rather than in content so it's easy to tune.

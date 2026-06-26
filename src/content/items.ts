@@ -3990,7 +3990,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A fragment of warm black stone. Found rarely, on the bodies of the slain. The name is what the cult calls it — the stone does not confirm anything. Believers say it is a piece of the dead god. Unbelievers have no better explanation.",
     "icon": "🖤",
     "cat": "Legendary",
-    "sell": 0
+    "sell": 10000
   },
   "blade_of_graves": {
     "id": "blade_of_graves",
