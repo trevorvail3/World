@@ -109,5 +109,4 @@ export const bountyShop: BountyShopListing[] = [
   { item: "hunters_kit", cost: 150, qty: 1, label: "Hunter's Kit", desc: "Hold one when you claim a task: +50% Bounty XP, consumed on claim." },
   { item: "arrow_ashiron", cost: 25, qty: 15, label: "Ashiron Arrows ×15", desc: "A bundle of fifteen ashiron-tipped arrows." },
   { item: "bloodore_arrow", cost: 60, qty: 15, label: "Bloodore Arrows ×15", desc: "A bundle of fifteen bloodore arrows." },
-  { item: "shard_of_orun", cost: 2500, qty: 1, label: "Shard of Orun", desc: "A jet-black fragment, warm to the touch. The hills give one up grudgingly." },
 ];

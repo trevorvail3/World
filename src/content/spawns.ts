@@ -298,6 +298,11 @@ export const objects: WorldObjectDef[] = [
   },
   { id: "lm_knuckle", kind: "shrine", x: 22, y: 12, name: "The Knuckle", lines: ["The bald stone fist the hills are named for. Old scratch-marks are worked into the rock — a mason's tally, or something older. Sera would copy them and still not pretend to know."] },
   { id: "rock_knuckle", kind: "rock", x: 20, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  // Warm Seams: the on-theme, guaranteed source of a Shard of Orun, so the main
+  // story (q_first_shard) no longer hinges on a 0.1% drop. (Shard sells for 0,
+  // so a minable source is no gold exploit; the quest still pays for it.)
+  { id: "warm_seam_1", kind: "rock", x: 19, y: 13, name: "Warm Seam", resource: "mine_warm_seam" },
+  { id: "warm_seam_2", kind: "rock", x: 20, y: 13, name: "Warm Seam", resource: "mine_warm_seam" },
   { id: "lm_coldvein", kind: "shrine", x: 8, y: 33, name: "The Coldvein Scar", lines: ["A surface cutting worked dry two generations back. A retired miner still walks up for one last look before his knees give out — not after ore, he says. Just the look."] },
   { id: "lm_redrun_head", kind: "shrine", x: 27, y: 32, name: "The Redrun Head", lines: ["Where a dozen hill-streams braid into the head of the Redrun. The whole long river starts as this — thin water over pale stone."] },
   { id: "fish_tarn", kind: "fishing_spot", x: 33, y: 30, name: "The Head-Stream Pool", resource: "fish_ashfin" },

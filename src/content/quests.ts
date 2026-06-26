@@ -68,7 +68,7 @@ export const quests: QuestDef[] = [
       "I'm Calder. I carry word for the Heartmoor, and we pay well for warm stone. Bring me one and we'll talk like honest people.",
     ],
     steps: [
-      { type: "gather", item: "shard_of_orun", count: 1, text: "Find a Shard of Orun out on the moor" },
+      { type: "gather", item: "shard_of_orun", count: 1, text: "Cut a Shard of Orun from a warm seam in the Knuckle Hills (or take one off the slain)" },
       {
         type: "choice",
         npc: "calder",
