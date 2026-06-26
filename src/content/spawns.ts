@@ -228,6 +228,71 @@ export const objects: WorldObjectDef[] = [
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 93, y: 80, name: "Ancient Orc" },
   { id: "rd_ferryman", kind: "monster", monster: "dread_ferryman", x: 93, y: 77, name: "The Dread Ferryman" },
 
+  // === NAMED LANDMARKS — the gazetteer (discovery layer) ====================
+  // Drawn from the World Bible §X. Examine-only places that give each area
+  // depth and reward exploring; a few carry small extra nodes.
+
+  // --- The open Knuckle Hills (north-west country) ---
+  {
+    id: "rook", kind: "npc", x: 11, y: 9, name: "Rook, the Fieldwarden",
+    lines: [
+      "Cold firepit, warm welcome. Rook — I keep the watch over these hills, such as it is.",
+      "I post the early bounties down at the Ironvale board. Small game, common prey. Everyone starts on a hill like this.",
+      "There's a wolf out here that doesn't move like a wolf. Old, lame, clever. The truth of it is plainer and harder than the rumour. Most things up here are.",
+    ],
+  },
+  { id: "lm_knuckle", kind: "shrine", x: 22, y: 12, name: "The Knuckle", lines: ["The bald stone fist the hills are named for. Old scratch-marks are worked into the rock — a mason's tally, or something older. Sera would copy them and still not pretend to know."] },
+  { id: "rock_knuckle", kind: "rock", x: 20, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "lm_coldvein", kind: "shrine", x: 8, y: 33, name: "The Coldvein Scar", lines: ["A surface cutting worked dry two generations back. A retired miner still walks up for one last look before his knees give out — not after ore, he says. Just the look."] },
+  { id: "lm_redrun_head", kind: "shrine", x: 27, y: 32, name: "The Redrun Head", lines: ["Where a dozen hill-streams braid into the head of the Redrun. The whole long river starts as this — thin water over pale stone."] },
+  { id: "fish_tarn", kind: "fishing_spot", x: 33, y: 30, name: "The Head-Stream Pool", resource: "fish_ashfin" },
+  { id: "tree_hill_1", kind: "tree", x: 16, y: 20, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_hill_2", kind: "tree", x: 20, y: 22, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+
+  // --- Ironvale's districts (the city's named institutions) ---
+  { id: "lm_watchtower", kind: "shrine", x: 46, y: 40, name: "The Watchtower", lines: ["A timber frame going up against the inside of the wall. Nobody finishes the sentence about what it's for. Ironvale is beginning to think defensively — against what, no one writes down."] },
+  { id: "lm_mending", kind: "shrine", x: 52, y: 58, name: "The Mending House", lines: ["Where Ironvale brings what the world breaks. The cots are seldom all empty, and seldom all full."] },
+  { id: "lm_wayfarers", kind: "shrine", x: 74, y: 50, name: "The Wayfarers' Lodge", lines: ["Where civilians are kitted and sent out into the world, and usually return. A board by the door lists expeditions overdue. Usually it is short."] },
+
+  // --- Greyoak Wood ---
+  { id: "lm_oldgrowth", kind: "shrine", x: 12, y: 63, name: "The Old Growth Edge", lines: ["Last year's boundary stakes stand a full pace inside this year's living wood. You can mark the retreat. You do not learn what walks in the cleared ground."] },
+  { id: "lm_mill", kind: "shrine", x: 28, y: 55, name: "The Grey Oak Mill", lines: ["The saws that feed Ironvale's beams, running dawn to dusk. The best blade keeps dulling too fast; the foreman has a suspect, and he's half wrong."] },
+  {
+    id: "charburner", kind: "npc", x: 5, y: 67, name: "The Charburner",
+    lines: [
+      "Mind the mound — turf-capped, slow-burning, and it'll take a boot off if you're careless.",
+      "I trade fuel for news and news for company. Sit a while. The wood's quieter than it was, and I like to know who's still walking the Lodge road.",
+    ],
+  },
+  { id: "fire_charburner", kind: "fire", x: 7, y: 68, name: "Charburner's Fire" },
+
+  // --- The Spine ---
+  { id: "lm_serath_post", kind: "shrine", x: 44, y: 6, name: "Serath's Post", lines: ["A stone bothy on the high pass, banked against the wind. Serath's relief is always days overdue; the road closes when the weather decides it should."] },
+  { id: "lm_cold_streams", kind: "shrine", x: 49, y: 12, name: "The Cold Streams", lines: ["Meltwater off the high snow, running fast and clear and cold enough to ache. Something long and pale moves in the deeper channels. The old hands call it an eel and leave it at that."] },
+  { id: "lm_spinite_cut", kind: "shrine", x: 51, y: 23, name: "The Spinite Cut", lines: ["Where the Spine's own metal comes out of the rock. A cutter's been pulling stone that fractures wrong — the flaw is in the seam, and he knew it before you did."] },
+
+  // --- Heartmoor ---
+  { id: "lm_false_seam", kind: "shrine", x: 12, y: 84, name: "The False Seam", lines: ["A cut that gives off the warmth but yields no stone. Dying, or never real — settle it if you can. Best leave the theology where it lies."] },
+  { id: "lm_nightshade", kind: "shrine", x: 26, y: 86, name: "Nightshade Hollow", lines: ["A low, still dell where the dangerous green things grow best. There is one hour the plants are worth taking, and the herbalists guard it jealously."] },
+  { id: "lm_peat", kind: "shrine", x: 20, y: 93, name: "The Peat Cuttings", lines: ["Black trenches squared off across the moor. A cutter's spade turned up something the bog kept whole. Name it before they decide to sell it."] },
+  { id: "lm_mire_crossing", kind: "shrine", x: 31, y: 88, name: "The Mire Crossing", lines: ["Where solid ground is a rumour. The water moved last season; the safe line of stakes goes under if you lose your way reading it."] },
+
+  // --- The Marrow Deeps ---
+  { id: "lm_smooth_walls", kind: "shrine", x: 90, y: 19, name: "The Smooth Walls", lines: ["Tool-dressed stone, older than any living hand. The masons' marks here might match the spine-shape on the Worn Coins. Suggestive. It proves nothing."] },
+  { id: "lm_golem_gallery", kind: "shrine", x: 95, y: 30, name: "The Golem Gallery", lines: ["Stone figures still carrying out a forgotten order. One has stopped where the others move. Observe it and report why — without giving it a reason to mind you."] },
+  { id: "lm_black_water", kind: "shrine", x: 86, y: 24, name: "The Black Water", lines: ["A still pool that swallows torchlight whole. Something pale lives in it — a blind cave-fish, by any plain account. One miner won't go near the water anymore."] },
+  { id: "lm_fringe", kind: "shrine", x: 84, y: 10, name: "The Fringe Diggings", lines: ["The last lit edge before the dark goes total. Skritt's deep miner works it, and never asks what he's selling — nor who's buying."] },
+
+  // --- The Redrun & the sea ---
+  { id: "lm_ferry_stones", kind: "shrine", x: 95, y: 70, name: "The Ferry Stones", lines: ["Dressed Underloft stones that surface mid-channel at low water. Record them before the river rises — another mark for Sera's slow map of the dead."] },
+  { id: "lm_brigand_camp", kind: "shrine", x: 90, y: 66, name: "The Brigand Camp", lines: ["A mean fire kept by people the road failed. One of them wants out, and offers what he knows for safe passage. Trust him or don't, and live with it."] },
+  { id: "lm_river_mouth", kind: "shrine", x: 102, y: 82, name: "The River Mouth", lines: ["The last fresh water before the open grey. An old deep-water fisher is the only soul who's seen the Eyeless Pike and rowed home. Earn the telling; it gates nothing."] },
+  { id: "lm_orcs_ground", kind: "shrine", x: 93, y: 78, name: "The Orc's Ground", lines: ["Kept ground, tended by an old Orc. Bring the correct offering, done completely, and he speaks once. Get it wrong and he simply doesn't."] },
+
+  // --- The Ashfen Flats ---
+  { id: "lm_short_shift", kind: "shrine", x: 56, y: 90, name: "The Short-Shift Diggings", lines: ["Cuttings worked in bursts, because no one can stand the heat for long. A miner won't come up at the end of his shift — geology, or zeal. Left open."] },
+  { id: "lm_tended_seam", kind: "shrine", x: 66, y: 96, name: "The Tended Seam", lines: ["A warm patch kept clean of debris by hands that leave offerings, not tools. A Cult tender asks you to witness, not help. The discomfort is the point."] },
+
   // === BOSS ARENAS (sealed band below the overworld) ========================
   { id: "ret_bog", kind: "portal", x: 24, y: 119, name: "Barrow Exit", target: { x: 16, y: 98 }, lines: ["You haul yourself back out of the mire."] },
   { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 115, name: "The Bog Warden" },

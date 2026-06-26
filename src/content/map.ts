@@ -193,6 +193,35 @@ function decode(): WorldMap {
   carve(CITY.x0, GATES.west.y - 1, CITY.x0, GATES.west.y + 1, "path");
   carve(CITY.x1, GATES.east.y - 1, CITY.x1, GATES.east.y + 1, "path");
 
+  // 4b) Countryside features — the bible's named landmarks get real ground, so
+  //     the open country between regions reads as places, not blank field.
+  // -- The open Knuckle Hills, north-west of the city --
+  carve(8, 6, 14, 12, "dirt");     // Rook's Watch — a high firepit knoll
+  carve(18, 8, 26, 16, "stone");   // The Knuckle — the bald stone fist
+  carve(14, 18, 22, 24, "dirt");   // an ashwood grove
+  carve(28, 29, 33, 34, "water");  // a hill tarn (a head-stream pool)
+  carve(5, 30, 11, 36, "stone");   // The Coldvein Scar — a played-out cutting
+  // -- The river approach & east banks --
+  carve(80, 56, 90, 63, "dirt");   // Redrun banks below the east road
+  // -- The moor's edge, south of the city --
+  carve(40, 73, 49, 82, "bog");    // where the hill country gives out to moor
+  // -- The charburner's country, between wood and moor --
+  carve(2, 64, 8, 70, "dirt");     // The Charburner's Clearing
+  // -- The warm ground spreading south-east (Ashfen apron) --
+  carve(72, 86, 86, 101, "ash");   // warm flats reaching toward the river mouth
+
+  // 4c) Heath: give the remaining open grass a rolling, mixed texture instead of
+  //     a flat green sheet (all walkable — grass / dirt / moss hill country).
+  for (let y = 0; y < OVERWORLD_HEIGHT; y++) {
+    for (let x = 0; x < WIDTH; x++) {
+      if (tiles[y * WIDTH + x] !== "grass") continue;
+      const n = noise(x, y);
+      if (n > 0.86) set(x, y, "moss");
+      else if (n > 0.66) set(x, y, "dirt");
+      // else: stays grass
+    }
+  }
+
   // 5) Roads from the gates out to each region (kept 3 wide and walkable).
   //    North gate → the Spine pass (its walkable stone pass is at its west edge).
   carve(59, 34, 61, CITY.y0 - 1, "path");          // up through the grove
