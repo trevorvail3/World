@@ -131,6 +131,16 @@ export const objects: WorldObjectDef[] = [
     ],
   },
 
+  // --- Aldric's farmstead, west of Ironvale: plant + tree patches ---
+  { id: "patch_1", kind: "plant_patch", x: 2, y: 7, name: "Plant Patch" },
+  { id: "patch_2", kind: "plant_patch", x: 4, y: 7, name: "Plant Patch" },
+  { id: "patch_3", kind: "plant_patch", x: 6, y: 7, name: "Plant Patch" },
+  { id: "patch_4", kind: "plant_patch", x: 2, y: 9, name: "Plant Patch" },
+  { id: "patch_5", kind: "plant_patch", x: 4, y: 9, name: "Plant Patch" },
+  { id: "patch_6", kind: "plant_patch", x: 6, y: 9, name: "Plant Patch" },
+  { id: "treepatch_1", kind: "tree_patch", x: 2, y: 16, name: "Tree Patch" },
+  { id: "treepatch_2", kind: "tree_patch", x: 6, y: 16, name: "Tree Patch" },
+
   // --- Monsters (Combat) — kept outside Ironvale's walls, in the hills ---
   { id: "rat_1", kind: "monster", monster: "moor_rat", x: 20, y: 5, name: "Moor Rat" },
   { id: "rat_2", kind: "monster", monster: "moor_rat", x: 22, y: 5, name: "Moor Rat" },

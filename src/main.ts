@@ -41,8 +41,9 @@ const INTRO_LINES = [
 ];
 
 // --- The client supplies time + randomness (the core never does). ---
+// `now` is monotonic (resets per reload); `epoch` is wall-clock, for farming.
 function ctxAt(nowMs: number): Ctx {
-  return { now: nowMs, rng: Math.random };
+  return { now: nowMs, rng: Math.random, epoch: Date.now() };
 }
 
 // --- Build a fresh, local world. ---
@@ -101,7 +102,7 @@ game = new Game(canvas, bridge, hud, dialogue, app, menu, guide);
 
 // --- Autosave: persist progress periodically and whenever the tab is hidden. ---
 function persist(): void {
-  writeSave(serializePlayer(state.player));
+  writeSave(serializePlayer(state));
 }
 window.setInterval(persist, 4000);
 window.addEventListener("pagehide", persist);

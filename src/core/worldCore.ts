@@ -22,6 +22,7 @@
 import type {
   AchievementCond,
   Content,
+  CropDef,
   Ctx,
   EquipSlot,
   Intent,
@@ -141,6 +142,9 @@ const BLOCKING_KINDS = new Set([
   "furnace",
   "anvil",
   "shrine",
+  "plant_patch",
+  "tree_patch",
+  "portal",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -570,6 +574,10 @@ export function applyIntent(
       sellToMarket(player, content, intent.item, intent.qty, events);
       break;
     }
+    case "PLANT": {
+      plantSeed(state, content, intent.patchId, intent.crop, ctx, events);
+      break;
+    }
     case "SET_STYLE": {
       player.combatStyle = intent.style;
       events.push({
@@ -935,7 +943,121 @@ function startInteraction(
     case "anvil":
       events.push({ type: "OPEN_CRAFT", station: def.kind, objId });
       break;
+
+    case "plant_patch":
+    case "tree_patch":
+      interactPatch(state, content, def, obj, ctx, events);
+      break;
+
+    case "portal":
+      usePortal(state, def, events);
+      break;
   }
+}
+
+/** Empty patch → pick a seed; growing → time left; ripe → harvest. */
+function interactPatch(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const patchType = def.kind === "tree_patch" ? "tree" : "plant";
+  if (!obj.crop) {
+    events.push({ type: "OPEN_PLANT", patchId: def.id, patchType });
+    return;
+  }
+  const crop = content.crops[obj.crop];
+  if (!crop) { delete obj.crop; return; }
+  const readyAt = (obj.plantedAt ?? 0) + crop.growthMs;
+  if (ctx.epoch < readyAt) {
+    const mins = Math.ceil((readyAt - ctx.epoch) / 60000);
+    events.push({ type: "LOG", message: `${crop.name} is still growing — about ${mins} min left.` });
+    return;
+  }
+  harvestPatch(state, content, obj, crop, ctx, events);
+}
+
+/** Harvest a ripe patch: roll survival, grant produce + XP, clear the patch. */
+function harvestPatch(
+  state: WorldState,
+  content: Content,
+  obj: WorldObjectState,
+  crop: CropDef,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  delete obj.crop;
+  delete obj.plantedAt;
+  if (ctx.rng() >= crop.baseChance) {
+    grantXp(state, content, "farming", Math.floor(crop.xpHarvest * 0.1), events);
+    events.push({ type: "LOG", message: `Your ${crop.name} withered before harvest.` });
+    return;
+  }
+  const qty = randInt(ctx, crop.produceMin, crop.produceMax);
+  addItem(player, crop.produce, qty, events);
+  grantXp(state, content, "farming", crop.xpHarvest, events);
+  events.push({ type: "LOG", message: `You harvest ${qty}× ${content.items[crop.produce].name}.` });
+  if (crop.bonusDrop && crop.bonusChance && ctx.rng() < crop.bonusChance && content.items[crop.bonusDrop]) {
+    if (canAddItem(player, crop.bonusDrop)) addItem(player, crop.bonusDrop, 1, events);
+  }
+}
+
+/** Plant a crop's seed in an empty patch (consumes the seed, grants plant XP). */
+function plantSeed(
+  state: WorldState,
+  content: Content,
+  patchId: string,
+  cropId: string,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const obj = state.objects[patchId];
+  const def = findObjectDef(content, patchId);
+  const crop = content.crops[cropId];
+  if (!obj || !def || !crop) return;
+  const patchType = def.kind === "tree_patch" ? "tree" : "plant";
+  if (crop.type !== patchType) {
+    events.push({ type: "LOG", message: `That seed doesn't belong in this patch.` });
+    return;
+  }
+  if (obj.crop) {
+    events.push({ type: "LOG", message: "Something is already growing here." });
+    return;
+  }
+  if (skillLvl(player, "farming") < crop.levelReq) {
+    events.push({ type: "LOG", message: `You need Farming level ${crop.levelReq} to plant ${crop.name}.` });
+    return;
+  }
+  if (countItem(player, crop.seed) < 1) {
+    events.push({ type: "LOG", message: `You have no ${content.items[crop.seed].name}.` });
+    return;
+  }
+  removeOneItem(player, crop.seed);
+  obj.crop = cropId;
+  obj.plantedAt = ctx.epoch;
+  grantXp(state, content, "farming", crop.xpPlant, events);
+  const mins = Math.ceil(crop.growthMs / 60000);
+  events.push({ type: "LOG", message: `You plant ${crop.name}. Ready in about ${mins} min.` });
+}
+
+/** A portal teleports the player to its paired destination (boss arena ↔ home). */
+function usePortal(
+  state: WorldState,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  if (!def.target) return;
+  const { player } = state;
+  player.pos = { x: def.target.x, y: def.target.y };
+  player.path = [];
+  player.pendingInteractId = null;
+  clearActivity(player);
+  if (def.lines?.[0]) events.push({ type: "LOG", message: def.lines[0] });
 }
 
 // ---------------------------------------------------------------------------

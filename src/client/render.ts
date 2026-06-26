@@ -146,7 +146,11 @@ export function drawWorld(
     const px = p.x * TILE - cam.x;
     const py = p.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
-    drawObject(g, def, obj.available, px, py, now);
+    if (def.kind === "plant_patch" || def.kind === "tree_patch") {
+      drawPatch(g, obj.crop, obj.plantedAt, content, px, py);
+    } else {
+      drawObject(g, def, obj.available, px, py, now);
+    }
     // Name label
     if (def.kind === "npc" || def.kind === "monster") {
       label(g, def.name, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
@@ -157,6 +161,51 @@ export function drawWorld(
   if (state.player.alive) {
     drawPlayer(g, state.player.pos, cam, now);
   }
+}
+
+/** A farming patch: bare tilled soil, a growing sprout, or a ripe crop. */
+function drawPatch(
+  g: CanvasRenderingContext2D,
+  crop: string | undefined,
+  plantedAt: number | undefined,
+  content: Content,
+  px: number,
+  py: number,
+): void {
+  const cx = px + TILE / 2;
+  const cy = py + TILE / 2;
+  // Tilled soil bed.
+  g.fillStyle = "#3f2e20";
+  g.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
+  g.strokeStyle = "rgba(0,0,0,0.3)";
+  g.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    g.beginPath();
+    g.moveTo(px + 5, py + 5 + i * (TILE - 10) / 4);
+    g.lineTo(px + TILE - 5, py + 5 + i * (TILE - 10) / 4);
+    g.stroke();
+  }
+  const def = crop ? content.crops[crop] : undefined;
+  if (!def || plantedAt === undefined) return;
+  const elapsed = Date.now() - plantedAt;
+  const frac = Math.max(0, Math.min(1, elapsed / def.growthMs));
+  const ripe = frac >= 1;
+  if (ripe) {
+    // A soft gold ring marks a patch ready to harvest.
+    g.strokeStyle = "rgba(242,207,107,0.8)";
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(cx, cy, TILE * 0.42, 0, Math.PI * 2);
+    g.stroke();
+  }
+  // The crop icon, scaling up as it matures.
+  const size = (ripe ? 20 : 9 + frac * 9) * (def.type === "tree" ? 1.1 : 1);
+  g.font = `${size}px serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.globalAlpha = ripe ? 1 : 0.55 + frac * 0.4;
+  g.fillText(def.icon, cx, cy);
+  g.globalAlpha = 1;
 }
 
 function drawObject(
@@ -201,7 +250,28 @@ function drawObject(
     case "anvil":
       drawAnvil(g, cx, cy);
       break;
+    case "portal":
+      drawPortal(g, cx, cy, now);
+      break;
   }
+}
+
+/** A boss-dungeon portal: a dark arch with a swirling ember glow. */
+function drawPortal(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const pulse = 0.6 + 0.4 * Math.sin(now / 360);
+  g.fillStyle = "#1a1016";
+  g.beginPath();
+  g.ellipse(cx, cy, TILE * 0.32, TILE * 0.42, 0, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = `rgba(210,116,44,${0.5 + 0.4 * pulse})`;
+  g.lineWidth = 3;
+  g.beginPath();
+  g.ellipse(cx, cy, TILE * 0.32, TILE * 0.42, 0, 0, Math.PI * 2);
+  g.stroke();
+  g.fillStyle = `rgba(242,160,90,${0.35 * pulse})`;
+  g.beginPath();
+  g.ellipse(cx, cy, TILE * 0.18, TILE * 0.26, 0, 0, Math.PI * 2);
+  g.fill();
 }
 
 // --- Anvil: an iron horn on a dark stump ---

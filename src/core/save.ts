@@ -50,17 +50,28 @@ export interface SavedProgress {
   stats: { goldEarned: number; monstersSlain: number };
   /** Unlocked achievement ids. */
   achievements: string[];
+  /** Farming patches: patch id -> what's planted and when (epoch ms). */
+  farms: Record<string, { crop: string; plantedAt: number }>;
   hp: number;
   pos: { x: number; y: number };
 }
 
 /** Snapshot the player's progress into a plain, serialisable object. */
-export function serializePlayer(player: Player): SavedProgress {
+export function serializePlayer(state: WorldState): SavedProgress {
+  const { player } = state;
   const skills: Partial<Record<SkillId, number>> = {};
   (Object.keys(player.skills) as SkillId[]).forEach((id) => {
     skills[id] = player.skills[id].xp;
   });
+  const farms: SavedProgress["farms"] = {};
+  for (const id of Object.keys(state.objects)) {
+    const o = state.objects[id]!;
+    if (o.crop && typeof o.plantedAt === "number") {
+      farms[id] = { crop: o.crop, plantedAt: o.plantedAt };
+    }
+  }
   return {
+    farms,
     version: SAVE_VERSION,
     skills,
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
@@ -188,6 +199,19 @@ export function hydratePlayer(
     player.achievements = savedAch.filter(
       (id): id is string => typeof id === "string" && content.achievements.some((a) => a.id === id),
     );
+  }
+  // Farming patches keep growing in real time: restore what was planted + when.
+  const savedFarms = raw["farms"];
+  if (isRecord(savedFarms)) {
+    for (const id of Object.keys(savedFarms)) {
+      const f = savedFarms[id];
+      const obj = state.objects[id];
+      if (!obj || !isRecord(f)) continue;
+      if (typeof f["crop"] === "string" && f["crop"] in content.crops && typeof f["plantedAt"] === "number") {
+        obj.crop = f["crop"];
+        obj.plantedAt = f["plantedAt"];
+      }
+    }
   }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {

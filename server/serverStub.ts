@@ -49,7 +49,8 @@ export class AuthoritativeWorld {
   }
 
   private ctx(nowMs: number): Ctx {
-    return { now: nowMs, rng: this.rng };
+    // A server tick is authoritative wall-clock time, so epoch tracks `now`.
+    return { now: nowMs, rng: this.rng, epoch: nowMs };
   }
 
   /** A client sent us an intent; apply it and return events to broadcast. */

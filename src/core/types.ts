@@ -28,6 +28,12 @@
 export interface Ctx {
   now: number;
   rng: () => number;
+  /**
+   * Wall-clock time (Date.now epoch ms). Used only for things that must grow in
+   * REAL time across sessions — farming patches — since `now` (performance.now)
+   * resets every reload. Supplied by the client like `now` (the core stays pure).
+   */
+  epoch: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -687,7 +693,12 @@ export type ObjKind =
   | "furnace"
   | "anvil"
   /** An examine-only landmark (the Wind-Shrine, the sealed Spine Vault). */
-  | "shrine";
+  | "shrine"
+  /** A farming plot: plant a seed, wait real time, harvest. */
+  | "plant_patch"
+  | "tree_patch"
+  /** A boss-dungeon entrance / exit that teleports the player. */
+  | "portal";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -715,6 +726,10 @@ export interface WorldObjectDef {
   lines?: string[];
   /** A tree/rock species tag for rendering variety (e.g. "greyoak", "coldpine"). */
   species?: string;
+  /** Portal only: the tile the player is teleported to. */
+  target?: Vec2;
+  /** Boss-dungeon entrance only: the dungeon id it leads to (for display). */
+  dungeon?: string;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -781,6 +796,10 @@ export interface WorldObjectState {
   wanderTarget?: Vec2 | null;
   /** When standing still, the time (ms) at which it picks its next step. */
   nextWanderAt?: number;
+  /** Farming patch: the CROPS key currently planted (undefined = empty). */
+  crop?: string;
+  /** Farming patch: wall-clock epoch (ms) the seed was planted. */
+  plantedAt?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -975,6 +994,13 @@ export interface SellIntent {
   qty: number;
 }
 
+/** "Plant this crop's seed in this patch." */
+export interface PlantIntent {
+  type: "PLANT";
+  patchId: string;
+  crop: string;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -984,6 +1010,7 @@ export type Intent =
   | WithdrawIntent
   | BuyIntent
   | SellIntent
+  | PlantIntent
   | EquipIntent
   | UnequipIntent
   | CraftIntent
@@ -1013,6 +1040,8 @@ export type WorldEvent =
   | { type: "OPEN_BANK" }
   /** Open a shopkeeper's trade window. */
   | { type: "OPEN_SHOP"; shop: string }
+  /** Open the seed-choice menu for an empty farming patch. */
+  | { type: "OPEN_PLANT"; patchId: string; patchType: "plant" | "tree" }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   | { type: "QUEST_STARTED"; quest: string }
@@ -1185,6 +1214,31 @@ export interface ShopStock {
   qty: number;
 }
 
+/** One crop (a plant or a tree) the player can farm. growthMs is REAL ms. */
+export interface CropDef {
+  id: string;
+  name: string;
+  type: "plant" | "tree";
+  icon: string;
+  /** The seed item planted. */
+  seed: ItemId;
+  /** The item harvested. */
+  produce: ItemId;
+  /** Farming level required to plant it. */
+  levelReq: number;
+  /** Real-world milliseconds to mature. */
+  growthMs: number;
+  /** Chance the crop survives to harvest (else it fails). */
+  baseChance: number;
+  xpPlant: number;
+  xpHarvest: number;
+  produceMin: number;
+  produceMax: number;
+  /** An occasional bonus item on harvest. */
+  bonusDrop?: ItemId;
+  bonusChance?: number;
+}
+
 /** A shopkeeper's wares. Selling back happens at the item's own `sell` value. */
 export interface ShopDef {
   id: string;
@@ -1212,6 +1266,8 @@ export interface Content {
   factions: { id: FactionId; name: string; icon: string; blurb: string }[];
   /** The achievements (data). */
   achievements: AchievementDef[];
+  /** Farmable crops, keyed by crop id. */
+  crops: Record<string, CropDef>;
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

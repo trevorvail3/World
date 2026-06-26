@@ -28,6 +28,9 @@ export const shops: ShopDef[] = [
       { item: "embercite_ore", price: 90, qty: 5 },
       { item: "seed_ashweed", price: 20, qty: 3 },
       { item: "seed_thornroot", price: 38, qty: 3 },
+      { item: "seed_bloodberry", price: 69, qty: 3 },
+      { item: "seed_coldmoss", price: 108, qty: 3 },
+      { item: "seed_ashwood", price: 60, qty: 3 },
       { item: "fertilizer_basic", price: 55, qty: 1 },
       { item: "forage_mushroom", price: 52, qty: 5 },
       // Starter gathering tools (round(sell × 1.3)).

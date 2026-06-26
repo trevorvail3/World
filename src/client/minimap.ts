@@ -38,6 +38,9 @@ const MM_OBJ: Record<ObjKind, string> = {
   furnace: "#b06a48",
   anvil: "#7a7d86",
   shrine: "#b9b0c8",
+  plant_patch: "#6a8a4a",
+  tree_patch: "#4e7a3e",
+  portal: "#b0593a",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

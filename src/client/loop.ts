@@ -98,6 +98,9 @@ const VERB: Record<ObjKind, string> = {
   furnace: "Smelt at",
   anvil: "Forge at",
   shrine: "Examine",
+  plant_patch: "Tend",
+  tree_patch: "Tend",
+  portal: "Enter",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -111,6 +114,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   furnace: "A small stone furnace, hot enough to render ore to bar.",
   anvil: "A pitted iron anvil. Bring bars and a hammer to beat out gear.",
   shrine: "A weathered standing stone, older than any road here.",
+  plant_patch: "A bed of tilled soil, waiting for a seed.",
+  tree_patch: "A cleared plot where a sapling could take root.",
+  portal: "A dark archway. Something waits on the other side.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -301,6 +307,9 @@ export class Game {
           if (shopDef) this.shop.show(this.bridge.state, shopDef);
           break;
         }
+        case "OPEN_PLANT":
+          this.openPlant(ev.patchId, ev.patchType);
+          break;
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
@@ -435,6 +444,50 @@ export class Game {
       prompt,
       items,
       "Choose carefully — this answer is remembered.",
+    );
+  }
+
+  /** A farming patch's seed menu: what you can plant here right now. */
+  private openPlant(patchId: string, patchType: "plant" | "tree"): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+    const farmLvl = player.skills.farming.level;
+
+    const crops = Object.values(content.crops)
+      .filter((c) => c.type === patchType)
+      .sort((a, b) => a.levelReq - b.levelReq);
+
+    const items: MenuItem[] = crops.map((c) => {
+      const seeds = have(c.seed);
+      const ok = farmLvl >= c.levelReq && seeds > 0;
+      const mins = Math.round(c.growthMs / 60000);
+      const time = mins >= 60 ? `${Math.round(mins / 60)}h` : `${mins}m`;
+      return {
+        label: `${c.icon} ${c.name}`,
+        target: ok ? `${time} · ${seeds} seed${seeds === 1 ? "" : "s"}` : `Lv ${c.levelReq}`,
+        tone: ok ? "action" : "normal",
+        onSelect: () => {
+          if (farmLvl < c.levelReq) {
+            this.hud.log(`You need Farming level ${c.levelReq} to plant ${c.name}.`);
+            return;
+          }
+          if (seeds <= 0) {
+            this.hud.log(`You have no ${content.items[c.seed].name}.`);
+            return;
+          }
+          this.dispatch({ type: "PLANT", patchId, crop: c.id });
+        },
+      };
+    });
+    if (items.length === 0) return;
+    this.menu.show(
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      patchType === "tree" ? "Plant a tree" : "Plant a seed",
+      items,
+      "Crops grow in real time — come back when they're ripe.",
     );
   }
 
