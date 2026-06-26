@@ -24,6 +24,8 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   path: ["#6a5b45", "#77654c"],
   stone: ["#41424b", "#4b4d57"],
   water: ["#1f3346", "#26415a"],
+  // Greyoak Wood's floor — deeper, cooler green than hill grass.
+  moss: ["#2c3a2a", "#354733"],
 };
 
 const EMBER = "#d2742c";
@@ -124,7 +126,7 @@ function drawObject(
   const cy = py + TILE / 2;
   switch (def.kind) {
     case "tree":
-      drawTree(g, cx, cy, available);
+      drawTree(g, cx, cy, available, def.species);
       break;
     case "rock":
       drawRock(g, cx, cy, available);
@@ -140,6 +142,12 @@ function drawObject(
         drawRespawning(g, cx, cy);
       } else if (def.monster === "hill_wolf") {
         drawWolf(g, cx, cy, now);
+      } else if (def.monster === "wild_boar") {
+        drawBoar(g, cx, cy, now, false);
+      } else if (def.monster === "greymane_boar") {
+        drawBoar(g, cx, cy, now, true);
+      } else if (def.monster === "forest_bear") {
+        drawBear(g, cx, cy, now);
       } else {
         drawRat(g, cx, cy, now);
       }
@@ -255,12 +263,18 @@ function shadow(g: CanvasRenderingContext2D, cx: number, cy: number, rx: number,
   g.fill();
 }
 
-// --- Ashwood tree: pale trunk, layered grey-green canopy ---
-function drawTree(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+// --- Trees: a shared stump when felled; species-specific canopy when standing ---
+function drawTree(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  available: boolean,
+  species?: string,
+): void {
   if (!available) {
     shadow(g, cx, cy + 10, 7, 3);
     g.fillStyle = "#7c6e54";
-    g.fillRect(cx - 5, cy + 4, 10, 7); // pale stump
+    g.fillRect(cx - 5, cy + 4, 10, 7); // stump
     g.fillStyle = "#9a8a6e";
     g.fillRect(cx - 5, cy + 4, 10, 2);
     g.fillStyle = "#5a4b34";
@@ -268,20 +282,68 @@ function drawTree(g: CanvasRenderingContext2D, cx: number, cy: number, available
     circle(g, cx + 8, cy + 10, 1.4);
     return;
   }
+  if (species === "coldpine") return drawColdpine(g, cx, cy);
+  if (species === "greyoak") return drawGreyoak(g, cx, cy);
+  drawAshwood(g, cx, cy);
+}
+
+// Ashwood: pale trunk, layered grey-green canopy.
+function drawAshwood(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   shadow(g, cx, cy + 12, 12, 4);
-  g.fillStyle = "#8d7e60"; // pale ashwood trunk
+  g.fillStyle = "#8d7e60";
   g.fillRect(cx - 3, cy, 6, TILE / 2 - 2);
   g.fillStyle = "#a99a78";
   g.fillRect(cx - 3, cy, 2, TILE / 2 - 2);
-  g.fillStyle = "#3f4d2a"; // canopy, layered
+  g.fillStyle = "#3f4d2a";
   circle(g, cx - 7, cy - 2, 9);
   circle(g, cx + 7, cy - 2, 9);
   g.fillStyle = "#4e5f34";
   circle(g, cx, cy - 8, 12);
   g.fillStyle = "#5d6e3e";
   circle(g, cx - 3, cy - 11, 7);
-  g.fillStyle = "rgba(184,192,150,0.5)"; // pale highlight
+  g.fillStyle = "rgba(184,192,150,0.5)";
   circle(g, cx - 4, cy - 12, 3);
+}
+
+// Coldpine: a tall, cold blue-green conifer in stacked tiers.
+function drawColdpine(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 12, 8, 3);
+  g.fillStyle = "#5a4a36"; // narrow trunk
+  g.fillRect(cx - 2, cy + 2, 4, TILE / 2 - 4);
+  const tier = (baseY: number, w: number, h: number, col: string) => {
+    g.fillStyle = col;
+    g.beginPath();
+    g.moveTo(cx, baseY - h);
+    g.lineTo(cx - w, baseY);
+    g.lineTo(cx + w, baseY);
+    g.closePath();
+    g.fill();
+  };
+  tier(cy + 6, 11, 12, "#27412f");
+  tier(cy + 1, 9, 11, "#2f4d38");
+  tier(cy - 4, 7, 10, "#386044");
+  g.fillStyle = "rgba(180,205,190,0.35)"; // frost highlight
+  circle(g, cx - 2, cy - 9, 2);
+}
+
+// Greyoak: a thick grey trunk under a broad, heavy grey-green crown.
+function drawGreyoak(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 13, 14, 4);
+  g.fillStyle = "#6e6a62"; // thick grey bark
+  g.fillRect(cx - 4, cy - 1, 8, TILE / 2);
+  g.fillStyle = "#827d73";
+  g.fillRect(cx - 4, cy - 1, 3, TILE / 2);
+  g.fillStyle = "#33402a"; // wide canopy, layered
+  circle(g, cx - 10, cy - 3, 10);
+  circle(g, cx + 10, cy - 3, 10);
+  circle(g, cx - 4, cy - 6, 11);
+  circle(g, cx + 5, cy - 7, 11);
+  g.fillStyle = "#46552f";
+  circle(g, cx, cy - 11, 12);
+  g.fillStyle = "#54663a";
+  circle(g, cx - 4, cy - 13, 6);
+  g.fillStyle = "rgba(150,165,120,0.4)";
+  circle(g, cx - 5, cy - 14, 3);
 }
 
 // --- Knucklestone: faceted grey-brown boulder with a warm fleck ---
@@ -427,6 +489,85 @@ function drawWolf(g: CanvasRenderingContext2D, cx: number, cy: number, now: numb
   g.fill();
   g.fillStyle = "#d8b24a"; // eye
   circle(g, cx - 12, cy - 2 + bob, 1.1);
+}
+
+// --- Wild Boar: stocky, bristled, tusked. Greymane variant is larger + grey. ---
+function drawBoar(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+  greymane: boolean,
+): void {
+  const bob = Math.sin(now / 220) * 0.6;
+  const s = greymane ? 1.18 : 1; // the Greymane is the bigger, rarer beast
+  const body = greymane ? "#6d6a63" : "#4a3f33";
+  const back = greymane ? "#838079" : "#5b4f40";
+  shadow(g, cx, cy + 9 * s, 13 * s, 4);
+  g.fillStyle = "#3a3128"; // legs
+  g.fillRect(cx - 7 * s, cy + 4 + bob, 2.5, 7 * s);
+  g.fillRect(cx + 4 * s, cy + 4 + bob, 2.5, 7 * s);
+  g.fillStyle = body; // barrel body
+  g.beginPath();
+  g.ellipse(cx, cy + bob, 12 * s, 7.5 * s, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = back; // raised bristled back
+  g.beginPath();
+  g.ellipse(cx - 1, cy - 3 + bob, 9 * s, 3 * s, 0, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = "#2a231b"; // bristle ridge
+  g.lineWidth = 1;
+  for (let i = -3; i <= 3; i++) {
+    g.beginPath();
+    g.moveTo(cx + i * 3, cy - 5 * s + bob);
+    g.lineTo(cx + i * 3, cy - 8 * s + bob);
+    g.stroke();
+  }
+  g.fillStyle = body; // head
+  g.beginPath();
+  g.ellipse(cx - 13 * s, cy + 1 + bob, 6 * s, 5 * s, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#2c251d"; // snout
+  g.beginPath();
+  g.ellipse(cx - 18 * s, cy + 2 + bob, 3 * s, 2.4 * s, 0, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = "#e8e2d0"; // tusks
+  g.lineWidth = 1.4;
+  g.beginPath();
+  g.moveTo(cx - 17 * s, cy + 3 + bob);
+  g.lineTo(cx - 19 * s, cy - 1 + bob);
+  g.stroke();
+  g.fillStyle = "#1a140f"; // eye
+  circle(g, cx - 13 * s, cy - 1 + bob, 1);
+}
+
+// --- Forest Bear: large, heavy, dark-furred ---
+function drawBear(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 260) * 0.6;
+  shadow(g, cx, cy + 11, 15, 5);
+  g.fillStyle = "#33271d"; // legs
+  g.fillRect(cx - 9, cy + 5 + bob, 4, 8);
+  g.fillRect(cx + 5, cy + 5 + bob, 4, 8);
+  g.fillStyle = "#4a3a2b"; // bulky body
+  g.beginPath();
+  g.ellipse(cx, cy + bob, 14, 9, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#5a4734"; // shoulder hump
+  g.beginPath();
+  g.ellipse(cx + 3, cy - 4 + bob, 8, 5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#4a3a2b"; // head
+  circle(g, cx - 12, cy - 3 + bob, 6.5);
+  g.fillStyle = "#5a4734"; // muzzle
+  g.beginPath();
+  g.ellipse(cx - 17, cy - 1 + bob, 4, 3, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#33271d"; // ears
+  circle(g, cx - 15, cy - 8 + bob, 2.4);
+  circle(g, cx - 9, cy - 8 + bob, 2.4);
+  g.fillStyle = "#15100b"; // nose + eye
+  circle(g, cx - 20, cy - 1 + bob, 1.4);
+  circle(g, cx - 12, cy - 4 + bob, 1.1);
 }
 
 // --- A faint mark where a monster will respawn ---

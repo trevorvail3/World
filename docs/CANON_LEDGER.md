@@ -179,10 +179,17 @@ weakness + full drop tables (with canon `tier` labels). TypeScript validates all
 Each zone bundles a hand-built map + spawns (resources, monsters, fishing, NPCs,
 landmarks). Bible §X gives implementation-ready landmark ids. Build in canon order.
 
+**Architecture (in place):** one continuous map (no load screens) — zones are
+regions stitched together and walked between. Gathering is **node-driven**:
+each tree/rock/fishing node carries a `resource` (SkillAction id), so it yields
+its own canon item and is **level-gated** (e.g. coldpine needs Forestry 20).
+New aesthetics per zone: tile types (`moss`), tree species sprites (ashwood/
+coldpine/greyoak), monster sprites (boar/greymane/bear), per-NPC dialogue.
+
 | zone | id | gate | content | status |
 |---|---|---|---|---|
-| The Knuckle Hills | `knuckle_hills` | start | moor_rat, hill_wolf, ashfin fishing, knucklestone, ashwood | 🟡 (slice exists) |
-| Greyoak Wood | `greyoak_wood` | — | wild_boar, forest_bear, coldpine/greyoak wood, boar/bear | ⬜ |
+| The Knuckle Hills | `knuckle_hills` | start | moor_rat, hill_wolf, ashfin fishing, knucklestone, ashwood | ✅ live |
+| Greyoak Wood | `greyoak_wood` | south road | coldpine (F20) + greyoak (F45), wild_boar, forest_bear, greymane_boar, Maret + the Lodge clearing | ✅ live |
 | The Spine | `spine` | cmb 25 | ridge_wolf, stone_crawler, troll, wraith; ashiron/ribstone | ⬜ |
 | Heartmoor | `heartmoor` | cmb 45 | hounds, bog_knight, mire_serpent; hearthite, herbs | ⬜ |
 | The Marrow Deeps | `marrow_deeps` | cmb 65 | crawlers, golems, wraiths; voidstone | ⬜ |
