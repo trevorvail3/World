@@ -1007,6 +1007,13 @@ export interface Player {
    * player is just walking to a spot.
    */
   pendingInteractId: string | null;
+  /**
+   * The shop/bank/board the player currently stands at (set on interaction,
+   * cleared when they walk away). Trade/bank/bounty intents are only honoured
+   * while it matches — so the core, not just the UI, enforces "be at the
+   * counter". Transient; never persisted.
+   */
+  station: { kind: "shop" | "bank" | "bounty"; id?: string } | null;
   alive: boolean;
   /** Time (ms) at which a dead player respawns. */
   respawnAt: number;

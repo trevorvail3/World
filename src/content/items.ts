@@ -2976,7 +2976,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🪨",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "mining"
     }
@@ -2988,7 +2988,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🔨",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "smithing"
     }
@@ -3000,7 +3000,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🌲",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "forestry"
     }
@@ -3012,7 +3012,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🪚",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "woodcraft"
     }
@@ -3024,7 +3024,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🎣",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "fishing"
     }
@@ -3036,7 +3036,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🍳",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "cooking"
     }
@@ -3048,7 +3048,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🌾",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "farming"
     }
@@ -3060,7 +3060,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🏕️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "survivalist"
     }
@@ -3072,7 +3072,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🎯",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "bounty"
     }
@@ -3084,7 +3084,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "❤️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "vitality"
     }
@@ -3096,7 +3096,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "⚔️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "edge"
     }
@@ -3108,7 +3108,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "💪",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "vigour"
     }
@@ -3120,7 +3120,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🛡️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "ward"
     }
@@ -3132,7 +3132,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🏹",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "draw"
     }
@@ -3144,7 +3144,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🏗️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "construction"
     }
@@ -3156,7 +3156,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "⚗️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "herblore"
     }
@@ -3168,7 +3168,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "✂️",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "crafting"
     }
@@ -3180,7 +3180,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🪤",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 1000000,
+    "sell": 0,
     "meta": {
       "skill": "hunter"
     }
@@ -3192,7 +3192,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🌟",
     "cat": "Capes",
     "slot": "cape",
-    "sell": 100000000,
+    "sell": 0,
     "meta": {
       "skill": "max"
     }

@@ -281,6 +281,7 @@ export function createWorld(
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
+    station: null,
     alive: true,
     respawnAt: 0,
   };
@@ -639,12 +640,14 @@ export function applyIntent(
     case "MOVE": {
       player.path = intent.path.map((p) => ({ x: p.x, y: p.y }));
       player.pendingInteractId = null;
+      player.station = null; // walking away leaves the counter
       clearActivity(player);
       break;
     }
     case "INTERACT": {
       player.path = intent.path.map((p) => ({ x: p.x, y: p.y }));
       player.pendingInteractId = intent.objId;
+      player.station = null; // a fresh interaction; startInteraction re-sets it
       clearActivity(player);
       // If we're already standing next to it, act immediately.
       if (player.path.length === 0) {
@@ -655,6 +658,7 @@ export function applyIntent(
     case "CANCEL": {
       player.path = [];
       player.pendingInteractId = null;
+      player.station = null;
       clearActivity(player);
       break;
     }
@@ -663,10 +667,12 @@ export function applyIntent(
       break;
     }
     case "DEPOSIT": {
+      if (!atStation(player, "bank", "the bank", events)) break;
       depositAll(player, intent.item);
       break;
     }
     case "WITHDRAW": {
+      if (!atStation(player, "bank", "the bank", events)) break;
       withdrawOne(player, intent.item, events);
       break;
     }
@@ -687,6 +693,10 @@ export function applyIntent(
       break;
     }
     case "BUY": {
+      if (player.station?.kind !== "shop" || player.station.id !== intent.shop) {
+        events.push({ type: "LOG", message: "You need to be at that shop to buy." });
+        break;
+      }
       buyFromShop(player, content, intent.shop, intent.item, events);
       break;
     }
@@ -695,6 +705,7 @@ export function applyIntent(
       break;
     }
     case "SELL": {
+      if (!atStation(player, "shop", "a shop", events)) break;
       sellToMarket(player, content, intent.item, intent.qty, events);
       break;
     }
@@ -703,18 +714,22 @@ export function applyIntent(
       break;
     }
     case "BOUNTY_TASK": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
       takeBountyTask(state, content, intent.guideId, ctx, events);
       break;
     }
     case "BOUNTY_CLAIM": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
       claimBountyTask(state, content, events);
       break;
     }
     case "BOUNTY_ABANDON": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
       abandonBountyTask(player, events);
       break;
     }
     case "BOUNTY_BUY": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
       buyBountyItem(player, content, intent.item, events);
       break;
     }
@@ -827,6 +842,18 @@ export function equipRequirement(
   }
   const level = GEAR_TIER_REQS[def.tier] ?? 0;
   return level > 1 ? { skill: "combat", level } : null;
+}
+
+/** Guard a counter intent: true only while the player stands at that station. */
+function atStation(
+  player: Player,
+  kind: "shop" | "bank" | "bounty",
+  what: string,
+  events: WorldEvent[],
+): boolean {
+  if (player.station?.kind === kind) return true;
+  events.push({ type: "LOG", message: `You need to be at ${what} to do that.` });
+  return false;
 }
 
 /** The player's combat level (idle game formula). */
@@ -1151,6 +1178,7 @@ function startInteraction(
     }
 
     case "bounty_board": {
+      player.station = { kind: "bounty" };
       events.push({ type: "OPEN_BOUNTY", objId });
       break;
     }
@@ -1160,6 +1188,7 @@ function startInteraction(
       // right now (so a quest can still send you to a shopkeeper NPC).
       const shop = content.shops.find((s) => s.npc === def.id);
       if (shop && !questStepTargets(state.player, content, def.id)) {
+        player.station = { kind: "shop", id: shop.id };
         events.push({ type: "OPEN_SHOP", shop: shop.id });
         break;
       }
@@ -1209,6 +1238,7 @@ function startInteraction(
     }
 
     case "bank":
+      player.station = { kind: "bank" };
       events.push({ type: "OPEN_BANK" });
       break;
 
@@ -1417,6 +1447,7 @@ function checkAggro(
     const mSpeed = monsterFor(content, def)?.speed ?? COMBAT.monsterSpeed;
     player.path = [];
     player.pendingInteractId = null;
+    player.station = null;
     player.activity = {
       kind: "combat",
       targetId: def.id,
