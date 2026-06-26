@@ -122,24 +122,30 @@ Source: `SKILLS[*].actions` (~3383–3749). Dest: `src/content/actions.ts`
 `note`s and canon `baseTime`. TypeScript validates every referenced item id, so
 the registry is provably internally consistent.
 
-> Gameplay still runs on the wired recipes in `processing.ts` / `forging.ts`.
-> Migrating each skill to drive off this registry (and **re-tuning** pacing) is
-> the per-skill gameplay work in Phase 2+. The data is the foundation that work
-> builds on.
+> **Station crafting now drives off this registry directly.** A generic craft
+> engine (`startCraft`/`processCraft` + `stationActions`) powers the fire,
+> furnace and anvil: tapping a station opens a recipe menu (level-gated, with
+> ingredient costs and availability) and the chosen recipe repeats until the
+> materials run out. `processing.ts`/`forging.ts` were deleted; cooking,
+> smelting and smithing are fully recipe-driven. Times are re-tuned to a single
+> snappy `CRAFT_INTERVAL`. Gathering (mining/forestry/fishing) is still tier-1
+> hard-wired — higher-tier nodes arrive with the zones (Phase 2).
 
-| skill block | #actions (actual) | status |
+| skill block | #actions | wired status |
 |---|---|---|
-| Mining | 9 | ✅ data · 🟡 wired (knucklestone) |
-| Smithing (smelt + forge) | 74 | ✅ data · 🟡 wired (smelt 1, forge 4) |
-| Forestry | 8 | ✅ data · 🟡 wired (ashwood) |
-| Hunter | 6 | ✅ data · ⬜ wired |
-| Woodcraft | 33 | ✅ data · ⬜ wired |
-| Fishing | 6 | ✅ data · 🟡 wired (ashfin) |
-| Cooking | 31 | ✅ data · 🟡 wired (3) |
-| Survivalist | 13 | ✅ data · ⬜ wired |
-| Herblore | 17 | ✅ data · ⏭️ wired |
-| Construction | 19 | ✅ data · ⏭️ wired |
-| Crafting | 37 | ✅ data · ⬜ wired |
+| Cooking | 31 | ✅ **playable** — all recipes at the fire (raw→cooked, smoked, meals) |
+| Smithing — smelt | 7 | ✅ **playable** — all metals at the furnace (with flux) |
+| Smithing — forge | 67 | ✅ **playable** — all gear/tools/tips at the anvil (level-gated) |
+| Survivalist — firemaking | 2 | ✅ **playable** — burn logs → charcoal at the fire |
+| Mining | 9 | 🟡 wired tier-1 (knucklestone); rest need zone nodes |
+| Forestry | 8 | 🟡 wired tier-1 (ashwood); rest need zone nodes |
+| Fishing | 6 | 🟡 wired tier-1 (ashfin); rest need zone nodes |
+| Survivalist — foraging | 9 | ⬜ needs forage nodes (zones) |
+| Hunter | 6 | ⬜ needs hunting nodes (zones) |
+| Woodcraft | 33 | ⬜ needs a sawmill/fletching station |
+| Crafting | 37 | ⬜ needs a tannery/loom station |
+| Herblore | 17 | ⏭️ needs a herbalist bench + herbs |
+| Construction | 19 | ⏭️ needs build sites |
 
 Item-registry note: 469 → **471** items (added `ironbark_shard`, `heartoak_amber`
 to satisfy two forestry `rareDrop` refs the idle game left undefined).

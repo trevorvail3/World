@@ -19,6 +19,7 @@ import {
   applyIntent,
   buildWalkability,
   createWorld,
+  stationActions,
   tick,
 } from "./core/worldCore.ts";
 import { hydratePlayer, serializePlayer } from "./core/save.ts";
@@ -57,6 +58,9 @@ const bridge: CoreBridge = {
   state,
   content,
   walkable,
+  stationRecipes(station) {
+    return stationActions(content, station);
+  },
   send(intent: Intent) {
     return applyIntent(state, content, intent, ctxAt(performance.now()));
   },

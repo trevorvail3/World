@@ -756,13 +756,15 @@ export type ActivityKind =
   | "mining"
   | "fishing"
   | "combat"
-  | "cooking"
-  | "smelting";
+  /** Any station recipe (cooking, smelting, smithing, firemaking…). */
+  | "crafting";
 
 export interface Activity {
   kind: ActivityKind;
   /** The world object this activity targets (e.g. the tree being chopped). */
   targetId: string | null;
+  /** Crafting only: the SkillAction id being repeated at a station. */
+  actionId: string | null;
   /** Time (ms) of the next "swing"/roll for this activity. */
   nextActionAt: number;
   /** How long one swing/roll takes (ms) — lets the client show progress. */
@@ -872,10 +874,15 @@ export interface UnequipIntent {
   equipSlot: EquipSlot;
 }
 
-/** "Forge this piece of gear at the anvil" (consumes bars, grants Smithing XP). */
-export interface ForgeIntent {
-  type: "FORGE";
-  output: ItemId;
+/**
+ * "Make this recipe at the station I'm standing at." The actionId is a
+ * SkillAction id (see src/content/actions.ts); objId is the station, so the
+ * client can show progress on it. The core repeats it until materials run out.
+ */
+export interface CraftIntent {
+  type: "CRAFT";
+  actionId: string;
+  objId: string;
 }
 
 /** "Switch my melee combat style" (which combat skill the next kill trains). */
@@ -893,7 +900,7 @@ export type Intent =
   | WithdrawIntent
   | EquipIntent
   | UnequipIntent
-  | ForgeIntent
+  | CraftIntent
   | SetStyleIntent;
 
 // ---------------------------------------------------------------------------
@@ -917,33 +924,18 @@ export type WorldEvent =
   | { type: "PLAYER_DIED" }
   | { type: "PLAYER_RESPAWNED" }
   | { type: "OPEN_BANK" }
-  | { type: "OPEN_FORGE" };
+  /** Open the recipe menu for a station (fire/furnace/anvil). */
+  | { type: "OPEN_CRAFT"; station: ObjKind; objId: string };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
 // ---------------------------------------------------------------------------
 
-/** A processing recipe: one input item becomes one output item, for XP. */
-export interface Recipe {
-  input: ItemId;
-  output: ItemId;
-  xp: number;
-}
-
-/** A forging recipe: several bars become one piece of gear, for Smithing XP. */
-export interface ForgeRecipe {
-  output: ItemId;
-  input: ItemId;
-  /** How many of the input item the forge consumes. */
-  count: number;
-  xp: number;
-}
-
 /**
  * One skill action, ported verbatim from the idle game's `SKILLS[*].actions`.
  * This is the canonical recipe/gathering data for every gathering and
- * processing skill. Gameplay still runs on the wired recipes for now; later
- * bundles migrate each skill to drive off this registry. See src/content/actions.ts.
+ * processing skill. Station crafting (cooking/smelting/smithing/firemaking)
+ * runs directly off these. See src/content/actions.ts.
  */
 export interface SkillAction {
   id: string;
@@ -988,11 +980,7 @@ export interface Content {
   items: Record<ItemId, ItemDef>;
   /** Monster combat stats + loot, keyed by MonsterStats id. */
   monsters: Record<string, MonsterStats>;
-  /** Processing recipes for the camp stations. */
-  recipes: { cooking: Recipe[]; smelting: Recipe[] };
-  /** Smithing recipes that turn bars into gear at the anvil. */
-  forging: ForgeRecipe[];
-  /** The full canon skill-action registry (data; not all wired yet). */
+  /** The full canon skill-action registry — drives gathering + station crafting. */
   actions: SkillAction[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
