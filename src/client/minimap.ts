@@ -48,6 +48,8 @@ const MM_OBJ: Record<ObjKind, string> = {
   workbench: "#9a7b4e",
   crafting_table: "#a98a6a",
   cart: "#b89357",
+  fountain: "#6fa0c0",
+  sawmill: "#9a7b4e",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

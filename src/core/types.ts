@@ -716,7 +716,11 @@ export type ObjKind =
   /** A Crafting table: tan leather, blow glass, cut gems and make jewellery. */
   | "crafting_table"
   /** A market stall / street cart — decorative city dressing (examine-only). */
-  | "cart";
+  | "cart"
+  /** A town fountain — the central square's centrepiece (examine-only). */
+  | "fountain"
+  /** A Woodcraft sawmill / bowyer's bench: planks, shafts, rods, bows, arrows. */
+  | "sawmill";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it

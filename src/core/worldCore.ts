@@ -100,6 +100,7 @@ export function stationActions(content: Content, station: string): SkillAction[]
     if (station === "cauldron") return a.skill === "herblore";
     if (station === "workbench") return a.skill === "construction";
     if (station === "crafting_table") return a.skill === "crafting";
+    if (station === "sawmill") return a.skill === "woodcraft";
     return false;
   });
 }
@@ -160,6 +161,8 @@ const BLOCKING_KINDS = new Set([
   "workbench",
   "crafting_table",
   "cart",
+  "fountain",
+  "sawmill",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -1070,6 +1073,7 @@ function startInteraction(
 
     case "shrine":
     case "cart":
+    case "fountain":
       // Examine-only landmark / city dressing: speak its line, if any.
       events.push({
         type: "LOG",
@@ -1110,6 +1114,7 @@ function startInteraction(
     case "cauldron":
     case "workbench":
     case "crafting_table":
+    case "sawmill":
       events.push({ type: "OPEN_CRAFT", station: def.kind, objId });
       break;
 

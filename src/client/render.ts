@@ -535,7 +535,75 @@ function drawObject(
     case "cart":
       drawCart(g, cx, cy);
       break;
+    case "fountain":
+      drawFountain(g, cx, cy, now);
+      break;
+    case "sawmill":
+      drawSawmill(g, cx, cy);
+      break;
   }
+}
+
+/** A town fountain: a round stone basin with a bright, jetting plume. */
+function drawFountain(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  shadow(g, cx, cy + 11, 15, 5);
+  // Outer basin (stone ring).
+  g.fillStyle = "#6b6157";
+  g.beginPath(); g.ellipse(cx, cy + 3, 16, 11, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#564d44";
+  g.beginPath(); g.ellipse(cx, cy + 3, 16, 11, 0, 0, Math.PI * 2); g.stroke();
+  // Water in the basin (animated shimmer).
+  const sh = 0.5 + 0.5 * Math.sin(now / 400);
+  g.fillStyle = "#2f5a78";
+  g.beginPath(); g.ellipse(cx, cy + 3, 12.5, 8, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(120,180,210,${0.35 + 0.25 * sh})`;
+  g.beginPath(); g.ellipse(cx - 2, cy + 1, 7, 4, 0, 0, Math.PI * 2); g.fill();
+  // Central pedestal.
+  g.fillStyle = "#5a5149";
+  g.fillRect(cx - 3, cy - 8, 6, 12);
+  g.fillStyle = "#6f655a";
+  g.fillRect(cx - 4, cy - 9, 8, 2);
+  // The jet + falling droplets.
+  const jet = 6 + 3 * sh;
+  g.strokeStyle = "rgba(170,210,235,0.7)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx, cy - 8); g.lineTo(cx, cy - 8 - jet); g.stroke();
+  g.fillStyle = "rgba(190,225,245,0.8)";
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + now / 500;
+    g.beginPath();
+    g.arc(cx + Math.cos(a) * 7, cy - 6 + Math.abs(Math.sin(a)) * 5, 1.4, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
+/** A Woodcraft sawmill: a frame-saw over a log on trestles, with a shaving-horse. */
+function drawSawmill(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 14, 4);
+  // Trestles + a log being sawn.
+  g.strokeStyle = "#3a2c1d"; g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(cx - 10, cy + 9); g.lineTo(cx - 6, cy + 1);
+  g.moveTo(cx - 2, cy + 9); g.lineTo(cx - 6, cy + 1);
+  g.moveTo(cx + 2, cy + 9); g.lineTo(cx + 6, cy + 1);
+  g.moveTo(cx + 10, cy + 9); g.lineTo(cx + 6, cy + 1);
+  g.stroke();
+  // The log.
+  g.fillStyle = "#8a6a40";
+  g.fillRect(cx - 11, cy - 2, 22, 5);
+  g.fillStyle = "#a07a44";
+  g.fillRect(cx - 11, cy - 2, 22, 1.5);
+  g.fillStyle = "#caa56a"; // cut end
+  g.beginPath(); g.arc(cx - 11, cy + 0.5, 2.5, 0, Math.PI * 2); g.fill();
+  // The frame-saw standing in the cut.
+  g.strokeStyle = "#6f5436"; g.lineWidth = 2;
+  g.strokeRect(cx - 1, cy - 13, 8, 11);
+  g.strokeStyle = "#b9bcc4"; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(cx + 3, cy - 13); g.lineTo(cx + 3, cy - 1); g.stroke();
+  // A few sawdust flecks + an offcut.
+  g.fillStyle = "#b89357";
+  g.fillRect(cx - 13, cy + 7, 4, 2);
+  g.fillStyle = "rgba(200,170,110,0.5)";
+  g.fillRect(cx + 8, cy + 6, 3, 1.5);
 }
 
 /** A market stall: a cart with a striped awning and a crate or two. */

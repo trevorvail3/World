@@ -101,6 +101,56 @@ export const objects: WorldObjectDef[] = [
   // --- The bounty board, on the market square ---
   { id: "bounty_board_1", kind: "bounty_board", x: 66, y: 49, name: "Bounty Board" },
 
+  // --- The town square: a fountain at the crossroads ---
+  { id: "fountain_1", kind: "fountain", x: 60, y: 52, name: "The Ironvale Fountain", lines: ["Bright water over green-stained stone. Children dare each other to drink from it; nobody knows where the spring beneath it rises."] },
+
+  // --- The Carpenter's sawmill, in the artisans' yard (Woodcraft) ---
+  { id: "sawmill_1", kind: "sawmill", x: 49, y: 57, name: "Carpenter's Sawmill" },
+
+  // --- Townsfolk going about the day (they wander the streets and squares) ---
+  {
+    id: "town_fishwife", kind: "npc", x: 66, y: 55, name: "A Fishwife",
+    lines: [
+      "Greyfin, fresh off the Redrun! Well — fresh enough. You'll not get better this side of the estuary.",
+      "My man rows the river. Says the water's been running redder than it ought. I tell him it's the season. He doesn't argue, but he doesn't smile either.",
+    ],
+  },
+  {
+    id: "town_guard", kind: "npc", x: 62, y: 47, name: "An Off-Duty Guard",
+    lines: [
+      "Long as the gates hold and the lamps are lit, Ironvale sleeps easy. Mostly.",
+      "They've got me on the new watchtower come spring. Watching for what, nobody'll say. That's the part that keeps me up.",
+    ],
+  },
+  {
+    id: "town_child", kind: "npc", x: 58, y: 53, name: "A Child",
+    lines: [
+      "Bet you can't toss a coin in the fountain and have it land flat. Nobody can. I've seen a hundred try.",
+      "My gran says the old coins the rats dig up are unlucky. I keep one anyway. It's warm. Feel.",
+    ],
+  },
+  {
+    id: "town_pilgrim", kind: "npc", x: 51, y: 56, name: "A Pilgrim",
+    lines: [
+      "I walked from the Heartmoor to stand a day in a city that still has walls. It's a comfort, walls.",
+      "They say the Spine is Orun's own back. I came to see it. I'll go home and say I saw a mountain. Both are true, I think.",
+    ],
+  },
+  {
+    id: "town_drunk", kind: "npc", x: 73, y: 56, name: "A Cheerful Drunk",
+    lines: [
+      "Friend! Friend. You've an honest face and a full purse, I can tell these things.",
+      "I'll tell you a secret for a coin. No? Then I'll tell you for free: the moon watches, and she does not blink. Sleep on that.",
+    ],
+  },
+  {
+    id: "town_courier", kind: "npc", x: 65, y: 45, name: "An Ironvale Courier",
+    lines: [
+      "Riders out at dawn, riders in at dusk. The Courier never stops; the roads don't let us.",
+      "Greyoak, the Spine, the Heartmoor — I've carried word to all of them. Everything in Varath runs through this market eventually.",
+    ],
+  },
+
   // === THE KNUCKLE HILLS — the home hills wrapping the city =================
 
   // --- Ashwood trees on the dirt grove, north of the city (Forestry) ---
@@ -262,6 +312,7 @@ export const objects: WorldObjectDef[] = [
   // --- Greyoak Wood ---
   { id: "lm_oldgrowth", kind: "shrine", x: 12, y: 63, name: "The Old Growth Edge", lines: ["Last year's boundary stakes stand a full pace inside this year's living wood. You can mark the retreat. You do not learn what walks in the cleared ground."] },
   { id: "lm_mill", kind: "shrine", x: 28, y: 55, name: "The Grey Oak Mill", lines: ["The saws that feed Ironvale's beams, running dawn to dusk. The best blade keeps dulling too fast; the foreman has a suspect, and he's half wrong."] },
+  { id: "sawmill_mill", kind: "sawmill", x: 26, y: 55, name: "The Grey Oak Mill Bench" },
   {
     id: "charburner", kind: "npc", x: 5, y: 67, name: "The Charburner",
     lines: [

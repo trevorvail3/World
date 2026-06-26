@@ -237,6 +237,8 @@ function decode(): WorldMap {
   //    The buildings: each footprint becomes blocking masonry (the renderer
   //    lays a roof over it). The streets and frontages stay clear between them.
   for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");
+  //    A flagged town square around the crossroads, for the fountain + crowds.
+  carve(58, 50, 62, 54, "stone");
 
   // 4b) Countryside features — the bible's named landmarks get real ground, so
   //     the open country between regions reads as places, not blank field.
