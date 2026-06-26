@@ -51,6 +51,19 @@ import type {
 const MOVE_SPEED = 3.5; // tiles per second
 const MOUNT_SPEED_MULT = 1.45; // a worn mount makes overworld travel this much faster
 
+// Predators that strike when you stray too close (everything else waits to be
+// attacked). Kept here rather than in content so it's easy to tune.
+const AGGRESSIVE = new Set<string>([
+  "hill_wolf", "ridge_wolf", "heartmoor_hound", "wild_boar", "greymane_boar",
+  "forest_bear", "stone_crawler", "cave_crawler", "mountain_troll", "deep_golem",
+  "spine_wraith", "marrow_wraith", "mire_serpent",
+  "hollow_warden", "bog_warden", "spine_warlord", "marrow_keeper",
+]);
+const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
+// On death you drop a tenth of your coin (a real but gentle setback).
+const DEATH_GOLD_FRACTION = 0.1;
+const DEATH_GOLD_CAP = 250;
+
 // Playable level ceiling. The XP table (content) is built a little past this so
 // look-ups never fall off the end, but a skill never *reads* above the cap.
 // Keep in step with LEVEL_CAP in src/content/xpCurve.ts.
@@ -1360,6 +1373,63 @@ function usePortal(
 // The tick: advancing time. Movement, activities, combat and respawns.
 // ---------------------------------------------------------------------------
 
+/** A guaranteed-standable respawn point: the spawn tile, or the nearest land. */
+function respawnTile(content: Content, spawn: Vec2): Vec2 {
+  const { map } = content;
+  const solid = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return true;
+    const t = map.tiles[y * map.width + x];
+    return t === "water" || t === "mountain" || t === "cave_wall" || t === "deep" || t === "wall";
+  };
+  if (!solid(spawn.x, spawn.y)) return { x: spawn.x, y: spawn.y };
+  for (let r = 1; r <= 8; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (!solid(spawn.x + dx, spawn.y + dy)) return { x: spawn.x + dx, y: spawn.y + dy };
+      }
+    }
+  }
+  return { x: spawn.x, y: spawn.y };
+}
+
+/**
+ * Aggressive monsters strike first. If the player is idle/walking (not already
+ * fighting, gathering or crafting) and steps within AGGRO_RANGE of an awake
+ * predator, that monster pulls them into combat and gets the first swing — so
+ * the wilderness can no longer be strolled through untouched.
+ */
+function checkAggro(
+  state: WorldState,
+  content: Content,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  if (!player.alive || player.activity.kind !== "idle") return;
+  for (const def of content.objects) {
+    if (def.kind !== "monster" || !AGGRESSIVE.has(def.monster ?? "")) continue;
+    const obj = state.objects[def.id];
+    if (!obj || !obj.available || obj.hp === undefined) continue;
+    const mp = obj.pos ?? { x: def.x, y: def.y };
+    if (Math.hypot(mp.x - player.pos.x, mp.y - player.pos.y) > AGGRO_RANGE) continue;
+    const pSpeed = playerSpeed(player, content);
+    const mSpeed = monsterFor(content, def)?.speed ?? COMBAT.monsterSpeed;
+    player.path = [];
+    player.pendingInteractId = null;
+    player.activity = {
+      kind: "combat",
+      targetId: def.id,
+      actionId: null,
+      nextActionAt: ctx.now + pSpeed,
+      actionInterval: pSpeed,
+    };
+    obj.nextAttackAt = ctx.now + Math.floor(mSpeed / 2); // it gets the jump on you
+    events.push({ type: "LOG", message: `The ${def.name} attacks!` });
+    return; // one engagement per tick
+  }
+}
+
 export function tick(
   state: WorldState,
   content: Content,
@@ -1388,7 +1458,7 @@ export function tick(
     if (ctx.now >= player.respawnAt) {
       player.alive = true;
       player.hp = player.maxHp;
-      player.pos = { x: player.spawn.x, y: player.spawn.y };
+      player.pos = respawnTile(content, player.spawn);
       player.path = [];
       clearActivity(player);
       events.push({ type: "PLAYER_RESPAWNED" });
@@ -1409,6 +1479,9 @@ export function tick(
 
     // 3b) Auto-advance any "gather X" quest objective now satisfied.
     checkGatherQuests(state, content, events);
+
+    // 3c) Aggressive monsters you've wandered too close to strike first.
+    checkAggro(state, content, ctx, events);
   }
 
   // 4) Respawn depleted resources / dead monsters whose timers are up.
@@ -2436,8 +2509,14 @@ function monsterSwing(
     const raw = randInt(ctx, 1, stats.maxHit);
     const soak = Math.floor(playerDefence(player, content) / COMBAT.wardDivisor);
     const dmg = Math.max(1, Math.round((raw - soak) * dmgMult));
+    const before = player.hp;
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
+    // A one-time warning the moment you drop into the danger zone.
+    const lowAt = player.maxHp * 0.3;
+    if (before > lowAt && player.hp > 0 && player.hp <= lowAt) {
+      events.push({ type: "LOG", message: "You're badly wounded — heal or run!" });
+    }
     // Life-drain: the boss heals a fraction of the harm it does.
     const ld = mechanics.find((m) => m.type === "lifedrain");
     if (ld && ld.type === "lifedrain" && obj.hp !== undefined && obj.hp < stats.hp) {
@@ -2454,8 +2533,15 @@ function monsterSwing(
     player.respawnAt = ctx.now + PLAYER_RESPAWN;
     player.path = [];
     clearActivity(player);
+    // A gentle setback: drop a tenth of your carried coin (capped).
+    const lost = Math.min(DEATH_GOLD_CAP, Math.floor(player.gold * DEATH_GOLD_FRACTION));
+    if (lost > 0) {
+      player.gold -= lost;
+      events.push({ type: "LOG", message: `The ${def.name} knocks you out! You lose ${lost}g.` });
+    } else {
+      events.push({ type: "LOG", message: `The ${def.name} knocks you out!` });
+    }
     events.push({ type: "PLAYER_DIED" });
-    events.push({ type: "LOG", message: `The ${def.name} knocks you out!` });
   }
 }
 
