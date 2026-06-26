@@ -29,6 +29,12 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   // The Spine: dark rock peaks and pale high snow.
   mountain: ["#3a3a42", "#4a4a54"],
   snow: ["#aeb8c6", "#c2ccd8"],
+  // Heartmoor: murky moor; Ashfen: warm ash; Marrow: dark cave; Eyeless Sea: deep.
+  bog: ["#33402f", "#3d4a37"],
+  ash: ["#4a3b34", "#574740"],
+  cave: ["#1c1a22", "#26232e"],
+  cave_wall: ["#0e0d12", "#15131a"],
+  deep: ["#14233a", "#1a2c46"],
 };
 
 const EMBER = "#d2742c";
@@ -78,11 +84,16 @@ export function drawWorld(
       // Speckle for texture.
       const hv = hash(x, y);
       g.fillStyle = accent;
-      if (tile === "water") {
+      if (tile === "water" || tile === "deep") {
         // gentle animated shimmer
         const shimmer = 0.5 + 0.5 * Math.sin(now / 600 + x + y);
         g.globalAlpha = 0.25 + 0.2 * shimmer;
         g.fillRect(px, py + TILE * (0.2 + 0.5 * hv), TILE, 3);
+        g.globalAlpha = 1;
+      } else if (tile === "cave_wall") {
+        // a solid dark rock block with a faint top edge
+        g.globalAlpha = 0.5;
+        g.fillRect(px, py, TILE, 3);
         g.globalAlpha = 1;
       } else if (tile === "mountain") {
         // A raised peak: a dark rock pyramid with a pale, snow-lit crown.
@@ -167,25 +178,7 @@ function drawObject(
       drawNpc(g, cx, cy, now);
       break;
     case "monster":
-      if (!available) {
-        drawRespawning(g, cx, cy);
-      } else if (def.monster === "hill_wolf" || def.monster === "ridge_wolf") {
-        drawWolf(g, cx, cy, now);
-      } else if (def.monster === "wild_boar") {
-        drawBoar(g, cx, cy, now, false);
-      } else if (def.monster === "greymane_boar") {
-        drawBoar(g, cx, cy, now, true);
-      } else if (def.monster === "forest_bear") {
-        drawBear(g, cx, cy, now);
-      } else if (def.monster === "stone_crawler") {
-        drawStoneCrawler(g, cx, cy, now);
-      } else if (def.monster === "mountain_troll") {
-        drawTroll(g, cx, cy, now);
-      } else if (def.monster === "spine_wraith") {
-        drawWraith(g, cx, cy, now);
-      } else {
-        drawRat(g, cx, cy, now);
-      }
+      drawMonster(g, def.monster, available, cx, cy, now);
       break;
 
     case "shrine":
@@ -460,6 +453,152 @@ function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: numbe
   g.beginPath();
   g.arc(cx, cy - 12 + bob, 5, Math.PI, 0);
   g.fill();
+}
+
+/** Route a monster to its sprite (reusing shapes across similar creatures). */
+function drawMonster(
+  g: CanvasRenderingContext2D,
+  monster: string | undefined,
+  available: boolean,
+  cx: number,
+  cy: number,
+  now: number,
+): void {
+  if (!available) return drawRespawning(g, cx, cy);
+  switch (monster) {
+    case "hill_wolf":
+    case "ridge_wolf":
+    case "heartmoor_hound":
+      return drawWolf(g, cx, cy, now);
+    case "wild_boar":
+      return drawBoar(g, cx, cy, now, false);
+    case "greymane_boar":
+      return drawBoar(g, cx, cy, now, true);
+    case "forest_bear":
+      return drawBear(g, cx, cy, now);
+    case "stone_crawler":
+    case "cave_crawler":
+      return drawStoneCrawler(g, cx, cy, now);
+    case "mountain_troll":
+    case "deep_golem":
+      return drawTroll(g, cx, cy, now);
+    case "spine_wraith":
+    case "marrow_wraith":
+      return drawWraith(g, cx, cy, now);
+    case "mire_serpent":
+    case "river_serpent":
+    case "marsh_lurker":
+      return drawSerpent(g, cx, cy, now);
+    case "deep_bat":
+      return drawBat(g, cx, cy, now);
+    case "bog_knight":
+      return drawHumanoid(g, cx, cy, now, "#5b6470", "#7a8492"); // grey armour
+    case "redrun_brigand":
+      return drawHumanoid(g, cx, cy, now, "#5a4636", "#6e5742"); // leathers
+    case "ancient_orc":
+      return drawHumanoid(g, cx, cy, now, "#4d5a3e", "#5f6e4c"); // green-grey orc
+    case "dread_ferryman":
+      return drawHumanoid(g, cx, cy, now, "#1f2630", "#2c3540"); // black-hooded
+    default:
+      return drawRat(g, cx, cy, now);
+  }
+}
+
+// --- Serpent: a coiled, scaled body with a raised head ---
+function drawSerpent(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const sway = Math.sin(now / 240) * 3;
+  shadow(g, cx, cy + 8, 12, 4);
+  g.strokeStyle = "#3f5a44";
+  g.lineWidth = 6;
+  g.lineCap = "round";
+  g.beginPath(); // coiled body
+  g.moveTo(cx + 11, cy + 7);
+  g.quadraticCurveTo(cx - 12, cy + 9, cx - 6, cy + 1);
+  g.quadraticCurveTo(cx + 8, cy - 4, cx - 2 + sway, cy - 9);
+  g.stroke();
+  g.strokeStyle = "#4f6e54";
+  g.lineWidth = 2.5;
+  g.beginPath();
+  g.moveTo(cx + 11, cy + 7);
+  g.quadraticCurveTo(cx - 12, cy + 9, cx - 6, cy + 1);
+  g.quadraticCurveTo(cx + 8, cy - 4, cx - 2 + sway, cy - 9);
+  g.stroke();
+  g.fillStyle = "#4f6e54"; // head
+  g.beginPath();
+  g.ellipse(cx - 2 + sway, cy - 10, 4, 3.2, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#d2c24a"; // eye
+  circle(g, cx - 3 + sway, cy - 11, 1);
+  g.strokeStyle = "#c43a23"; // tongue
+  g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(cx - 5 + sway, cy - 11);
+  g.lineTo(cx - 8 + sway, cy - 12);
+  g.stroke();
+  g.lineCap = "butt";
+}
+
+// --- Bat: a small dark flier with beating wings ---
+function drawBat(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const flap = Math.sin(now / 90) * 5;
+  shadow(g, cx, cy + 9, 6, 2);
+  g.fillStyle = "#2b2630";
+  g.beginPath(); // left wing
+  g.moveTo(cx, cy);
+  g.quadraticCurveTo(cx - 11, cy - 6 - flap, cx - 14, cy + 2 - flap);
+  g.quadraticCurveTo(cx - 8, cy + 1, cx, cy + 3);
+  g.closePath();
+  g.fill();
+  g.beginPath(); // right wing
+  g.moveTo(cx, cy);
+  g.quadraticCurveTo(cx + 11, cy - 6 - flap, cx + 14, cy + 2 - flap);
+  g.quadraticCurveTo(cx + 8, cy + 1, cx, cy + 3);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#39333f"; // body
+  g.beginPath();
+  g.ellipse(cx, cy + 1, 3, 4.5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#39333f"; // ears
+  circle(g, cx - 2, cy - 4, 1.4);
+  circle(g, cx + 2, cy - 4, 1.4);
+  g.fillStyle = "#c43a23"; // eyes
+  circle(g, cx - 1.4, cy - 1, 0.8);
+  circle(g, cx + 1.4, cy - 1, 0.8);
+}
+
+// --- Humanoid: a standing figure (knight / brigand / orc / hooded ferryman) ---
+function drawHumanoid(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+  body: string,
+  trim: string,
+): void {
+  const bob = Math.sin(now / 500) * 0.8;
+  shadow(g, cx, cy + 12, 8, 3);
+  g.fillStyle = "#2b2620"; // legs
+  g.fillRect(cx - 5, cy + 6 + bob, 4, 8);
+  g.fillRect(cx + 1, cy + 6 + bob, 4, 8);
+  g.fillStyle = body; // torso / cloak
+  g.beginPath();
+  g.moveTo(cx - 7, cy + 8 + bob);
+  g.lineTo(cx - 6, cy - 7 + bob);
+  g.quadraticCurveTo(cx, cy - 11 + bob, cx + 6, cy - 7 + bob);
+  g.lineTo(cx + 7, cy + 8 + bob);
+  g.closePath();
+  g.fill();
+  g.fillStyle = trim; // shoulder trim
+  g.fillRect(cx - 7, cy - 6 + bob, 14, 3);
+  g.fillStyle = "#caa472"; // head / hood-shadow
+  circle(g, cx, cy - 11 + bob, 4.5);
+  g.fillStyle = body; // hood / helm over the head
+  g.beginPath();
+  g.arc(cx, cy - 12 + bob, 5, Math.PI, 0);
+  g.fill();
+  g.fillStyle = "#1a140f";
+  g.fillRect(cx - 4, cy - 12 + bob, 8, 2); // brow shadow
 }
 
 // --- Moor Rat: small, long-tailed ---

@@ -649,7 +649,16 @@ export type TileType =
   | "moss"
   // The Spine: impassable rock peaks and walkable high snow.
   | "mountain"
-  | "snow";
+  | "snow"
+  // Heartmoor: soft, murky moor ground.
+  | "bog"
+  // The Ashfen Flats: warm, cracked geothermal ground.
+  | "ash"
+  // The Marrow Deeps: dark cave floor and impassable cave rock.
+  | "cave"
+  | "cave_wall"
+  // The Eyeless Sea: deep open water (impassable, like water).
+  | "deep";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {
