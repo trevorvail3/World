@@ -182,6 +182,7 @@ export function createWorld(
     combatStyle: "vigour",
     quests: {},
     questsDone: [],
+    flags: [],
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -448,6 +449,10 @@ export function applyIntent(
       startCraft(state, content, intent.actionId, intent.objId, ctx, events);
       break;
     }
+    case "CHOOSE": {
+      applyChoice(state, content, intent.quest, intent.option, events);
+      break;
+    }
     case "SET_STYLE": {
       player.combatStyle = intent.style;
       events.push({
@@ -694,13 +699,13 @@ function startInteraction(
       break;
     }
 
-    case "npc":
-      events.push({
-        type: "DIALOGUE",
-        npc: def.name,
-        lines: handleNpcTalk(state, content, def, events),
-      });
+    case "npc": {
+      const lines = handleNpcTalk(state, content, def, events);
+      if (lines.length > 0) {
+        events.push({ type: "DIALOGUE", npc: def.name, lines });
+      }
       break;
+    }
 
     case "shrine":
       // Examine-only landmark: speak its inscription (its first line), if any.
@@ -988,10 +993,12 @@ function handleNpcTalk(
   const { player } = state;
   const npcId = npcDef.id;
 
-  // 1) Progress an active quest from this giver whose current step is here.
+  // 1) Progress any active quest whose CURRENT step targets THIS npc. Steps may
+  //    point at any NPC, not just the quest's giver — a giver can send you to
+  //    talk to, deliver to, or be questioned by someone across the map.
   for (const qid of Object.keys(player.quests)) {
     const def = content.quests.find((q) => q.id === qid);
-    if (!def || def.giver !== npcId) continue;
+    if (!def) continue;
     const st = player.quests[qid]!;
     const obj = def.steps[st.step];
     if (!obj) continue;
@@ -1005,18 +1012,29 @@ function handleNpcTalk(
       }
       return [`Bring me ${obj.count} ${content.items[obj.item].name} — ${obj.text.toLowerCase()}.`];
     }
-    // Active here, but the current objective is out in the world.
-    return [`You're not done yet: ${obj.text}.`];
+    if (obj.type === "choice" && obj.npc === npcId) {
+      // Don't advance — ask the client to present the options (no dialogue box).
+      events.push({
+        type: "QUEST_CHOICE",
+        quest: qid,
+        prompt: obj.prompt,
+        options: obj.options.map((o) => o.label),
+      });
+      return [];
+    }
   }
 
-  // 2) Offer the next available quest from this NPC.
-  const offer = content.quests.find(
-    (q) =>
-      q.giver === npcId &&
-      !player.quests[q.id] &&
-      !player.questsDone.includes(q.id) &&
-      (!q.requires || player.questsDone.includes(q.requires)),
-  );
+  // 2) A quest from THIS giver is active, but its current step is elsewhere —
+  //    nudge the player toward whatever it's asking for.
+  for (const qid of Object.keys(player.quests)) {
+    const def = content.quests.find((q) => q.id === qid);
+    if (!def || def.giver !== npcId) continue;
+    const obj = def.steps[player.quests[qid]!.step];
+    if (obj) return [`You're not done yet: ${obj.text}.`];
+  }
+
+  // 3) Offer the next available quest from this NPC.
+  const offer = content.quests.find((q) => q.giver === npcId && questAvailable(player, q));
   if (offer) {
     player.quests[offer.id] = { step: 0, killCount: 0 };
     events.push({ type: "QUEST_STARTED", quest: offer.id });
@@ -1024,7 +1042,7 @@ function handleNpcTalk(
     return offer.intro;
   }
 
-  // 3) Otherwise, ordinary chatter.
+  // 4) Otherwise, ordinary chatter.
   return npcDef.lines ?? ["..."];
 }
 
@@ -1069,6 +1087,39 @@ function grantQuestReward(
   for (const it of def.reward.items ?? []) {
     addItem(player, it.item, it.qty, events);
   }
+  for (const f of def.reward.flags ?? []) {
+    if (!player.flags.includes(f)) player.flags.push(f);
+  }
+}
+
+/** Is a quest offerable now (not active/done, prerequisites + flag gates met)? */
+function questAvailable(player: Player, q: QuestDef): boolean {
+  if (player.quests[q.id] || player.questsDone.includes(q.id)) return false;
+  if (q.requires && !player.questsDone.includes(q.requires)) return false;
+  if (q.requiresFlags && !q.requiresFlags.every((f) => player.flags.includes(f))) return false;
+  if (q.blockedByFlags && q.blockedByFlags.some((f) => player.flags.includes(f))) return false;
+  return true;
+}
+
+/** Apply a player's pick at a quest's "choice" step, then advance the quest. */
+function applyChoice(
+  state: WorldState,
+  content: Content,
+  questId: string,
+  option: number,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const def = content.quests.find((q) => q.id === questId);
+  const st = player.quests[questId];
+  if (!def || !st) return;
+  const obj = def.steps[st.step];
+  if (!obj || obj.type !== "choice") return;
+  const pick = obj.options[option];
+  if (!pick) return;
+  for (const f of pick.flags) if (!player.flags.includes(f)) player.flags.push(f);
+  if (pick.reply) events.push({ type: "LOG", message: pick.reply });
+  advanceQuest(state, content, def, st, events);
 }
 
 /** A kill counts toward any active quest hunting that monster. */
@@ -1098,7 +1149,7 @@ function advanceKillQuests(
   }
 }
 
-/** Auto-advance any "gather" objective the player now satisfies. */
+/** Auto-advance any passive objective ("gather" / "reach") now satisfied. */
 function checkGatherQuests(
   state: WorldState,
   content: Content,
@@ -1110,8 +1161,10 @@ function checkGatherQuests(
     if (!def) continue;
     const st = player.quests[qid]!;
     const obj = def.steps[st.step];
-    if (!obj || obj.type !== "gather") continue;
-    if (countItem(player, obj.item) >= obj.count) {
+    if (!obj) continue;
+    if (obj.type === "gather" && countItem(player, obj.item) >= obj.count) {
+      advanceQuest(state, content, def, st, events);
+    } else if (obj.type === "reach" && skillLvl(player, obj.skill) >= obj.level) {
       advanceQuest(state, content, def, st, events);
     }
   }

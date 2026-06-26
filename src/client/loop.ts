@@ -291,6 +291,9 @@ export class Game {
           });
           break;
         }
+        case "QUEST_CHOICE":
+          this.openChoice(ev.quest, ev.prompt, ev.options);
+          break;
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -374,6 +377,28 @@ export class Game {
       title,
       items,
       "Pick a recipe — you'll keep making it until the materials run out.",
+    );
+  }
+
+  /**
+   * A quest's branching question: show each option as a tappable line. Picking
+   * one sends a CHOOSE intent; the core sets the flags and advances the quest.
+   */
+  private openChoice(quest: string, prompt: string, options: string[]): void {
+    const items: MenuItem[] = options.map((label, index) => ({
+      label,
+      tone: "action",
+      onSelect: () => {
+        this.dispatch({ type: "CHOOSE", quest, option: index });
+      },
+    }));
+    if (items.length === 0) return;
+    this.menu.show(
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      prompt,
+      items,
+      "Choose carefully — this answer is remembered.",
     );
   }
 

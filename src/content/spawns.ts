@@ -54,6 +54,48 @@ export const objects: WorldObjectDef[] = [
     ],
   },
 
+  // --- Vorn, the Ashforge master, at the furnace ---
+  {
+    id: "vorn",
+    kind: "npc",
+    x: 17,
+    y: 9,
+    name: "Vorn",
+    lines: [
+      "Hot work, smith. Mind the slag and we'll get along.",
+      "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs, and then we wait to see if he picks it up anyway.",
+      "Teach yourself on cold ash and guesswork long enough and the metal starts telling you things. Stay, and I'll tell you the rest.",
+    ],
+  },
+
+  // --- Sera, archivist of the Pale Record ---
+  {
+    id: "sera",
+    kind: "npc",
+    x: 12,
+    y: 10,
+    name: "Sera",
+    lines: [
+      "Careful with the dust — half of it is older than the kingdom.",
+      "The Pale Record keeps what the world would rather forget. The Underloft. The warm stone they buried their dead with. The coins that keep surfacing.",
+      "Bring me a thing with a question on it and I'll give it a home instead of a shelf over a hearth.",
+    ],
+  },
+
+  // --- Berric, of the Ashforge inner council ---
+  {
+    id: "berric",
+    kind: "npc",
+    x: 21,
+    y: 9,
+    name: "Berric",
+    lines: [
+      "New blood. Vorn's project, are you. He does like to collect strays.",
+      "Stone's stone, friend. A seam doesn't care who surveys it or who buys the map after. Only a fool leaves money in the ground out of sentiment.",
+      "We should talk properly some time. Quietly.",
+    ],
+  },
+
   // --- Monsters (Combat) ---
   { id: "rat_1", kind: "monster", monster: "moor_rat", x: 19, y: 10, name: "Moor Rat" },
   { id: "rat_2", kind: "monster", monster: "moor_rat", x: 22, y: 12, name: "Moor Rat" },
@@ -87,6 +129,20 @@ export const objects: WorldObjectDef[] = [
       "This is Greyoak. Old before Ironvale was a name. The boar keep to the understory; give the deep wood its distance and it gives you yours.",
       "Every season the old growth pulls back a little further. We mark the new treeline against the last. We do not ask what walks in the cleared ground.",
       "Bring an axe worth the name and the greyoak will pay you in timber. Bring less and it will only blunt you.",
+    ],
+  },
+
+  // --- Lenne, the Lodge tracker, working the near trees ---
+  {
+    id: "lenne",
+    kind: "npc",
+    x: 14,
+    y: 24,
+    name: "Lenne",
+    lines: [
+      "Quiet, now. You'll learn more standing still in this wood than talking in it.",
+      "I track for the Lodge. Maret keeps the fire; I keep the treeline. We both watch the same thing pulling back.",
+      "If the old growth ever decides you're worth its notice, you'll feel it before you see it. Don't run.",
     ],
   },
 
@@ -224,6 +280,19 @@ export const objects: WorldObjectDef[] = [
     name: "The Marrow Vault",
     lines: [
       "Walls too smooth to be the dark's work, and a door that was opened from the inside. Whatever stayed down here, stayed because it chose to.",
+    ],
+  },
+  // --- The Marrow Keeper: last Underloft guardian, waiting by the vault ---
+  {
+    id: "marrow_keeper",
+    kind: "npc",
+    x: 60,
+    y: 9,
+    name: "The Marrow Keeper",
+    lines: [
+      "You came down the long dark and the door let you. Few things it lets through.",
+      "I kept the watch when there was an order to keep it for. Now there is only the watch, and the stone, and the warmth that will not cool.",
+      "Ask what you came to ask. But know that I have stood here longer than your kingdom, and even I cannot tell you whether the warmth is a god.",
     ],
   },
 

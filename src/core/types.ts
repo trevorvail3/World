@@ -827,6 +827,8 @@ export interface Player {
   quests: Record<string, QuestState>;
   /** Ids of quests already completed. */
   questsDone: string[];
+  /** Story flags set by quests (faction joins, plot beats, choices). */
+  flags: string[];
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -925,6 +927,13 @@ export interface SetStyleIntent {
   style: CombatStyle;
 }
 
+/** "Pick option N at a quest's choice step." */
+export interface ChooseIntent {
+  type: "CHOOSE";
+  quest: string;
+  option: number;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -935,7 +944,8 @@ export type Intent =
   | EquipIntent
   | UnequipIntent
   | CraftIntent
-  | SetStyleIntent;
+  | SetStyleIntent
+  | ChooseIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -962,7 +972,9 @@ export type WorldEvent =
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   | { type: "QUEST_STARTED"; quest: string }
   | { type: "QUEST_ADVANCED"; quest: string }
-  | { type: "QUEST_COMPLETED"; quest: string };
+  | { type: "QUEST_COMPLETED"; quest: string }
+  /** A quest is asking the player to choose; the client shows the options. */
+  | { type: "QUEST_CHOICE"; quest: string; prompt: string; options: string[] };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
@@ -1015,27 +1027,47 @@ export interface SkillAction {
 // Quests (data; see src/content/quests.ts).
 // ---------------------------------------------------------------------------
 
+/** One choice a player can make at a "choose" step. */
+export interface QuestChoice {
+  /** The button label shown to the player. */
+  label: string;
+  /** Story flags this choice sets when taken. */
+  flags: string[];
+  /** A line acknowledging the choice. */
+  reply?: string;
+}
+
 /** One thing a quest step asks of the player. */
 export type QuestObjective =
   | { type: "talk"; npc: string; text: string }
   | { type: "kill"; monster: string; count: number; text: string }
   | { type: "gather"; item: ItemId; count: number; text: string }
-  | { type: "deliver"; npc: string; item: ItemId; count: number; text: string };
+  | { type: "deliver"; npc: string; item: ItemId; count: number; text: string }
+  | { type: "reach"; skill: SkillId; level: number; text: string }
+  | { type: "choice"; npc: string; text: string; prompt: string; options: QuestChoice[] };
 
 /** What a quest grants on completion. */
 export interface QuestReward {
   xp?: { skill: SkillId; amount: number }[];
   items?: { item: ItemId; qty: number }[];
+  /** Story flags set on completion (faction joins, plot beats). */
+  flags?: string[];
 }
 
-/** A quest: a linear chain of objectives offered by a giver NPC. */
+/** A quest: a chain of objectives offered by a giver NPC. */
 export interface QuestDef {
   id: string;
   name: string;
+  /** Act label for the quest log (1/2/3), optional. */
+  act?: number;
   /** The NPC id who offers and ends the quest. */
   giver: string;
   /** A quest id that must be completed before this one is offered. */
   requires?: string;
+  /** Story flags ALL of which must be set before this quest is offered. */
+  requiresFlags?: string[];
+  /** Story flags NONE of which may be set (mutually-exclusive branches). */
+  blockedByFlags?: string[];
   /** Lines spoken when the quest is accepted. */
   intro: string[];
   /** The ordered objectives. */

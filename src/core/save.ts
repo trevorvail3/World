@@ -40,6 +40,8 @@ export interface SavedProgress {
   quests: Record<string, { step: number; killCount: number }>;
   /** Completed quest ids. */
   questsDone: string[];
+  /** Story flags. */
+  flags: string[];
   hp: number;
   pos: { x: number; y: number };
 }
@@ -59,6 +61,7 @@ export function serializePlayer(player: Player): SavedProgress {
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
+    flags: [...player.flags],
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -146,6 +149,10 @@ export function hydratePlayer(
     player.questsDone = savedDone.filter(
       (id): id is string => typeof id === "string" && content.quests.some((q) => q.id === id),
     );
+  }
+  const savedFlags = raw["flags"];
+  if (Array.isArray(savedFlags)) {
+    player.flags = savedFlags.filter((f): f is string => typeof f === "string");
   }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {
