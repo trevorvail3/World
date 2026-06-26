@@ -211,8 +211,8 @@ coldpine/greyoak), monster sprites (boar/greymane/bear), per-NPC dialogue.
 
 | system | source | maps to spatial how | status |
 |---|---|---|---|
-| NPCs | `NPCS` (~7491) | placed characters in Ironvale/zones | ⬜ |
-| Quests (~14, 3 acts) | `QUESTS` (~7504) | quest log + objectives + dialogue | ⏭️ |
+| NPCs | `NPCS` (~7491) | placed characters in zones (Aldric, Maret, Serath, Calder…) | 🟡 (placed + dialogue; quest-givers wired) |
+| Quests | `QUESTS` (~7504) | **system live** — data-driven QuestDef (talk/kill/gather/deliver objectives), accept/advance/turn-in via NPC dialogue, rewards (xp+items), chaining + prerequisites, a Quests tab log, and "!"/"?" markers over givers. Opening chain authored: *The Coin in the Dirt* → *Ash and Knuckle* (Aldric) → *The Lodge's Measure* (Maret). More to port from canon. | 🟡 live (framework + opening chain) |
 | Factions (4) + reputation | `factionFlags` (~7142) | join/rep consequences | ⏭️ |
 | Romance (3 NPCs) | `G.relationships` | affinity arcs | ⏭️ |
 | Bounty system | `BOUNTY_*` (~3266) | kill-task board + Hunt Marks | ⏭️ |

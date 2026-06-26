@@ -37,13 +37,14 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
   crafting: "Crafting…",
 };
 
-type TabId = "inventory" | "skills" | "equipment" | "character" | "settings";
+type TabId = "inventory" | "skills" | "equipment" | "character" | "quests" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
   { id: "skills", icon: "📜", title: "Skills" },
   { id: "equipment", icon: "🛡️", title: "Equipment" },
   { id: "character", icon: "👤", title: "Character" },
+  { id: "quests", icon: "📋", title: "Quests" },
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
 
@@ -86,6 +87,7 @@ export class Hud {
   private charTotal!: HTMLElement;
   private charHp!: HTMLElement;
   private styleButtons = new Map<CombatStyle, HTMLElement>();
+  private questList?: HTMLElement;
   private equipCells = new Map<EquipSlot, HTMLElement>();
   private equipStats!: HTMLElement;
   private lastEquipment: Partial<Record<EquipSlot, ItemId>> = {};
@@ -264,6 +266,13 @@ export class Hud {
         styleWrap.appendChild(row);
         p.appendChild(styleWrap);
         p.appendChild(note("Name and background arrive with sign-in."));
+        break;
+      }
+      case "quests": {
+        const list = document.createElement("div");
+        list.className = "quest-list";
+        this.questList = list;
+        p.appendChild(list);
         break;
       }
       case "settings": {
@@ -514,6 +523,45 @@ export class Hud {
     if (this.equipStats) {
       this.equipStats.textContent = `Acc +${acc}  ·  Dmg +${dmg}  ·  Def +${def}`;
     }
+
+    // Quests
+    if (this.questList) this.renderQuests(player);
+  }
+
+  /** Rebuild the quest log from the player's active + completed quests. */
+  private renderQuests(player: WorldState["player"]): void {
+    if (!this.questList) return;
+    const quests = this.content.quests;
+    const active = Object.keys(player.quests);
+    const parts: string[] = [];
+
+    if (active.length) {
+      parts.push(`<div class="quest-h">Active</div>`);
+      for (const id of active) {
+        const def = quests.find((q) => q.id === id);
+        if (!def) continue;
+        const st = player.quests[id]!;
+        const obj = def.steps[st.step];
+        let line = obj ? escapeHtml(obj.text) : "";
+        if (obj && obj.type === "kill") line += ` <span class="quest-prog">(${st.killCount}/${obj.count})</span>`;
+        parts.push(
+          `<div class="quest-item"><div class="quest-name">${escapeHtml(def.name)}</div><div class="quest-obj">▸ ${line}</div></div>`,
+        );
+      }
+    }
+
+    if (player.questsDone.length) {
+      parts.push(`<div class="quest-h">Completed</div>`);
+      for (const id of player.questsDone) {
+        const def = quests.find((q) => q.id === id);
+        if (def) parts.push(`<div class="quest-done">✓ ${escapeHtml(def.name)}</div>`);
+      }
+    }
+
+    if (!parts.length) {
+      parts.push(note("No quests yet. Talk to the folk you meet — a marker means they've something to ask.").outerHTML);
+    }
+    this.questList.innerHTML = parts.join("");
   }
 }
 

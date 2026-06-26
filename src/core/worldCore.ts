@@ -27,6 +27,8 @@ import type {
   ItemId,
   MonsterStats,
   Player,
+  QuestDef,
+  QuestState,
   SkillAction,
   SkillId,
   Vec2,
@@ -178,6 +180,8 @@ export function createWorld(
     bank: {},
     equipment: {},
     combatStyle: "vigour",
+    quests: {},
+    questsDone: [],
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -694,7 +698,7 @@ function startInteraction(
       events.push({
         type: "DIALOGUE",
         npc: def.name,
-        lines: def.lines ?? ["..."],
+        lines: handleNpcTalk(state, content, def, events),
       });
       break;
 
@@ -783,6 +787,9 @@ export function tick(
     if (player.path.length === 0) {
       processActivity(state, content, ctx, events);
     }
+
+    // 3b) Auto-advance any "gather X" quest objective now satisfied.
+    checkGatherQuests(state, content, events);
   }
 
   // 4) Respawn depleted resources / dead monsters whose timers are up.
@@ -966,6 +973,150 @@ function processCraft(
   act.nextActionAt = ctx.now + CRAFT_INTERVAL;
 }
 
+// --- Quests --------------------------------------------------------------
+
+/**
+ * Decide what an NPC says when talked to, handling quest accept / progress /
+ * turn-in along the way. Returns the dialogue lines to show.
+ */
+function handleNpcTalk(
+  state: WorldState,
+  content: Content,
+  npcDef: WorldObjectDef,
+  events: WorldEvent[],
+): string[] {
+  const { player } = state;
+  const npcId = npcDef.id;
+
+  // 1) Progress an active quest from this giver whose current step is here.
+  for (const qid of Object.keys(player.quests)) {
+    const def = content.quests.find((q) => q.id === qid);
+    if (!def || def.giver !== npcId) continue;
+    const st = player.quests[qid]!;
+    const obj = def.steps[st.step];
+    if (!obj) continue;
+    if (obj.type === "talk" && obj.npc === npcId) {
+      return advanceQuest(state, content, def, st, events);
+    }
+    if (obj.type === "deliver" && obj.npc === npcId) {
+      if (countItem(player, obj.item) >= obj.count) {
+        for (let i = 0; i < obj.count; i++) removeOneItem(player, obj.item);
+        return advanceQuest(state, content, def, st, events);
+      }
+      return [`Bring me ${obj.count} ${content.items[obj.item].name} — ${obj.text.toLowerCase()}.`];
+    }
+    // Active here, but the current objective is out in the world.
+    return [`You're not done yet: ${obj.text}.`];
+  }
+
+  // 2) Offer the next available quest from this NPC.
+  const offer = content.quests.find(
+    (q) =>
+      q.giver === npcId &&
+      !player.quests[q.id] &&
+      !player.questsDone.includes(q.id) &&
+      (!q.requires || player.questsDone.includes(q.requires)),
+  );
+  if (offer) {
+    player.quests[offer.id] = { step: 0, killCount: 0 };
+    events.push({ type: "QUEST_STARTED", quest: offer.id });
+    events.push({ type: "LOG", message: `Quest started: ${offer.name}.` });
+    return offer.intro;
+  }
+
+  // 3) Otherwise, ordinary chatter.
+  return npcDef.lines ?? ["..."];
+}
+
+/**
+ * Advance an active quest one step. If that finishes it, grant the reward and
+ * return the outro lines; otherwise log the next objective. Returns lines for
+ * dialogue (callers that aren't talking just ignore them).
+ */
+function advanceQuest(
+  state: WorldState,
+  content: Content,
+  def: QuestDef,
+  st: QuestState,
+  events: WorldEvent[],
+): string[] {
+  const { player } = state;
+  st.step += 1;
+  st.killCount = 0;
+  if (st.step >= def.steps.length) {
+    grantQuestReward(state, content, def, events);
+    delete player.quests[def.id];
+    if (!player.questsDone.includes(def.id)) player.questsDone.push(def.id);
+    events.push({ type: "QUEST_COMPLETED", quest: def.id });
+    events.push({ type: "LOG", message: `Quest complete: ${def.name}!` });
+    return def.outro;
+  }
+  events.push({ type: "QUEST_ADVANCED", quest: def.id });
+  events.push({ type: "LOG", message: `${def.name}: ${def.steps[st.step]!.text}.` });
+  return [`${def.steps[st.step]!.text}.`];
+}
+
+function grantQuestReward(
+  state: WorldState,
+  content: Content,
+  def: QuestDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  for (const x of def.reward.xp ?? []) {
+    grantXp(state, content, x.skill, x.amount, events);
+  }
+  for (const it of def.reward.items ?? []) {
+    addItem(player, it.item, it.qty, events);
+  }
+}
+
+/** A kill counts toward any active quest hunting that monster. */
+function advanceKillQuests(
+  state: WorldState,
+  content: Content,
+  monster: string | undefined,
+  events: WorldEvent[],
+): void {
+  if (!monster) return;
+  const { player } = state;
+  for (const qid of Object.keys(player.quests)) {
+    const def = content.quests.find((q) => q.id === qid);
+    if (!def) continue;
+    const st = player.quests[qid]!;
+    const obj = def.steps[st.step];
+    if (!obj || obj.type !== "kill" || obj.monster !== monster) continue;
+    st.killCount += 1;
+    if (st.killCount >= obj.count) {
+      advanceQuest(state, content, def, st, events);
+    } else {
+      events.push({
+        type: "LOG",
+        message: `${obj.text}: ${st.killCount}/${obj.count}.`,
+      });
+    }
+  }
+}
+
+/** Auto-advance any "gather" objective the player now satisfies. */
+function checkGatherQuests(
+  state: WorldState,
+  content: Content,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  for (const qid of Object.keys(player.quests)) {
+    const def = content.quests.find((q) => q.id === qid);
+    if (!def) continue;
+    const st = player.quests[qid]!;
+    const obj = def.steps[st.step];
+    if (!obj || obj.type !== "gather") continue;
+    if (countItem(player, obj.item) >= obj.count) {
+      advanceQuest(state, content, def, st, events);
+    }
+  }
+}
+
 // --- Combat math, ported faithfully from the idle game (CANON_LEDGER 1e) -----
 
 /** A skill's current level (1 if somehow absent). */
@@ -1109,6 +1260,7 @@ function playerSwing(
     rollDrops(player, stats, ctx, events);
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
+    advanceKillQuests(state, content, def.monster, events);
     clearActivity(player);
   }
 }

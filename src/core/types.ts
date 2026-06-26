@@ -823,6 +823,10 @@ export interface Player {
   equipment: Partial<Record<EquipSlot, ItemId>>;
   /** The melee combat style trained on the next kill. */
   combatStyle: CombatStyle;
+  /** Active quests, keyed by quest id. */
+  quests: Record<string, QuestState>;
+  /** Ids of quests already completed. */
+  questsDone: string[];
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -955,7 +959,10 @@ export type WorldEvent =
   | { type: "PLAYER_RESPAWNED" }
   | { type: "OPEN_BANK" }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
-  | { type: "OPEN_CRAFT"; station: ObjKind; objId: string };
+  | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
+  | { type: "QUEST_STARTED"; quest: string }
+  | { type: "QUEST_ADVANCED"; quest: string }
+  | { type: "QUEST_COMPLETED"; quest: string };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
@@ -1004,6 +1011,48 @@ export interface SkillAction {
   woodShardDrop?: { chance: number };
 }
 
+// ---------------------------------------------------------------------------
+// Quests (data; see src/content/quests.ts).
+// ---------------------------------------------------------------------------
+
+/** One thing a quest step asks of the player. */
+export type QuestObjective =
+  | { type: "talk"; npc: string; text: string }
+  | { type: "kill"; monster: string; count: number; text: string }
+  | { type: "gather"; item: ItemId; count: number; text: string }
+  | { type: "deliver"; npc: string; item: ItemId; count: number; text: string };
+
+/** What a quest grants on completion. */
+export interface QuestReward {
+  xp?: { skill: SkillId; amount: number }[];
+  items?: { item: ItemId; qty: number }[];
+}
+
+/** A quest: a linear chain of objectives offered by a giver NPC. */
+export interface QuestDef {
+  id: string;
+  name: string;
+  /** The NPC id who offers and ends the quest. */
+  giver: string;
+  /** A quest id that must be completed before this one is offered. */
+  requires?: string;
+  /** Lines spoken when the quest is accepted. */
+  intro: string[];
+  /** The ordered objectives. */
+  steps: QuestObjective[];
+  /** Lines spoken on turn-in (completion). */
+  outro: string[];
+  reward: QuestReward;
+}
+
+/** Live progress for one active quest on the player. */
+export interface QuestState {
+  /** The current step index into QuestDef.steps. */
+  step: number;
+  /** Progress toward the current "kill" objective. */
+  killCount: number;
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -1012,6 +1061,8 @@ export interface Content {
   monsters: Record<string, MonsterStats>;
   /** The full canon skill-action registry — drives gathering + station crafting. */
   actions: SkillAction[];
+  /** The quest chains (data). */
+  quests: QuestDef[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */
