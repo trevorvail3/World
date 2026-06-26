@@ -1687,7 +1687,6 @@ export const actions: SkillAction[] = [
     "xp": 50,
     "produces": "greyfin_raw",
     "location": "river",
-    "window": true,
     "rareDrop": {
       "item": "river_stone",
       "chance": 0.05
@@ -1714,7 +1713,6 @@ export const actions: SkillAction[] = [
     "xp": 150,
     "produces": "redgill_raw",
     "location": "coast",
-    "window": true,
     "rareDrop": {
       "item": "waterlogged_coin",
       "chance": 0.06
@@ -1741,7 +1739,6 @@ export const actions: SkillAction[] = [
     "xp": 265,
     "produces": "eyeless_pike_raw",
     "location": "deep",
-    "window": true,
     "rareDrop": {
       "item": "eyeless_scale",
       "chance": 0.2

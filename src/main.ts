@@ -132,15 +132,26 @@ function boot(newChar: CreatedCharacter | null): void {
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 
+  // A discreet "Saved" flash so the player knows progress persists on its own.
+  const saveTag = document.createElement("div");
+  saveTag.className = "save-tag";
+  saveTag.textContent = "Saved";
+  hudRoot!.appendChild(saveTag);
+
   // Autosave: periodically and whenever the tab is hidden.
-  const persist = (): void => {
+  const persist = (showTag = false): void => {
     if (wiped) return;
     writeSave(serializePlayer(state));
+    if (showTag) {
+      saveTag.classList.remove("show");
+      void saveTag.offsetWidth; // restart the fade
+      saveTag.classList.add("show");
+    }
   };
-  window.setInterval(persist, 4000);
-  window.addEventListener("pagehide", persist);
+  window.setInterval(() => persist(true), 4000);
+  window.addEventListener("pagehide", () => persist(false));
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") persist();
+    if (document.visibilityState === "hidden") persist(false);
   });
 
   // Write an immediate save so a brand-new character's name and colours survive

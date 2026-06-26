@@ -1812,6 +1812,8 @@ function gatherStep(
     if (depletes && ctx.rng() < (beh.deplete ?? 0)) {
       obj.available = false;
       obj.respawnAt = ctx.now + (beh.respawn ?? 7000);
+      const dname = content.objects.find((d) => d.id === obj.id)?.name ?? "node";
+      events.push({ type: "LOG", message: `The ${dname} is worked out — it'll recover shortly.` });
       events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
       clearActivity(player);
       return;
