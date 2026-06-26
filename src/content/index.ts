@@ -7,6 +7,7 @@
  */
 
 import type { Content } from "../core/types.ts";
+import { forging } from "./forging.ts";
 import { items } from "./items.ts";
 import { map } from "./map.ts";
 import { monsters } from "./monsters.ts";
@@ -21,6 +22,7 @@ export const content: Content = {
   items,
   monsters,
   recipes,
+  forging,
   xpForLevel,
   skills,
 };

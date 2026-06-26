@@ -25,10 +25,11 @@ export const objects: WorldObjectDef[] = [
   { id: "fish_1", kind: "fishing_spot", x: 7, y: 12, name: "Fishing Spot" },
   { id: "fish_2", kind: "fishing_spot", x: 10, y: 12, name: "Fishing Spot" },
 
-  // --- The camp: bank chest, cooking fire, and a smelting furnace ---
+  // --- The camp: bank chest, cooking fire, furnace, and a forge anvil ---
   { id: "bank_1", kind: "bank", x: 16, y: 10, name: "Bank Chest" },
   { id: "fire_1", kind: "fire", x: 17, y: 11, name: "Cooking Fire" },
   { id: "furnace_1", kind: "furnace", x: 18, y: 10, name: "Furnace" },
+  { id: "anvil_1", kind: "anvil", x: 19, y: 11, name: "Anvil" },
 
   // --- NPC ---
   { id: "aldric", kind: "npc", x: 14, y: 8, name: "Aldric" },

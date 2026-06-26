@@ -26,6 +26,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   bank: "#caa05a",
   fire: "#e08a3a",
   furnace: "#b06a48",
+  anvil: "#7a7d86",
 };
 
 export class Minimap {

@@ -74,7 +74,17 @@ export type ItemId =
   | "wolf_pelt"
   | "wolf_fang"
   | "worn_coin"
-  | "shard_of_orun";
+  | "shard_of_orun"
+  | "knucklestone_dagger"
+  | "knucklestone_helm"
+  | "knucklestone_shield"
+  | "knucklestone_mail";
+
+/**
+ * The wearable slots. A piece of gear declares which one it fills (see
+ * ItemDef.equip); the player can wear one item per slot at a time.
+ */
+export type EquipSlot = "weapon" | "helmet" | "body" | "shield";
 
 /** A static description of an item. Lives in src/content/items.ts. */
 export interface ItemDef {
@@ -84,6 +94,12 @@ export interface ItemDef {
   description: string;
   /** Food only: hit points restored when eaten. */
   heals?: number;
+  /** Gear only: which slot this item occupies when worn. */
+  equip?: EquipSlot;
+  /** Gear only: added to the player's maximum hit (weapons). */
+  dmg?: number;
+  /** Gear only: damage soaked from incoming hits (armour). */
+  def?: number;
 }
 
 /** One occupied inventory slot. The inventory is an array of 28 of these. */
@@ -119,7 +135,8 @@ export type ObjKind =
   | "monster"
   | "bank"
   | "fire"
-  | "furnace";
+  | "furnace"
+  | "anvil";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -221,6 +238,8 @@ export interface Player {
   inventory: (InventorySlot | null)[];
   /** The bank chest: unlimited, stacked storage (item id -> quantity). */
   bank: Partial<Record<ItemId, number>>;
+  /** Worn gear: one item id per equipment slot (absent slots are empty). */
+  equipment: Partial<Record<EquipSlot, ItemId>>;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -290,13 +309,34 @@ export interface WithdrawIntent {
   item: ItemId;
 }
 
+/** "Wear the gear in this inventory slot" (swapping out anything already worn). */
+export interface EquipIntent {
+  type: "EQUIP";
+  slot: number;
+}
+
+/** "Take off whatever I'm wearing in this slot" (back into the pack). */
+export interface UnequipIntent {
+  type: "UNEQUIP";
+  equipSlot: EquipSlot;
+}
+
+/** "Forge this piece of gear at the anvil" (consumes bars, grants Smithing XP). */
+export interface ForgeIntent {
+  type: "FORGE";
+  output: ItemId;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
   | CancelIntent
   | EatIntent
   | DepositIntent
-  | WithdrawIntent;
+  | WithdrawIntent
+  | EquipIntent
+  | UnequipIntent
+  | ForgeIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -318,7 +358,8 @@ export type WorldEvent =
   | { type: "MONSTER_KILLED"; objId: string }
   | { type: "PLAYER_DIED" }
   | { type: "PLAYER_RESPAWNED" }
-  | { type: "OPEN_BANK" };
+  | { type: "OPEN_BANK" }
+  | { type: "OPEN_FORGE" };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
@@ -331,6 +372,15 @@ export interface Recipe {
   xp: number;
 }
 
+/** A forging recipe: several bars become one piece of gear, for Smithing XP. */
+export interface ForgeRecipe {
+  output: ItemId;
+  input: ItemId;
+  /** How many of the input item the forge consumes. */
+  count: number;
+  xp: number;
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -339,6 +389,8 @@ export interface Content {
   monsters: Record<string, MonsterStats>;
   /** Processing recipes for the camp stations. */
   recipes: { cooking: Recipe[]; smelting: Recipe[] };
+  /** Smithing recipes that turn bars into gear at the anvil. */
+  forging: ForgeRecipe[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name, etc.). */
