@@ -768,6 +768,16 @@ export interface WorldObjectState {
   hp?: number;
   /** Monsters only: time (ms) of the monster's next attack while in combat. */
   nextAttackAt?: number;
+  /**
+   * Wandering creatures (npc/monster) only: their live position, which drifts
+   * within a small region around the spawn tile (def.x/def.y). Undefined for
+   * fixed objects, which always render at their def coordinates.
+   */
+  pos?: Vec2;
+  /** The tile this creature is currently stepping toward (null = standing). */
+  wanderTarget?: Vec2 | null;
+  /** When standing still, the time (ms) at which it picks its next step. */
+  nextWanderAt?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -850,6 +860,12 @@ export interface WorldState {
   player: Player;
   /** Live state for every world object, keyed by object id. */
   objects: Record<string, WorldObjectState>;
+  /**
+   * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
+   * and the tile it's stepping into). Rebuilt each tick so walkability — and the
+   * player's pathfinding — routes around creatures wherever they've drifted to.
+   */
+  creatureTiles: Set<string>;
   /** The last time tick() ran, so we can measure elapsed time. */
   lastTick: number;
 }

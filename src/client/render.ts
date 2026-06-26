@@ -14,6 +14,7 @@ import type {
   WorldObjectDef,
   WorldState,
 } from "../core/types.ts";
+import { objectPos } from "../core/worldCore.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -138,8 +139,10 @@ export function drawWorld(
   for (const def of content.objects) {
     const obj = state.objects[def.id];
     if (!obj) continue;
-    const px = def.x * TILE - cam.x;
-    const py = def.y * TILE - cam.y;
+    // Creatures render at their live (wandering) position; fixed objects at def.
+    const p = objectPos(def, obj);
+    const px = p.x * TILE - cam.x;
+    const py = p.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w || py > h) continue;
     drawObject(g, def, obj.available, px, py, now);
     // Name label

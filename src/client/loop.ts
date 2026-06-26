@@ -34,6 +34,7 @@ import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap } from "./minimap.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
+import { objectPos } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
 /**
@@ -418,7 +419,8 @@ export class Game {
   private positionOf(targetId: string): Vec2 | null {
     if (targetId === "player") return this.bridge.state.player.pos;
     const def = this.bridge.content.objects.find((o) => o.id === targetId);
-    return def ? { x: def.x, y: def.y } : null;
+    if (!def) return null;
+    return objectPos(def, this.bridge.state.objects[def.id]);
   }
 
   // --- Drawing overlays --------------------------------------------------
@@ -509,7 +511,8 @@ export class Game {
     if (act.kind === "idle" || !act.targetId) return;
     const def = this.bridge.content.objects.find((o) => o.id === act.targetId);
     if (!def) return;
-    const { x: cx, y: cy } = this.toScreen(def.x, def.y);
+    const ap = objectPos(def, this.bridge.state.objects[def.id]);
+    const { x: cx, y: cy } = this.toScreen(ap.x, ap.y);
 
     if (act.kind === "combat") {
       const stats = def.monster ? this.bridge.content.monsters[def.monster] : undefined;
@@ -554,7 +557,7 @@ export class Game {
 
     if (step === "greet") {
       const aldric = this.bridge.content.objects.find((o) => o.id === "aldric");
-      if (aldric) target = { x: aldric.x, y: aldric.y };
+      if (aldric) target = objectPos(aldric, this.bridge.state.objects[aldric.id]);
     } else if (step === "hunt") {
       // Point at the nearest living monster.
       const p = this.bridge.state.player.pos;
@@ -562,10 +565,11 @@ export class Game {
       for (const o of this.bridge.content.objects) {
         if (o.kind !== "monster") continue;
         if (!this.bridge.state.objects[o.id]?.available) continue;
-        const d = (o.x - p.x) ** 2 + (o.y - p.y) ** 2;
+        const op = objectPos(o, this.bridge.state.objects[o.id]);
+        const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
         if (d < best) {
           best = d;
-          target = { x: o.x, y: o.y };
+          target = op;
         }
       }
     }
@@ -618,7 +622,8 @@ export class Game {
       }
       if (!mark) continue;
 
-      const { x: cx, y: cy } = this.toScreen(obj.x, obj.y);
+      const mp = objectPos(obj, this.bridge.state.objects[obj.id]);
+      const { x: cx, y: cy } = this.toScreen(mp.x, mp.y);
       const bob = Math.sin(now / 280) * 3;
       const my = cy - TILE * 0.85 + bob;
       this.g.font = "bold 20px 'Cinzel', serif";
@@ -724,7 +729,7 @@ export class Game {
   private defaultAction(tile: Vec2): void {
     const obj = this.objectAt(tile);
     if (obj) {
-      this.interactObject(obj.id, { x: obj.x, y: obj.y });
+      this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
     this.walkTo(tile);
@@ -743,11 +748,11 @@ export class Game {
         label: VERB[obj.kind],
         target: obj.name,
         tone: "action",
-        onSelect: () => this.interactObject(obj.id, { x: obj.x, y: obj.y }),
+        onSelect: () => this.interactObject(obj.id, this.liveTile(obj)),
       });
       items.push({
         label: "Walk here",
-        onSelect: () => this.walkBeside({ x: obj.x, y: obj.y }),
+        onSelect: () => this.walkBeside(this.liveTile(obj)),
       });
     } else {
       title = "Ground";
@@ -765,9 +770,16 @@ export class Game {
   }
 
   private objectAt(tile: Vec2) {
-    return this.bridge.content.objects.find(
-      (o) => o.x === tile.x && o.y === tile.y,
-    );
+    return this.bridge.content.objects.find((o) => {
+      const p = objectPos(o, this.bridge.state.objects[o.id]);
+      return Math.round(p.x) === tile.x && Math.round(p.y) === tile.y;
+    });
+  }
+
+  /** The creature/object's current tile (rounded), for pathing toward it. */
+  private liveTile(obj: WorldObjectDef): Vec2 {
+    const p = objectPos(obj, this.bridge.state.objects[obj.id]);
+    return { x: Math.round(p.x), y: Math.round(p.y) };
   }
 
   /** Examine text: a monster shows its canon description; others use the map. */

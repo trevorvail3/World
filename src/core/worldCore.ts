@@ -45,6 +45,20 @@ import type {
 
 const MOVE_SPEED = 3.5; // tiles per second
 
+// Idle wandering for npcs + monsters. They drift one tile at a time within a
+// small box around their spawn, pausing between steps, and hold still when the
+// player is right beside them (so you can talk / engage without them sliding
+// off). Movement is sub-tile and interpolated, like the player's.
+const WANDER = {
+  /** Max Chebyshev distance (tiles) a creature may stray from its spawn. */
+  radius: 2,
+  /** Wander walk speed (tiles/sec) — an unhurried amble, slower than the player. */
+  speed: 1.6,
+  /** Idle pause between steps is a random ms in [pauseMin, pauseMax]. */
+  pauseMin: 1400,
+  pauseMax: 4200,
+};
+
 // `deplete` is the chance, on a successful gather, that the node runs out and
 // the player stops — otherwise they keep gathering until the pack is full.
 const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000, deplete: 0.25 };
@@ -105,11 +119,12 @@ const INVENTORY_SIZE = 28;
 // Walkability — shared with the client's pathfinder.
 // ---------------------------------------------------------------------------
 
+// Fixed solid objects: the player always stops *next to* these, never on them.
+// NPCs and monsters block too, but they wander, so their tiles are tracked live
+// in state.creatureTiles rather than baked into the static set below.
 const BLOCKING_KINDS = new Set([
   "tree",
   "rock",
-  "npc",
-  "monster",
   "bank",
   "fire",
   "furnace",
@@ -117,15 +132,24 @@ const BLOCKING_KINDS = new Set([
   "shrine",
 ]);
 
+/** A creature's live tile if it's wandering, else its fixed def coordinates. */
+export function objectPos(
+  def: WorldObjectDef,
+  st: WorldObjectState | undefined,
+): Vec2 {
+  return st?.pos ? { x: st.pos.x, y: st.pos.y } : { x: def.x, y: def.y };
+}
+
 /**
- * Build a fast "can I stand on this tile?" function from the content.
- * Water blocks movement, and any tile occupied by a solid object (tree,
- * rock, NPC, monster) blocks movement too — so the player always stops
- * *next to* things and never on top of them. Object positions are fixed,
- * so this is computed once.
+ * Build a fast "can I stand on this tile?" function. Water and the deep terrain
+ * block movement; fixed solid objects block their tile; and wandering creatures
+ * block wherever they currently stand (read live from `state`, which the tick
+ * keeps up to date) — so the player always stops *next to* things, even after a
+ * creature has drifted from its spawn.
  */
 export function buildWalkability(
   content: Content,
+  state: WorldState,
 ): (x: number, y: number) => boolean {
   const blocked = new Set<string>();
   for (const obj of content.objects) {
@@ -139,6 +163,7 @@ export function buildWalkability(
       return false;
     }
     if (blocked.has(`${x},${y}`)) return false;
+    if (state.creatureTiles.has(`${x},${y}`)) return false;
     return true;
   };
 }
@@ -153,6 +178,7 @@ export function createWorld(
   ctx: Ctx,
 ): WorldState {
   const objects: Record<string, WorldObjectState> = {};
+  const creatureTiles = new Set<string>();
   for (const def of content.objects) {
     const base: WorldObjectState = {
       id: def.id,
@@ -160,6 +186,14 @@ export function createWorld(
       respawnAt: 0,
     };
     if (def.kind === "monster") base.hp = monsterFor(content, def)?.hp ?? 1;
+    // NPCs and monsters start at their spawn tile and amble from there; stagger
+    // their first step so they don't all set off in lockstep.
+    if (def.kind === "npc" || def.kind === "monster") {
+      base.pos = { x: def.x, y: def.y };
+      base.wanderTarget = null;
+      base.nextWanderAt = ctx.now + Math.floor(ctx.rng() * WANDER.pauseMax);
+      creatureTiles.add(`${def.x},${def.y}`);
+    }
     objects[def.id] = base;
   }
 
@@ -193,6 +227,7 @@ export function createWorld(
     map: content.map,
     player,
     objects,
+    creatureTiles,
     lastTick: ctx.now,
   };
 }
@@ -806,12 +841,152 @@ export function tick(
       if (def.kind === "monster") {
         obj.hp = monsterFor(content, def)?.hp ?? 1;
         obj.nextAttackAt = 0;
+        // A slain monster comes back at its spawn, not where it wandered to die.
+        obj.pos = { x: def.x, y: def.y };
+        obj.wanderTarget = null;
+        obj.nextWanderAt = ctx.now + WANDER.pauseMin;
       }
       events.push({ type: "OBJECT_RESPAWNED", objId: def.id });
     }
   }
 
+  // 5) Idle wandering: npcs + monsters amble within reach of their spawn.
+  wanderCreatures(state, content, ctx, dt);
+
   return events;
+}
+
+/**
+ * Step every wandering creature one unhurried tile-walk at a time, within
+ * WANDER.radius of its spawn. Creatures hold still while the player is right
+ * beside them (so talking / engaging is never a moving target) and while a
+ * monster is the player's active combat target. Rebuilds state.creatureTiles
+ * from live positions so the player's pathfinder routes around them.
+ */
+function wanderCreatures(
+  state: WorldState,
+  content: Content,
+  ctx: Ctx,
+  dt: number,
+): void {
+  const { player } = state;
+  const walk = baseWalkable(content);
+  const pTile = { x: Math.round(player.pos.x), y: Math.round(player.pos.y) };
+
+  // Rebuild the live occupancy set from where creatures currently stand (and the
+  // tiles they're stepping into), so reservations are honoured within this pass.
+  const occupied = state.creatureTiles;
+  occupied.clear();
+  for (const def of content.objects) {
+    const obj = state.objects[def.id];
+    if (!obj || !obj.pos || !obj.available) continue;
+    occupied.add(`${Math.round(obj.pos.x)},${Math.round(obj.pos.y)}`);
+    if (obj.wanderTarget) occupied.add(`${obj.wanderTarget.x},${obj.wanderTarget.y}`);
+  }
+
+  for (const def of content.objects) {
+    if (def.kind !== "npc" && def.kind !== "monster") continue;
+    const obj = state.objects[def.id];
+    if (!obj || !obj.pos || !obj.available) continue;
+
+    // Mid-step: keep walking toward the reserved target tile.
+    if (obj.wanderTarget) {
+      const reached = stepToward(obj.pos, obj.wanderTarget, (WANDER.speed * dt) / 1000);
+      if (reached) {
+        obj.pos = { x: obj.wanderTarget.x, y: obj.wanderTarget.y };
+        obj.wanderTarget = null;
+        obj.nextWanderAt = ctx.now + randRange(ctx, WANDER.pauseMin, WANDER.pauseMax);
+      }
+      continue;
+    }
+
+    // Standing still: hold position while engaged or while the player is beside
+    // us; otherwise, when the pause elapses, pick the next step.
+    const here = { x: Math.round(obj.pos.x), y: Math.round(obj.pos.y) };
+    const engaged = player.activity.kind === "combat" && player.activity.targetId === def.id;
+    const playerBeside = Math.max(Math.abs(here.x - pTile.x), Math.abs(here.y - pTile.y)) <= 1;
+    if (engaged || playerBeside) {
+      obj.nextWanderAt = ctx.now + WANDER.pauseMin;
+      continue;
+    }
+    if (ctx.now < (obj.nextWanderAt ?? 0)) continue;
+
+    // Candidate steps: the four neighbours, shuffled, that stay in range and are
+    // free of terrain, fixed objects, the player and other creatures.
+    const steps = shuffle4(ctx);
+    let moved = false;
+    for (const [dx, dy] of steps) {
+      const nx = here.x + dx;
+      const ny = here.y + dy;
+      if (Math.max(Math.abs(nx - def.x), Math.abs(ny - def.y)) > WANDER.radius) continue;
+      if (!walk(nx, ny)) continue;
+      if (nx === pTile.x && ny === pTile.y) continue;
+      if (occupied.has(`${nx},${ny}`)) continue;
+      obj.wanderTarget = { x: nx, y: ny };
+      occupied.add(`${nx},${ny}`); // reserve so the next creature won't pick it
+      moved = true;
+      break;
+    }
+    // Boxed in for now — try again after a short pause.
+    if (!moved) obj.nextWanderAt = ctx.now + WANDER.pauseMin;
+  }
+}
+
+/** Move `pos` toward `target` by up to `budget` tiles; true if it arrives. */
+function stepToward(pos: Vec2, target: Vec2, budget: number): boolean {
+  const dx = target.x - pos.x;
+  const dy = target.y - pos.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist <= budget || dist < 1e-6) return true;
+  pos.x += (dx / dist) * budget;
+  pos.y += (dy / dist) * budget;
+  return false;
+}
+
+/** Terrain + fixed-object walkability only (ignores creatures), for wandering. */
+const baseWalkCache = new WeakMap<Content, (x: number, y: number) => boolean>();
+function baseWalkable(content: Content): (x: number, y: number) => boolean {
+  let fn = baseWalkCache.get(content);
+  if (fn) return fn;
+  const blocked = new Set<string>();
+  for (const obj of content.objects) {
+    if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
+  }
+  const { map } = content;
+  fn = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+    const tile = map.tiles[y * map.width + x];
+    if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep") {
+      return false;
+    }
+    return !blocked.has(`${x},${y}`);
+  };
+  baseWalkCache.set(content, fn);
+  return fn;
+}
+
+const STEP4: ReadonlyArray<readonly [number, number]> = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+
+/** The four cardinal steps in a rng-shuffled order. */
+function shuffle4(ctx: Ctx): Array<readonly [number, number]> {
+  const a = STEP4.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(ctx.rng() * (i + 1));
+    const t = a[i]!;
+    a[i] = a[j]!;
+    a[j] = t;
+  }
+  return a;
+}
+
+/** A random integer ms in [min, max]. */
+function randRange(ctx: Ctx, min: number, max: number): number {
+  return min + Math.floor(ctx.rng() * (max - min + 1));
 }
 
 function stepMovement(player: Player, dt: number): void {

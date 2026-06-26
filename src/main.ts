@@ -48,7 +48,7 @@ function ctxAt(nowMs: number): Ctx {
 // --- Build a fresh, local world. ---
 const startNow = performance.now();
 const state = createWorld(content, playerStart, ctxAt(startNow));
-const walkable = buildWalkability(content);
+const walkable = buildWalkability(content, state);
 
 // Lay any saved progress back onto the fresh world (ignored if missing/invalid).
 const restored = hydratePlayer(state, content, readSave());

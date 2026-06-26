@@ -7,6 +7,7 @@
  */
 
 import type { Content, ObjKind, TileType, WorldState } from "../core/types.ts";
+import { objectPos } from "../core/worldCore.ts";
 import { Camera, TILE } from "./render.ts";
 
 const MM_TILE: Record<TileType, string> = {
@@ -88,11 +89,12 @@ export class Minimap {
       const color = MM_OBJ[def.kind];
       if (!color) continue;
       const obj = state.objects[def.id];
+      const p = objectPos(def, obj);
       g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
       g.beginPath();
       g.arc(
-        offX + (def.x + 0.5) * cell,
-        offY + (def.y + 0.5) * cell,
+        offX + (p.x + 0.5) * cell,
+        offY + (p.y + 0.5) * cell,
         Math.max(1.2, cell * 0.35),
         0,
         Math.PI * 2,
