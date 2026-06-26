@@ -31,7 +31,7 @@ export class BankUI {
         </div>
         <div class="bank-label">Stored</div>
         <div class="bank-grid"></div>
-        <div class="bank-label">Your Pack <span class="bank-hint">tap to deposit</span></div>
+        <div class="bank-label">Your Pack <button class="bank-depositall" type="button">Deposit all</button></div>
         <div class="bank-inv inv-grid"></div>
       </div>`;
     this.bankGrid = this.backdrop.querySelector(".bank-grid") as HTMLElement;
@@ -49,6 +49,23 @@ export class BankUI {
     this.backdrop.addEventListener("pointerdown", (e) => {
       if (e.target === this.backdrop) this.close();
     });
+    (this.backdrop.querySelector(".bank-depositall") as HTMLElement).addEventListener(
+      "pointerdown",
+      (e) => {
+        e.stopPropagation();
+        this.depositAll();
+      },
+    );
+  }
+
+  private depositAll(): void {
+    if (!this.state) return;
+    const ids = new Set<ItemId>();
+    for (const slot of this.state.player.inventory) {
+      if (slot) ids.add(slot.item);
+    }
+    for (const id of ids) this.dispatch({ type: "DEPOSIT", item: id });
+    this.render();
   }
 
   isOpen(): boolean {

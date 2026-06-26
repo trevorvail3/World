@@ -767,6 +767,25 @@ body {
   color: #6f655a;
 }
 
+.bank-depositall {
+  float: right;
+  font-family: "EB Garamond", serif;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: var(--ember);
+  background: rgba(210, 116, 44, 0.12);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.bank-depositall:hover {
+  border-color: var(--ember);
+  color: #f0c187;
+}
+
 .bank-grid {
   display: grid;
   grid-template-columns: repeat(6, 30px);
