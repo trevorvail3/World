@@ -36,6 +36,10 @@ export interface SavedProgress {
   equipment: Record<string, string>;
   /** Selected melee combat style. */
   combatStyle: string;
+  /** Active quests: id -> { step, killCount }. */
+  quests: Record<string, { step: number; killCount: number }>;
+  /** Completed quest ids. */
+  questsDone: string[];
   hp: number;
   pos: { x: number; y: number };
 }
@@ -53,6 +57,8 @@ export function serializePlayer(player: Player): SavedProgress {
     bank: { ...player.bank } as Record<string, number>,
     equipment: { ...player.equipment } as Record<string, string>,
     combatStyle: player.combatStyle,
+    quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
+    questsDone: [...player.questsDone],
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -132,6 +138,30 @@ export function hydratePlayer(
   const style = raw["combatStyle"];
   if (style === "edge" || style === "vigour" || style === "ward") {
     player.combatStyle = style;
+  }
+
+  // --- Quests (only ids this build knows; clamp step into range) ---
+  const savedDone = raw["questsDone"];
+  if (Array.isArray(savedDone)) {
+    player.questsDone = savedDone.filter(
+      (id): id is string => typeof id === "string" && content.quests.some((q) => q.id === id),
+    );
+  }
+  const savedQuests = raw["quests"];
+  if (isRecord(savedQuests)) {
+    const quests: Player["quests"] = {};
+    for (const id of Object.keys(savedQuests)) {
+      const def = content.quests.find((q) => q.id === id);
+      const s = savedQuests[id];
+      if (!def || !isRecord(s)) continue;
+      if (player.questsDone.includes(id)) continue; // done wins over active
+      const step = typeof s["step"] === "number" ? s["step"] : 0;
+      const killCount = typeof s["killCount"] === "number" ? s["killCount"] : 0;
+      if (step >= 0 && step < def.steps.length) {
+        quests[id] = { step: Math.floor(step), killCount: Math.max(0, Math.floor(killCount)) };
+      }
+    }
+    player.quests = quests;
   }
 
   // --- Max HP follows the loaded Vitality level, then HP clamps to it ---

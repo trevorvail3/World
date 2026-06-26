@@ -209,6 +209,7 @@ export class Game {
     this.drawHighlights(now);
     this.drawActivityFeedback(now);
     this.drawGuideTarget(now);
+    this.drawQuestMarkers(now);
     this.drawFloats(now);
 
     // 4) Refresh the HUD readouts and the minimap.
@@ -278,6 +279,18 @@ export class Game {
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
+        case "QUEST_COMPLETED": {
+          const p = this.bridge.state.player.pos;
+          this.floats.push({
+            x: p.x,
+            y: p.y - 0.6,
+            text: "Quest complete!",
+            color: "#f2cf6b",
+            born: now,
+            size: 17,
+          });
+          break;
+        }
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -543,6 +556,54 @@ export class Game {
     this.g.lineTo(cx, topY + 2);
     this.g.closePath();
     this.g.fill();
+  }
+
+  /** A "!" over an NPC with a quest to give, or "?" when one's ready to hand in. */
+  private drawQuestMarkers(now: number): void {
+    const player = this.bridge.state.player;
+    const quests = this.bridge.content.quests;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+
+    for (const obj of this.bridge.content.objects) {
+      if (obj.kind !== "npc") continue;
+      let mark: "!" | "?" | null = null;
+
+      // Ready to turn in: an active quest whose current step ends at this NPC.
+      for (const id of Object.keys(player.quests)) {
+        const def = quests.find((q) => q.id === id);
+        if (!def || def.giver !== obj.id) continue;
+        const step = def.steps[player.quests[id]!.step];
+        if (!step) continue;
+        if (step.type === "talk" && step.npc === obj.id) mark = "?";
+        else if (step.type === "deliver" && step.npc === obj.id && have(step.item) >= step.count) {
+          mark = "?";
+        }
+      }
+      // Otherwise: a new quest available here.
+      if (!mark) {
+        const offer = quests.find(
+          (q) =>
+            q.giver === obj.id &&
+            !player.quests[q.id] &&
+            !player.questsDone.includes(q.id) &&
+            (!q.requires || player.questsDone.includes(q.requires)),
+        );
+        if (offer) mark = "!";
+      }
+      if (!mark) continue;
+
+      const { x: cx, y: cy } = this.toScreen(obj.x, obj.y);
+      const bob = Math.sin(now / 280) * 3;
+      const my = cy - TILE * 0.85 + bob;
+      this.g.font = "bold 20px 'Cinzel', serif";
+      this.g.textAlign = "center";
+      this.g.fillStyle = "rgba(0,0,0,0.6)";
+      this.g.fillText(mark, cx + 1, my + 1);
+      this.g.fillStyle = mark === "!" ? "#f2cf6b" : "#cde0a0";
+      this.g.fillText(mark, cx, my);
+    }
+    this.g.textAlign = "left";
   }
 
   private drawFloats(now: number): void {
