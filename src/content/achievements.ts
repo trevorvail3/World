@@ -36,7 +36,7 @@ export const achievements: AchievementDef[] = [
   { id: "ach_finale", name: "The Last Choice", desc: "See the story of the Shard to its end.", icon: "✦", category: "Story", cond: { type: "flag", flag: "varath_main_story_complete" } },
 
   // --- Standing & Companions ---
-  { id: "ach_sworn", name: "Sworn", desc: "Reach Allied standing with any faction.", icon: "🤝", category: "Standing", cond: { type: "anyRepAtLeast", amount: 60 } },
+  { id: "ach_sworn", name: "Sworn", desc: "Reach Allied standing with any faction.", icon: "🤝", category: "Standing", cond: { type: "anyRepAtLeast", amount: 50 } },
   { id: "ach_a_friend", name: "A Friend on the Road", desc: "Befriend your first companion.", icon: "🐾", category: "Companions", cond: { type: "companions", count: 1 } },
   { id: "ach_menagerie", name: "Menagerie", desc: "Gather five companions.", icon: "🦜", category: "Companions", cond: { type: "companions", count: 5 } },
 ];

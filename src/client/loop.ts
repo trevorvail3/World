@@ -387,6 +387,10 @@ export class Game {
         case "QUEST_CHOICE":
           this.openChoice(ev.quest, ev.prompt, ev.options);
           break;
+        case "QUEST_STARTED":
+        case "QUEST_ADVANCED":
+          this.hud.pinQuest(ev.quest); // track the freshest quest in the pinned card
+          break;
         case "COMPANION_FOUND": {
           const p = this.bridge.state.player.pos;
           const name = this.bridge.content.items[ev.item]?.name ?? "A companion";

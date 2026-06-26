@@ -118,10 +118,11 @@ export const quests: QuestDef[] = [
     intro: [
       "You're not bad — for someone who taught themselves on cold ash and guesswork.",
       "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs and wait to see if he picks it up. Prove your hand: forge me five Ashiron bars and bring them here.",
+      "Word to the wise: ashiron won't smelt clean on its own. You'll want embercite for flux — they cut it out on the Ashfen Flats, south of here.",
     ],
     steps: [
       { type: "reach", skill: "smithing", level: 20, text: "Reach Smithing level 20" },
-      { type: "deliver", npc: "vorn", item: "ashiron_bar", count: 5, text: "Forge and deliver 5 Ashiron Bars to Vorn" },
+      { type: "deliver", npc: "vorn", item: "ashiron_bar", count: 5, text: "Forge & deliver 5 Ashiron Bars (each bar needs Embercite flux from the Ashfen Flats)" },
       {
         type: "choice",
         npc: "vorn",

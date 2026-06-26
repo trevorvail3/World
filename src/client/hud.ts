@@ -62,7 +62,9 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
 
 /** A reputation number → a standing word + tone class. */
 function standing(rep: number): { word: string; tone: string } {
-  if (rep >= 60) return { word: "Allied", tone: "pos" };
+  // Allied at 50 so each faction's full quest line can actually reach the top
+  // tier (their rep rewards cap around there), not just Ashforge.
+  if (rep >= 50) return { word: "Allied", tone: "pos" };
   if (rep >= 25) return { word: "Friendly", tone: "pos" };
   if (rep >= 1) return { word: "Warming", tone: "pos" };
   if (rep === 0) return { word: "Neutral", tone: "neutral" };
@@ -115,6 +117,7 @@ export class Hud {
   private statusText!: HTMLElement;
   private buffStrip!: HTMLElement;
   private questTracker!: HTMLElement;
+  private pinnedQuestId: string | null = null;
   private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
   private logLines: string[] = [];
@@ -479,18 +482,41 @@ export class Hud {
   private renderQuestTracker(player: WorldState["player"]): void {
     const ids = Object.keys(player.quests);
     if (ids.length === 0) { this.questTracker.classList.add("hidden"); return; }
-    const qid = ids[0]!;
+    // Prefer the most-recently-advanced quest; else a main-story quest (those
+    // carry an `act`); else whatever's first — so a side-quest can't mask the
+    // story objective.
+    let qid =
+      this.pinnedQuestId && player.quests[this.pinnedQuestId] ? this.pinnedQuestId : null;
+    if (!qid) qid = ids.find((id) => this.content.quests.find((q) => q.id === id)?.act !== undefined) ?? ids[0]!;
     const def = this.content.quests.find((q) => q.id === qid);
     const st = player.quests[qid];
     if (!def || !st) { this.questTracker.classList.add("hidden"); return; }
-    const step = def.steps[st.step] as { type?: string; text?: string; count?: number } | undefined;
+    const step = def.steps[st.step] as
+      | { type?: string; text?: string; count?: number; item?: string }
+      | undefined;
     let obj = step?.text ?? "Return to the quest-giver.";
+    const base = obj.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/, "");
     if (step?.type === "kill" && typeof step.count === "number") {
-      obj = `${obj.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/, "")} (${st.killCount}/${step.count})`;
+      obj = `${base} (${st.killCount}/${step.count})`;
+    } else if ((step?.type === "gather" || step?.type === "deliver") && step.item && typeof step.count === "number") {
+      const have = Math.min(step.count, this.carried(player, step.item));
+      obj = `${base} (${have}/${step.count})`;
     }
     this.questTracker.innerHTML =
       `<div class="quest-title"><span class="quest-ic">${iconize("📜")}</span>${escapeHtml(def.name)}</div><div class="quest-obj">${escapeHtml(obj)}</div>`;
     this.questTracker.classList.remove("hidden");
+  }
+
+  /** How many of an item the player is carrying (matches the core's gather check). */
+  private carried(player: WorldState["player"], item: string): number {
+    let n = 0;
+    for (const slot of player.inventory) if (slot?.item === item) n += slot.qty;
+    return n;
+  }
+
+  /** Pin a quest to the tracker (called when one starts or advances). */
+  pinQuest(id: string): void {
+    this.pinnedQuestId = id;
   }
 
   /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */
