@@ -186,7 +186,7 @@ export class Hud {
           const block = document.createElement("div");
           block.className = "skill-block";
           block.innerHTML = `
-            <div class="skill-row"><span class="skill-name">${this.content.skills[sid].name}</span><span class="skill-val">1</span></div>
+            <div class="skill-row"><span class="skill-name"><span class="skill-icon">${this.content.skills[sid].icon}</span>${this.content.skills[sid].name}</span><span class="skill-val">1</span></div>
             <div class="skill-xpbar"><div class="skill-xpfill"></div></div>`;
           this.skillRows.set(sid, block.querySelector(".skill-val") as HTMLElement);
           this.skillFills.set(sid, block.querySelector(".skill-xpfill") as HTMLElement);

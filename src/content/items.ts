@@ -1,123 +1,4835 @@
 /**
  * src/content/items.ts
  * --------------------
- * The item registry. Names, ids and flavour text are taken from the Varath
- * idle game's source so the two games describe the same objects identically.
+ * The full item registry, ported faithfully from the Varath idle game's
+ * `ITEMS` table (+ `GOLD_VALUES` for sell prices). 469 items. Names,
+ * descriptions, icons, categories and stats are copied verbatim so the two
+ * games describe the same objects identically.
+ *
+ * GENERATED from varath_21.html — see docs/CANON_LEDGER.md (Phase 1c). The four
+ * `knucklestone_*` forged pieces are transitional (our equipment slice); they
+ * have no canon equivalent yet and get reconciled to canon gear in a later bundle.
+ *
+ * Fields the spatial game doesn't consume yet (canon `slot`, weapon `acc`, food
+ * `buff`s, mount/pet/cape `meta`) are carried losslessly; see ItemDef.
  */
 
 import type { ItemDef, ItemId } from "../core/types.ts";
 
 export const items: Record<ItemId, ItemDef> = {
-  ashwood_log: {
-    id: "ashwood_log",
-    name: "Ashwood Log",
-    description: "Pale and light. Common as dirt across Varath. Burns fast; works fast.",
+  "knucklestone_ore": {
+    "id": "knucklestone_ore",
+    "name": "Knucklestone",
+    "description": "The most common stone of the Knuckle Hills. Soft and grey-brown, worked easily by any hand.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 3
   },
-  knucklestone_ore: {
-    id: "knucklestone_ore",
-    name: "Knucklestone",
-    description:
-      "The most common stone of the Knuckle Hills. Soft and grey-brown, worked easily by any hand.",
+  "embercite_ore": {
+    "id": "embercite_ore",
+    "name": "Embercite",
+    "description": "A dark, coal-black ore with a faint inner heat. Used as flux to smelt higher-quality metals. Without it, the metal runs too brittle.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 14
   },
-  knucklestone_bar: {
-    id: "knucklestone_bar",
-    name: "Knucklestone Bar",
-    description:
-      "Brittle but workable. A beginner's first bar, smelted from the grey stone of the Knuckle Hills.",
+  "ashiron_ore": {
+    "id": "ashiron_ore",
+    "name": "Ashiron",
+    "description": "Heavy and grey with a faint metallic sheen. The first ore that feels like real metal in the hand.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 18
   },
-  ashfin_raw: {
-    id: "ashfin_raw",
-    name: "Raw Ashfin",
-    description:
-      "Small and silver. Every child in Varath has caught one. Barely worth cleaning alone.",
+  "ribstone_ore": {
+    "id": "ribstone_ore",
+    "name": "Ribstone",
+    "description": "Dense, grey-brown stone from the Ribvault ridges. Believers say its hardness comes from sitting close to the bone.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 35
   },
-  ashfin_cooked: {
-    id: "ashfin_cooked",
-    name: "Cooked Ashfin",
-    description: "Barely a meal, but warm. Better than nothing on a cold night.",
-    heals: 10,
+  "gold_ore": {
+    "id": "gold_ore",
+    "name": "Gold Ore",
+    "description": "Soft and heavy. Too brittle for weaponry but essential to the jeweller's craft.",
+    "icon": "🟡",
+    "cat": "Ores",
+    "sell": 30
   },
-  raw_rat_meat: {
-    id: "raw_rat_meat",
-    name: "Raw Rat Meat",
-    description: "Stringy and gamey. It cooks up edible, if you're hungry enough.",
+  "bloodore_ore": {
+    "id": "bloodore_ore",
+    "name": "Bloodore",
+    "description": "Deep red-brown from its mineral content. Mined near the Redrun river. The myth follows the name everywhere.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 110
   },
-  cooked_rat_meat: {
-    id: "cooked_rat_meat",
-    name: "Cooked Rat Meat",
-    description: "Charred and chewy. It fills a hollow belly and little else.",
-    heals: 6,
+  "hearthite_ore": {
+    "id": "hearthite_ore",
+    "name": "Hearthite",
+    "description": "Jet black and almost warm to the touch — or so miners claim. The rarest ore in Varath. Cults gather near every known seam.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 280
   },
-  raw_hide: {
-    id: "raw_hide",
-    name: "Raw Hide",
-    description: "An untreated animal hide. The tannery turns these into leather.",
+  "voidstone_ore": {
+    "id": "voidstone_ore",
+    "name": "Voidstone",
+    "description": "A near-black ore from the deepest Marrow Deeps shafts. Cold to the touch despite the depth. Miners who spend long hours near it report unusual dreams.",
+    "icon": "🪨",
+    "cat": "Ores",
+    "sell": 85
   },
-  rat_tail: {
-    id: "rat_tail",
-    name: "Rat Tail",
-    description: "A long, scaly tail. Some apothecaries ask no questions and pay coin.",
+  "knucklestone_bar": {
+    "id": "knucklestone_bar",
+    "name": "Knucklestone Bar",
+    "description": "Brittle but workable. A beginner's first bar, smelted from the grey stone of the Knuckle Hills.",
+    "icon": "▪️",
+    "cat": "Bars",
+    "sell": 12
   },
-  raw_wolf_meat: {
-    id: "raw_wolf_meat",
-    name: "Raw Wolf Meat",
-    description: "Lean, dark meat. Tough, but it keeps a hunter going.",
+  "ashiron_bar": {
+    "id": "ashiron_bar",
+    "name": "Ashiron Bar",
+    "description": "Solid grey iron. The backbone of a working warrior's first real equipment.",
+    "icon": "▪️",
+    "cat": "Bars",
+    "sell": 60
   },
-  cooked_wolf_meat: {
-    id: "cooked_wolf_meat",
-    name: "Cooked Wolf Meat",
-    description: "Dark and rich over the coals. A proper meal for a long day.",
-    heals: 14,
+  "ribstone_bar": {
+    "id": "ribstone_bar",
+    "name": "Ribstone Bar",
+    "description": "Dense and heavy in the hand. Difficult to work but worth the effort.",
+    "icon": "▪️",
+    "cat": "Bars",
+    "sell": 120
   },
-  wolf_pelt: {
-    id: "wolf_pelt",
-    name: "Wolf Pelt",
-    description: "A grey hill-wolf pelt. Warm, and worth a fair bit cured.",
+  "gold_bar": {
+    "id": "gold_bar",
+    "name": "Gold Bar",
+    "description": "A refined gold bar. The currency of fine craftwork — every ring and chain starts here.",
+    "icon": "🟨",
+    "cat": "Bars",
+    "sell": 120
   },
-  wolf_fang: {
-    id: "wolf_fang",
-    name: "Wolf Fang",
-    description: "A long curved fang. Strung on a cord, it marks a hunter.",
+  "bloodore_bar": {
+    "id": "bloodore_bar",
+    "name": "Bloodore Bar",
+    "description": "Carries a reddish cast from the ore. Said by some to never fully cool, no matter how long it sits.",
+    "icon": "▪️",
+    "cat": "Bars",
+    "sell": 350
   },
-  worn_coin: {
-    id: "worn_coin",
-    name: "Worn Coin",
-    description: "Old Varath mintage, too eroded to read. The dead still pay the living.",
+  "hearthite_bar": {
+    "id": "hearthite_bar",
+    "name": "Hearthite Bar",
+    "description": "Black metal with a faint inner warmth. The finest material a smith of Varath can work.",
+    "icon": "▪️",
+    "cat": "Bars",
+    "sell": 880
   },
-  shard_of_orun: {
-    id: "shard_of_orun",
-    name: "Shard of Orun",
-    description:
-      "A fragment of jet-black stone, warm to the touch. Found on the slain. Warm rock, or the god remembering — no one can prove which.",
+  "voidstone_bar": {
+    "id": "voidstone_bar",
+    "name": "Voidstone Bar",
+    "description": "Smelted voidstone. Cold, heavy, and dark. Takes Embercite to work. Smiths say it holds an edge unlike anything else.",
+    "icon": "🔲",
+    "cat": "Bars",
+    "sell": 280
   },
-
-  // --- Gear: forged from Knucklestone bars at the anvil ---
-  knucklestone_dagger: {
-    id: "knucklestone_dagger",
-    name: "Knucklestone Dagger",
-    description: "A short, brittle blade beaten from grey bar. It bites harder than a bare fist.",
-    equip: "weapon",
-    dmg: 2,
+  "pickaxe_1": {
+    "id": "pickaxe_1",
+    "name": "Knucklestone Pickaxe",
+    "description": "Rough-forged from knucklestone. Gets the job done, slowly.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 1,
+    "sell": 15
   },
-  knucklestone_helm: {
-    id: "knucklestone_helm",
-    name: "Knucklestone Helm",
-    description: "A rough grey cap of hammered bar. Turns a glancing blow, if you're lucky.",
-    equip: "helmet",
-    def: 2,
+  "pickaxe_3": {
+    "id": "pickaxe_3",
+    "name": "Ashiron Pickaxe",
+    "description": "Ashiron head on a stonewood handle. A significant step up.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 3,
+    "sell": 80
   },
-  knucklestone_shield: {
-    id: "knucklestone_shield",
-    name: "Knucklestone Shield",
-    description: "A heavy slab of grey plate on a strap. Crude, but it stops what it covers.",
-    equip: "shield",
-    def: 3,
+  "pickaxe_4": {
+    "id": "pickaxe_4",
+    "name": "Ribstone Pickaxe",
+    "description": "Heavy, dense, noticeably faster in the seam.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 4,
+    "sell": 150
   },
-  knucklestone_mail: {
-    id: "knucklestone_mail",
-    name: "Knucklestone Mail",
-    description: "A weighty shirt of overlapped bar-plates. A smith's proudest early work.",
-    equip: "body",
-    def: 4,
+  "pickaxe_6": {
+    "id": "pickaxe_6",
+    "name": "Bloodore Pickaxe",
+    "description": "The reddish head cuts through stone with unsettling ease.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 6,
+    "sell": 420
   },
+  "pickaxe_9": {
+    "id": "pickaxe_9",
+    "name": "Voidstone Pickaxe",
+    "description": "Near-black, cold in the hand. The finest mineable pick before Hearthite.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 9,
+    "sell": 840
+  },
+  "pickaxe_10": {
+    "id": "pickaxe_10",
+    "name": "Hearthite Pickaxe",
+    "description": "Warm in the hand even in the deep cold. The finest pick in Varath.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "pickaxe",
+    "tier": 10,
+    "sell": 1050
+  },
+  "hatchet_1": {
+    "id": "hatchet_1",
+    "name": "Knucklestone Hatchet",
+    "description": "A crude hatchet. Works, but slowly.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 1,
+    "sell": 15
+  },
+  "hatchet_3": {
+    "id": "hatchet_3",
+    "name": "Ashiron Hatchet",
+    "description": "Splits most logs cleanly. A journeyman forester's companion.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 3,
+    "sell": 80
+  },
+  "hatchet_4": {
+    "id": "hatchet_4",
+    "name": "Ribstone Hatchet",
+    "description": "Heavy and reliable. Good for the denser timbers.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 4,
+    "sell": 150
+  },
+  "hatchet_6": {
+    "id": "hatchet_6",
+    "name": "Bloodore Hatchet",
+    "description": "The reddish edge bites deep. Ancient wood offers little resistance.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 6,
+    "sell": 420
+  },
+  "hatchet_9": {
+    "id": "hatchet_9",
+    "name": "Voidstone Hatchet",
+    "description": "Dark and perfectly weighted. Deeproot yields to it easily.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 9,
+    "sell": 840
+  },
+  "hatchet_10": {
+    "id": "hatchet_10",
+    "name": "Hearthite Hatchet",
+    "description": "The finest felling tool made in Varath. Deeproot yields to it like softwood.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "hatchet",
+    "tier": 10,
+    "sell": 1050
+  },
+  "rod_1": {
+    "id": "rod_1",
+    "name": "Ashwood Rod",
+    "description": "A simple ashwood rod. Slow, but it catches fish.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 1,
+    "sell": 50
+  },
+  "rod_2": {
+    "id": "rod_2",
+    "name": "Coldpine Rod",
+    "description": "Coldpine bends without snapping. Better casting, better catch.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 3,
+    "sell": 120
+  },
+  "rod_3": {
+    "id": "rod_3",
+    "name": "Ruewood Rod",
+    "description": "The red wood is oddly supple. Good for deep pools.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 4,
+    "sell": 220
+  },
+  "rod_4": {
+    "id": "rod_4",
+    "name": "Reinforced Ashwood Rod",
+    "description": "Ashwood braced with ashiron. Handles stronger fish with ease.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 6,
+    "sell": 600
+  },
+  "rod_5": {
+    "id": "rod_5",
+    "name": "Reinforced Coldpine Rod",
+    "description": "A coldpine rod reinforced with bloodore. Favored by serious anglers.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 9,
+    "sell": 1000
+  },
+  "rod_6": {
+    "id": "rod_6",
+    "name": "Reinforced Ruewood Rod",
+    "description": "Ruewood and voidstone. The finest fishing rod in Varath. Even the Eyeless Pike cannot resist it.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "rod",
+    "tier": 10,
+    "sell": 1800
+  },
+  "plank_ashwood": {
+    "id": "plank_ashwood",
+    "name": "Ashwood Plank",
+    "description": "Rough-sawn ashwood boards. The backbone of any basic build.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 8
+  },
+  "plank_briarwood": {
+    "id": "plank_briarwood",
+    "name": "Briarwood Plank",
+    "description": "Dense-grained boards. Takes nails cleanly.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 18
+  },
+  "plank_coldpine": {
+    "id": "plank_coldpine",
+    "name": "Coldpine Plank",
+    "description": "Clean, straight-grained softwood. Good for interior work.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 35
+  },
+  "plank_stonewood": {
+    "id": "plank_stonewood",
+    "name": "Stonewood Plank",
+    "description": "Near-petrified boards. Used for load-bearing walls.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 65
+  },
+  "plank_greyoak": {
+    "id": "plank_greyoak",
+    "name": "Greyoak Plank",
+    "description": "Hard-wearing and dense. The preferred wood of serious builders.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 110
+  },
+  "plank_ruewood": {
+    "id": "plank_ruewood",
+    "name": "Ruewood Plank",
+    "description": "Ruddy-tinted boards. Unusually resilient to damp.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 180
+  },
+  "plank_ironbark": {
+    "id": "plank_ironbark",
+    "name": "Ironbark Plank",
+    "description": "Unyielding and dense. Even a saw protests.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 145
+  },
+  "plank_heartoak": {
+    "id": "plank_heartoak",
+    "name": "Heartoak Plank",
+    "description": "Rich amber boards, almost too beautiful to bury in a wall.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 260
+  },
+  "stone_block": {
+    "id": "stone_block",
+    "name": "Stone Block",
+    "description": "Dressed knucklestone. The basic unit of any serious construction.",
+    "icon": "🧱",
+    "cat": "Materials",
+    "sell": 15
+  },
+  "cut_coldvein": {
+    "id": "cut_coldvein",
+    "name": "Cut Coldvein",
+    "description": "Trimmed coldvein stone. Harder wearing than knucklestone; used for walls.",
+    "icon": "🧱",
+    "cat": "Materials",
+    "sell": 35
+  },
+  "cut_ribstone": {
+    "id": "cut_ribstone",
+    "name": "Cut Ribstone",
+    "description": "Dense ribstone, shaped and faced. Believers say it sets harder because it knows what it once was.",
+    "icon": "🪨",
+    "cat": "Materials",
+    "sell": 35
+  },
+  "ashiron_rivet": {
+    "id": "ashiron_rivet",
+    "name": "Ashiron Rivet",
+    "description": "Iron fasteners for timber frames. Each upgrade needs a hundred of these.",
+    "icon": "🔩",
+    "cat": "Materials",
+    "sell": 12
+  },
+  "mortar_basic": {
+    "id": "mortar_basic",
+    "name": "Basic Mortar",
+    "description": "Ground limestone and ash. Binds stone well enough for a cottage.",
+    "icon": "🪣",
+    "cat": "Materials",
+    "sell": 20
+  },
+  "mortar_refined": {
+    "id": "mortar_refined",
+    "name": "Refined Mortar",
+    "description": "Finer grind, stronger bond. Mid-tier construction staple.",
+    "icon": "🪣",
+    "cat": "Materials",
+    "sell": 45
+  },
+  "mortar_spinite": {
+    "id": "mortar_spinite",
+    "name": "Spinite Mortar",
+    "description": "Ground spinite mixed with ash. Sets like iron. Required for large structures.",
+    "icon": "🪣",
+    "cat": "Materials",
+    "sell": 90
+  },
+  "timber_frame": {
+    "id": "timber_frame",
+    "name": "Timber Frame",
+    "description": "Pre-cut ashwood framing. Goes up fast.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 25
+  },
+  "stonewood_beam": {
+    "id": "stonewood_beam",
+    "name": "Stonewood Beam",
+    "description": "Load-bearing timber. Required for stone house tiers and above.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 60
+  },
+  "watchtower_frame": {
+    "id": "watchtower_frame",
+    "name": "Watchtower Frame",
+    "description": "The skeleton of a watchtower. Assembled from deep-cut stone and ironwood. The last serious construction project most men attempt.",
+    "icon": "🗼",
+    "cat": "Infrastructure",
+    "sell": 1200
+  },
+  "vault_stone": {
+    "id": "vault_stone",
+    "name": "Vault Stone",
+    "description": "Dressed spinite stone, precisely cut for load-bearing vault work. Requires a patient hand and steady tools.",
+    "icon": "🏛️",
+    "cat": "Infrastructure",
+    "sell": 800
+  },
+  "heartoak_beam": {
+    "id": "heartoak_beam",
+    "name": "Heartoak Beam",
+    "description": "Massive structural timber. Dense enough to hold a keep roof without bowing.",
+    "icon": "🪵",
+    "cat": "Infrastructure",
+    "sell": 900
+  },
+  "ashwood_log": {
+    "id": "ashwood_log",
+    "name": "Ashwood Log",
+    "description": "Pale and light. Common as dirt across Varath. Burns fast; works fast.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 5
+  },
+  "coldpine_log": {
+    "id": "coldpine_log",
+    "name": "Coldpine Log",
+    "description": "Straight-grained highland timber. Smells sharp when freshly cut.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 25
+  },
+  "stonewood_log": {
+    "id": "stonewood_log",
+    "name": "Stonewood Log",
+    "description": "Dense and heavy — sinks in water. Makes the toughest handles.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 50
+  },
+  "greyoak_log": {
+    "id": "greyoak_log",
+    "name": "Greyoak Log",
+    "description": "Wide rings speak of a long life. Reliable and well-balanced.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 90
+  },
+  "ruewood_log": {
+    "id": "ruewood_log",
+    "name": "Ruewood Log",
+    "description": "Deep red-brown heartwood. Sought by bowyers for its natural flex.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 155
+  },
+  "deeproot_log": {
+    "id": "deeproot_log",
+    "name": "Deeproot Log",
+    "description": "Enormous and ancient. Its rings lose count. Taking one is not done lightly.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 395
+  },
+  "ironbark_log": {
+    "id": "ironbark_log",
+    "name": "Ironbark Log",
+    "description": "Near-black bark, flesh like stone. Blunts axes and outlasts the men who fell it.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 120
+  },
+  "heartoak_log": {
+    "id": "heartoak_log",
+    "name": "Heartoak Log",
+    "description": "Golden-amber wood. Found only in deep old-growth. A fallen one smells of honey and iron.",
+    "icon": "🪵",
+    "cat": "Logs",
+    "sell": 220
+  },
+  "ashwood_shaft": {
+    "id": "ashwood_shaft",
+    "name": "Ashwood Shaft",
+    "description": "A simple arrow shaft. Light, straight, and disposable.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 6
+  },
+  "coldpine_shaft": {
+    "id": "coldpine_shaft",
+    "name": "Coldpine Shaft",
+    "description": "The preferred shaft for most archers. Straight-grained and consistent.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 28
+  },
+  "greyoak_shaft": {
+    "id": "greyoak_shaft",
+    "name": "Greyoak Shaft",
+    "description": "A reliable mid-range shaft. Even grain makes for predictable flight.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 55
+  },
+  "ruewood_shaft": {
+    "id": "ruewood_shaft",
+    "name": "Ruewood Shaft",
+    "description": "Dense and heavy. Carries more force on impact.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 90
+  },
+  "deeproot_shaft": {
+    "id": "deeproot_shaft",
+    "name": "Deeproot Shaft",
+    "description": "The finest shaft in Varath. Each one is worth something.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 230
+  },
+  "stonewood_haft": {
+    "id": "stonewood_haft",
+    "name": "Stonewood Haft",
+    "description": "A dense handle blank for hafted weapons. Heavy but enduring.",
+    "icon": "🥢",
+    "cat": "Materials",
+    "sell": 60
+  },
+  "crude_shortbow": {
+    "id": "crude_shortbow",
+    "name": "Ashwood Shortbow",
+    "description": "Cut from green ashwood and strung tight. Every archer starts here.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 2,
+    "dmg": 1,
+    "sell": 20
+  },
+  "shortbow": {
+    "id": "shortbow",
+    "name": "Briarwood Shortbow",
+    "description": "Briarwood is springy and unforgiving — a good teacher.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 5,
+    "dmg": 2,
+    "sell": 50
+  },
+  "longbow": {
+    "id": "longbow",
+    "name": "Coldpine Longbow",
+    "description": "Straight-grained coldpine, shaped for reach. A bowyer's favourite first real bow.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 9,
+    "dmg": 4,
+    "sell": 100
+  },
+  "greyoak_longbow": {
+    "id": "greyoak_longbow",
+    "name": "Greyoak Warbow",
+    "description": "Old-growth wood shaped by someone who knows what patience produces. A serious weapon.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 16,
+    "dmg": 7,
+    "sell": 200
+  },
+  "ruewood_shortbow": {
+    "id": "ruewood_shortbow",
+    "name": "Ruewood Hunter's Bow",
+    "description": "Red-barked wood that holds tension unlike anything cheaper. Fast draw, hard hit.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 24,
+    "dmg": 10,
+    "sell": 380
+  },
+  "duskwood_warbow": {
+    "id": "duskwood_warbow",
+    "name": "Duskwood Warbow",
+    "description": "Cut from dusk-dark wood and strung at night, they say. Those who shoot it note the arrows find their mark quietly.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 36,
+    "dmg": 15,
+    "sell": 600
+  },
+  "deeproot_warbow": {
+    "id": "deeproot_warbow",
+    "name": "Deeproot Warbow",
+    "description": "The deepest wood in Varath made into the finest bow. Whatever it was before, it is this now.",
+    "icon": "🏹",
+    "cat": "Weapons",
+    "slot": "ranged",
+    "acc": 48,
+    "dmg": 21,
+    "sell": 950
+  },
+  "ashfin_raw": {
+    "id": "ashfin_raw",
+    "name": "Raw Ashfin",
+    "description": "Small and silver. Every child in Varath has caught one. Barely worth cleaning alone.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 2
+  },
+  "greyfin_raw": {
+    "id": "greyfin_raw",
+    "name": "Raw Greyfin",
+    "description": "A fish of the lower Redrun, where the river broadens and slows. Bigger than the hill-stream catch, with firm flesh.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 10
+  },
+  "ribperch_raw": {
+    "id": "ribperch_raw",
+    "name": "Raw Ribperch",
+    "description": "Named by believers who note its ribcage shape. Common in the Ribvault basin, where the estuary spreads into brackish shallows. Those who fish there return the first catch of the season.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 18
+  },
+  "redgill_raw": {
+    "id": "redgill_raw",
+    "name": "Raw Redgill",
+    "description": "A sea fish with vivid red gill-plates. Prized for the richness of its flesh.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 50
+  },
+  "deepscale_raw": {
+    "id": "deepscale_raw",
+    "name": "Raw Deepscale",
+    "description": "A heavily-armoured fish from the deep coastal waters. Ugly to look at, worth the work to prepare. Its scales are harder than some metals.",
+    "icon": "🐡",
+    "cat": "Fish",
+    "sell": 80
+  },
+  "eyeless_pike_raw": {
+    "id": "eyeless_pike_raw",
+    "name": "Raw Eyeless Pike",
+    "description": "Enormous, ancient, and blind. Found only in the deepest waters of the Eyeless Sea. Most fishermen see one in a lifetime. The rest see none.",
+    "icon": "🦈",
+    "cat": "Fish",
+    "sell": 125
+  },
+  "river_stone": {
+    "id": "river_stone",
+    "name": "Smooth River Stone",
+    "description": "A river-worn stone, perfectly smooth. Some collect them. Crafting can use these as simple jewelry components.",
+    "icon": "🪨",
+    "cat": "Finds",
+    "sell": 8
+  },
+  "old_hook": {
+    "id": "old_hook",
+    "name": "Old Hook",
+    "description": "A bent, rusted hook from some earlier fisherman's line. Old Varath iron, maybe older.",
+    "icon": "🪝",
+    "cat": "Finds",
+    "sell": 15
+  },
+  "waterlogged_coin": {
+    "id": "waterlogged_coin",
+    "name": "Waterlogged Coin",
+    "description": "A coin softened by long immersion. The face is unreadable. Old Varath mintage, like the worn coins on the barrow-things.",
+    "icon": "🪙",
+    "cat": "Finds",
+    "sell": 20
+  },
+  "redrun_pearl": {
+    "id": "redrun_pearl",
+    "name": "Redrun Pearl",
+    "description": "A small, reddish pearl from the Redrun estuary. More red than white. Jewellers find these remarkable.",
+    "icon": "🔵",
+    "cat": "Gems",
+    "sell": 180
+  },
+  "eyeless_scale": {
+    "id": "eyeless_scale",
+    "name": "Eyeless Scale",
+    "description": "A single scale from the Eyeless Pike. Translucent and hard as stone. Those who fish the Eyeless Sea keep these. No one is sure why.",
+    "icon": "⬜",
+    "cat": "Rare Drops",
+    "sell": 500
+  },
+  "ashfin_cooked": {
+    "id": "ashfin_cooked",
+    "name": "Cooked Ashfin",
+    "description": "Barely a meal, but warm. Better than nothing on a cold night.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 10,
+    "sell": 8
+  },
+  "speckletrout_cooked": {
+    "id": "speckletrout_cooked",
+    "name": "Cooked Speckletrout",
+    "description": "The standard trail food of Men. Reliable, filling, easy to prepare.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 18,
+    "sell": 18
+  },
+  "greyfin_cooked": {
+    "id": "greyfin_cooked",
+    "name": "Cooked Greyfin",
+    "description": "A decent meal. Salted and cooked well, it keeps a man going through a long day.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 28,
+    "sell": 35
+  },
+  "ribperch_cooked": {
+    "id": "ribperch_cooked",
+    "name": "Cooked Ribperch",
+    "description": "A proper meal. Worth the bones. First food worth stockpiling before hard work.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 40,
+    "sell": 60
+  },
+  "coldwater_eel_cooked": {
+    "id": "coldwater_eel_cooked",
+    "name": "Cooked Coldwater Eel",
+    "description": "Rich and dense. Hard to cook well; punishing when burnt.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 55,
+    "sell": 100
+  },
+  "redgill_cooked": {
+    "id": "redgill_cooked",
+    "name": "Cooked Redgill",
+    "description": "The benchmark meal for serious work. Good flesh, good recovery.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 72,
+    "sell": 165
+  },
+  "deepscale_cooked": {
+    "id": "deepscale_cooked",
+    "name": "Cooked Deepscale",
+    "description": "Time-consuming to prepare, but the effort shows in every bite.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 90,
+    "sell": 260
+  },
+  "eyeless_pike_cooked": {
+    "id": "eyeless_pike_cooked",
+    "name": "Cooked Eyeless Pike",
+    "description": "The finest meal in Varath. One fish, many servings, full recovery.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 110,
+    "sell": 410
+  },
+  "sword_1": {
+    "id": "sword_1",
+    "name": "Knucklestone Sword",
+    "description": "A blunt, heavy blade. Better than fists, barely.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "acc": 2,
+    "dmg": 1,
+    "attackStyle": "slash",
+    "sell": 25
+  },
+  "sword_3": {
+    "id": "sword_3",
+    "name": "Ashiron Sword",
+    "description": "Solid iron, well balanced. Trustworthy in a fight.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "acc": 9,
+    "dmg": 4,
+    "attackStyle": "slash",
+    "sell": 130
+  },
+  "sword_4": {
+    "id": "sword_4",
+    "name": "Ribstone Sword",
+    "description": "Heavy and punishing. Demands a strong arm.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "acc": 14,
+    "dmg": 6,
+    "attackStyle": "slash",
+    "sell": 250
+  },
+  "sword_6": {
+    "id": "sword_6",
+    "name": "Bloodore Sword",
+    "description": "The red blade is said to thirst. Superstition, surely.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "acc": 28,
+    "dmg": 12,
+    "attackStyle": "slash",
+    "sell": 700
+  },
+  "sword_9": {
+    "id": "sword_9",
+    "name": "Voidstone Sword",
+    "description": "Cold to the touch and razor-edged. Few things stop it.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 9,
+    "acc": 44,
+    "dmg": 20,
+    "attackStyle": "slash",
+    "sell": 1350
+  },
+  "sword_10": {
+    "id": "sword_10",
+    "name": "Hearthite Sword",
+    "description": "The finest blade in Varath. Warm, even in killing weather.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "acc": 48,
+    "dmg": 21,
+    "attackStyle": "slash",
+    "sell": 1750
+  },
+  "armor_1": {
+    "id": "armor_1",
+    "name": "Knucklestone Mail",
+    "description": "Roughly riveted plates. Turns the occasional blow.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "def": 2,
+    "sell": 35
+  },
+  "armor_3": {
+    "id": "armor_3",
+    "name": "Ashiron Mail",
+    "description": "Solid iron mail. Reliable and reassuring.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "def": 9,
+    "sell": 180
+  },
+  "armor_4": {
+    "id": "armor_4",
+    "name": "Ribstone Plate",
+    "description": "Heavy plate. Slows you, but you live.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "def": 14,
+    "sell": 345
+  },
+  "armor_6": {
+    "id": "armor_6",
+    "name": "Bloodore Plate",
+    "description": "The red plate is unnerving to face across a field.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "def": 28,
+    "sell": 965
+  },
+  "armor_9": {
+    "id": "armor_9",
+    "name": "Voidstone Plate",
+    "description": "Cold and dark. Absorbs blows with unsettling stillness.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "tier": 9,
+    "def": 40,
+    "sell": 1900
+  },
+  "armor_10": {
+    "id": "armor_10",
+    "name": "Hearthite Plate",
+    "description": "The finest armor in Varath. It seems to shrug off the cold itself.",
+    "icon": "🛡️",
+    "cat": "Armor",
+    "slot": "armor",
+    "def": 48,
+    "sell": 2430
+  },
+  "raw_rat_meat": {
+    "id": "raw_rat_meat",
+    "name": "Raw Rat Meat",
+    "description": "Stringy and unappealing. Food is food.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 3
+  },
+  "raw_wolf_meat": {
+    "id": "raw_wolf_meat",
+    "name": "Raw Wolf Meat",
+    "description": "Lean and gamey. Cooks into a decent meal.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 8
+  },
+  "raw_boar_meat": {
+    "id": "raw_boar_meat",
+    "name": "Raw Boar Meat",
+    "description": "Rich and fatty. A real meal for a working man.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 16
+  },
+  "raw_bear_meat": {
+    "id": "raw_bear_meat",
+    "name": "Raw Bear Meat",
+    "description": "Heavy, dark meat. Sustains a fighter through hard days.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 30
+  },
+  "rat_meat_cooked": {
+    "id": "rat_meat_cooked",
+    "name": "Cooked Rat Meat",
+    "description": "Charred and tough, but it fills a hole.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 8,
+    "sell": 12
+  },
+  "wolf_meat_cooked": {
+    "id": "wolf_meat_cooked",
+    "name": "Cooked Wolf Meat",
+    "description": "Gamey but satisfying. A hunter's staple.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 20,
+    "sell": 28
+  },
+  "boar_meat_cooked": {
+    "id": "boar_meat_cooked",
+    "name": "Cooked Boar Meat",
+    "description": "Roasted boar — one of the better meals a Man can want.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 34,
+    "sell": 55
+  },
+  "bear_meat_cooked": {
+    "id": "bear_meat_cooked",
+    "name": "Cooked Bear Meat",
+    "description": "Dense and restorative. Eaten before hard fights.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 52,
+    "sell": 100
+  },
+  "venison_cooked": {
+    "id": "venison_cooked",
+    "name": "Venison",
+    "description": "Roasted prime stag. Lean, rich, and deeply restorative.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 72,
+    "sell": 160
+  },
+  "aurochs_cooked": {
+    "id": "aurochs_cooked",
+    "name": "Aurochs Steak",
+    "description": "A thick steak from the largest game on the moor. A feast in itself.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 100,
+    "sell": 240
+  },
+  "wolf_pelt": {
+    "id": "wolf_pelt",
+    "name": "Wolf Pelt",
+    "description": "A grey wolf's hide. Tan it at the Crafting bench — yields 2 tanned leather.",
+    "icon": "🟤",
+    "cat": "Hides",
+    "sell": 30
+  },
+  "boar_hide": {
+    "id": "boar_hide",
+    "name": "Boar Hide",
+    "description": "Thick, bristled boar hide. Tougher to work than wolf pelt, but yields more durable leather.",
+    "icon": "🟤",
+    "cat": "Hides",
+    "sell": 45
+  },
+  "bear_pelt": {
+    "id": "bear_pelt",
+    "name": "Bear Pelt",
+    "description": "A heavy bear pelt. When hardened by a skilled craftsman it rivals light plate for protection.",
+    "icon": "🟤",
+    "cat": "Hides",
+    "sell": 75
+  },
+  "venison": {
+    "id": "venison",
+    "name": "Venison",
+    "description": "Prime stag meat from a Pale Stag. Darker and richer than boar. Cooks well.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 45
+  },
+  "aurochs_cut": {
+    "id": "aurochs_cut",
+    "name": "Aurochs Cut",
+    "description": "A thick cut from an Ashen Aurochs. The largest game on the moor. Dense and sustaining.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 95
+  },
+  "thick_hide": {
+    "id": "thick_hide",
+    "name": "Thick Hide",
+    "description": "A heavy, dense hide from an Ashen Aurochs. Requires master leatherwork to process.",
+    "icon": "🟫",
+    "cat": "Materials",
+    "sell": 140
+  },
+  "sinew": {
+    "id": "sinew",
+    "name": "Sinew",
+    "description": "Tough sinew from a Pale Stag. Used in bowcraft and fine cordage.",
+    "icon": "〰️",
+    "cat": "Materials",
+    "sell": 65
+  },
+  "trophy": {
+    "id": "trophy",
+    "name": "Hunter's Trophy",
+    "description": "A rare keepsake from a great hunt. Sought by collectors.",
+    "icon": "🏆",
+    "cat": "Materials",
+    "sell": 500
+  },
+  "rat_tail": {
+    "id": "rat_tail",
+    "name": "Rat Tail",
+    "description": "A scrawny rat's tail. You kept it. You're not sure why.",
+    "icon": "〰️",
+    "cat": "Drops",
+    "sell": 2
+  },
+  "worn_coin": {
+    "id": "worn_coin",
+    "name": "Worn Coin",
+    "description": "An old, eroded coin. The face on it is not a denomination anyone recognises. Old Varath mintage — or something older.",
+    "icon": "🪙",
+    "cat": "Drops",
+    "sell": 75
+  },
+  "wolf_fang": {
+    "id": "wolf_fang",
+    "name": "Wolf Fang",
+    "description": "A large grey wolf fang. Sharp, dense. Useful for something, surely.",
+    "icon": "🦷",
+    "cat": "Drops",
+    "sell": 20
+  },
+  "boar_tusk": {
+    "id": "boar_tusk",
+    "name": "Boar Tusk",
+    "description": "A curved boar tusk, heavy and solid. Harder than it looks.",
+    "icon": "🦷",
+    "cat": "Drops",
+    "sell": 35
+  },
+  "bear_claw": {
+    "id": "bear_claw",
+    "name": "Bear Claw",
+    "description": "A forest bear claw, long and curved. Good for trade or tools.",
+    "icon": "🐾",
+    "cat": "Drops",
+    "sell": 60
+  },
+  "rat_king_ear": {
+    "id": "rat_king_ear",
+    "name": "Rat King's Ear",
+    "description": "A desiccated ear from a Rat King — a rat that grew fat enough to lead others. Alchemists pay well for these.",
+    "icon": "👂",
+    "cat": "Rare Drops",
+    "sell": 250
+  },
+  "silver_wolf_pelt": {
+    "id": "silver_wolf_pelt",
+    "name": "Silver Wolf Pelt",
+    "description": "An albino wolf pelt, silver-white and remarkably fine. These are not often seen on the hills.",
+    "icon": "⬜",
+    "cat": "Rare Drops",
+    "sell": 400
+  },
+  "bristle_crown": {
+    "id": "bristle_crown",
+    "name": "Bristle Crown",
+    "description": "A peculiar trophy — a boar with a crown-like ring of stiffened bristles. One in many hundreds.",
+    "icon": "👑",
+    "cat": "Rare Drops",
+    "sell": 600
+  },
+  "forest_bear_skull": {
+    "id": "forest_bear_skull",
+    "name": "Forest Bear Skull",
+    "description": "A great bear skull, heavy and intact. Few hunters take these home. The bone gleams faintly.",
+    "icon": "💀",
+    "cat": "Rare Drops",
+    "sell": 800
+  },
+  "pet_mining": {
+    "id": "pet_mining",
+    "name": "Rockling",
+    "description": "A small stone creature that formed around your pick one morning. You did not notice until it blinked. +2% chance of double ore.",
+    "icon": "🪨",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "mining",
+      "bonus": "ore_yield",
+      "bonusAmt": 0.02
+    }
+  },
+  "pet_smithing": {
+    "id": "pet_smithing",
+    "name": "Cinder",
+    "description": "A coal-black creature that lives in the forge heat. It keeps your fire even. +3% Smithing XP.",
+    "icon": "🔥",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "smithing",
+      "bonus": "smithing_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_forestry": {
+    "id": "pet_forestry",
+    "name": "Barkback",
+    "description": "A small creature made of bark and moss that rides your shoulder. The trees do not seem to mind. +3% Forestry speed.",
+    "icon": "🌿",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "forestry",
+      "bonus": "gather_speed",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_woodcraft": {
+    "id": "pet_woodcraft",
+    "name": "Splinter",
+    "description": "A small creature assembled from offcuts. It organises your workspace without being asked. +3% Woodcraft XP.",
+    "icon": "🪵",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "woodcraft",
+      "bonus": "woodcraft_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_fishing": {
+    "id": "pet_fishing",
+    "name": "Bobber",
+    "description": "A fish that does not leave. It circles your line and seems to attract the others. +3% Fishing speed.",
+    "icon": "🐟",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "fishing",
+      "bonus": "gather_speed",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_cooking": {
+    "id": "pet_cooking",
+    "name": "Ashling",
+    "description": "A small creature that lives near the fire and watches the pot. Food burns less with it around. +3% Cooking XP.",
+    "icon": "🍖",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "cooking",
+      "bonus": "cooking_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_farming": {
+    "id": "pet_farming",
+    "name": "Seedling",
+    "description": "A green creature that walks the patch rows and seems to encourage things to grow. +5% crop survival.",
+    "icon": "🌱",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "farming",
+      "bonus": "crop_survival",
+      "bonusAmt": 0.05
+    }
+  },
+  "pet_survivalist": {
+    "id": "pet_survivalist",
+    "name": "Duskwing",
+    "description": "A moth with ember-coloured wings. It leads you to things. +5% forage yield chance.",
+    "icon": "🦋",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "survivalist",
+      "bonus": "forage_yield",
+      "bonusAmt": 0.05
+    }
+  },
+  "pet_herblore": {
+    "id": "pet_herblore",
+    "name": "Sprig",
+    "description": "A creature that smells like every herb at once. It sits on the bench and the potions come out cleaner. +3% Herblore XP.",
+    "icon": "🌾",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "herblore",
+      "bonus": "herblore_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_bounty": {
+    "id": "pet_bounty",
+    "name": "Tracker",
+    "description": "A silent creature that appears only on the hunt. You have never seen it eat. +5% Bounty XP.",
+    "icon": "🐾",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "bounty",
+      "bonus": "bounty_xp",
+      "bonusAmt": 0.05
+    }
+  },
+  "pet_construction": {
+    "id": "pet_construction",
+    "name": "Mortar",
+    "description": "A small creature made entirely of set stone. It fits in the palm and weighs more than it should. +3% Construction XP.",
+    "icon": "🧱",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "construction",
+      "bonus": "construction_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_crafting": {
+    "id": "pet_crafting",
+    "name": "Thimble",
+    "description": "A tiny creature that sorts thread, polishes tools, and tidies the bench. It asks for nothing. +3% Crafting XP.",
+    "icon": "✂️",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "petSkill": "crafting",
+      "bonus": "crafting_xp",
+      "bonusAmt": 0.03
+    }
+  },
+  "pet_hunter": {
+    "id": "pet_hunter",
+    "name": "Quicksnare",
+    "description": "A hare that escaped its own snare. It now rides your pack and guides quarry into range. +5% chance of double meat yield.",
+    "icon": "🐇",
+    "cat": "Skilling Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petSkill": "hunter",
+      "bonus": "meat_yield",
+      "bonusAmt": 0.05
+    }
+  },
+  "pet_hollow_warden": {
+    "id": "pet_hollow_warden",
+    "name": "Barrowkin",
+    "description": "A small hollow thing that followed you out of the barrow. It does not disagree with you. Yet.",
+    "icon": "🦴",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "hollow_warden"
+    }
+  },
+  "pet_bog_warden": {
+    "id": "pet_bog_warden",
+    "name": "Mirewisp",
+    "description": "It rose out of the bog water when the Warden fell and has not gone back down.",
+    "icon": "💧",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "bog_warden"
+    }
+  },
+  "pet_spine_warlord": {
+    "id": "pet_spine_warlord",
+    "name": "Cairn",
+    "description": "A knot of stone and old bone from the vault. It has been waiting longer than you have been alive.",
+    "icon": "⛰️",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "spine_warlord"
+    }
+  },
+  "pet_marrow_keeper": {
+    "id": "pet_marrow_keeper",
+    "name": "Keepsake",
+    "description": "It stayed when everything else was carried out. It seems to think you are the last instruction.",
+    "icon": "💀",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "marrow_keeper"
+    }
+  },
+  "ribstone_arrow": {
+    "id": "ribstone_arrow",
+    "name": "Ribstone Arrow",
+    "description": "Heavier than iron. Carries more force.",
+    "icon": "➶",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "sell": 38
+  },
+  "bloodore_arrow": {
+    "id": "bloodore_arrow",
+    "name": "Bloodore Arrow",
+    "description": "Red-tipped. Unsettling to face.",
+    "icon": "➶",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "sell": 105
+  },
+  "voidstone_arrow": {
+    "id": "voidstone_arrow",
+    "name": "Voidstone Arrow",
+    "description": "Dark and heavy. Built for the hardest encounters.",
+    "icon": "➶",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "sell": 230
+  },
+  "wood_ash": {
+    "id": "wood_ash",
+    "name": "Wood Ash",
+    "description": "Fine grey ash from burning softwood. Used in fertilizers and as a base ingredient.",
+    "icon": "🌫️",
+    "cat": "Materials",
+    "sell": 4
+  },
+  "fine_charcoal": {
+    "id": "fine_charcoal",
+    "name": "Fine Charcoal",
+    "description": "High-grade charcoal from the densest ancient woods. Rare and versatile.",
+    "icon": "◼",
+    "cat": "Materials",
+    "sell": 60
+  },
+  "ashroot_compound": {
+    "id": "ashroot_compound",
+    "name": "Ashroot Compound",
+    "description": "Dense and restorative. Takes skill to prepare correctly.",
+    "icon": "🧪",
+    "cat": "Food",
+    "heals": 130,
+    "sell": 180
+  },
+  "dawnspore_elixir": {
+    "id": "dawnspore_elixir",
+    "name": "Dawnspore Elixir",
+    "description": "Extraordinarily rare. Tastes of morning air and cold stone.",
+    "icon": "🧪",
+    "cat": "Food",
+    "heals": 185,
+    "sell": 300
+  },
+  "smoked_speckletrout": {
+    "id": "smoked_speckletrout",
+    "name": "Smoked Speckletrout",
+    "description": "Slow-smoked over charcoal. Worth the wait.",
+    "icon": "🥩",
+    "cat": "Food",
+    "heals": 45,
+    "buff": "xp_boost",
+    "buffAmt": 0.05,
+    "buffMs": 180000,
+    "sell": 45
+  },
+  "smoked_greyfin": {
+    "id": "smoked_greyfin",
+    "name": "Smoked Greyfin",
+    "description": "A coastal fish cured over hardwood coals.",
+    "icon": "🥩",
+    "cat": "Food",
+    "heals": 70,
+    "buff": "xp_boost",
+    "buffAmt": 0.05,
+    "buffMs": 240000,
+    "sell": 80
+  },
+  "smoked_ribperch": {
+    "id": "smoked_ribperch",
+    "name": "Smoked Ribperch",
+    "description": "Smoked ribperch is considered a delicacy even by the well-fed.",
+    "icon": "🥩",
+    "cat": "Food",
+    "heals": 100,
+    "buff": "xp_boost",
+    "buffAmt": 0.08,
+    "buffMs": 300000,
+    "sell": 120
+  },
+  "smoked_redgill": {
+    "id": "smoked_redgill",
+    "name": "Smoked Redgill",
+    "description": "The best sea fish improves markedly with smoke.",
+    "icon": "🥩",
+    "cat": "Food",
+    "heals": 145,
+    "buff": "xp_boost",
+    "buffAmt": 0.1,
+    "buffMs": 360000,
+    "sell": 200
+  },
+  "hill_stew": {
+    "id": "hill_stew",
+    "name": "Hill Stew",
+    "description": "Wolf meat and mushrooms, long-cooked. A proper hunter's meal. Better than the sum of its parts.",
+    "icon": "🍲",
+    "cat": "Food",
+    "heals": 65,
+    "buff": "melee_dmg",
+    "buffAmt": 3,
+    "buffMs": 240000,
+    "sell": 80
+  },
+  "forest_roast": {
+    "id": "forest_roast",
+    "name": "Forest Roast",
+    "description": "Boar and thornberries, slow-roasted. The kind of meal that turns a camp into a home.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 95,
+    "buff": "melee_dmg",
+    "buffAmt": 5,
+    "buffMs": 300000,
+    "sell": 140
+  },
+  "bone_broth": {
+    "id": "bone_broth",
+    "name": "Bone Broth",
+    "description": "Bear bones and hearthroot, simmered all day. Old medicine. Remarkable recovery.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 120,
+    "buff": "defence",
+    "buffAmt": 8,
+    "buffMs": 360000,
+    "sell": 200
+  },
+  "redrun_chowder": {
+    "id": "redrun_chowder",
+    "name": "Redrun Chowder",
+    "description": "Redgill and river greens, reduced over charcoal. The cook's version of the finest fish in Varath.",
+    "icon": "🍲",
+    "cat": "Food",
+    "heals": 160,
+    "buff": "melee_acc",
+    "buffAmt": 10,
+    "buffMs": 360000,
+    "sell": 320
+  },
+  "deepmeat_stew": {
+    "id": "deepmeat_stew",
+    "name": "Deepmeat Stew",
+    "description": "Deepscale and ashroot, a difficult preparation that rewards serious cooks. Near-complete recovery.",
+    "icon": "🍲",
+    "cat": "Food",
+    "heals": 200,
+    "buff": "melee_dmg",
+    "buffAmt": 12,
+    "buffMs": 480000,
+    "sell": 500
+  },
+  "battle_ration": {
+    "id": "battle_ration",
+    "name": "Battle Ration",
+    "description": "A dense, purpose-made ration for sustained combat. Not pleasant, effective.",
+    "icon": "🎒",
+    "cat": "Food",
+    "heals": 40,
+    "sell": 50
+  },
+  "warriors_draught": {
+    "id": "warriors_draught",
+    "name": "Warrior's Draught",
+    "description": "A bitter brew that sharpens the edge for a short time. +6 damage for 60 seconds.",
+    "icon": "🧪",
+    "cat": "Combat",
+    "buff": "melee_dmg",
+    "buffAmt": 6,
+    "buffMs": 60000,
+    "sell": 80
+  },
+  "shield_oil": {
+    "id": "shield_oil",
+    "name": "Shield Oil",
+    "description": "Rubbed into armor before battle. The blow still lands, but softer. +8 defence for 60 seconds.",
+    "icon": "🛢️",
+    "cat": "Combat",
+    "buff": "defence",
+    "buffAmt": 8,
+    "buffMs": 60000,
+    "sell": 70
+  },
+  "hunters_kit": {
+    "id": "hunters_kit",
+    "name": "Hunter's Kit",
+    "description": "A bounty hunter toolkit. Improves the next task reward.",
+    "icon": "🎯",
+    "cat": "Combat",
+    "sell": 150
+  },
+  "helm_1": {
+    "id": "helm_1",
+    "name": "Knucklestone Helm",
+    "description": "A crude helmet. Protects the head.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 1,
+    "def": 2,
+    "sell": 20
+  },
+  "helm_3": {
+    "id": "helm_3",
+    "name": "Ashiron Helm",
+    "description": "A ashiron helmet. Protects the head.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 3,
+    "def": 7,
+    "sell": 95
+  },
+  "helm_4": {
+    "id": "helm_4",
+    "name": "Ribstone Helm",
+    "description": "A ribstone helmet. Protects the head.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 4,
+    "def": 11,
+    "sell": 160
+  },
+  "helm_6": {
+    "id": "helm_6",
+    "name": "Bloodore Helm",
+    "description": "A bloodore helmet. Protects the head.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 6,
+    "def": 23,
+    "sell": 440
+  },
+  "helm_9": {
+    "id": "helm_9",
+    "name": "Voidstone Helm",
+    "description": "A dark, cold helm. Unsettling to look at.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 9,
+    "def": 32,
+    "sell": 850
+  },
+  "helm_10": {
+    "id": "helm_10",
+    "name": "Hearthite Helm",
+    "description": "A hearthite helmet. Protects the head.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 10,
+    "def": 36,
+    "sell": 1100
+  },
+  "legs_1": {
+    "id": "legs_1",
+    "name": "Knucklestone Leg Plate",
+    "description": "A crude leg plate.",
+    "icon": "🦿",
+    "cat": "Armour",
+    "slot": "legs",
+    "tier": 1,
+    "def": 3,
+    "sell": 25
+  },
+  "legs_3": {
+    "id": "legs_3",
+    "name": "Ashiron Leg Plate",
+    "description": "A ashiron leg plate.",
+    "icon": "🦿",
+    "cat": "Armour",
+    "slot": "legs",
+    "tier": 3,
+    "def": 10,
+    "sell": 115
+  },
+  "legs_4": {
+    "id": "legs_4",
+    "name": "Ribstone Leg Plate",
+    "description": "A ribstone leg plate.",
+    "icon": "🦿",
+    "cat": "Armour",
+    "slot": "legs",
+    "tier": 4,
+    "def": 16,
+    "sell": 195
+  },
+  "legs_6": {
+    "id": "legs_6",
+    "name": "Bloodore Leg Plate",
+    "description": "A bloodore leg plate.",
+    "icon": "🦿",
+    "cat": "Armour",
+    "slot": "legs",
+    "tier": 6,
+    "def": 34,
+    "sell": 540
+  },
+  "legs_8": {
+    "id": "legs_8",
+    "name": "Hearthite Leg Plate",
+    "description": "A hearthite leg plate.",
+    "icon": "🦿",
+    "cat": "Armour",
+    "slot": "legs",
+    "tier": 8,
+    "def": 63,
+    "sell": 1350
+  },
+  "boot_1": {
+    "id": "boot_1",
+    "name": "Knucklestone Boots",
+    "description": "Crude boots. A solid foundation.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 1,
+    "def": 1,
+    "sell": 12
+  },
+  "boot_3": {
+    "id": "boot_3",
+    "name": "Ashiron Boots",
+    "description": "Ashiron boots. A solid foundation.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 3,
+    "def": 4,
+    "sell": 55
+  },
+  "boot_4": {
+    "id": "boot_4",
+    "name": "Ribstone Boots",
+    "description": "Ribstone boots. A solid foundation.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 4,
+    "def": 6,
+    "sell": 90
+  },
+  "boot_6": {
+    "id": "boot_6",
+    "name": "Bloodore Boots",
+    "description": "Bloodore boots. A solid foundation.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 6,
+    "def": 14,
+    "sell": 255
+  },
+  "boot_9": {
+    "id": "boot_9",
+    "name": "Voidstone Boots",
+    "description": "Dark and cold underfoot.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 9,
+    "def": 20,
+    "sell": 510
+  },
+  "boot_10": {
+    "id": "boot_10",
+    "name": "Hearthite Boots",
+    "description": "Hearthite boots. A solid foundation.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 10,
+    "def": 22,
+    "sell": 650
+  },
+  "shield_1": {
+    "id": "shield_1",
+    "name": "Knucklestone Shield",
+    "description": "A crude shield. Usable with one-handed weapons.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 1,
+    "def": 3,
+    "twoHand": false,
+    "sell": 25
+  },
+  "shield_3": {
+    "id": "shield_3",
+    "name": "Ashiron Shield",
+    "description": "A ashiron shield. Usable with one-handed weapons.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 3,
+    "def": 10,
+    "twoHand": false,
+    "sell": 115
+  },
+  "shield_4": {
+    "id": "shield_4",
+    "name": "Ribstone Shield",
+    "description": "A ribstone shield. Usable with one-handed weapons.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 4,
+    "def": 16,
+    "twoHand": false,
+    "sell": 195
+  },
+  "shield_6": {
+    "id": "shield_6",
+    "name": "Bloodore Shield",
+    "description": "A bloodore shield. Usable with one-handed weapons.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 6,
+    "def": 34,
+    "twoHand": false,
+    "sell": 540
+  },
+  "shield_9": {
+    "id": "shield_9",
+    "name": "Voidstone Shield",
+    "description": "Darkly reflective. Absorbs blows well.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 9,
+    "def": 48,
+    "twoHand": false,
+    "sell": 1050
+  },
+  "shield_10": {
+    "id": "shield_10",
+    "name": "Hearthite Shield",
+    "description": "A hearthite shield. Usable with one-handed weapons.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 10,
+    "def": 63,
+    "twoHand": false,
+    "sell": 1350
+  },
+  "spear_1": {
+    "id": "spear_1",
+    "name": "Knucklestone Spear",
+    "description": "A crude spear. Two-handed, fast, accurate.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 1,
+    "acc": 5,
+    "dmg": 2,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 28
+  },
+  "spear_3": {
+    "id": "spear_3",
+    "name": "Ashiron Spear",
+    "description": "An ashiron spear. Two-handed, fast, accurate.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 3,
+    "acc": 15,
+    "dmg": 7,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 145
+  },
+  "spear_4": {
+    "id": "spear_4",
+    "name": "Ribstone Spear",
+    "description": "A ribstone spear. Two-handed, fast, accurate.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 4,
+    "acc": 23,
+    "dmg": 11,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 280
+  },
+  "spear_6": {
+    "id": "spear_6",
+    "name": "Bloodore Spear",
+    "description": "A bloodore spear. Two-handed, fast, accurate.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 6,
+    "acc": 46,
+    "dmg": 23,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 775
+  },
+  "spear_9": {
+    "id": "spear_9",
+    "name": "Voidstone Spear",
+    "description": "Dark and precise.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 9,
+    "acc": 78,
+    "dmg": 41,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 1530
+  },
+  "spear_10": {
+    "id": "spear_10",
+    "name": "Hearthite Spear",
+    "description": "A hearthite spear. Two-handed, fast, accurate.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 10,
+    "acc": 83,
+    "dmg": 44,
+    "attackStyle": "stab",
+    "wepType": "spear",
+    "speed": 1800,
+    "twoHand": true,
+    "sell": 1950
+  },
+  "dagger_1": {
+    "id": "dagger_1",
+    "name": "Knucklestone Dagger",
+    "description": "A crude iron shiv. Fast and disposable.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 1,
+    "acc": 3,
+    "dmg": 1,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 1600,
+    "sell": 20
+  },
+  "dagger_3": {
+    "id": "dagger_3",
+    "name": "Ashiron Dagger",
+    "description": "Well-balanced and quick. Favoured by scouts.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 3,
+    "acc": 12,
+    "dmg": 4,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 1700,
+    "sell": 110
+  },
+  "dagger_4": {
+    "id": "dagger_4",
+    "name": "Ribstone Dagger",
+    "description": "Dense and sharp. Punches through gaps in armour.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 4,
+    "acc": 18,
+    "dmg": 6,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 1800,
+    "sell": 210
+  },
+  "dagger_6": {
+    "id": "dagger_6",
+    "name": "Bloodore Dagger",
+    "description": "The red dagger stains everything it touches.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 6,
+    "acc": 34,
+    "dmg": 12,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 1900,
+    "sell": 590
+  },
+  "dagger_9": {
+    "id": "dagger_9",
+    "name": "Voidstone Dagger",
+    "description": "Cold-edged, faster.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 9,
+    "acc": 54,
+    "dmg": 19,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 2000,
+    "sell": 1160
+  },
+  "dagger_10": {
+    "id": "dagger_10",
+    "name": "Hearthite Dagger",
+    "description": "A warm, living edge. The fastest blade in Varath.",
+    "icon": "🔪",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 10,
+    "acc": 58,
+    "dmg": 21,
+    "attackStyle": "stab",
+    "wepType": "dagger",
+    "speed": 2000,
+    "sell": 1480
+  },
+  "hammer_1": {
+    "id": "hammer_1",
+    "name": "Knucklestone Mace",
+    "description": "A heavy lump of crude iron. Slow, but it lands hard.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 1,
+    "acc": 1,
+    "dmg": 3,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3200,
+    "sell": 28
+  },
+  "hammer_3": {
+    "id": "hammer_3",
+    "name": "Ashiron Mace",
+    "description": "A warhammer for real fights. Dents armour like clay.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 3,
+    "acc": 6,
+    "dmg": 12,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3400,
+    "sell": 145
+  },
+  "hammer_4": {
+    "id": "hammer_4",
+    "name": "Ribstone Mace",
+    "description": "The weight alone is threatening. Bone-breaking on impact.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 4,
+    "acc": 10,
+    "dmg": 18,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3400,
+    "sell": 280
+  },
+  "hammer_6": {
+    "id": "hammer_6",
+    "name": "Bloodore Mace",
+    "description": "A brutal red maul. Stone and armour crumble under it.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 6,
+    "acc": 22,
+    "dmg": 36,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3600,
+    "sell": 775
+  },
+  "hammer_9": {
+    "id": "hammer_9",
+    "name": "Voidstone Mace",
+    "description": "Cold and crushing.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 9,
+    "acc": 36,
+    "dmg": 60,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3800,
+    "sell": 1530
+  },
+  "hammer_10": {
+    "id": "hammer_10",
+    "name": "Hearthite Mace",
+    "description": "The mightiest crushing weapon in Varath. The ground shakes.",
+    "icon": "🔨",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 10,
+    "acc": 40,
+    "dmg": 64,
+    "attackStyle": "crush",
+    "wepType": "hammer",
+    "speed": 3800,
+    "sell": 1950
+  },
+  "claymore_1": {
+    "id": "claymore_1",
+    "name": "Knucklestone Greatsword",
+    "description": "A crude two-handed blade. Unwieldy, but devastating.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 1,
+    "acc": 1,
+    "dmg": 5,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4000,
+    "twoHand": true,
+    "sell": 32
+  },
+  "claymore_3": {
+    "id": "claymore_3",
+    "name": "Ashiron Greatsword",
+    "description": "A proper greatsword. Requires both hands and real conviction.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 3,
+    "acc": 7,
+    "dmg": 17,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4200,
+    "twoHand": true,
+    "sell": 165
+  },
+  "claymore_4": {
+    "id": "claymore_4",
+    "name": "Ribstone Greatsword",
+    "description": "Immense and merciless. Takes practice just to lift cleanly.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 4,
+    "acc": 12,
+    "dmg": 25,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4200,
+    "twoHand": true,
+    "sell": 320
+  },
+  "claymore_6": {
+    "id": "claymore_6",
+    "name": "Bloodore Greatsword",
+    "description": "The red greatsword leaves a trail. Not all of it is the enemy's.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 6,
+    "acc": 24,
+    "dmg": 48,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4400,
+    "twoHand": true,
+    "sell": 890
+  },
+  "claymore_9": {
+    "id": "claymore_9",
+    "name": "Voidstone Greatsword",
+    "description": "Cold and terrifyingly sharp.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 9,
+    "acc": 40,
+    "dmg": 80,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4600,
+    "twoHand": true,
+    "sell": 1750
+  },
+  "claymore_10": {
+    "id": "claymore_10",
+    "name": "Hearthite Greatsword",
+    "description": "The greatest blade in Varath. One swing reshapes the field.",
+    "icon": "⚔️",
+    "cat": "Weapons",
+    "slot": "mainhand",
+    "tier": 10,
+    "acc": 43,
+    "dmg": 86,
+    "attackStyle": "slash",
+    "wepType": "claymore",
+    "speed": 4600,
+    "twoHand": true,
+    "sell": 2230
+  },
+  "ring_1": {
+    "id": "ring_1",
+    "name": "Knucklestone Ring",
+    "description": "A crude hammered ring. Modest accuracy.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 3,
+    "sell": 35
+  },
+  "ring_3": {
+    "id": "ring_3",
+    "name": "Ashiron Ring",
+    "description": "A well-forged ring of ashiron.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 7,
+    "sell": 90
+  },
+  "ring_5": {
+    "id": "ring_5",
+    "name": "Spinite Ring",
+    "description": "A dark ring that sits unnaturally still on the finger.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 13,
+    "sell": 220
+  },
+  "ring_8": {
+    "id": "ring_8",
+    "name": "Hearthite Ring",
+    "description": "Warm to the touch. The finest ring a smith can produce.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 22,
+    "sell": 800
+  },
+  "neck_war": {
+    "id": "neck_war",
+    "name": "Warrior's Chain",
+    "description": "A heavy chain worn by fighters. Adds striking power.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "dmg": 6,
+    "sell": 180
+  },
+  "neck_ward": {
+    "id": "neck_ward",
+    "name": "Guardian Chain",
+    "description": "A layered chain of ashiron links. Adds defence.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "def": 10,
+    "sell": 220
+  },
+  "neck_hunt": {
+    "id": "neck_hunt",
+    "name": "Hunter's Pendant",
+    "description": "A carved pendant worn by hunters. Improves ranged accuracy.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 10,
+    "sell": 200
+  },
+  "mount_pony": {
+    "id": "mount_pony",
+    "name": "Knuckle Pony",
+    "description": "A stocky moorland pony — calm in a collapsing shaft. Cuts Descent hazard by 25%.",
+    "icon": "🐴",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 200,
+    "meta": {
+      "rideReq": 1,
+      "cost": 500,
+      "perk": "descent_hazard",
+      "perkAmt": 0.25
+    }
+  },
+  "mount_horse": {
+    "id": "mount_horse",
+    "name": "Greyoak Stallion",
+    "description": "A tall forest horse that hauls more out than it should. +10% chance of an extra resource per gather.",
+    "icon": "🐴",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 800,
+    "meta": {
+      "rideReq": 20,
+      "cost": 2000,
+      "perk": "gather_extra",
+      "perkAmt": 0.1
+    }
+  },
+  "mount_destrier": {
+    "id": "mount_destrier",
+    "name": "War Destrier",
+    "description": "A battle-bred charger that keeps the advance. −40% respawn pause between kills.",
+    "icon": "🐎",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 3200,
+    "meta": {
+      "rideReq": 40,
+      "cost": 8000,
+      "perk": "respawn_speed",
+      "perkAmt": 0.4
+    }
+  },
+  "mount_galloper": {
+    "id": "mount_galloper",
+    "name": "Heartmoor Galloper",
+    "description": "Bred for speed on open moor. Scouts ahead — −20% expedition time.",
+    "icon": "🐎",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 10000,
+    "meta": {
+      "rideReq": 60,
+      "cost": 25000,
+      "perk": "expedition_time",
+      "perkAmt": 0.2
+    }
+  },
+  "mount_hound": {
+    "id": "mount_hound",
+    "name": "Shadow Hound",
+    "description": "Not a horse. Tireless while you are away. +15% offline progress.",
+    "icon": "🐕",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 32000,
+    "meta": {
+      "rideReq": 80,
+      "cost": 80000,
+      "perk": "offline_boost",
+      "perkAmt": 0.15
+    }
+  },
+  "mount_runemarked": {
+    "id": "mount_runemarked",
+    "name": "The Runemarked",
+    "description": "A creature from old stories. Varath musters to it — +1 expedition member slot.",
+    "icon": "✨",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 90,
+      "perk": "expedition_slot",
+      "perkAmt": 1
+    }
+  },
+  "mount_mule": {
+    "id": "mount_mule",
+    "name": "Knuckle Mule",
+    "description": "A stubborn hill mule, sure on loose scree. −30% Descent hazard.",
+    "icon": "🫏",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 600,
+    "meta": {
+      "rideReq": 10,
+      "cost": 1200,
+      "perk": "descent_hazard",
+      "perkAmt": 0.3
+    }
+  },
+  "mount_craggoat": {
+    "id": "mount_craggoat",
+    "name": "Cragstep Goat",
+    "description": "Climbs the Spine where horses won't. −40% Descent hazard.",
+    "icon": "🐐",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 4500,
+    "meta": {
+      "rideReq": 35,
+      "cost": 9000,
+      "perk": "descent_hazard",
+      "perkAmt": 0.4
+    }
+  },
+  "mount_palecrawler": {
+    "id": "mount_palecrawler",
+    "name": "Saddled Crawler",
+    "description": "A cave crawler broken to the saddle. It knows where the rock is sound. −55% Descent hazard.",
+    "icon": "🕷️",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 60,
+      "perk": "descent_hazard",
+      "perkAmt": 0.55
+    }
+  },
+  "mount_deepstrider": {
+    "id": "mount_deepstrider",
+    "name": "Deepstone Strider",
+    "description": "A walking fragment of the Marrow's making. The deep does not threaten what the deep built. −70% Descent hazard.",
+    "icon": "🗿",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 80,
+      "perk": "descent_hazard",
+      "perkAmt": 0.7
+    }
+  },
+  "mount_ox": {
+    "id": "mount_ox",
+    "name": "Moor Ox",
+    "description": "A broad-backed ox that carries more than it should. +6% chance of an extra resource per gather.",
+    "icon": "🐂",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 350,
+    "meta": {
+      "rideReq": 5,
+      "cost": 700,
+      "perk": "gather_extra",
+      "perkAmt": 0.06
+    }
+  },
+  "mount_bristleback": {
+    "id": "mount_bristleback",
+    "name": "Bristleback Boar",
+    "description": "Roots up more than you'd think. +13% extra-gather chance.",
+    "icon": "🐗",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 3000,
+    "meta": {
+      "rideReq": 30,
+      "cost": 6000,
+      "perk": "gather_extra",
+      "perkAmt": 0.13
+    }
+  },
+  "mount_aurochs": {
+    "id": "mount_aurochs",
+    "name": "Ashen Aurochs",
+    "description": "Hauls a full day's gather without complaint. +16% extra-gather chance.",
+    "icon": "🐃",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 11000,
+    "meta": {
+      "rideReq": 55,
+      "cost": 22000,
+      "perk": "gather_extra",
+      "perkAmt": 0.16
+    }
+  },
+  "mount_packbear": {
+    "id": "mount_packbear",
+    "name": "Crag Pack-Bear",
+    "description": "A crag bear that carries instead of mauls. Mostly. +22% extra-gather chance.",
+    "icon": "🐻",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 37000,
+    "meta": {
+      "rideReq": 75,
+      "cost": 75000,
+      "perk": "gather_extra",
+      "perkAmt": 0.22
+    }
+  },
+  "mount_greymane": {
+    "id": "mount_greymane",
+    "name": "Greymane Boar",
+    "description": "The great grey boar hunted in the deepest Greyoak. Ride it and the wood gives more freely. +20% extra-gather chance.",
+    "icon": "🐗",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 65,
+      "perk": "gather_extra",
+      "perkAmt": 0.2
+    }
+  },
+  "mount_ridgewolf": {
+    "id": "mount_ridgewolf",
+    "name": "Dire Ridgewolf",
+    "description": "Won't let a kill cool. −25% respawn pause.",
+    "icon": "🐺",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 2500,
+    "meta": {
+      "rideReq": 25,
+      "cost": 5000,
+      "perk": "respawn_speed",
+      "perkAmt": 0.25
+    }
+  },
+  "mount_ironboar": {
+    "id": "mount_ironboar",
+    "name": "Ironside Boar",
+    "description": "A boar bred for the charge, plated at the shoulder. −35% respawn pause.",
+    "icon": "🐗",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 7000,
+    "meta": {
+      "rideReq": 45,
+      "cost": 14000,
+      "perk": "respawn_speed",
+      "perkAmt": 0.35
+    }
+  },
+  "mount_spinecharger": {
+    "id": "mount_spinecharger",
+    "name": "Spine Charger",
+    "description": "Sure-footed on broken ground, eager for the next fight. −50% respawn pause.",
+    "icon": "🐎",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 30000,
+    "meta": {
+      "rideReq": 70,
+      "cost": 60000,
+      "perk": "respawn_speed",
+      "perkAmt": 0.5
+    }
+  },
+  "mount_silverwolf": {
+    "id": "mount_silverwolf",
+    "name": "Silver Wolf",
+    "description": "The pale rare of the Knuckle Hills. It hunts beside you and never tires of it. −55% respawn pause.",
+    "icon": "🐺",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 60,
+      "perk": "respawn_speed",
+      "perkAmt": 0.55
+    }
+  },
+  "mount_courier": {
+    "id": "mount_courier",
+    "name": "Courier Pony",
+    "description": "The Ironvale Courier's own breed. Born to run the roads. −10% expedition time.",
+    "icon": "🐴",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 1500,
+    "meta": {
+      "rideReq": 15,
+      "cost": 3000,
+      "perk": "expedition_time",
+      "perkAmt": 0.1
+    }
+  },
+  "mount_marshstrider": {
+    "id": "mount_marshstrider",
+    "name": "Marsh Strider",
+    "description": "Crosses the Heartmoor at a pace others can't. −15% expedition time.",
+    "icon": "🐴",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 6000,
+    "meta": {
+      "rideReq": 40,
+      "cost": 12000,
+      "perk": "expedition_time",
+      "perkAmt": 0.15
+    }
+  },
+  "mount_stormhound": {
+    "id": "mount_stormhound",
+    "name": "Storm Hound",
+    "description": "Runs ahead of the weather. −18% expedition time.",
+    "icon": "🐕",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 15000,
+    "meta": {
+      "rideReq": 50,
+      "cost": 30000,
+      "perk": "expedition_time",
+      "perkAmt": 0.18
+    }
+  },
+  "mount_dustrunner": {
+    "id": "mount_dustrunner",
+    "name": "Redrun Courser",
+    "description": "Bred along the red river for distance and speed. −25% expedition time.",
+    "icon": "🐎",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 45000,
+    "meta": {
+      "rideReq": 75,
+      "cost": 90000,
+      "perk": "expedition_time",
+      "perkAmt": 0.25
+    }
+  },
+  "mount_ferryman": {
+    "id": "mount_ferryman",
+    "name": "Ferryman's Steed",
+    "description": "It crosses what others can't, and asks the same toll. −30% expedition time.",
+    "icon": "🐴",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 85,
+      "perk": "expedition_time",
+      "perkAmt": 0.3
+    }
+  },
+  "mount_nighthound": {
+    "id": "mount_nighthound",
+    "name": "Night Hound",
+    "description": "Works the dark while you rest. +8% offline progress.",
+    "icon": "🐕‍🦺",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 3200,
+    "meta": {
+      "rideReq": 30,
+      "cost": 6500,
+      "perk": "offline_boost",
+      "perkAmt": 0.08
+    }
+  },
+  "mount_bogwisp": {
+    "id": "mount_bogwisp",
+    "name": "Bog Wisp",
+    "description": "A pale Heartmoor light that drifts ahead, working when you aren't. +10% offline progress.",
+    "icon": "🪼",
+    "cat": "Mounts",
+    "slot": "mount",
+    "sell": 8000,
+    "meta": {
+      "rideReq": 45,
+      "cost": 16000,
+      "perk": "offline_boost",
+      "perkAmt": 0.1
+    }
+  },
+  "mount_deepwing": {
+    "id": "mount_deepwing",
+    "name": "Deepwing Bat",
+    "description": "A bat of the Marrow Deeps, never still in the dark. +12% offline progress.",
+    "icon": "🦇",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 55,
+      "perk": "offline_boost",
+      "perkAmt": 0.12
+    }
+  },
+  "mount_wraithsteed": {
+    "id": "mount_wraithsteed",
+    "name": "Wraith-Steed",
+    "description": "A remnant that does not sleep, and lets you do the same work through it. +18% offline progress.",
+    "icon": "👻",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 85,
+      "perk": "offline_boost",
+      "perkAmt": 0.18
+    }
+  },
+  "mount_lodgeoutrider": {
+    "id": "mount_lodgeoutrider",
+    "name": "Lodge Outrider",
+    "description": "Granted to those the Wayfarers' Lodge trusts to ride point. +1 expedition member slot.",
+    "icon": "🐎",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 50,
+      "perk": "expedition_slot",
+      "perkAmt": 1
+    }
+  },
+  "mount_hollowsteed": {
+    "id": "mount_hollowsteed",
+    "name": "Hollow Steed",
+    "description": "It musters the unaccounted to ride with you. +1 expedition member slot.",
+    "icon": "💀",
+    "cat": "Mounts",
+    "slot": "mount",
+    "meta": {
+      "rideReq": 70,
+      "perk": "expedition_slot",
+      "perkAmt": 1
+    }
+  },
+  "prosp_helmet": {
+    "id": "prosp_helmet",
+    "name": "Prospector Helmet",
+    "description": "+0.5% Mining XP. Part of the Prospector's Set (5% total when complete).",
+    "icon": "⛏️",
+    "cat": "Gathering Gear",
+    "slot": "helmet",
+    "meta": {
+      "skillBonus": "mining",
+      "xpPct": 0.005
+    }
+  },
+  "prosp_jacket": {
+    "id": "prosp_jacket",
+    "name": "Prospector Jacket",
+    "description": "+0.5% Mining XP. Part of the Prospector's Set (5% total when complete).",
+    "icon": "🦺",
+    "cat": "Gathering Gear",
+    "slot": "armor",
+    "meta": {
+      "skillBonus": "mining",
+      "xpPct": 0.005
+    }
+  },
+  "prosp_trousers": {
+    "id": "prosp_trousers",
+    "name": "Prospector Trousers",
+    "description": "+0.5% Mining XP. Part of the Prospector's Set (5% total when complete).",
+    "icon": "👖",
+    "cat": "Gathering Gear",
+    "slot": "legs",
+    "meta": {
+      "skillBonus": "mining",
+      "xpPct": 0.005
+    }
+  },
+  "prosp_boots": {
+    "id": "prosp_boots",
+    "name": "Prospector Boots",
+    "description": "+0.5% Mining XP. Part of the Prospector's Set (5% total when complete).",
+    "icon": "🥾",
+    "cat": "Gathering Gear",
+    "slot": "boots",
+    "meta": {
+      "skillBonus": "mining",
+      "xpPct": 0.005
+    }
+  },
+  "lumber_hat": {
+    "id": "lumber_hat",
+    "name": "Lumberjack Hat",
+    "description": "+0.5% Forestry XP. Part of the Lumberjack's Set (5% total when complete).",
+    "icon": "🪖",
+    "cat": "Gathering Gear",
+    "slot": "helmet",
+    "meta": {
+      "skillBonus": "forestry",
+      "xpPct": 0.005
+    }
+  },
+  "lumber_top": {
+    "id": "lumber_top",
+    "name": "Lumberjack Top",
+    "description": "+0.5% Forestry XP. Part of the Lumberjack's Set (5% total when complete).",
+    "icon": "🧥",
+    "cat": "Gathering Gear",
+    "slot": "armor",
+    "meta": {
+      "skillBonus": "forestry",
+      "xpPct": 0.005
+    }
+  },
+  "lumber_legs": {
+    "id": "lumber_legs",
+    "name": "Lumberjack Legs",
+    "description": "+0.5% Forestry XP. Part of the Lumberjack's Set (5% total when complete).",
+    "icon": "👖",
+    "cat": "Gathering Gear",
+    "slot": "legs",
+    "meta": {
+      "skillBonus": "forestry",
+      "xpPct": 0.005
+    }
+  },
+  "lumber_boots": {
+    "id": "lumber_boots",
+    "name": "Lumberjack Boots",
+    "description": "+0.5% Forestry XP. Part of the Lumberjack's Set (5% total when complete).",
+    "icon": "🥾",
+    "cat": "Gathering Gear",
+    "slot": "boots",
+    "meta": {
+      "skillBonus": "forestry",
+      "xpPct": 0.005
+    }
+  },
+  "angler_hat": {
+    "id": "angler_hat",
+    "name": "Angler Hat",
+    "description": "+0.5% Fishing XP. Part of the Angler's Set (5% total when complete).",
+    "icon": "🎩",
+    "cat": "Gathering Gear",
+    "slot": "helmet",
+    "meta": {
+      "skillBonus": "fishing",
+      "xpPct": 0.005
+    }
+  },
+  "angler_top": {
+    "id": "angler_top",
+    "name": "Angler Top",
+    "description": "+0.5% Fishing XP. Part of the Angler's Set (5% total when complete).",
+    "icon": "🧥",
+    "cat": "Gathering Gear",
+    "slot": "armor",
+    "meta": {
+      "skillBonus": "fishing",
+      "xpPct": 0.005
+    }
+  },
+  "angler_waders": {
+    "id": "angler_waders",
+    "name": "Angler Waders",
+    "description": "+0.5% Fishing XP. Part of the Angler's Set (5% total when complete).",
+    "icon": "👖",
+    "cat": "Gathering Gear",
+    "slot": "legs",
+    "meta": {
+      "skillBonus": "fishing",
+      "xpPct": 0.005
+    }
+  },
+  "angler_boots": {
+    "id": "angler_boots",
+    "name": "Angler Boots",
+    "description": "+0.5% Fishing XP. Part of the Angler's Set (5% total when complete).",
+    "icon": "🥾",
+    "cat": "Gathering Gear",
+    "slot": "boots",
+    "meta": {
+      "skillBonus": "fishing",
+      "xpPct": 0.005
+    }
+  },
+  "farmer_hat": {
+    "id": "farmer_hat",
+    "name": "Farmer Hat",
+    "description": "+0.5% Farming XP. Part of the Farmer's Set (5% total when complete).",
+    "icon": "👒",
+    "cat": "Gathering Gear",
+    "slot": "helmet",
+    "meta": {
+      "skillBonus": "farming",
+      "xpPct": 0.005
+    }
+  },
+  "farmer_jacket": {
+    "id": "farmer_jacket",
+    "name": "Farmer Jacket",
+    "description": "+0.5% Farming XP. Part of the Farmer's Set (5% total when complete).",
+    "icon": "🦺",
+    "cat": "Gathering Gear",
+    "slot": "armor",
+    "meta": {
+      "skillBonus": "farming",
+      "xpPct": 0.005
+    }
+  },
+  "farmer_legs": {
+    "id": "farmer_legs",
+    "name": "Farmer Legs",
+    "description": "+0.5% Farming XP. Part of the Farmer's Set (5% total when complete).",
+    "icon": "👖",
+    "cat": "Gathering Gear",
+    "slot": "legs",
+    "meta": {
+      "skillBonus": "farming",
+      "xpPct": 0.005
+    }
+  },
+  "farmer_boots": {
+    "id": "farmer_boots",
+    "name": "Farmer Boots",
+    "description": "+0.5% Farming XP. Part of the Farmer's Set (5% total when complete).",
+    "icon": "🥾",
+    "cat": "Gathering Gear",
+    "slot": "boots",
+    "meta": {
+      "skillBonus": "farming",
+      "xpPct": 0.005
+    }
+  },
+  "cape_mining": {
+    "id": "cape_mining",
+    "name": "Stone Master's Cape",
+    "description": "The mark of a master miner. The stone yields to your eye.",
+    "icon": "🪨",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "mining"
+    }
+  },
+  "cape_smithing": {
+    "id": "cape_smithing",
+    "name": "Forgemaster's Cape",
+    "description": "The mark of a master smith. The forge obeys your hands.",
+    "icon": "🔨",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "smithing"
+    }
+  },
+  "cape_forestry": {
+    "id": "cape_forestry",
+    "name": "Old Growth Cape",
+    "description": "The mark of a master forester. The oldest trees bow for you.",
+    "icon": "🌲",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "forestry"
+    }
+  },
+  "cape_woodcraft": {
+    "id": "cape_woodcraft",
+    "name": "Bowwright's Cape",
+    "description": "The mark of a master bowyer. Every shaft runs true.",
+    "icon": "🪚",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "woodcraft"
+    }
+  },
+  "cape_fishing": {
+    "id": "cape_fishing",
+    "name": "Angler's Cape",
+    "description": "The mark of a master angler. The fish come to you.",
+    "icon": "🎣",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "fishing"
+    }
+  },
+  "cape_cooking": {
+    "id": "cape_cooking",
+    "name": "Hearthkeeper's Cape",
+    "description": "The mark of a master cook. Nothing burns.",
+    "icon": "🍳",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "cooking"
+    }
+  },
+  "cape_farming": {
+    "id": "cape_farming",
+    "name": "Harvest Cape",
+    "description": "The mark of a master farmer. Every seed takes root.",
+    "icon": "🌾",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "farming"
+    }
+  },
+  "cape_survivalist": {
+    "id": "cape_survivalist",
+    "name": "Wayfarer's Cape",
+    "description": "The mark of a true survivalist. Varath holds no secrets from you.",
+    "icon": "🏕️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "survivalist"
+    }
+  },
+  "cape_bounty": {
+    "id": "cape_bounty",
+    "name": "Hunter's Cape",
+    "description": "The mark of a master hunter. Every task is a certainty.",
+    "icon": "🎯",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "bounty"
+    }
+  },
+  "cape_vitality": {
+    "id": "cape_vitality",
+    "name": "Life's Cape",
+    "description": "The mark of a hardened warrior. You endure what others cannot.",
+    "icon": "❤️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "vitality"
+    }
+  },
+  "cape_edge": {
+    "id": "cape_edge",
+    "name": "Edgemaster's Cape",
+    "description": "The mark of a master swordsman. The edge never dulls.",
+    "icon": "⚔️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "edge"
+    }
+  },
+  "cape_vigour": {
+    "id": "cape_vigour",
+    "name": "Vigour Cape",
+    "description": "The mark of the strongest fighter. Each strike carries weight.",
+    "icon": "💪",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "vigour"
+    }
+  },
+  "cape_ward": {
+    "id": "cape_ward",
+    "name": "Shield-Ward Cape",
+    "description": "The mark of an unbreakable defender. Blows glance off you.",
+    "icon": "🛡️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "ward"
+    }
+  },
+  "cape_draw": {
+    "id": "cape_draw",
+    "name": "Marksmanship Cape",
+    "description": "The mark of the finest archer in Varath. The shot is always true.",
+    "icon": "🏹",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "draw"
+    }
+  },
+  "cape_construction": {
+    "id": "cape_construction",
+    "name": "Builder's Cape",
+    "description": "The mark of the master builder of Varath. Every stone is set true.",
+    "icon": "🏗️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "construction"
+    }
+  },
+  "cape_herblore": {
+    "id": "cape_herblore",
+    "name": "Alchemist's Cape",
+    "description": "The mark of a master herbalist. Every potion runs true and strong.",
+    "icon": "⚗️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "herblore"
+    }
+  },
+  "cape_crafting": {
+    "id": "cape_crafting",
+    "name": "Artisan's Cape",
+    "description": "The mark of Varath's master craftsman. Leather, glass, and gem yield to your hands.",
+    "icon": "✂️",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "crafting"
+    }
+  },
+  "cape_hunter": {
+    "id": "cape_hunter",
+    "name": "Trapper's Cape",
+    "description": "The mark of a master hunter. The moor gives up what it holds.",
+    "icon": "🪤",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 1000000,
+    "meta": {
+      "skill": "hunter"
+    }
+  },
+  "cape_max": {
+    "id": "cape_max",
+    "name": "Cape of Varath",
+    "description": "All master cape bonuses combined: +5% all XP, +20 max HP, +5 Edge/Vigour/Draw/Ward, +25% Hunt Marks, +10% crop survival, potions last 25% longer, smelting 10% faster. The mark of a complete Varath.",
+    "icon": "🌟",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 100000000,
+    "meta": {
+      "skill": "max"
+    }
+  },
+  "cape_ironvale": {
+    "id": "cape_ironvale",
+    "name": "Ironvale's Cape",
+    "description": "A prestige reskin of the Cape of Varath. Carries every benefit of the Cape of Varath — it is the same power, differently dressed. Awarded only to those who have filled the collection log, claimed every achievement, and cleared every dungeon.",
+    "icon": "✨",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 0,
+    "meta": {
+      "skill": "ironvale"
+    }
+  },
+  "charcoal": {
+    "id": "charcoal",
+    "name": "Charcoal",
+    "description": "Produced by burning wood. Used as a cheaper substitute for Embercite in smelting, at two charcoal per ore.",
+    "icon": "⬛",
+    "cat": "Materials",
+    "sell": 22
+  },
+  "raw_hide": {
+    "id": "raw_hide",
+    "name": "Raw Hide",
+    "description": "A scraped, untreated hide from a moor rat. Tan it at the Crafting bench.",
+    "icon": "🟤",
+    "cat": "Leathers",
+    "sell": 8
+  },
+  "tanned_leather": {
+    "id": "tanned_leather",
+    "name": "Tanned Leather",
+    "description": "Cured and softened hide. The foundation of leatherwork.",
+    "icon": "🟫",
+    "cat": "Leathers",
+    "sell": 20
+  },
+  "cured_leather": {
+    "id": "cured_leather",
+    "name": "Cured Leather",
+    "description": "Cured wolf hide, supple and durable. Good for serious armour.",
+    "icon": "🟫",
+    "cat": "Leathers",
+    "sell": 55
+  },
+  "hardened_leather": {
+    "id": "hardened_leather",
+    "name": "Hardened Leather",
+    "description": "Bear hide treated and hardened over fire. Rivals light plate in protection.",
+    "icon": "🟫",
+    "cat": "Leathers",
+    "sell": 130
+  },
+  "master_leather": {
+    "id": "master_leather",
+    "name": "Master Leather",
+    "description": "Hardened leather reinforced with ashiron rivets. The pinnacle of the leatherworker's craft.",
+    "icon": "🟫",
+    "cat": "Leathers",
+    "sell": 350
+  },
+  "silica_sand": {
+    "id": "silica_sand",
+    "name": "Silica Sand",
+    "description": "Quartz-rich sand found in certain rock veins. Melted down by glassblowers into raw glass.",
+    "icon": "🪨",
+    "cat": "Materials",
+    "sell": 12
+  },
+  "glass_vial": {
+    "id": "glass_vial",
+    "name": "Glass Vial",
+    "description": "A small glass vial. Herblore can use these to stretch potions further.",
+    "icon": "🧪",
+    "cat": "Glass",
+    "sell": 28
+  },
+  "glass_bead": {
+    "id": "glass_bead",
+    "name": "Glass Bead",
+    "description": "A polished glass bead. Jewellers prize these for setting into rings and necklaces.",
+    "icon": "🔵",
+    "cat": "Glass",
+    "sell": 45
+  },
+  "glass_flask": {
+    "id": "glass_flask",
+    "name": "Glass Flask",
+    "description": "A wide-mouthed flask. Holds double the volume of a vial — potions brewed in these last far longer.",
+    "icon": "🫙",
+    "cat": "Glass",
+    "sell": 90
+  },
+  "rough_gem": {
+    "id": "rough_gem",
+    "name": "Rough Gem",
+    "description": "An uncut gemstone pulled from deep rock. A skilled craftsman can cut and polish it.",
+    "icon": "💎",
+    "cat": "Gems",
+    "sell": 80
+  },
+  "cut_gem": {
+    "id": "cut_gem",
+    "name": "Cut Gem",
+    "description": "A faceted, polished gem. Set into rings and necklaces for exceptional power.",
+    "icon": "💎",
+    "cat": "Gems",
+    "sell": 300
+  },
+  "leath_helm": {
+    "id": "leath_helm",
+    "name": "Tanned Leather Helm",
+    "description": "A simple leather cap. Lighter than metal but protection enough.",
+    "icon": "🪖",
+    "cat": "Leather Armour",
+    "slot": "helmet",
+    "def": 3,
+    "craftTier": 1,
+    "sell": 35
+  },
+  "leath_body": {
+    "id": "leath_body",
+    "name": "Tanned Leather Coat",
+    "description": "A stitched leather jerkin. Flexible and decent protection.",
+    "icon": "🥋",
+    "cat": "Leather Armour",
+    "slot": "armor",
+    "def": 6,
+    "craftTier": 1,
+    "sell": 70
+  },
+  "leath_legs": {
+    "id": "leath_legs",
+    "name": "Tanned Leather Legs",
+    "description": "Leather breeches, reinforced at the knees.",
+    "icon": "🩲",
+    "cat": "Leather Armour",
+    "slot": "legs",
+    "def": 4,
+    "craftTier": 1,
+    "sell": 55
+  },
+  "leath_boots": {
+    "id": "leath_boots",
+    "name": "Tanned Leather Boots",
+    "description": "Soft leather boots. Quiet on stone.",
+    "icon": "🥾",
+    "cat": "Leather Armour",
+    "slot": "boots",
+    "def": 2,
+    "craftTier": 1,
+    "sell": 25
+  },
+  "cured_helm": {
+    "id": "cured_helm",
+    "name": "Cured Leather Helm",
+    "description": "A shaped, cured leather helm with studded reinforcement.",
+    "icon": "🪖",
+    "cat": "Leather Armour",
+    "slot": "helmet",
+    "def": 7,
+    "craftTier": 2,
+    "sell": 95
+  },
+  "cured_body": {
+    "id": "cured_body",
+    "name": "Cured Leather Coat",
+    "description": "A tough cured leather coat. Mid-tier protection and no rattle.",
+    "icon": "🥋",
+    "cat": "Leather Armour",
+    "slot": "armor",
+    "def": 14,
+    "craftTier": 2,
+    "sell": 190
+  },
+  "cured_legs": {
+    "id": "cured_legs",
+    "name": "Cured Leather Legs",
+    "description": "Cured leather legguards. Substantial and flexible.",
+    "icon": "🩲",
+    "cat": "Leather Armour",
+    "slot": "legs",
+    "def": 10,
+    "craftTier": 2,
+    "sell": 145
+  },
+  "cured_boots": {
+    "id": "cured_boots",
+    "name": "Cured Leather Boots",
+    "description": "Thick cured boots with a dense sole.",
+    "icon": "🥾",
+    "cat": "Leather Armour",
+    "slot": "boots",
+    "def": 5,
+    "craftTier": 2,
+    "sell": 70
+  },
+  "hard_helm": {
+    "id": "hard_helm",
+    "name": "Hardened Leather Helm",
+    "description": "Bear-hide helm hardened over fire. Heavy for leather — protective as light plate.",
+    "icon": "🪖",
+    "cat": "Leather Armour",
+    "slot": "helmet",
+    "def": 13,
+    "craftTier": 3,
+    "sell": 230
+  },
+  "hard_body": {
+    "id": "hard_body",
+    "name": "Hardened Leather Coat",
+    "description": "Overlapping hardened panels. Slashing weapons lose their edge on this.",
+    "icon": "🥋",
+    "cat": "Leather Armour",
+    "slot": "armor",
+    "def": 26,
+    "craftTier": 3,
+    "sell": 460
+  },
+  "hard_legs": {
+    "id": "hard_legs",
+    "name": "Hardened Leather Legs",
+    "description": "Hardened leather greaves. Solid and silent.",
+    "icon": "🩲",
+    "cat": "Leather Armour",
+    "slot": "legs",
+    "def": 19,
+    "craftTier": 3,
+    "sell": 350
+  },
+  "hard_boots": {
+    "id": "hard_boots",
+    "name": "Hardened Leather Boots",
+    "description": "Dense, reinforced boots. The stone does not bite through.",
+    "icon": "🥾",
+    "cat": "Leather Armour",
+    "slot": "boots",
+    "def": 10,
+    "craftTier": 3,
+    "sell": 170
+  },
+  "master_helm": {
+    "id": "master_helm",
+    "name": "Master Leather Helm",
+    "description": "Iron-riveted master craftwork. The finest leather helm in Varath.",
+    "icon": "🪖",
+    "cat": "Leather Armour",
+    "slot": "helmet",
+    "def": 22,
+    "craftTier": 4,
+    "sell": 650
+  },
+  "master_body": {
+    "id": "master_body",
+    "name": "Master Leather Coat",
+    "description": "Master-grade layered leather and iron. Between a coat of plates and full plate in protection.",
+    "icon": "🥋",
+    "cat": "Leather Armour",
+    "slot": "armor",
+    "def": 44,
+    "craftTier": 4,
+    "sell": 1300
+  },
+  "master_legs": {
+    "id": "master_legs",
+    "name": "Master Leather Legs",
+    "description": "Master-crafted leg armour. The rivets are set by hand.",
+    "icon": "🩲",
+    "cat": "Leather Armour",
+    "slot": "legs",
+    "def": 32,
+    "craftTier": 4,
+    "sell": 975
+  },
+  "master_boots": {
+    "id": "master_boots",
+    "name": "Master Leather Boots",
+    "description": "The finest leather boots — thick soles, iron toecaps, hardened uppers.",
+    "icon": "🥾",
+    "cat": "Leather Armour",
+    "slot": "boots",
+    "def": 17,
+    "craftTier": 4,
+    "sell": 480
+  },
+  "craft_ring_1": {
+    "id": "craft_ring_1",
+    "name": "Knucklestone Ring",
+    "description": "A simple stone-set ring. Modest accuracy.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 4,
+    "sell": 45
+  },
+  "craft_ring_2": {
+    "id": "craft_ring_2",
+    "name": "Glass-Set Ring",
+    "description": "A coldvein band set with a polished glass bead.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 9,
+    "sell": 120
+  },
+  "craft_ring_3": {
+    "id": "craft_ring_3",
+    "name": "Ashiron Band",
+    "description": "A solid ashiron ring with twin glass-bead settings.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 15,
+    "sell": 280
+  },
+  "craft_ring_gem": {
+    "id": "craft_ring_gem",
+    "name": "Gem-Set Ring",
+    "description": "A master ring set with a cut gem. The finest crafted ring in Varath.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 24,
+    "sell": 900
+  },
+  "pearl_ring": {
+    "id": "pearl_ring",
+    "name": "River Pearl Ring",
+    "description": "A coldvein band set with a reddish Redrun pearl. An uncommon find made into an uncommon ring.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 7,
+    "sell": 280
+  },
+  "stone_ring": {
+    "id": "stone_ring",
+    "name": "River Stone Ring",
+    "description": "A smooth river stone set simply in clay and fired. The first ring many crafters make.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 2,
+    "sell": 25
+  },
+  "craft_neck_power": {
+    "id": "craft_neck_power",
+    "name": "Ironweave Chain",
+    "description": "A heavy ashiron chain — the dense links add striking force.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "dmg": 10,
+    "sell": 200
+  },
+  "craft_neck_shield": {
+    "id": "craft_neck_shield",
+    "name": "Wardstone Pendant",
+    "description": "A ribstone pendant carved into a ward-glyph. Bolsters defence.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "def": 14,
+    "sell": 250
+  },
+  "craft_neck_hunter": {
+    "id": "craft_neck_hunter",
+    "name": "Glass-Eye Pendant",
+    "description": "A glass-bead pendant on a fine chain. The bead catches light like an eye.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 13,
+    "sell": 220
+  },
+  "craft_neck_gem": {
+    "id": "craft_neck_gem",
+    "name": "Gemstone Necklace",
+    "description": "A polished cut gem on a master chain. The pinnacle of craftwork jewellery.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 18,
+    "sell": 1100
+  },
+  "sigil_knuckle": {
+    "id": "sigil_knuckle",
+    "name": "Knuckle Sigil",
+    "description": "A pressed knucklestone seal — the mark of a Hill man who knows his roots.",
+    "icon": "🔰",
+    "cat": "Heraldry",
+    "slot": "ring",
+    "acc": 6,
+    "sell": 120
+  },
+  "sigil_spine": {
+    "id": "sigil_spine",
+    "name": "Spine Sigil",
+    "description": "A spinite-etched insignia. Mountain-born or mountain-tested.",
+    "icon": "🔰",
+    "cat": "Heraldry",
+    "slot": "ring",
+    "acc": 14,
+    "sell": 380
+  },
+  "crest_shield": {
+    "id": "crest_shield",
+    "name": "Crested Shield",
+    "description": "A coldvein shield painted with bloodore heraldry. Defence and declaration.",
+    "icon": "🛡️",
+    "cat": "Heraldry",
+    "slot": "offhand",
+    "def": 18,
+    "twoHand": false,
+    "sell": 450
+  },
+  "crest_shield_master": {
+    "id": "crest_shield_master",
+    "name": "Master Crest Shield",
+    "description": "A ribstone shield with void-pigment insignia. The heraldist's final word on defence.",
+    "icon": "🛡️",
+    "cat": "Heraldry",
+    "slot": "offhand",
+    "def": 30,
+    "twoHand": false,
+    "sell": 900
+  },
+  "herald_cape_ash": {
+    "id": "herald_cape_ash",
+    "name": "Ashmark Cape",
+    "description": "A grey-dyed travelling cape marked with the ash sigil. +4% gathering speed.",
+    "icon": "🧣",
+    "cat": "Heraldry",
+    "slot": "cape",
+    "sell": 200,
+    "meta": {
+      "gatherBonus": 0.04
+    }
+  },
+  "herald_cape_deep": {
+    "id": "herald_cape_deep",
+    "name": "Deepmark Cape",
+    "description": "A deeproot-dyed cape bearing the old mark. Those who know, nod. +8% gathering speed.",
+    "icon": "🧣",
+    "cat": "Heraldry",
+    "slot": "cape",
+    "sell": 600,
+    "meta": {
+      "gatherBonus": 0.08
+    }
+  },
+  "tip_knucklestone": {
+    "id": "tip_knucklestone",
+    "name": "Knucklestone Tips",
+    "description": "Crude stone arrowheads. They hold a basic edge.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 3
+  },
+  "tip_ashiron": {
+    "id": "tip_ashiron",
+    "name": "Ashiron Tips",
+    "description": "Proper iron arrowheads. These bite.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 14
+  },
+  "tip_ribstone": {
+    "id": "tip_ribstone",
+    "name": "Ribstone Tips",
+    "description": "Dense tips that punch through lighter armour.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 22
+  },
+  "tip_bloodore": {
+    "id": "tip_bloodore",
+    "name": "Bloodore Tips",
+    "description": "Reddish, heavy. They carry momentum well.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 55
+  },
+  "tip_hearthite": {
+    "id": "tip_hearthite",
+    "name": "Hearthite Tips",
+    "description": "The finest arrowheads in Varath. Warm to the touch.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 120
+  },
+  "tip_voidstone": {
+    "id": "tip_voidstone",
+    "name": "Voidstone Tips",
+    "description": "Dark, cold tips. Frighteningly sharp.",
+    "icon": "◁",
+    "cat": "Materials",
+    "sell": 12
+  },
+  "arrow_knucklestone": {
+    "id": "arrow_knucklestone",
+    "name": "Knucklestone Arrow",
+    "description": "A basic arrow tipped with knucklestone. Better than nothing.",
+    "icon": "🏹",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "acc": 3,
+    "dmg": 2,
+    "sell": 12
+  },
+  "arrow_ashiron": {
+    "id": "arrow_ashiron",
+    "name": "Ashiron Arrow",
+    "description": "A proper war arrow. Reliable in the field.",
+    "icon": "🏹",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "acc": 8,
+    "dmg": 5,
+    "sell": 40
+  },
+  "arrow_ashiron_resin": {
+    "id": "arrow_ashiron_resin",
+    "name": "Resin Ashiron Arrow",
+    "description": "A well-made arrow with resin-treated shaft. Consistent in flight.",
+    "icon": "🏹",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "acc": 10,
+    "dmg": 5,
+    "sell": 12
+  },
+  "arrow_hearthite": {
+    "id": "arrow_hearthite",
+    "name": "Hearthite Arrow",
+    "description": "The finest arrow in Varath. Warm even in flight.",
+    "icon": "🏹",
+    "cat": "Arrows",
+    "slot": "ammo",
+    "acc": 28,
+    "dmg": 18,
+    "sell": 200
+  },
+  "plant_fiber": {
+    "id": "plant_fiber",
+    "name": "Plant Fiber",
+    "description": "Stripped fibers from wild plants. Used to string bows and craft rope.",
+    "icon": "🪢",
+    "cat": "Materials",
+    "sell": 12
+  },
+  "unstrung_crude": {
+    "id": "unstrung_crude",
+    "name": "Unstrung Shortbow",
+    "description": "A rough shortbow shape, no string yet.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 10
+  },
+  "unstrung_short": {
+    "id": "unstrung_short",
+    "name": "Unstrung Shortbow (B)",
+    "description": "A shaped briarwood bow. Needs stringing.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 25
+  },
+  "unstrung_long": {
+    "id": "unstrung_long",
+    "name": "Unstrung Longbow",
+    "description": "A coldpine longbow shape, not yet strung.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 55
+  },
+  "unstrung_greyoak": {
+    "id": "unstrung_greyoak",
+    "name": "Unstrung Greyoak Longbow",
+    "description": "Greyoak bow without a string.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 110
+  },
+  "unstrung_ruewood": {
+    "id": "unstrung_ruewood",
+    "name": "Unstrung Ruewood Shortbow",
+    "description": "The red wood, shaped. Needs stringing.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 200
+  },
+  "unstrung_dusk": {
+    "id": "unstrung_dusk",
+    "name": "Unstrung Duskwood Warbow",
+    "description": "Dark warbow, unfinished without its string.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 320
+  },
+  "unstrung_deep": {
+    "id": "unstrung_deep",
+    "name": "Unstrung Deeproot Warbow",
+    "description": "The finest wood, shaped but awaiting its string.",
+    "icon": "🪵",
+    "cat": "Materials",
+    "sell": 500
+  },
+  "bird_nest": {
+    "id": "bird_nest",
+    "name": "Bird Nest",
+    "description": "A nest shaken loose from the canopy. Often contains seeds or the odd small item.",
+    "icon": "🪹",
+    "cat": "Forage",
+    "sell": 15
+  },
+  "bark_strip": {
+    "id": "bark_strip",
+    "name": "Bark Strip",
+    "description": "A strip of dried bark. Useful for tinder, binding, and certain tinctures.",
+    "icon": "🟫",
+    "cat": "Materials",
+    "sell": 8
+  },
+  "pine_resin": {
+    "id": "pine_resin",
+    "name": "Pine Resin",
+    "description": "Sticky resin tapped from coldpine. Used in bowcraft and as a wood preservative.",
+    "icon": "🟡",
+    "cat": "Materials",
+    "sell": 22
+  },
+  "ironwood_sap": {
+    "id": "ironwood_sap",
+    "name": "Ironwood Sap",
+    "description": "Thick, dark sap from stonewood. Hardens on contact with air. Useful as a natural adhesive.",
+    "icon": "🟤",
+    "cat": "Materials",
+    "sell": 25
+  },
+  "greyoak_gall": {
+    "id": "greyoak_gall",
+    "name": "Greyoak Gall",
+    "description": "A hard growth on a greyoak trunk. Crushed, it produces a brown-black dye used by those who don't trade with heraldists.",
+    "icon": "🟤",
+    "cat": "Materials",
+    "sell": 18
+  },
+  "ruewood_splinter": {
+    "id": "ruewood_splinter",
+    "name": "Ruewood Splinter",
+    "description": "A blood-red splinter from ruewood heartwood. Fletchers prize these for arrow nocking.",
+    "icon": "🔴",
+    "cat": "Materials",
+    "sell": 30
+  },
+  "dusk_bark": {
+    "id": "dusk_bark",
+    "name": "Dusk Bark",
+    "description": "Peeled from duskwood at twilight. Darker than normal bark. Survivalists use it in fire prep.",
+    "icon": "⬛",
+    "cat": "Materials",
+    "sell": 20
+  },
+  "deeproot_chip": {
+    "id": "deeproot_chip",
+    "name": "Deeproot Chip",
+    "description": "A fragment of deeproot heartwood. Dense, ancient, and faintly warm. Uses unknown beyond obvious fuel value.",
+    "icon": "🟫",
+    "cat": "Materials",
+    "sell": 45
+  },
+  "resin_shaft": {
+    "id": "resin_shaft",
+    "name": "Resin-Treated Shaft",
+    "description": "A coldpine shaft treated with pine resin. Fletchers say the arrow flies cleaner.",
+    "icon": "🏹",
+    "cat": "Materials",
+    "sell": 18
+  },
+  "mushroom_broth": {
+    "id": "mushroom_broth",
+    "name": "Mushroom Broth",
+    "description": "A thin broth of wild mushrooms. Warming rather than filling.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 12,
+    "sell": 25
+  },
+  "thornberry_tonic": {
+    "id": "thornberry_tonic",
+    "name": "Thornberry Tonic",
+    "description": "A tart, staining tonic from thornberries. Clears the head.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 22,
+    "sell": 40
+  },
+  "hearthroot_tea": {
+    "id": "hearthroot_tea",
+    "name": "Hearthroot Tea",
+    "description": "A deep, earthy tea. Warm in the belly long after drinking.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 38,
+    "sell": 70
+  },
+  "nightshade_brew": {
+    "id": "nightshade_brew",
+    "name": "Nightshade Brew",
+    "description": "A dark brew of nightshade. Dangerous in the wrong hands. Effective in the right ones.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 55,
+    "sell": 100
+  },
+  "ashroot_elixir": {
+    "id": "ashroot_elixir",
+    "name": "Ashroot Elixir",
+    "description": "A rare elixir. Tastes of ash and cold smoke. Remarkable healing.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 75,
+    "sell": 150
+  },
+  "dawnspore_draught": {
+    "id": "dawnspore_draught",
+    "name": "Dawnspore Draught",
+    "description": "A luminous draught brewed at dawn. The finest foraged medicine in Varath.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 100,
+    "sell": 220
+  },
+  "deepmoss_broth": {
+    "id": "deepmoss_broth",
+    "name": "Deepmoss Broth",
+    "description": "A cold, dark broth of deepmoss. It should not taste good. It does.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 85,
+    "sell": 160
+  },
+  "ashbloom_tea": {
+    "id": "ashbloom_tea",
+    "name": "Ashbloom Tea",
+    "description": "Brewed from pale ashbloom. Smells of old fires. Remarkable recovery for something so slight.",
+    "icon": "🥣",
+    "cat": "Food",
+    "heals": 130,
+    "sell": 240
+  },
+  "health_elixir": {
+    "id": "health_elixir",
+    "name": "Health Elixir",
+    "description": "A concentrated healing potion bought with Hunt Marks. Restores 50 HP instantly.",
+    "icon": "🧪",
+    "cat": "Combat Items",
+    "heals": 50,
+    "sell": 150
+  },
+  "token_spine": {
+    "id": "token_spine",
+    "name": "Spine Pass",
+    "description": "A stamped bone seal issued by the Spine gate-keepers. Grants one entry to The Spine.",
+    "icon": "🪨",
+    "cat": "Combat Items"
+  },
+  "token_heartmoor": {
+    "id": "token_heartmoor",
+    "name": "Heartmoor Writ",
+    "description": "A folded document marked with moor-clay. Grants passage through the Heartmoor checkpost.",
+    "icon": "🌿",
+    "cat": "Combat Items"
+  },
+  "token_marrow": {
+    "id": "token_marrow",
+    "name": "Marrow Descent Key",
+    "description": "A carved stone key. Opens the lower shaft entrance to the Marrow Deeps.",
+    "icon": "🕳️",
+    "cat": "Combat Items"
+  },
+  "token_redrun": {
+    "id": "token_redrun",
+    "name": "Redrun Crossing Fee",
+    "description": "The ferryman's fee, paid in advance. Grants one crossing of the Redrun.",
+    "icon": "⛵",
+    "cat": "Combat Items"
+  },
+  "shard_of_orun": {
+    "id": "shard_of_orun",
+    "name": "Shard of Orun",
+    "description": "A fragment of warm black stone. Found rarely, on the bodies of the slain. The name is what the cult calls it — the stone does not confirm anything. Believers say it is a piece of the dead god. Unbelievers have no better explanation.",
+    "icon": "🖤",
+    "cat": "Legendary",
+    "sell": 10000
+  },
+  "blade_of_graves": {
+    "id": "blade_of_graves",
+    "name": "Blade of Graves",
+    "description": "Forged beneath the Knuckle Hills in a time before smelting was a trade. It has never been fully clean.",
+    "icon": "🗡️",
+    "cat": "Legendary Weapons",
+    "slot": "mainhand",
+    "acc": 28,
+    "dmg": 18,
+    "attackStyle": "slash",
+    "lore": "barrows",
+    "sell": 3000
+  },
+  "marrow_flail": {
+    "id": "marrow_flail",
+    "name": "Marrow Flail",
+    "description": "Heavy, brutal, effective. The chain is older than the head. The head is very old.",
+    "icon": "⚔️",
+    "cat": "Legendary Weapons",
+    "slot": "mainhand",
+    "acc": 22,
+    "dmg": 24,
+    "attackStyle": "crush",
+    "lore": "barrows",
+    "sell": 3000
+  },
+  "ashward_shield": {
+    "id": "ashward_shield",
+    "name": "Ashward Shield",
+    "description": "Obsidian-edged ashiron. Blocks things that should not be blockable.",
+    "icon": "🛡️",
+    "cat": "Legendary Armour",
+    "slot": "offhand",
+    "def": 28,
+    "lore": "barrows",
+    "sell": 3000
+  },
+  "greymail_plate": {
+    "id": "greymail_plate",
+    "name": "Greymail Plate",
+    "description": "Hammered from a single iron bloom. No two rings are alike. It has never rusted.",
+    "icon": "🧥",
+    "cat": "Legendary Armour",
+    "slot": "armor",
+    "def": 35,
+    "lore": "barrows",
+    "sell": 3000
+  },
+  "barrow_helm": {
+    "id": "barrow_helm",
+    "name": "Barrow Helm",
+    "description": "The visor is permanently lowered. No one has seen the face of whoever wore it last.",
+    "icon": "⛑️",
+    "cat": "Legendary Armour",
+    "slot": "helmet",
+    "def": 22,
+    "lore": "barrows",
+    "sell": 3000
+  },
+  "orun_reaver": {
+    "id": "orun_reaver",
+    "name": "Orun's Reaver",
+    "description": "A weapon from the age when believers fought openly. It still carries that argument.",
+    "icon": "🗡️",
+    "cat": "Legendary Weapons",
+    "slot": "mainhand",
+    "acc": 38,
+    "dmg": 28,
+    "attackStyle": "slash",
+    "lore": "spine",
+    "sell": 6000
+  },
+  "coldbone_bow": {
+    "id": "coldbone_bow",
+    "name": "Coldbone Bow",
+    "description": "Carved from a tree that grew through a tomb. The string hums at a pitch only animals react to.",
+    "icon": "🏹",
+    "cat": "Legendary Weapons",
+    "slot": "ranged",
+    "acc": 40,
+    "dmg": 22,
+    "lore": "spine",
+    "sell": 6000
+  },
+  "stoneguard_plate": {
+    "id": "stoneguard_plate",
+    "name": "Stoneguard Plate",
+    "description": "Recovered from the Spine summit. Heavy as consequence.",
+    "icon": "🧥",
+    "cat": "Legendary Armour",
+    "slot": "armor",
+    "def": 52,
+    "lore": "spine",
+    "sell": 6000
+  },
+  "ironveil_legs": {
+    "id": "ironveil_legs",
+    "name": "Ironveil Legs",
+    "description": "Interlocked spinite rings over an ashiron core. Nothing gets through.",
+    "icon": "🦿",
+    "cat": "Legendary Armour",
+    "slot": "legs",
+    "def": 38,
+    "lore": "spine",
+    "sell": 6000
+  },
+  "warden_ring": {
+    "id": "warden_ring",
+    "name": "Warden Ring",
+    "description": "Warm. Always warm. The stone at its centre is the same black as a Shard of Orun.",
+    "icon": "💍",
+    "cat": "Legendary Jewellery",
+    "slot": "ring",
+    "acc": 18,
+    "lore": "spine",
+    "sell": 6000
+  },
+  "bog_ward_helm": {
+    "id": "bog_ward_helm",
+    "name": "Bog Warden Helm",
+    "description": "The helm of whatever the Bog Warden was before the mire took it. Heavy and cold. Does not rust.",
+    "icon": "🪖",
+    "cat": "Legendary Armour",
+    "slot": "helmet",
+    "def": 20,
+    "lore": "bogbarrow",
+    "sell": 1800
+  },
+  "marrow_keep_plate": {
+    "id": "marrow_keep_plate",
+    "name": "Marrow Keeper Plate",
+    "description": "Plate armour from the Marrow Vault. Pale as the stone around it. Heavier than it looks.",
+    "icon": "🧥",
+    "cat": "Legendary Armour",
+    "slot": "armor",
+    "def": 52,
+    "lore": "marrowvault",
+    "sell": 4500
+  },
+  "seed_ashweed": {
+    "id": "seed_ashweed",
+    "name": "Ashweed Seed",
+    "description": "A common weed seed. Grows quickly and reliably.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 5
+  },
+  "seed_thornroot": {
+    "id": "seed_thornroot",
+    "name": "Thornroot Seed",
+    "description": "A hardy seed with a barbed shell. Scrapes the fingers when planted.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 10
+  },
+  "seed_bloodberry": {
+    "id": "seed_bloodberry",
+    "name": "Bloodberry Seed",
+    "description": "A seed that yields a red-stained fruit. Said to taste of copper and sweetness.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 18
+  },
+  "seed_coldmoss": {
+    "id": "seed_coldmoss",
+    "name": "Coldmoss Spore",
+    "description": "A pale spore from highland moss. Needs cool soil to take root.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 28
+  },
+  "seed_ironleaf": {
+    "id": "seed_ironleaf",
+    "name": "Ironleaf Seed",
+    "description": "The seed of a plant with metal-grey leaves. Alchemists value the dried leaf.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 42
+  },
+  "seed_greybloom": {
+    "id": "seed_greybloom",
+    "name": "Greybloom Seed",
+    "description": "A grey, dusty seed from the open moors. Slow but reliable.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 60
+  },
+  "seed_spinethistle": {
+    "id": "seed_spinethistle",
+    "name": "Spinethistle Seed",
+    "description": "A seed wrapped in protective spines. The plant is just as unwelcoming.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 85
+  },
+  "seed_ruevine": {
+    "id": "seed_ruevine",
+    "name": "Ruevine Seed",
+    "description": "A seed from a climbing vine with red-veined leaves.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 120
+  },
+  "seed_duskshade": {
+    "id": "seed_duskshade",
+    "name": "Duskshade Seed",
+    "description": "A seed from a plant that only opens at dusk. Rare in the daylight.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 170
+  },
+  "seed_marrowflower": {
+    "id": "seed_marrowflower",
+    "name": "Marrowflower Seed",
+    "description": "A pale seed, fragile to the touch. The flower it yields is palest white.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 240
+  },
+  "seed_hearthbloom": {
+    "id": "seed_hearthbloom",
+    "name": "Hearthbloom Seed",
+    "description": "A warm-toned seed that smells faintly of embers even when unplanted.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 340
+  },
+  "seed_orunroot": {
+    "id": "seed_orunroot",
+    "name": "Orunroot Seed",
+    "description": "A jet-black seed of unknown origin. Takes root in stone. Believers do not plant it lightly.",
+    "icon": "🫘",
+    "cat": "Seeds",
+    "sell": 500
+  },
+  "seed_ashwood": {
+    "id": "seed_ashwood",
+    "name": "Ashwood Seed",
+    "description": "A seed for growing an ashwood tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 15,
+    "meta": {
+      "val": 15
+    }
+  },
+  "seed_coldpine": {
+    "id": "seed_coldpine",
+    "name": "Coldpine Seed",
+    "description": "A seed for growing a coldpine tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 50,
+    "meta": {
+      "val": 50
+    }
+  },
+  "seed_stonewood": {
+    "id": "seed_stonewood",
+    "name": "Stonewood Seed",
+    "description": "A seed for growing a stonewood tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 110,
+    "meta": {
+      "val": 110
+    }
+  },
+  "seed_greyoak": {
+    "id": "seed_greyoak",
+    "name": "Greyoak Seed",
+    "description": "A seed for growing a greyoak tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 170,
+    "meta": {
+      "val": 170
+    }
+  },
+  "seed_ruewood": {
+    "id": "seed_ruewood",
+    "name": "Ruewood Seed",
+    "description": "A seed for growing a ruewood tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 265,
+    "meta": {
+      "val": 265
+    }
+  },
+  "seed_deeproot": {
+    "id": "seed_deeproot",
+    "name": "Deeproot Seed",
+    "description": "A seed for growing a deeproot tree.",
+    "icon": "🌱",
+    "cat": "Seeds",
+    "sell": 620,
+    "meta": {
+      "val": 620
+    }
+  },
+  "herb_ashweed": {
+    "id": "herb_ashweed",
+    "name": "Ashweed",
+    "description": "A common weed with mild medicinal properties. The base of most simple remedies.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 15
+  },
+  "herb_thornroot": {
+    "id": "herb_thornroot",
+    "name": "Thornroot",
+    "description": "A spiky root with a bitter taste. Useful in poultices and traded well.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 28
+  },
+  "herb_bloodberry": {
+    "id": "herb_bloodberry",
+    "name": "Bloodberry",
+    "description": "A red-stained fruit. Tastes of copper and sweetness. Alchemists prize it.",
+    "icon": "🍒",
+    "cat": "Herbs",
+    "sell": 45
+  },
+  "herb_coldmoss": {
+    "id": "herb_coldmoss",
+    "name": "Coldmoss",
+    "description": "A pale, soft moss from highland patches. Cooling in application.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 70
+  },
+  "herb_ironleaf": {
+    "id": "herb_ironleaf",
+    "name": "Ironleaf",
+    "description": "A metal-grey leaf, stiff and sharply edged. Highly valued by herbalists.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 105
+  },
+  "herb_greybloom": {
+    "id": "herb_greybloom",
+    "name": "Greybloom",
+    "description": "A moor flower, grey-petaled and faintly aromatic. Dries into potent powder.",
+    "icon": "🌸",
+    "cat": "Herbs",
+    "sell": 150
+  },
+  "herb_spinethistle": {
+    "id": "herb_spinethistle",
+    "name": "Spinethistle",
+    "description": "A thorned herb requiring gloves to harvest. Its spines are useful in their own right.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 210
+  },
+  "herb_ruevine": {
+    "id": "herb_ruevine",
+    "name": "Ruevine",
+    "description": "Red-veined vine leaves, pungent and staining. Rare and valuable.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 290
+  },
+  "herb_duskshade": {
+    "id": "herb_duskshade",
+    "name": "Duskshade",
+    "description": "A twilight herb of uncertain properties. Traders ask few questions.",
+    "icon": "🌿",
+    "cat": "Herbs",
+    "sell": 400
+  },
+  "herb_marrowflower": {
+    "id": "herb_marrowflower",
+    "name": "Marrowflower",
+    "description": "Palest white petals, almost translucent. Extraordinarily rare.",
+    "icon": "🌸",
+    "cat": "Herbs",
+    "sell": 560
+  },
+  "herb_hearthbloom": {
+    "id": "herb_hearthbloom",
+    "name": "Hearthbloom",
+    "description": "A warm, ember-scented bloom. Petal dust glows faintly orange in the dark.",
+    "icon": "🌸",
+    "cat": "Herbs",
+    "sell": 780
+  },
+  "herb_orunroot": {
+    "id": "herb_orunroot",
+    "name": "Orunroot",
+    "description": "A black, warm root that grows in stone. Believers handle it with reverence. No one knows what it does.",
+    "icon": "🖤",
+    "cat": "Herbs",
+    "sell": 5000
+  },
+  "fertilizer_basic": {
+    "id": "fertilizer_basic",
+    "name": "Basic Fertilizer",
+    "description": "A simple mix of foraged materials worked into the soil. Improves crop survival by 20%.",
+    "icon": "🪣",
+    "cat": "Farming",
+    "sell": 50
+  },
+  "fertilizer_rich": {
+    "id": "fertilizer_rich",
+    "name": "Rich Fertilizer",
+    "description": "A dense, pungent fertilizer from rare foraged ingredients. Improves crop survival by 35%.",
+    "icon": "🪣",
+    "cat": "Farming",
+    "sell": 200
+  },
+  "forage_mushroom": {
+    "id": "forage_mushroom",
+    "name": "Wild Mushroom",
+    "description": "A common mushroom from the forest floor. Edible and useful in composts.",
+    "icon": "🍄",
+    "cat": "Foraged",
+    "sell": 8
+  },
+  "forage_thornberry": {
+    "id": "forage_thornberry",
+    "name": "Thornberries",
+    "description": "Small, dark berries from bramble thickets. Tart and staining.",
+    "icon": "🫐",
+    "cat": "Foraged",
+    "sell": 15
+  },
+  "forage_hearthroot": {
+    "id": "forage_hearthroot",
+    "name": "Hearthroot",
+    "description": "A root that grows near old fire pits. Warm to the touch. Used in fertilizers.",
+    "icon": "🌿",
+    "cat": "Foraged",
+    "sell": 40
+  },
+  "forage_nightshade": {
+    "id": "forage_nightshade",
+    "name": "Nightshade",
+    "description": "A plant of the deep wood. Handled carefully. Valuable to the right buyers.",
+    "icon": "🌿",
+    "cat": "Foraged",
+    "sell": 65
+  },
+  "forage_ashroot": {
+    "id": "forage_ashroot",
+    "name": "Ashroot",
+    "description": "A root found in ash-rich soils, often near old fires. Rare and sought after.",
+    "icon": "🌿",
+    "cat": "Foraged",
+    "sell": 100
+  },
+  "forage_dawnspore": {
+    "id": "forage_dawnspore",
+    "name": "Dawnspore",
+    "description": "A rare spore that appears only at dawn in old-growth areas. Highly prized.",
+    "icon": "🍄",
+    "cat": "Foraged",
+    "sell": 160
+  },
+  "forage_deepmoss": {
+    "id": "forage_deepmoss",
+    "name": "Deepmoss",
+    "description": "A dense, dark moss found on cave walls near the Marrow Deeps entrance. Cold to the touch. Used in slow-cooked stews and certain draughts.",
+    "icon": "🌿",
+    "cat": "Foraged",
+    "sell": 35
+  },
+  "forage_ashbloom": {
+    "id": "forage_ashbloom",
+    "name": "Ashbloom",
+    "description": "A pale flower that grows in the ash of old fire pits — the same sites where Hearthroot clusters. Rarer than it looks.",
+    "icon": "🌸",
+    "cat": "Foraged",
+    "sell": 55
+  },
+  "potion_wildroot": {
+    "id": "potion_wildroot",
+    "name": "Wildroot Tincture",
+    "description": "A rough brew of mushroom and thornberry. The weakest gathering tincture in Varath, but it needs no farm.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.06,
+    "buffMs": 180000,
+    "sell": 30
+  },
+  "potion_greensap": {
+    "id": "potion_greensap",
+    "name": "Greensap Tincture",
+    "description": "A green brew from ashweed and mushroom. Gathering feels effortless for a time.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.1,
+    "buffMs": 300000,
+    "sell": 80
+  },
+  "potion_thornbrew": {
+    "id": "potion_thornbrew",
+    "name": "Thornbrew",
+    "description": "Thornroot and thornberries. The hands move faster, the tools bite deeper.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.15,
+    "buffMs": 480000,
+    "sell": 140
+  },
+  "potion_ironbrew": {
+    "id": "potion_ironbrew",
+    "name": "Ironbrew",
+    "description": "Ironleaf steeped in hearthroot tincture. Gathering +20% speed.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.2,
+    "buffMs": 600000,
+    "sell": 220
+  },
+  "potion_spinedraught": {
+    "id": "potion_spinedraught",
+    "name": "Spine Draught",
+    "description": "Spinethistle extract. Uncommonly potent.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.25,
+    "buffMs": 720000,
+    "sell": 320
+  },
+  "potion_gallbrew": {
+    "id": "potion_gallbrew",
+    "name": "Gall Tincture",
+    "description": "A bitter brew from greyoak gall and mushroom. Gathering feels easier for a time.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "gather_speed",
+    "buffAmt": 0.12,
+    "buffMs": 360000,
+    "sell": 120
+  },
+  "potion_bloodfire": {
+    "id": "potion_bloodfire",
+    "name": "Bloodfire Elixir",
+    "description": "Bloodberry and ashroot. Your strikes land truer.",
+    "icon": "🔴",
+    "cat": "Potions",
+    "buff": "melee_acc",
+    "buffAmt": 8,
+    "buffMs": 300000,
+    "sell": 180
+  },
+  "potion_coldedge": {
+    "id": "potion_coldedge",
+    "name": "Coldedge Elixir",
+    "description": "Coldmoss and ashroot. Each hit cuts deeper.",
+    "icon": "🔵",
+    "cat": "Potions",
+    "buff": "melee_dmg",
+    "buffAmt": 6,
+    "buffMs": 300000,
+    "sell": 180
+  },
+  "potion_runeward": {
+    "id": "potion_runeward",
+    "name": "Runeward Elixir",
+    "description": "Ruevine and dawnspore. The blows land softer.",
+    "icon": "🟣",
+    "cat": "Potions",
+    "buff": "defence",
+    "buffAmt": 10,
+    "buffMs": 300000,
+    "sell": 200
+  },
+  "potion_duskdraught": {
+    "id": "potion_duskdraught",
+    "name": "Dusk Draught",
+    "description": "Duskshade and ashroot. Rare and powerful.",
+    "icon": "⚫",
+    "cat": "Potions",
+    "buff": "melee_acc",
+    "buffAmt": 14,
+    "buffMs": 480000,
+    "sell": 400
+  },
+  "potion_swifteye": {
+    "id": "potion_swifteye",
+    "name": "Swifteye Elixir",
+    "description": "Thornberry and hearthroot. The eye sharpens, the arrow flies true.",
+    "icon": "🟢",
+    "cat": "Potions",
+    "buff": "ranged_acc",
+    "buffAmt": 8,
+    "buffMs": 300000,
+    "sell": 180
+  },
+  "potion_trueshot": {
+    "id": "potion_trueshot",
+    "name": "Trueshot Elixir",
+    "description": "Greyoak gall and hearthroot. Each shot lands with more force behind it.",
+    "icon": "🟡",
+    "cat": "Potions",
+    "buff": "ranged_dmg",
+    "buffAmt": 6,
+    "buffMs": 300000,
+    "sell": 180
+  },
+  "potion_hearthblaze": {
+    "id": "potion_hearthblaze",
+    "name": "Hearthblaze Draught",
+    "description": "Hearthbloom and dawnspore. All skill XP +10% for a time.",
+    "icon": "🟠",
+    "cat": "Potions",
+    "buff": "xp_boost",
+    "buffAmt": 0.1,
+    "buffMs": 600000,
+    "sell": 600
+  },
+  "potion_orunsap": {
+    "id": "potion_orunsap",
+    "name": "Orunsap",
+    "description": "Orunroot distilled. Believers do not drink it lightly.",
+    "icon": "🖤",
+    "cat": "Potions",
+    "buff": "xp_boost",
+    "buffAmt": 0.2,
+    "buffMs": 900000,
+    "sell": 1500
+  },
+  "potion_stonebind": {
+    "id": "potion_stonebind",
+    "name": "Stonebind Draught",
+    "description": "Coldmoss and ironleaf, reduced. Builders in the old stories mixed this into their mortar. Modern ones drink it instead.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "construction_speed",
+    "buffAmt": 0.15,
+    "buffMs": 480000,
+    "sell": 220
+  },
+  "potion_deepcalm": {
+    "id": "potion_deepcalm",
+    "name": "Deepcalm Elixir",
+    "description": "Deepmoss steeped slow. The effect is a settled, cold resistance. Cave fighters favour this.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "defence",
+    "buffAmt": 14,
+    "buffMs": 480000,
+    "sell": 280
+  },
+  "potion_ashbloom": {
+    "id": "potion_ashbloom",
+    "name": "Ashbloom Draught",
+    "description": "Brewed from the pale flower of old fire sites. An XP boost with unusual origins.",
+    "icon": "🧪",
+    "cat": "Potions",
+    "buff": "xp_boost",
+    "buffAmt": 0.08,
+    "buffMs": 480000,
+    "sell": 350
+  },
+  "forge_token": {
+    "id": "forge_token",
+    "name": "Forge Token",
+    "description": "A stamped disc of knucklestone. The Ashforge Guild uses these as proof of rank. This one is Berric's.",
+    "icon": "🔖",
+    "cat": "Quest"
+  },
+  "pale_record_pass": {
+    "id": "pale_record_pass",
+    "name": "Pale Record Pass",
+    "description": "A wax-sealed letter from the Pale Record archive granting access to a restricted reading room.",
+    "icon": "📜",
+    "cat": "Quest"
+  },
+  "seam_marker": {
+    "id": "seam_marker",
+    "name": "Seam Marker",
+    "description": "An iron spike with a lodge sigil. Marks a site of interest to the Warden's Lodge. Someone placed this at the seam before you arrived.",
+    "icon": "⚑",
+    "cat": "Quest"
+  },
+  "greyoak_bough": {
+    "id": "greyoak_bough",
+    "name": "Greyoak Bough",
+    "description": "A branch cut from the greyoak at the Lodge threshold. Maret handed it to you. You're not sure what it means yet.",
+    "icon": "🌿",
+    "cat": "Quest"
+  },
+  "orun_shard_large": {
+    "id": "orun_shard_large",
+    "name": "The Shard",
+    "description": "Larger than the first fragment. Heavier in the hand than it looks. The cult says this one has a name.",
+    "icon": "🖤",
+    "cat": "Quest"
+  },
+  "cult_offering": {
+    "id": "cult_offering",
+    "name": "Cult Offering",
+    "description": "A carefully wrapped bundle left at the seam site. The Heartmoor Cult leaves these when they cannot stay.",
+    "icon": "🕯️",
+    "cat": "Quest"
+  },
+  "berric_notes": {
+    "id": "berric_notes",
+    "name": "Berric's Notes",
+    "description": "Folded papers in Berric's hand. Delivery schedules, a name, and a price that doesn't add up to anything honest.",
+    "icon": "📋",
+    "cat": "Quest"
+  },
+  "maret_key": {
+    "id": "maret_key",
+    "name": "Maret's Key",
+    "description": "A Lodge master key. Maret gave it to you with two conditions. She didn't write them down.",
+    "icon": "🗝️",
+    "cat": "Quest"
+  },
+  "sera_lens": {
+    "id": "sera_lens",
+    "name": "Pale Record Lens",
+    "description": "A brass and glass tool from Sera's archive kit. Used to read script that's been deliberately obscured.",
+    "icon": "🔍",
+    "cat": "Quest"
+  },
+  "lenne_token": {
+    "id": "lenne_token",
+    "name": "Lenne's Hunting Token",
+    "description": "A small carved token Lenne uses to mark a trail. She gave you one. That's not nothing.",
+    "icon": "🪶",
+    "cat": "Quest"
+  },
+  "lodge_badge": {
+    "id": "lodge_badge",
+    "name": "Lodge Badge",
+    "description": "The Warden's Lodge emblem. Signifies you've completed the trial and are considered kin by the woodwardens.",
+    "icon": "🛡️",
+    "cat": "Quest"
+  },
+  "greymane_pelt": {
+    "id": "greymane_pelt",
+    "name": "Greymane Pelt",
+    "description": "The pelt of the Greymane Boar. Massive. Carries a smell that other animals don't like. The Lodge will want this.",
+    "icon": "🐗",
+    "cat": "Quest"
+  },
+  "greymane_tusk": {
+    "id": "greymane_tusk",
+    "name": "Greymane Tusk",
+    "description": "A great curved tusk from the Greymane Boar. Lenne says the old hunters kept these. She'd like one.",
+    "icon": "🦷",
+    "cat": "Quest"
+  },
+  "ashforge_hammer": {
+    "id": "ashforge_hammer",
+    "name": "Ashforge Hammer",
+    "description": "A Brotherhood hammer, stamped with the guild mark. Heavier than a common smith's tool. Faster at the strike for it.",
+    "icon": "🔨",
+    "cat": "Tools"
+  },
+  "intact_burial_shard": {
+    "id": "intact_burial_shard",
+    "name": "Intact Burial Shard",
+    "description": "A Shard of Orun still set in its burial position, untouched since the Underloft. The Marrow Keeper gave you this. It is a question someone died asking.",
+    "icon": "🖤",
+    "cat": "Quest"
+  },
+  "sera_cipher_pendant": {
+    "id": "sera_cipher_pendant",
+    "name": "Cipher Pendant",
+    "description": "Sera's personal cipher key. Her locked research notes open for whoever holds this. She gave it to you. That means something specific to her.",
+    "icon": "🔑",
+    "cat": "Quest"
+  },
+  "lodge_token": {
+    "id": "lodge_token",
+    "name": "Lodge Token",
+    "description": "A carved wooden disc stamped with the Lodge mark. Proof of standing with the Warden's Lodge. Not given lightly.",
+    "icon": "🌲",
+    "cat": "Quest"
+  },
+  "order_cipher_key": {
+    "id": "order_cipher_key",
+    "name": "Order Cipher Key",
+    "description": "A small brass key etched with Pale Record notation. Unlocks the Order's first tier of sealed lore entries.",
+    "icon": "🗝️",
+    "cat": "Quest"
+  },
+  "apprentice_mark_blade": {
+    "id": "apprentice_mark_blade",
+    "name": "Apprentice Mark Blade",
+    "description": "A ribstone blade forged to Brotherhood standard. The Mark is stamped into the tang. Proof you can work the difficult metals.",
+    "icon": "🗡️",
+    "cat": "Tools"
+  },
+  "berric_ledger": {
+    "id": "berric_ledger",
+    "name": "Berric's Ledger",
+    "description": "Berric's personal accounts. Names, figures, and arrangements the Order would find very interesting. Evidence, depending on who holds it.",
+    "icon": "📒",
+    "cat": "Quest"
+  },
+  "warden_longbow": {
+    "id": "warden_longbow",
+    "name": "Warden Longbow",
+    "description": "A proper Lodge bow, fitted and balanced for the deep wood. Maret doesn't give these to people she doesn't trust with the range.",
+    "icon": "🏹",
+    "cat": "Weapons"
+  },
+  "chronicler_seal": {
+    "id": "chronicler_seal",
+    "name": "Chronicler's Seal",
+    "description": "The Pale Record's mark of authorship. Grants full access to Order archives and identifies the bearer as a trusted chronicler.",
+    "icon": "📜",
+    "cat": "Quest"
+  },
+  "knucklestone_dagger": {
+    "id": "knucklestone_dagger",
+    "name": "Knucklestone Dagger",
+    "description": "A short, brittle blade beaten from grey bar. It bites harder than a bare fist.",
+    "icon": "🗡️",
+    "cat": "Weapons",
+    "equip": "weapon",
+    "dmg": 2
+  },
+  "knucklestone_helm": {
+    "id": "knucklestone_helm",
+    "name": "Knucklestone Helm",
+    "description": "A rough grey cap of hammered bar. Turns a glancing blow, if you're lucky.",
+    "icon": "⛑️",
+    "cat": "Armour",
+    "equip": "helmet",
+    "def": 2
+  },
+  "knucklestone_shield": {
+    "id": "knucklestone_shield",
+    "name": "Knucklestone Shield",
+    "description": "A heavy slab of grey plate on a strap. Crude, but it stops what it covers.",
+    "icon": "🛡️",
+    "cat": "Armour",
+    "equip": "shield",
+    "def": 3
+  },
+  "knucklestone_mail": {
+    "id": "knucklestone_mail",
+    "name": "Knucklestone Mail",
+    "description": "A weighty shirt of overlapped bar-plates. A smith's proudest early work.",
+    "icon": "🥋",
+    "cat": "Armour",
+    "equip": "body",
+    "def": 4
+  }
 };
