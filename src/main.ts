@@ -8,8 +8,9 @@
  * sends the same intents to a server and receives the same state back — with
  * NO changes to the core or the client (that's the whole point of RULE 2).
  *
- * Note where the impurity lives: the core forbids Date/Math.random, so the
- * client supplies them here, fresh on every call, via the `ctx` object.
+ * Startup flow: a local "log in" screen picks (or creates) a character account;
+ * a new character goes through the colour creator first. Only then is the world
+ * built and the chosen save laid onto it.
  */
 
 import "./style.css";
@@ -29,8 +30,15 @@ import { Guide } from "./client/guide.ts";
 import { Intro } from "./client/intro.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
-import { clearSave, readSave, writeSave } from "./client/storage.ts";
-import { TitleScreen } from "./client/titleScreen.ts";
+import {
+  clearSave,
+  listAccounts,
+  readSave,
+  setCurrentAccount,
+  writeSave,
+} from "./client/storage.ts";
+import { LoginScreen } from "./client/login.ts";
+import { CharacterCreator, type CreatedCharacter } from "./client/characterCreator.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
 // (never stated as fact) to honour the world's load-bearing ambiguity.
@@ -46,31 +54,7 @@ function ctxAt(nowMs: number): Ctx {
   return { now: nowMs, rng: Math.random, epoch: Date.now() };
 }
 
-// --- Build a fresh, local world. ---
-const startNow = performance.now();
-const state = createWorld(content, playerStart, ctxAt(startNow));
-const walkable = buildWalkability(content, state);
-
-// Lay any saved progress back onto the fresh world (ignored if missing/invalid).
-const restored = hydratePlayer(state, content, readSave());
-
-// --- The local bridge: turn client calls into core calls. ---
-const bridge: CoreBridge = {
-  state,
-  content,
-  walkable,
-  stationRecipes(station) {
-    return stationActions(content, station);
-  },
-  send(intent: Intent) {
-    return applyIntent(state, content, intent, ctxAt(performance.now()));
-  },
-  tick(nowMs: number) {
-    return tick(state, content, ctxAt(nowMs));
-  },
-};
-
-// --- Grab the page elements and start. ---
+// --- Grab the page elements up front. ---
 const canvas = document.getElementById("game") as HTMLCanvasElement | null;
 const hudRoot = document.getElementById("hud") as HTMLElement | null;
 const app = document.getElementById("app") as HTMLElement | null;
@@ -78,50 +62,92 @@ if (!canvas || !hudRoot || !app) {
   throw new Error("Missing #game / #hud / #app elements in index.html");
 }
 
-// --- Reset: wipe the save and reload (lives in the Settings tab). ---
-function resetProgress(): void {
-  const ok = window.confirm(
-    "Reset Varath World? This erases your skills, levels and pack for good.",
-  );
-  if (!ok) return;
-  clearSave();
-  window.location.reload();
+// --- Log in: pick an existing character or make a new one, then boot. ---
+function showLogin(): void {
+  new LoginScreen(app!, listAccounts(), {
+    onLogin: (name) => { setCurrentAccount(name); boot(null); },
+    onNew: () => {
+      new CharacterCreator(app!, {
+        takenNames: listAccounts(),
+        onBack: () => showLogin(),
+        onCreate: (c) => { setCurrentAccount(c.name); boot(c); },
+      });
+    },
+  });
 }
 
-// One shared action/inspect menu for both the world and the inventory.
-const menu = new ContextMenu(app);
-const guide = new Guide(app);
+// --- Build the world for the chosen account and start playing. ---
+function boot(newChar: CreatedCharacter | null): void {
+  const startNow = performance.now();
+  const state = createWorld(content, playerStart, ctxAt(startNow));
+  const walkable = buildWalkability(content, state);
 
-// Late-bound so UI actions (e.g. eating from the pack) route through the game.
-let game: Game;
-const dispatch = (intent: Intent): void => game.dispatch(intent);
+  // Lay any saved progress back onto the fresh world (ignored if missing).
+  const restored = hydratePlayer(state, content, readSave());
+  // A brand-new character stamps its look (and name) onto the fresh player.
+  if (newChar) {
+    state.player.appearance = {
+      name: newChar.name,
+      skin: newChar.skin,
+      hair: newChar.hair,
+      tunic: newChar.tunic,
+    };
+  }
 
-const hud = new Hud(hudRoot, content, resetProgress, menu, dispatch);
-const dialogue = new Dialogue(app);
-game = new Game(canvas, bridge, hud, dialogue, app, menu, guide);
+  const bridge: CoreBridge = {
+    state,
+    content,
+    walkable,
+    stationRecipes(station) {
+      return stationActions(content, station);
+    },
+    send(intent: Intent) {
+      return applyIntent(state, content, intent, ctxAt(performance.now()));
+    },
+    tick(nowMs: number) {
+      return tick(state, content, ctxAt(nowMs));
+    },
+  };
 
-// --- Autosave: persist progress periodically and whenever the tab is hidden. ---
-function persist(): void {
-  writeSave(serializePlayer(state));
-}
-window.setInterval(persist, 4000);
-window.addEventListener("pagehide", persist);
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") persist();
-});
+  // Reset wipes this account's save and returns to the login screen.
+  const resetProgress = (): void => {
+    const ok = window.confirm(
+      "Reset this character? This erases their skills, levels and pack for good.",
+    );
+    if (!ok) return;
+    clearSave();
+    window.location.reload();
+  };
 
-// The world starts running immediately (it animates softly), but the title
-// screen sits on top and captures taps until the player chooses to enter.
-game.start();
-new TitleScreen(app, () => {
-  // Tapping "Enter" plays the atmosphere intro, then drops into the world.
-  // New players get the gentle onboarding guide; returning players don't.
-  new Intro(app, INTRO_LINES, () => {
+  const menu = new ContextMenu(app!);
+  const guide = new Guide(app!);
+  let game: Game;
+  const dispatch = (intent: Intent): void => game.dispatch(intent);
+  const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch);
+  const dialogue = new Dialogue(app!);
+  game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
+
+  // Autosave: periodically and whenever the tab is hidden.
+  const persist = (): void => writeSave(serializePlayer(state));
+  window.setInterval(persist, 4000);
+  window.addEventListener("pagehide", persist);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") persist();
+  });
+
+  game.start();
+
+  const enter = (): void => {
     hud.log(
       restored
-        ? "You return to Ironvale, in the Knuckle Hills. Your progress is as you left it."
-        : "You step into Ironvale, the walled city in the Knuckle Hills.",
+        ? `Welcome back, ${state.player.appearance.name}. Ironvale is as you left it.`
+        : `You step into Ironvale, ${state.player.appearance.name} of the Knuckle Hills.`,
     );
     if (!restored) guide.start();
-  });
-});
+  };
+  // New characters get the atmosphere intro; returning players drop straight in.
+  if (restored) enter();
+  else new Intro(app!, INTRO_LINES, enter);
+}
+
+showLogin();

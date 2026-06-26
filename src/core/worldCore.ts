@@ -261,6 +261,7 @@ export function createWorld(
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
     achievements: [],
+    appearance: { name: "Wanderer", skin: "#e3bd92", hair: "#5a3a1e", tunic: "#6b6157" },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },

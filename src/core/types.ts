@@ -979,6 +979,8 @@ export interface Player {
   stats: { goldEarned: number; monstersSlain: number };
   /** Ids of achievements already unlocked (so they stay unlocked). */
   achievements: string[];
+  /** The player's name and cosmetic colours (from the character creator). */
+  appearance: { name: string; skin: string; hair: string; tunic: string };
   /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
   bounty: BountyState;
   /**

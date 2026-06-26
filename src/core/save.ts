@@ -50,6 +50,8 @@ export interface SavedProgress {
   stats: { goldEarned: number; monstersSlain: number };
   /** Unlocked achievement ids. */
   achievements: string[];
+  /** Name + cosmetic colours from the character creator. */
+  appearance: { name: string; skin: string; hair: string; tunic: string };
   /** Bounty progression: Hunt Marks, chosen guide, the active task (if any). */
   bounty: {
     marks: number;
@@ -91,6 +93,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     reputation: { ...player.reputation },
     stats: { ...player.stats },
     achievements: [...player.achievements],
+    appearance: { ...player.appearance },
     bounty: {
       marks: player.bounty.marks,
       guideId: player.bounty.guideId,
@@ -227,6 +230,16 @@ export function hydratePlayer(
     player.achievements = savedAch.filter(
       (id): id is string => typeof id === "string" && content.achievements.some((a) => a.id === id),
     );
+  }
+  // Appearance (name + colours); only accept well-formed string fields.
+  const savedApp = raw["appearance"];
+  if (isRecord(savedApp)) {
+    const a = player.appearance;
+    if (typeof savedApp["name"] === "string" && savedApp["name"].trim()) a.name = savedApp["name"].slice(0, 16);
+    for (const k of ["skin", "hair", "tunic"] as const) {
+      const v = savedApp[k];
+      if (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v)) a[k] = v;
+    }
   }
   // Bounty: restore marks, the chosen guide, and any active task — all guarded so
   // a save from before Bounty existed (no `bounty` key) just keeps the fresh state.

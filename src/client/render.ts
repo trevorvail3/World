@@ -429,7 +429,7 @@ export function drawWorld(
 
   // --- Player ---
   if (state.player.alive) {
-    drawPlayer(g, state.player.pos, cam, now);
+    drawPlayer(g, state.player.pos, cam, now, state.player.appearance);
   }
 
   // --- Time of day: a slow tint cycle, with firelight glowing through at night.
@@ -1688,9 +1688,13 @@ function drawPlayer(
   pos: Vec2,
   cam: Camera,
   now: number,
+  look?: { skin: string; hair: string; tunic: string },
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
+  const skin = look?.skin ?? "#d8c39a";
+  const tunic = look?.tunic ?? IRON;
+  const hair = look?.hair ?? "#5a3a1e";
 
   // shadow
   g.fillStyle = "rgba(0,0,0,0.35)";
@@ -1698,16 +1702,28 @@ function drawPlayer(
   g.ellipse(cx, cy + 12, 10, 4, 0, 0, Math.PI * 2);
   g.fill();
 
-  // body (iron) with a slight bob while alive
+  // body (tunic colour) with a slight bob while alive
   const bob = Math.sin(now / 180) * 1.2;
-  g.fillStyle = IRON;
+  g.fillStyle = tunic;
   g.fillRect(cx - 7, cy - 8 + bob, 14, 18);
-  // ember cloak trim
+  // a shaded panel down the front + a belt for a bit of form
+  g.fillStyle = "rgba(0,0,0,0.18)";
+  g.fillRect(cx - 1, cy - 8 + bob, 2, 18);
+  g.fillRect(cx - 7, cy + 2 + bob, 14, 2);
+  // ember cloak trim at the hem
   g.fillStyle = EMBER;
   g.fillRect(cx - 7, cy + 6 + bob, 14, 4);
   // head
-  g.fillStyle = "#d8c39a";
+  g.fillStyle = skin;
   circle(g, cx, cy - 12 + bob, 6);
+  // hair: a cap over the top of the head
+  g.fillStyle = hair;
+  g.beginPath();
+  g.arc(cx, cy - 12 + bob, 6, Math.PI * 1.05, Math.PI * 1.95);
+  g.lineTo(cx + 5, cy - 13 + bob);
+  g.arc(cx, cy - 13 + bob, 5.5, Math.PI * 1.9, Math.PI * 1.1, true);
+  g.closePath();
+  g.fill();
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {
