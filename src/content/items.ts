@@ -90,4 +90,34 @@ export const items: Record<ItemId, ItemDef> = {
     description:
       "A fragment of jet-black stone, warm to the touch. Found on the slain. Warm rock, or the god remembering — no one can prove which.",
   },
+
+  // --- Gear: forged from Knucklestone bars at the anvil ---
+  knucklestone_dagger: {
+    id: "knucklestone_dagger",
+    name: "Knucklestone Dagger",
+    description: "A short, brittle blade beaten from grey bar. It bites harder than a bare fist.",
+    equip: "weapon",
+    dmg: 2,
+  },
+  knucklestone_helm: {
+    id: "knucklestone_helm",
+    name: "Knucklestone Helm",
+    description: "A rough grey cap of hammered bar. Turns a glancing blow, if you're lucky.",
+    equip: "helmet",
+    def: 2,
+  },
+  knucklestone_shield: {
+    id: "knucklestone_shield",
+    name: "Knucklestone Shield",
+    description: "A heavy slab of grey plate on a strap. Crude, but it stops what it covers.",
+    equip: "shield",
+    def: 3,
+  },
+  knucklestone_mail: {
+    id: "knucklestone_mail",
+    name: "Knucklestone Mail",
+    description: "A weighty shirt of overlapped bar-plates. A smith's proudest early work.",
+    equip: "body",
+    def: 4,
+  },
 };

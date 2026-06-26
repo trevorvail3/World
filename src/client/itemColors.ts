@@ -23,4 +23,8 @@ export const ITEM_COLORS: Record<ItemId, string> = {
   wolf_fang: "#d8d2c2",
   worn_coin: "#c9a24a",
   shard_of_orun: "#2a2320",
+  knucklestone_dagger: "#b8bcc6",
+  knucklestone_helm: "#9aa0a8",
+  knucklestone_shield: "#878d96",
+  knucklestone_mail: "#a7adb6",
 };

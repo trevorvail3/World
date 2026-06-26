@@ -153,7 +153,31 @@ function drawObject(
     case "furnace":
       drawFurnace(g, cx, cy, now);
       break;
+    case "anvil":
+      drawAnvil(g, cx, cy);
+      break;
   }
+}
+
+// --- Anvil: an iron horn on a dark stump ---
+function drawAnvil(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 12, 4);
+  g.fillStyle = "#2f2a26"; // wooden stump base
+  g.fillRect(cx - 8, cy + 4, 16, 8);
+  g.fillStyle = "#3a342f";
+  g.fillRect(cx - 8, cy + 4, 16, 2);
+  g.fillStyle = "#54565e"; // iron body
+  g.fillRect(cx - 6, cy - 1, 12, 5); // waist
+  g.beginPath(); // the top face with its horn
+  g.moveTo(cx - 11, cy - 6);
+  g.lineTo(cx + 8, cy - 6);
+  g.lineTo(cx + 13, cy - 3); // horn tip
+  g.lineTo(cx + 8, cy - 1);
+  g.lineTo(cx - 8, cy - 1);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#6c6e77"; // lit top edge
+  g.fillRect(cx - 11, cy - 6, 19, 1.5);
 }
 
 // --- Bank chest: iron-bound wooden chest ---

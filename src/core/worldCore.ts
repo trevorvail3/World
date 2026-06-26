@@ -22,6 +22,7 @@
 import type {
   Content,
   Ctx,
+  EquipSlot,
   Intent,
   ItemId,
   MonsterStats,
@@ -74,6 +75,7 @@ const BLOCKING_KINDS = new Set([
   "bank",
   "fire",
   "furnace",
+  "anvil",
 ]);
 
 /**
@@ -134,6 +136,7 @@ export function createWorld(
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},
+    equipment: {},
     activity: { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -243,6 +246,33 @@ function removeOneItem(player: Player, item: ItemId): void {
   if (slot.qty <= 0) player.inventory[idx] = null;
 }
 
+/** How many of an item the player is carrying (across all stacks). */
+function countItem(player: Player, item: ItemId): number {
+  let n = 0;
+  for (const slot of player.inventory) {
+    if (slot?.item === item) n += slot.qty;
+  }
+  return n;
+}
+
+/**
+ * Sum a combat stat ("dmg" or "def") across everything the player is wearing.
+ * This is how worn gear feeds into the fight without the core knowing item
+ * names — it just reads the numbers content gave each piece.
+ */
+function equipStat(
+  player: Player,
+  content: Content,
+  field: "dmg" | "def",
+): number {
+  let total = 0;
+  for (const id of Object.values(player.equipment)) {
+    if (!id) continue;
+    total += content.items[id][field] ?? 0;
+  }
+  return total;
+}
+
 // ---------------------------------------------------------------------------
 // Handling intents (RULE 2: the only player-driven way to change the world).
 // ---------------------------------------------------------------------------
@@ -292,8 +322,97 @@ export function applyIntent(
       withdrawOne(player, intent.item, events);
       break;
     }
+    case "EQUIP": {
+      equipSlot(player, content, intent.slot, events);
+      break;
+    }
+    case "UNEQUIP": {
+      unequipSlot(player, content, intent.equipSlot, events);
+      break;
+    }
+    case "FORGE": {
+      forgeItem(state, content, intent.output, events);
+      break;
+    }
   }
   return events;
+}
+
+/** Wear the gear in an inventory slot, swapping out anything already worn. */
+function equipSlot(
+  player: Player,
+  content: Content,
+  slot: number,
+  events: WorldEvent[],
+): void {
+  const data = player.inventory[slot];
+  if (!data) return;
+  const def = content.items[data.item];
+  if (!def.equip) {
+    events.push({ type: "LOG", message: `You can't wear the ${def.name}.` });
+    return;
+  }
+  const newItem = data.item;
+  const previously = player.equipment[def.equip];
+
+  // Take one of the new item out of the pack…
+  data.qty -= 1;
+  if (data.qty <= 0) player.inventory[slot] = null;
+  // …wear it, and drop whatever was there back into the freed space.
+  player.equipment[def.equip] = newItem;
+  if (previously) addItem(player, previously, 1, events);
+  events.push({ type: "LOG", message: `You equip the ${def.name}.` });
+}
+
+/** Take a worn item off and return it to the pack (if there's room). */
+function unequipSlot(
+  player: Player,
+  content: Content,
+  eslot: EquipSlot,
+  events: WorldEvent[],
+): void {
+  const worn = player.equipment[eslot];
+  if (!worn) return;
+  if (!canAddItem(player, worn)) {
+    events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  delete player.equipment[eslot];
+  addItem(player, worn, 1, events);
+  events.push({
+    type: "LOG",
+    message: `You unequip the ${content.items[worn].name}.`,
+  });
+}
+
+/** Forge bars into a piece of gear at the anvil (consumes bars, grants XP). */
+function forgeItem(
+  state: WorldState,
+  content: Content,
+  output: ItemId,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const recipe = content.forging.find((r) => r.output === output);
+  if (!recipe) return;
+  if (countItem(player, recipe.input) < recipe.count) {
+    events.push({
+      type: "LOG",
+      message: `You need ${recipe.count} ${content.items[recipe.input].name}.`,
+    });
+    return;
+  }
+  if (!canAddItem(player, recipe.output)) {
+    events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  for (let i = 0; i < recipe.count; i++) removeOneItem(player, recipe.input);
+  grantXp(state, content, "smithing", recipe.xp, events);
+  addItem(player, recipe.output, 1, events);
+  events.push({
+    type: "LOG",
+    message: `You forge a ${content.items[recipe.output].name}.`,
+  });
 }
 
 /** Eat the food in a slot, restoring HP (no-op if it's not food or full). */
@@ -456,6 +575,19 @@ function startInteraction(
         actionInterval: SMELTING_INTERVAL,
       };
       events.push({ type: "LOG", message: "You feed ore into the furnace." });
+      break;
+
+    case "anvil":
+      // The forge is a menu, not a timed activity: opening it lets the player
+      // pick what to make. Forging itself happens via the FORGE intent.
+      if (!hasItem(player, "knucklestone_bar")) {
+        events.push({
+          type: "LOG",
+          message: "You need bars to forge. Smelt ore at the furnace first.",
+        });
+        return;
+      }
+      events.push({ type: "OPEN_FORGE" });
       break;
   }
 }
@@ -706,8 +838,9 @@ function resolveCombatSwing(
     return;
   }
 
-  // Player hits the monster.
-  const hit = Math.floor(ctx.rng() * (COMBAT.playerMaxHit + 1));
+  // Player hits the monster. Worn weapons add to the top of the damage range.
+  const maxHit = COMBAT.playerMaxHit + equipStat(player, content, "dmg");
+  const hit = Math.floor(ctx.rng() * (maxHit + 1));
   obj.hp -= hit;
   events.push({ type: "DAMAGE", targetId: obj.id, amount: hit });
 
@@ -726,8 +859,9 @@ function resolveCombatSwing(
     return;
   }
 
-  // Monster hits back.
-  const back = Math.floor(ctx.rng() * (stats.maxHit + 1));
+  // Monster hits back. Worn armour soaks a share of each incoming blow.
+  const soak = Math.floor(equipStat(player, content, "def") / 3);
+  const back = Math.max(0, Math.floor(ctx.rng() * (stats.maxHit + 1)) - soak);
   player.hp -= back;
   events.push({ type: "DAMAGE", targetId: "player", amount: back });
 

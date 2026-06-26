@@ -12,7 +12,14 @@
  * the world is recreated fresh and the saved player is laid back on top.
  */
 
-import type { Content, ItemId, Player, SkillId, WorldState } from "./types.ts";
+import type {
+  Content,
+  EquipSlot,
+  ItemId,
+  Player,
+  SkillId,
+  WorldState,
+} from "./types.ts";
 
 /** Bump this whenever the save shape changes; older saves are then ignored. */
 export const SAVE_VERSION = 1;
@@ -25,6 +32,8 @@ export interface SavedProgress {
   inventory: ({ item: string; qty: number } | null)[];
   /** Banked items: item id -> quantity. */
   bank: Record<string, number>;
+  /** Worn gear: equip slot -> item id. */
+  equipment: Record<string, string>;
   hp: number;
   pos: { x: number; y: number };
 }
@@ -40,6 +49,7 @@ export function serializePlayer(player: Player): SavedProgress {
     skills,
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
     bank: { ...player.bank } as Record<string, number>,
+    equipment: { ...player.equipment } as Record<string, string>,
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -100,6 +110,19 @@ export function hydratePlayer(
       }
     }
     player.bank = bank;
+  }
+
+  // --- Equipment (only items that exist and fit the slot they claim) ---
+  const savedEquip = raw["equipment"];
+  if (isRecord(savedEquip)) {
+    const equipment: Player["equipment"] = {};
+    for (const slot of Object.keys(savedEquip)) {
+      const id = savedEquip[slot];
+      if (typeof id !== "string" || !(id in content.items)) continue;
+      const def = content.items[id as ItemId];
+      if (def.equip === slot) equipment[slot as EquipSlot] = id as ItemId;
+    }
+    player.equipment = equipment;
   }
 
   // --- HP (clamped to the player's range) ---

@@ -14,8 +14,10 @@
 import type {
   ActivityKind,
   Content,
+  EquipSlot,
   Intent,
   InventorySlot,
+  ItemId,
   SkillId,
   WorldState,
 } from "../core/types.ts";
@@ -45,10 +47,12 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
 
-/** Equipment slots shown as placeholders until gear exists. */
-const EQUIP_SLOTS = [
-  "Head", "Cape", "Amulet", "Weapon", "Body", "Shield",
-  "Legs", "Hands", "Feet", "Ring",
+/** The equipment slots the player can fill, in display order. */
+const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
+  { slot: "weapon", name: "Weapon" },
+  { slot: "helmet", name: "Helmet" },
+  { slot: "body", name: "Body" },
+  { slot: "shield", name: "Shield" },
 ];
 
 export class Hud {
@@ -73,6 +77,9 @@ export class Hud {
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
   private charHp!: HTMLElement;
+  private equipCells = new Map<EquipSlot, HTMLElement>();
+  private equipStats!: HTMLElement;
+  private lastEquipment: Partial<Record<EquipSlot, ItemId>> = {};
 
   private onReset: () => void;
   private menu: ContextMenu | null;
@@ -190,14 +197,24 @@ export class Hud {
       case "equipment": {
         const grid = document.createElement("div");
         grid.className = "equip-grid";
-        for (const name of EQUIP_SLOTS) {
+        for (const { slot, name } of EQUIP_SLOTS) {
           const cell = document.createElement("div");
           cell.className = "equip-cell";
           cell.innerHTML = `<div class="equip-slot"></div><span class="equip-name">${name}</span>`;
+          const icon = cell.querySelector(".equip-slot") as HTMLElement;
+          this.attachLongPress(
+            icon,
+            (x, y) => this.inspectEquip(slot, x, y),
+            () => this.dispatch({ type: "UNEQUIP", equipSlot: slot }),
+          );
+          this.equipCells.set(slot, icon);
           grid.appendChild(cell);
         }
         p.appendChild(grid);
-        p.appendChild(note("No gear yet — weapons and armour are coming."));
+        this.equipStats = document.createElement("div");
+        this.equipStats.className = "equip-stats";
+        p.appendChild(this.equipStats);
+        p.appendChild(note("Tap a worn piece to take it off. Forge gear at the anvil."));
         break;
       }
       case "character": {
@@ -259,12 +276,15 @@ export class Hud {
       .join("");
   }
 
-  /** A short tap on a slot: eat food, otherwise just inspect it. */
+  /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */
   private tapItem(index: number, screenX: number, screenY: number): void {
     const data = this.invData[index];
     if (!data) return;
-    if (this.content.items[data.item].heals) {
+    const def = this.content.items[data.item];
+    if (def.heals) {
       this.dispatch({ type: "EAT", slot: index });
+    } else if (def.equip) {
+      this.dispatch({ type: "EQUIP", slot: index });
     } else {
       this.inspectItem(index, screenX, screenY);
     }
@@ -284,7 +304,37 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "EAT", slot: index }),
       });
     }
-    this.menu.show(screenX, screenY, def.name, items, def.description);
+    if (def.equip) {
+      items.push({
+        label: "Equip",
+        target: def.name,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "EQUIP", slot: index }),
+      });
+    }
+    this.menu.show(screenX, screenY, def.name, items, gearLine(def) || def.description);
+  }
+
+  /** Long-press a worn slot to inspect it, with the option to take it off. */
+  private inspectEquip(slot: EquipSlot, screenX: number, screenY: number): void {
+    if (!this.menu) return;
+    const id = this.lastEquipment[slot];
+    if (!id) return;
+    const def = this.content.items[id];
+    this.menu.show(
+      screenX,
+      screenY,
+      def.name,
+      [
+        {
+          label: "Unequip",
+          target: def.name,
+          tone: "action",
+          onSelect: () => this.dispatch({ type: "UNEQUIP", equipSlot: slot }),
+        },
+      ],
+      gearLine(def) || def.description,
+    );
   }
 
   /** Short tap fires `onTap`; a held press fires `onLong`. */
@@ -402,6 +452,29 @@ export class Hud {
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;
     }
+
+    // Equipment: fill worn slots, and total the bonuses underneath.
+    this.lastEquipment = player.equipment;
+    let dmg = 0;
+    let def = 0;
+    this.equipCells.forEach((icon, slot) => {
+      const id = player.equipment[slot];
+      if (id) {
+        const item = this.content.items[id];
+        dmg += item.dmg ?? 0;
+        def += item.def ?? 0;
+        icon.className = "equip-slot filled";
+        icon.style.setProperty("--item-color", ITEM_COLORS[id]);
+        icon.title = `${item.name} — ${item.description}`;
+      } else {
+        icon.className = "equip-slot";
+        icon.style.removeProperty("--item-color");
+        icon.title = "";
+      }
+    });
+    if (this.equipStats) {
+      this.equipStats.textContent = `Damage +${dmg}   ·   Defence +${def}`;
+    }
   }
 }
 
@@ -423,6 +496,16 @@ function note(text: string): HTMLElement {
   el.className = "tab-note";
   el.textContent = text;
   return el;
+}
+
+/** A one-line "Weapon · +2 damage" summary for a piece of gear (or ""). */
+function gearLine(def: { equip?: EquipSlot; dmg?: number; def?: number }): string {
+  if (!def.equip) return "";
+  const bits: string[] = [];
+  if (def.dmg) bits.push(`+${def.dmg} damage`);
+  if (def.def) bits.push(`+${def.def} defence`);
+  const where = def.equip[0]!.toUpperCase() + def.equip.slice(1);
+  return bits.length ? `${where} · ${bits.join(", ")}` : where;
 }
 
 function escapeHtml(s: string): string {

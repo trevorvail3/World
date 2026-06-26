@@ -90,6 +90,7 @@ const VERB: Record<ObjKind, string> = {
   bank: "Open",
   fire: "Cook at",
   furnace: "Smelt at",
+  anvil: "Forge at",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -101,6 +102,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   bank: "A sturdy iron-bound chest. Your goods are safe in it.",
   fire: "A steady cooking fire. Raw catch goes in; a meal comes out.",
   furnace: "A small stone furnace, hot enough to render ore to bar.",
+  anvil: "A pitted iron anvil. Bring bars and a hammer to beat out gear.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -252,6 +254,9 @@ export class Game {
         case "OPEN_BANK":
           this.bank.show(this.bridge.state);
           break;
+        case "OPEN_FORGE":
+          this.openForge();
+          break;
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -280,6 +285,35 @@ export class Game {
         born: now,
       });
     }
+  }
+
+  /** The anvil's forge menu: pick a piece of gear to beat out of your bars. */
+  private openForge(): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+
+    const items: MenuItem[] = content.forging.map((r) => {
+      const def = content.items[r.output];
+      const enough = have(r.input) >= r.count;
+      return {
+        label: "Forge",
+        target: `${def.name} · ${r.count} bar${r.count > 1 ? "s" : ""}`,
+        tone: enough ? "action" : "normal",
+        onSelect: () => this.dispatch({ type: "FORGE", output: r.output }),
+      };
+    });
+
+    const x = window.innerWidth / 2;
+    const y = window.innerHeight / 2;
+    this.menu.show(
+      x,
+      y,
+      "Anvil",
+      items,
+      "Beat Knucklestone bars into gear. You need a bar for the smallest piece.",
+    );
   }
 
   private positionOf(targetId: string): Vec2 | null {
