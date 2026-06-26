@@ -544,7 +544,9 @@ export type ItemId =
   | "knucklestone_dagger"
   | "knucklestone_helm"
   | "knucklestone_shield"
-  | "knucklestone_mail";
+  | "knucklestone_mail"
+  | "ironbark_shard"
+  | "heartoak_amber";
 
 /**
  * The wearable slots. A piece of gear declares which one it fills (see
@@ -893,6 +895,49 @@ export interface ForgeRecipe {
   xp: number;
 }
 
+/**
+ * One skill action, ported verbatim from the idle game's `SKILLS[*].actions`.
+ * This is the canonical recipe/gathering data for every gathering and
+ * processing skill. Gameplay still runs on the wired recipes for now; later
+ * bundles migrate each skill to drive off this registry. See src/content/actions.ts.
+ */
+export interface SkillAction {
+  id: string;
+  /** Which skill trains this action. */
+  skill: SkillId;
+  name: string;
+  /** Level in `skill` required to perform it. */
+  levelReq: number;
+  /** XP granted on a successful action. */
+  xp: number;
+  /** Canon action time in ms (the spatial game may re-tune pacing). */
+  baseTime?: number;
+  /** Inputs consumed, item id -> quantity. */
+  requires?: Partial<Record<ItemId, number>>;
+  /** Inputs where any one of these items satisfies the recipe. */
+  requiresAny?: ItemId[];
+  /** The item produced (absent for a few pure-effect actions). */
+  produces?: ItemId;
+  /** How many of `produces` are made per action (default 1). */
+  produceQty?: number;
+  /** UI grouping key, e.g. "arrows", "smoked", "quarry". */
+  group?: string;
+  /** Designer note / flavour shown in tooltips. */
+  note?: string;
+  /** Gather location key (fishing). */
+  location?: string;
+  /** Whether this is a timed bonus-window catch (fishing). */
+  window?: boolean;
+  /** Reforge-only: melts all gear instead of producing an item. */
+  meltAll?: boolean;
+  /** An extra rare drop on success. */
+  rareDrop?: { item: ItemId; chance: number };
+  /** A chance to also get a seed (forestry). */
+  seedDrop?: { item: ItemId; chance: number };
+  /** A chance to also get wood shards (forestry). */
+  woodShardDrop?: { chance: number };
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -903,6 +948,8 @@ export interface Content {
   recipes: { cooking: Recipe[]; smelting: Recipe[] };
   /** Smithing recipes that turn bars into gear at the anvil. */
   forging: ForgeRecipe[];
+  /** The full canon skill-action registry (data; not all wired yet). */
+  actions: SkillAction[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

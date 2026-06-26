@@ -477,4 +477,6 @@ export const ITEM_COLORS: Record<ItemId, string> = {
   knucklestone_helm: "#a7adb6",
   knucklestone_shield: "#a7adb6",
   knucklestone_mail: "#a7adb6",
+  ironbark_shard: "#c98a3a",
+  heartoak_amber: "#c98a3a",
 };

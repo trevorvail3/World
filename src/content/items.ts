@@ -2,16 +2,15 @@
  * src/content/items.ts
  * --------------------
  * The full item registry, ported faithfully from the Varath idle game's
- * `ITEMS` table (+ `GOLD_VALUES` for sell prices). 469 items. Names,
+ * `ITEMS` table (+ `GOLD_VALUES` for sell prices). 471 items. Names,
  * descriptions, icons, categories and stats are copied verbatim so the two
  * games describe the same objects identically.
  *
  * GENERATED from varath_21.html — see docs/CANON_LEDGER.md (Phase 1c). The four
- * `knucklestone_*` forged pieces are transitional (our equipment slice); they
- * have no canon equivalent yet and get reconciled to canon gear in a later bundle.
- *
- * Fields the spatial game doesn't consume yet (canon `slot`, weapon `acc`, food
- * `buff`s, mount/pet/cape `meta`) are carried losslessly; see ItemDef.
+ * `knucklestone_*` forged pieces are transitional (our equipment slice); and
+ * `ironbark_shard`/`heartoak_amber` fill two rare-drop refs the idle game left
+ * undefined. Fields the spatial game doesn't consume yet (canon `slot`, weapon
+ * `acc`, food `buff`s, mount/pet/cape `meta`) are carried losslessly; see ItemDef.
  */
 
 import type { ItemDef, ItemId } from "../core/types.ts";
@@ -4831,5 +4830,21 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Armour",
     "equip": "body",
     "def": 4
+  },
+  "ironbark_shard": {
+    "id": "ironbark_shard",
+    "name": "Ironbark Shard",
+    "description": "A splinter of ironbark hard enough to strike sparks. Prized by fletchers and smiths alike.",
+    "icon": "🪵",
+    "cat": "Rare Drops",
+    "sell": 40
+  },
+  "heartoak_amber": {
+    "id": "heartoak_amber",
+    "name": "Heartoak Amber",
+    "description": "A bead of fossil resin from the deepest heartoak. Warm-coloured, and warm to hold.",
+    "icon": "🟠",
+    "cat": "Rare Drops",
+    "sell": 120
   }
 };
