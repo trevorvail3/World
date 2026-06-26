@@ -69,6 +69,7 @@ const EMOJI: Record<string, string> = {
   "🗡️": "swords", "💀": "skull", "🧰": "backpack", "👑": "trophy", "🜚": "flask",
   "🏔️": "peak", "⛰️": "peak", "✦": "sparkle", "🦜": "feather", "⚒️": "hammer",
   "🕯️": "candle", "🪶": "feather", "🗺": "map", "🗺️": "map", "🔒": "lock",
+  "👟": "boot", "🥾": "boot",
 };
 
 /** A named glyph's SVG (falls back to a neutral dot if unknown). */

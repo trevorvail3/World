@@ -27,6 +27,7 @@ export const skills: Record<SkillId, { name: string; icon: string }> = {
   construction: { name: "Construction", icon: "🏗️" },
   crafting: { name: "Crafting", icon: "✂️" },
   bounty: { name: "Bounty", icon: "🎯" },
+  agility: { name: "Agility", icon: "👟" },
   // --- The 5 combat skills ---
   vitality: { name: "Vitality", icon: "❤️" },
   edge: { name: "Edge", icon: "⚔️" },

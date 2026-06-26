@@ -61,6 +61,8 @@ export type SkillId =
   | "construction"
   | "crafting"
   | "bounty"
+  // Agility: trained by running; raises run-energy duration + recharge.
+  | "agility"
   // Combat skills.
   | "vitality"
   | "edge"

@@ -58,6 +58,11 @@ const ENERGY_MAX = 100;
 const ENERGY_DRAIN = 1.7; // energy spent per tile sprinted (~58 tiles on a full bar)
 const ENERGY_REGEN = 7; // energy recovered per second when not sprinting
 const ENERGY_RECOVER = 20; // after running dry, you must regen this much before sprinting again
+// Agility trains by running and pays it back: at the level cap, drain is halved
+// (runs last ~2× longer) and regen is doubled (recovers ~2× faster).
+const AGILITY_DRAIN_REDUCTION = 0.5;
+const AGILITY_REGEN_BONUS = 1.0;
+const AGILITY_XP_PER_TILE = 4; // run-energy spent travelling also trains Agility
 
 // Predators that strike when you stray too close (everything else waits to be
 // attacked). Kept here rather than in content so it's easy to tune.
@@ -1518,9 +1523,13 @@ export function tick(
     // 2) Movement. Sprinting drains run energy; otherwise it recovers.
     const wasMoving = player.path.length > 0;
     const sprintTiles = wasMoving ? stepMovement(player, dt) : 0;
-    if (sprintTiles <= 0) {
+    if (sprintTiles > 0) {
+      // Running trains Agility — distance covered while sprinting.
+      grantXp(state, content, "agility", sprintTiles * AGILITY_XP_PER_TILE, events);
+    } else {
       if (player.energy < ENERGY_MAX) {
-        player.energy = Math.min(ENERGY_MAX, player.energy + (ENERGY_REGEN * dt) / 1000);
+        const regen = (ENERGY_REGEN * agilityRegenMult(player) * dt) / 1000;
+        player.energy = Math.min(ENERGY_MAX, player.energy + regen);
       }
       if (player.winded && player.energy >= ENERGY_RECOVER) player.winded = false; // caught your breath
     }
@@ -1720,6 +1729,18 @@ function randRange(ctx: Ctx, min: number, max: number): number {
   return min + Math.floor(ctx.rng() * (max - min + 1));
 }
 
+/** Higher Agility drains run energy more slowly (0..1 of full drain). */
+function agilityDrainMult(player: Player): number {
+  const lvl = player.skills.agility?.level ?? 1;
+  return 1 - AGILITY_DRAIN_REDUCTION * ((lvl - 1) / (LEVEL_CAP - 1));
+}
+
+/** Higher Agility recovers run energy faster (1..1+bonus). */
+function agilityRegenMult(player: Player): number {
+  const lvl = player.skills.agility?.level ?? 1;
+  return 1 + AGILITY_REGEN_BONUS * ((lvl - 1) / (LEVEL_CAP - 1));
+}
+
 /** Advance the player along their path; returns the tiles travelled while sprinting. */
 function stepMovement(player: Player, dt: number): number {
   const sprinting = player.running && player.energy > 0 && !player.winded;
@@ -1746,7 +1767,7 @@ function stepMovement(player: Player, dt: number): number {
   }
   const moved = startBudget - budget; // tiles actually walked this tick
   if (sprinting && moved > 0) {
-    player.energy = Math.max(0, player.energy - moved * ENERGY_DRAIN);
+    player.energy = Math.max(0, player.energy - moved * ENERGY_DRAIN * agilityDrainMult(player));
     if (player.energy <= 0) player.winded = true; // out of breath — walk to recover
     return moved;
   }

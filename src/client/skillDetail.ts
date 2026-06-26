@@ -16,6 +16,7 @@ const TRAIN_NOTE: Partial<Record<SkillId, string>> = {
   vigour: "Trained on the Vigour style: melee damage.",
   ward: "Trained on the Ward style: melee defence.",
   draw: "Trained by ranged attacks.",
+  agility: "Trained by running — the more ground you sprint, the longer your wind lasts and the faster it returns.",
   farming: "Sowing and harvesting crops — arriving in a later update.",
   bounty: "Completing bounties — arriving in a later update.",
 };
