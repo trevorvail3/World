@@ -1731,3 +1731,71 @@ button.inv-slot {
 .creator-back { flex: 0 0 auto; color: var(--ink-dim); border-color: var(--panel-edge); background: transparent; }
 .creator-go { flex: 1; }
 .creator-go:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Level-up moment ─────────────────────────────────────────────────────
+   The little OSRS "ding": a gilded card drops in below the status pill when a
+   skill ticks over, names the new level, and (if anything opened) what you can
+   now do. Driven entirely by .show / .hidden from levelUp.ts. */
+.levelup {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  z-index: 60;
+  pointer-events: auto;
+  min-width: 188px;
+  padding: 12px 18px 13px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(38, 30, 18, 0.97), rgba(22, 17, 11, 0.97));
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), inset 0 0 22px rgba(201, 162, 74, 0.12);
+  /* resting (hidden) state — lifted, faded, slightly small */
+  opacity: 0;
+  transform: translate(-50%, -14px) scale(0.92);
+  transition: opacity 0.28s ease, transform 0.34s cubic-bezier(0.18, 1.4, 0.4, 1);
+}
+.levelup.hidden { display: none; }
+.levelup.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.levelup-eyebrow {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 7px;
+  text-shadow: 0 0 10px rgba(201, 162, 74, 0.5);
+}
+.levelup-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+}
+.levelup-icon {
+  font-size: 26px;
+  line-height: 1;
+  filter: drop-shadow(0 0 7px rgba(210, 116, 44, 0.5));
+}
+.levelup-skill {
+  font-family: "Cinzel", serif;
+  font-size: 16px;
+  color: var(--ink);
+  text-align: left;
+}
+.levelup-level {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--ember);
+  text-align: left;
+}
+.levelup-unlock {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-edge);
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+.levelup-unlock b { color: var(--gold); font-weight: 600; }

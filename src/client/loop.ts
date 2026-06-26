@@ -30,6 +30,7 @@ import type {
 import { BankUI } from "./bankUI.ts";
 import { ShopUI } from "./shopUI.ts";
 import { BountyUI } from "./bountyUI.ts";
+import { LevelUp } from "./levelUp.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
@@ -62,6 +63,30 @@ interface FloatText {
   born: number;
   size?: number;
 }
+
+/** A short impact burst (chips / sparks / splash) at a tile, for action feel. */
+interface Spark {
+  x: number; // tile coords
+  y: number;
+  born: number;
+  color: string;
+  n: number; // number of shards
+}
+
+/** Impact-burst colour by the skill being trained (wood chips, stone, splash…). */
+const SPARK_COLOR: Record<string, string> = {
+  forestry: "#9a7a4a",
+  mining: "#a59a8c",
+  fishing: "#6fa0c0",
+  hunter: "#9a7a4a",
+  smithing: "#e0903a",
+  cooking: "#e08a3a",
+  crafting: "#caa05a",
+  herblore: "#7fae6a",
+  construction: "#a59a8c",
+  woodcraft: "#9a7a4a",
+  farming: "#7fae6a",
+};
 
 interface Marker {
   x: number;
@@ -172,6 +197,8 @@ export class Game {
   private g: CanvasRenderingContext2D;
   private cam: Camera = { x: 0, y: 0 };
   private floats: FloatText[] = [];
+  private sparks: Spark[] = [];
+  private levelUp: LevelUp;
   private camInitialised = false;
 
   private menu: ContextMenu;
@@ -207,6 +234,7 @@ export class Game {
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.bounty = new BountyUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
+    this.levelUp = new LevelUp(uiRoot, bridge.content);
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -254,6 +282,7 @@ export class Game {
     this.drawActivityFeedback(now);
     this.drawGuideTarget(now);
     this.drawQuestMarkers(now);
+    this.drawSparks(now);
     this.drawFloats(now);
 
     // 4) Refresh the HUD readouts and the minimap.
@@ -297,21 +326,18 @@ export class Game {
         case "LOG":
           this.hud.log(ev.message);
           break;
-        case "XP_GAINED":
+        case "XP_GAINED": {
           xpSum += ev.amount;
+          // A little impact burst on the thing you're working, on the beat.
+          const tid = this.bridge.state.player.activity.targetId;
+          const tp = tid ? this.positionOf(tid) : null;
+          if (tp) this.sparks.push({ x: tp.x, y: tp.y, born: now, color: SPARK_COLOR[ev.skill] ?? "#caa05a", n: 5 });
           break;
+        }
         case "LEVEL_UP": {
           const name = this.bridge.content.skills[ev.skill].name;
           this.hud.log(`You reach ${name} level ${ev.level}!`);
-          const p = this.bridge.state.player.pos;
-          this.floats.push({
-            x: p.x,
-            y: p.y - 0.5,
-            text: `${name} Lv ${ev.level}!`,
-            color: "#f2cf6b",
-            born: now,
-            size: 18,
-          });
+          this.levelUp.show(ev.skill, ev.level); // the OSRS "ding"
           break;
         }
         case "INVENTORY_FULL":
@@ -381,6 +407,12 @@ export class Game {
               text: ev.amount > 0 ? String(ev.amount) : "miss",
               color: ev.amount > 0 ? "#e2483a" : "#9aa0a6",
               born: now,
+            });
+            // A red spark when a blow lands; a small grey puff on a miss.
+            this.sparks.push({
+              x: pos.x, y: pos.y, born: now,
+              color: ev.amount > 0 ? "#e2483a" : "#7a808a",
+              n: ev.amount > 0 ? 6 : 3,
             });
           }
           break;
@@ -797,6 +829,32 @@ export class Game {
       this.g.fillText(mark, cx, my);
     }
     this.g.textAlign = "left";
+  }
+
+  /** Short radiating impact bursts on the worked tile (chips, sparks, splash). */
+  private drawSparks(now: number): void {
+    const LIFE = 300;
+    this.sparks = this.sparks.filter((s) => now - s.born < LIFE);
+    const g = this.g;
+    for (const s of this.sparks) {
+      const t = (now - s.born) / LIFE;
+      const cx = s.x * TILE + TILE / 2 - this.cam.x;
+      const cy = s.y * TILE + TILE / 2 - this.cam.y;
+      g.globalAlpha = 1 - t;
+      g.strokeStyle = s.color;
+      g.lineWidth = 2;
+      const reach = 4 + t * 12;
+      for (let i = 0; i < s.n; i++) {
+        // Stable per-shard angle so a given burst doesn't jitter frame to frame.
+        const a = (i / s.n) * Math.PI * 2 + (s.born % 6);
+        const dx = Math.cos(a), dy = Math.sin(a);
+        g.beginPath();
+        g.moveTo(cx + dx * (reach - 4), cy + dy * (reach - 4));
+        g.lineTo(cx + dx * reach, cy + dy * reach);
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
   }
 
   private drawFloats(now: number): void {
