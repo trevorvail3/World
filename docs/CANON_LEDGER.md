@@ -142,17 +142,23 @@ the registry is provably internally consistent.
 Item-registry note: 469 → **471** items (added `ironbark_shard`, `heartoak_amber`
 to satisfy two forestry `rareDrop` refs the idle game left undefined).
 
-### 1e. Combat registry  ⬜
-Source: `MONSTERS` (~3801–4018), `DUNGEONS` (~4025). Dest: `src/content/monsters.ts`.
-Copy level/hp/acc/def/maxHit/speed/xp/style/weakness + full drop tables **exactly**.
-Re-tune only respawn/encounter pacing. Core needs: accuracy/defence/weakness combat
-math (currently simplified), `ward` defence, attack styles.
+### 1e. Combat registry  ✅ (data ported)
+Source: `MONSTERS` (~3801–4018). Dest: `src/content/monsters.ts`.
+**30 monsters** ported verbatim — level/hp/acc/def/maxHit/speed/xp/attackStyle/
+weakness + full drop tables (with canon `tier` labels). TypeScript validates all
+98 drop item ids against the item registry. MonsterStats expanded to the superset.
+
+> Today's combat still uses hp/maxHit/xp only. The **combat-math upgrade**
+> (accuracy vs defence, weakness multipliers, attack styles, `ward` defence,
+> per-monster attack speed) is the next gameplay bundle — the data is now here
+> for it to consume. Dungeon `DUNGEONS` structure + authoritative boss drops
+> come with the zone/dungeon bundles (Phase 2).
 
 | group | count | status |
 |---|---|---|
-| Open-world monsters | ~20 | 🟡 (moor_rat, hill_wolf) |
-| Quest-only monsters | ~6 | ⬜ |
-| Dungeon bosses | 4 | ⬜ |
+| Open-world monsters | 21 | ✅ data · 🟡 wired (moor_rat, hill_wolf) |
+| Quest-only monsters | 6 | ✅ data |
+| Dungeon bosses | 4 | ✅ data (drops authoritative in DUNGEONS, Phase 2) |
 
 ---
 
