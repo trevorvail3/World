@@ -97,6 +97,62 @@ export const objects: WorldObjectDef[] = [
   { id: "gw_bear_1", kind: "monster", monster: "forest_bear", x: 5, y: 30, name: "Forest Bear" },
   { id: "gw_bear_2", kind: "monster", monster: "forest_bear", x: 22, y: 32, name: "Forest Bear" },
   { id: "gw_greymane", kind: "monster", monster: "greymane_boar", x: 15, y: 32, name: "Greymane Boar" },
+
+  // === THE SPINE =============================================================
+  // Orun's backbone: mining the Spinite Cut, and the long climb past ridge
+  // wolves, stone crawlers, trolls and wraiths. (Bible §X.)
+
+  // --- Serath the Spine Warden, at the head of the pass ---
+  {
+    id: "serath",
+    kind: "npc",
+    x: 32,
+    y: 6,
+    name: "Serath",
+    lines: [
+      "Far enough, for now. This is the Spine — Orun's backbone, the faithful say. Whatever it is, it does not forgive carelessness.",
+      "Ridge wolves on the low passes. Higher, the stone crawlers and the trolls. And the wraiths, where the wind never stops. Go up only as far as you can come down.",
+      "The Cut yields good metal — ashiron, and ribstone deeper. Bring a pick that can take the cold.",
+      "Two things you'll find and not understand: the Wind-Shrine, worn to the shape of a vertebra, and the Vault, shut from the inside. Measure them if you must. Don't pretend to read them.",
+    ],
+  },
+
+  // --- The Spinite Cut: ashiron (Mining 20) and ribstone (Mining 30) ---
+  { id: "sp_rock_1", kind: "rock", x: 32, y: 11, name: "Ashiron Seam", resource: "mine_ashiron" },
+  { id: "sp_rock_2", kind: "rock", x: 35, y: 15, name: "Ashiron Seam", resource: "mine_ashiron" },
+  { id: "sp_rock_3", kind: "rock", x: 42, y: 22, name: "Ribstone Seam", resource: "mine_ribstone" },
+  { id: "sp_rock_4", kind: "rock", x: 46, y: 29, name: "Ribstone Seam", resource: "mine_ribstone" },
+
+  // --- Monsters, by altitude ---
+  { id: "sp_wolf_1", kind: "monster", monster: "ridge_wolf", x: 36, y: 7, name: "Ridge Wolf" },
+  { id: "sp_wolf_2", kind: "monster", monster: "ridge_wolf", x: 37, y: 12, name: "Ridge Wolf" },
+  { id: "sp_crawler_1", kind: "monster", monster: "stone_crawler", x: 35, y: 18, name: "Stone Crawler" },
+  { id: "sp_crawler_2", kind: "monster", monster: "stone_crawler", x: 44, y: 16, name: "Stone Crawler" },
+  { id: "sp_troll_1", kind: "monster", monster: "mountain_troll", x: 45, y: 25, name: "Mountain Troll" },
+  { id: "sp_wraith_1", kind: "monster", monster: "spine_wraith", x: 46, y: 20, name: "Spine Wraith" },
+  { id: "sp_wraith_2", kind: "monster", monster: "spine_wraith", x: 42, y: 33, name: "Spine Wraith" },
+
+  // --- Landmarks (examine-only) ---
+  {
+    id: "spine_wind_shrine",
+    kind: "shrine",
+    x: 44,
+    y: 5,
+    name: "The Wind-Shrine",
+    lines: [
+      "A standing stone the wind has worn to the shape of a vertebra. Orun's, the believers say. A rock worn by weather, say the rest. The shrine settles nothing.",
+    ],
+  },
+  {
+    id: "spine_vault",
+    kind: "shrine",
+    x: 44,
+    y: 30,
+    name: "The Spine Vault",
+    lines: [
+      "A door of dressed stone set into the mountain — shut, and shut from the inside. The ward-stones around it have not been moved in a very long time.",
+    ],
+  },
 ];
 
 /** Where the player first appears (a path tile, next to Aldric). */

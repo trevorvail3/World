@@ -16,6 +16,8 @@ const MM_TILE: Record<TileType, string> = {
   stone: "#3a3b43",
   water: "#1e3142",
   moss: "#26331f",
+  mountain: "#33343c",
+  snow: "#9aa6b6",
 };
 
 const MM_OBJ: Record<ObjKind, string> = {
@@ -28,6 +30,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   fire: "#e08a3a",
   furnace: "#b06a48",
   anvil: "#7a7d86",
+  shrine: "#b9b0c8",
 };
 
 export class Minimap {

@@ -26,6 +26,9 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   water: ["#1f3346", "#26415a"],
   // Greyoak Wood's floor — deeper, cooler green than hill grass.
   moss: ["#2c3a2a", "#354733"],
+  // The Spine: dark rock peaks and pale high snow.
+  mountain: ["#3a3a42", "#4a4a54"],
+  snow: ["#aeb8c6", "#c2ccd8"],
 };
 
 const EMBER = "#d2742c";
@@ -81,16 +84,42 @@ export function drawWorld(
         g.globalAlpha = 0.25 + 0.2 * shimmer;
         g.fillRect(px, py + TILE * (0.2 + 0.5 * hv), TILE, 3);
         g.globalAlpha = 1;
+      } else if (tile === "mountain") {
+        // A raised peak: a dark rock pyramid with a pale, snow-lit crown.
+        const cxp = px + TILE / 2;
+        g.fillStyle = "#2a2a31";
+        g.beginPath();
+        g.moveTo(cxp, py + 4);
+        g.lineTo(px + TILE - 3, py + TILE - 3);
+        g.lineTo(px + 3, py + TILE - 3);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "#5a5b66"; // lit face
+        g.beginPath();
+        g.moveTo(cxp, py + 4);
+        g.lineTo(cxp, py + TILE - 3);
+        g.lineTo(px + 3, py + TILE - 3);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "#d8dde6"; // snow cap
+        g.beginPath();
+        g.moveTo(cxp, py + 4);
+        g.lineTo(cxp + 5, py + 12);
+        g.lineTo(cxp - 5, py + 12);
+        g.closePath();
+        g.fill();
       } else {
         g.globalAlpha = 0.5;
         g.fillRect(px + TILE * hv * 0.7, py + TILE * (hv * 0.5), 4, 4);
         g.globalAlpha = 1;
       }
 
-      // faint grid line
-      g.strokeStyle = "rgba(0,0,0,0.12)";
-      g.lineWidth = 1;
-      g.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
+      // faint grid line (skip on the busy mountain tiles)
+      if (tile !== "mountain") {
+        g.strokeStyle = "rgba(0,0,0,0.12)";
+        g.lineWidth = 1;
+        g.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
+      }
     }
   }
 
@@ -140,7 +169,7 @@ function drawObject(
     case "monster":
       if (!available) {
         drawRespawning(g, cx, cy);
-      } else if (def.monster === "hill_wolf") {
+      } else if (def.monster === "hill_wolf" || def.monster === "ridge_wolf") {
         drawWolf(g, cx, cy, now);
       } else if (def.monster === "wild_boar") {
         drawBoar(g, cx, cy, now, false);
@@ -148,9 +177,19 @@ function drawObject(
         drawBoar(g, cx, cy, now, true);
       } else if (def.monster === "forest_bear") {
         drawBear(g, cx, cy, now);
+      } else if (def.monster === "stone_crawler") {
+        drawStoneCrawler(g, cx, cy, now);
+      } else if (def.monster === "mountain_troll") {
+        drawTroll(g, cx, cy, now);
+      } else if (def.monster === "spine_wraith") {
+        drawWraith(g, cx, cy, now);
       } else {
         drawRat(g, cx, cy, now);
       }
+      break;
+
+    case "shrine":
+      drawShrine(g, cx, cy);
       break;
     case "bank":
       drawBank(g, cx, cy);
@@ -568,6 +607,127 @@ function drawBear(g: CanvasRenderingContext2D, cx: number, cy: number, now: numb
   g.fillStyle = "#15100b"; // nose + eye
   circle(g, cx - 20, cy - 1 + bob, 1.4);
   circle(g, cx - 12, cy - 4 + bob, 1.1);
+}
+
+// --- Stone Crawler: a low, armoured stone-shelled creature ---
+function drawStoneCrawler(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const sk = Math.sin(now / 160);
+  shadow(g, cx, cy + 7, 12, 4);
+  g.strokeStyle = "#4c4a46"; // legs
+  g.lineWidth = 2;
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath();
+    g.moveTo(cx + i * 5, cy + 3);
+    g.lineTo(cx + i * 5 + sk * 2, cy + 9);
+    g.stroke();
+  }
+  g.fillStyle = "#5b5852"; // stone shell
+  g.beginPath();
+  g.ellipse(cx, cy, 12, 7, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#6e6a62"; // plated ridges
+  g.beginPath();
+  g.ellipse(cx, cy - 1, 9, 4.5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = "#3a3833";
+  g.lineWidth = 1;
+  for (let i = -1; i <= 1; i++) {
+    g.beginPath();
+    g.moveTo(cx + i * 5, cy - 5);
+    g.lineTo(cx + i * 5, cy + 5);
+    g.stroke();
+  }
+  g.fillStyle = "#d2742c"; // ember eyes
+  circle(g, cx - 9, cy - 1, 1.2);
+  circle(g, cx - 11, cy + 1, 1);
+}
+
+// --- Mountain Troll: a big, hunched grey brute ---
+function drawTroll(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 300) * 1;
+  shadow(g, cx, cy + 13, 14, 5);
+  g.fillStyle = "#5a5d52"; // legs
+  g.fillRect(cx - 7, cy + 6 + bob, 5, 9);
+  g.fillRect(cx + 2, cy + 6 + bob, 5, 9);
+  g.fillStyle = "#6b6e61"; // hunched body
+  g.beginPath();
+  g.moveTo(cx - 11, cy + 8 + bob);
+  g.quadraticCurveTo(cx - 13, cy - 8 + bob, cx, cy - 9 + bob);
+  g.quadraticCurveTo(cx + 13, cy - 8 + bob, cx + 11, cy + 8 + bob);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#7a7d6e"; // shoulder
+  g.beginPath();
+  g.ellipse(cx, cy - 6 + bob, 11, 5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#787b6b"; // long arms
+  g.fillRect(cx - 13, cy - 3 + bob, 4, 12);
+  g.fillRect(cx + 9, cy - 3 + bob, 4, 12);
+  g.fillStyle = "#6b6e61"; // head
+  circle(g, cx, cy - 11 + bob, 5.5);
+  g.fillStyle = "#3a3d34"; // brow
+  g.fillRect(cx - 5, cy - 13 + bob, 10, 2);
+  g.fillStyle = "#c9b14a"; // eyes
+  circle(g, cx - 2.5, cy - 10 + bob, 1.1);
+  circle(g, cx + 2.5, cy - 10 + bob, 1.1);
+  g.fillStyle = "#e8e2d0"; // tusks
+  g.fillRect(cx - 3, cy - 6 + bob, 1.5, 3);
+  g.fillRect(cx + 1.5, cy - 6 + bob, 1.5, 3);
+}
+
+// --- Spine Wraith: a translucent, drifting figure of cold wind ---
+function drawWraith(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const drift = Math.sin(now / 280) * 2;
+  const pulse = 0.45 + 0.2 * Math.sin(now / 220);
+  g.globalAlpha = pulse;
+  g.fillStyle = "#9fc0d8"; // cold body
+  g.beginPath();
+  g.moveTo(cx, cy - 13);
+  g.quadraticCurveTo(cx - 9, cy - 4, cx - 8 + drift, cy + 10);
+  g.quadraticCurveTo(cx, cy + 6, cx + 8 + drift, cy + 10);
+  g.quadraticCurveTo(cx + 9, cy - 4, cx, cy - 13);
+  g.closePath();
+  g.fill();
+  g.globalAlpha = pulse * 0.6;
+  g.fillStyle = "#d6e6f2"; // inner light
+  g.beginPath();
+  g.ellipse(cx, cy - 6, 4, 7, 0, 0, Math.PI * 2);
+  g.fill();
+  g.globalAlpha = 1;
+  g.fillStyle = "#16323f"; // hollow eyes
+  circle(g, cx - 2.5, cy - 8, 1.3);
+  circle(g, cx + 2.5, cy - 8, 1.3);
+}
+
+// --- A standing landmark stone (the Wind-Shrine, the sealed Vault) ---
+function drawShrine(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 13, 11, 4);
+  g.fillStyle = "#6a6b73"; // weathered monolith
+  g.beginPath();
+  g.moveTo(cx - 7, cy + 13);
+  g.lineTo(cx - 8, cy - 10);
+  g.lineTo(cx - 3, cy - 15);
+  g.lineTo(cx + 4, cy - 14);
+  g.lineTo(cx + 8, cy - 6);
+  g.lineTo(cx + 7, cy + 13);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#7e7f88"; // lit face
+  g.beginPath();
+  g.moveTo(cx - 3, cy - 15);
+  g.lineTo(cx + 4, cy - 14);
+  g.lineTo(cx + 3, cy + 13);
+  g.lineTo(cx - 1, cy + 13);
+  g.closePath();
+  g.fill();
+  g.strokeStyle = "#3f4047"; // worn grooves (the "vertebra")
+  g.lineWidth = 1.4;
+  g.beginPath();
+  g.moveTo(cx - 6, cy - 4);
+  g.lineTo(cx + 6, cy - 5);
+  g.moveTo(cx - 6, cy + 3);
+  g.lineTo(cx + 5, cy + 2);
+  g.stroke();
 }
 
 // --- A faint mark where a monster will respawn ---

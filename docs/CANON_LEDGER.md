@@ -190,6 +190,7 @@ coldpine/greyoak), monster sprites (boar/greymane/bear), per-NPC dialogue.
 |---|---|---|---|---|
 | The Knuckle Hills | `knuckle_hills` | start | moor_rat, hill_wolf, ashfin fishing, knucklestone, ashwood | ✅ live |
 | Greyoak Wood | `greyoak_wood` | south road | coldpine (F20) + greyoak (F45), wild_boar, forest_bear, greymane_boar, Maret + the Lodge clearing | ✅ live |
+| The Spine | `spine` | east pass | ashiron (M20) + ribstone (M30) the Spinite Cut; ridge_wolf, stone_crawler, mountain_troll, spine_wraith; Serath the Warden; the Wind-Shrine + sealed Spine Vault (shrine landmarks); peaks + snow + the Cold Stream | ✅ live |
 | The Spine | `spine` | cmb 25 | ridge_wolf, stone_crawler, troll, wraith; ashiron/ribstone | ⬜ |
 | Heartmoor | `heartmoor` | cmb 45 | hounds, bog_knight, mire_serpent; hearthite, herbs | ⬜ |
 | The Marrow Deeps | `marrow_deeps` | cmb 65 | crawlers, golems, wraiths; voidstone | ⬜ |
