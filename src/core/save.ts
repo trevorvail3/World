@@ -44,6 +44,8 @@ export interface SavedProgress {
   flags: string[];
   /** Coins. */
   gold: number;
+  /** Faction standings. */
+  reputation: Record<string, number>;
   hp: number;
   pos: { x: number; y: number };
 }
@@ -65,6 +67,7 @@ export function serializePlayer(player: Player): SavedProgress {
     questsDone: [...player.questsDone],
     flags: [...player.flags],
     gold: player.gold,
+    reputation: { ...player.reputation },
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -160,6 +163,13 @@ export function hydratePlayer(
   const savedGold = raw["gold"];
   if (typeof savedGold === "number" && Number.isFinite(savedGold) && savedGold >= 0) {
     player.gold = Math.floor(savedGold);
+  }
+  const savedRep = raw["reputation"];
+  if (isRecord(savedRep)) {
+    for (const fid of Object.keys(player.reputation) as (keyof typeof player.reputation)[]) {
+      const v = savedRep[fid];
+      if (typeof v === "number" && Number.isFinite(v)) player.reputation[fid] = Math.round(v);
+    }
   }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {

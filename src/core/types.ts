@@ -843,6 +843,8 @@ export interface Player {
   flags: string[];
   /** Coins. Spent at shops; earned by selling and (later) quest rewards. */
   gold: number;
+  /** Standing with each of the four factions (can be negative). */
+  reputation: Record<FactionId, number>;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -1065,6 +1067,15 @@ export interface SkillAction {
 // Quests (data; see src/content/quests.ts).
 // ---------------------------------------------------------------------------
 
+/** The four powers of Varath. Reputation with each rises and falls by deed. */
+export type FactionId = "ashforge" | "lodge" | "pale_record" | "heartmoor_cult";
+
+/** A reputation change with one faction. */
+export interface RepChange {
+  faction: FactionId;
+  amount: number;
+}
+
 /** One choice a player can make at a "choose" step. */
 export interface QuestChoice {
   /** The button label shown to the player. */
@@ -1077,6 +1088,8 @@ export interface QuestChoice {
   gold?: number;
   /** One of this item is consumed when the option is taken (e.g. the shard sold). */
   takeItem?: ItemId;
+  /** Reputation changes with factions for picking this option. */
+  rep?: RepChange[];
 }
 
 /** One thing a quest step asks of the player. */
@@ -1096,6 +1109,8 @@ export interface QuestReward {
   flags?: string[];
   /** Coins granted on completion. */
   gold?: number;
+  /** Reputation changes with factions on completion. */
+  rep?: RepChange[];
 }
 
 /** A quest: a chain of objectives offered by a giver NPC. */
@@ -1161,6 +1176,8 @@ export interface Content {
   quests: QuestDef[];
   /** Shopkeeper wares (data). */
   shops: ShopDef[];
+  /** The factions and their display metadata (data). */
+  factions: { id: FactionId; name: string; icon: string; blurb: string }[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

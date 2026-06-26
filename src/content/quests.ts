@@ -80,11 +80,13 @@ export const quests: QuestDef[] = [
             flags: ["q_first_shard_sold_cult", "shard_answer_warm"],
             gold: 1500,
             takeItem: "shard_of_orun",
+            rep: [{ faction: "heartmoor_cult", amount: 15 }],
             reply: "Calder weighs the coin into your hand and the warmth into his. 'The Heartmoor thanks you.'",
           },
           {
             label: "Keep it. Understand it before you sell it.",
             flags: ["q_first_shard_kept"],
+            rep: [{ faction: "heartmoor_cult", amount: 3 }],
             reply: "Calder smiles, not unkindly. 'A person who wants to understand a thing first is the only kind I trust. The offer keeps.'",
           },
           {
@@ -92,6 +94,7 @@ export const quests: QuestDef[] = [
             flags: ["q_first_shard_kept", "q_first_shard_prefers_skritt"],
             gold: 1800,
             takeItem: "shard_of_orun",
+            rep: [{ faction: "heartmoor_cult", amount: -5 }],
             reply: "Calder's smile thins. 'The goblin's coin spends the same. But the Heartmoor remembers who it dealt with.'",
           },
         ],
@@ -156,6 +159,7 @@ export const quests: QuestDef[] = [
       xp: [{ skill: "smithing", amount: 250 }],
       items: [{ item: "ashforge_hammer", qty: 1 }],
       flags: ["guild_ashforge_joined", "met_vorn"],
+      rep: [{ faction: "ashforge", amount: 10 }],
     },
   },
 
@@ -207,6 +211,7 @@ export const quests: QuestDef[] = [
       ],
       items: [{ item: "lodge_token", qty: 1 }],
       flags: ["guild_lodge_contacted"],
+      rep: [{ faction: "lodge", amount: 10 }],
     },
   },
 
@@ -251,6 +256,7 @@ export const quests: QuestDef[] = [
       xp: [{ skill: "mining", amount: 150 }],
       items: [{ item: "order_cipher_key", qty: 1 }],
       flags: ["guild_pale_record_contacted", "met_sera", "knows_underloft", "act1_complete"],
+      rep: [{ faction: "pale_record", amount: 10 }],
     },
   },
 
@@ -304,6 +310,7 @@ export const quests: QuestDef[] = [
       xp: [{ skill: "smithing", amount: 500 }],
       items: [{ item: "apprentice_mark_blade", qty: 1 }],
       flags: ["guild_ashforge_rank_2"],
+      rep: [{ faction: "ashforge", amount: 15 }],
     },
   },
 
@@ -355,6 +362,7 @@ export const quests: QuestDef[] = [
       ],
       items: [{ item: "berric_ledger", qty: 1 }],
       flags: ["act2_berric_dealt_with"],
+      rep: [{ faction: "ashforge", amount: 15 }],
     },
   },
 
@@ -404,6 +412,7 @@ export const quests: QuestDef[] = [
       ],
       items: [{ item: "warden_longbow", qty: 1 }],
       flags: ["guild_lodge_rank_2", "knows_forest_retreat"],
+      rep: [{ faction: "lodge", amount: 15 }],
     },
   },
 
@@ -455,6 +464,7 @@ export const quests: QuestDef[] = [
         { item: "order_cipher_key", qty: 1 },
       ],
       flags: ["guild_pale_record_rank_1", "knows_rite_partial"],
+      rep: [{ faction: "pale_record", amount: 15 }],
     },
   },
 
@@ -478,21 +488,45 @@ export const quests: QuestDef[] = [
           {
             label: "The Brotherhood works it.",
             flags: ["act2_seam_choice_mining"],
+            rep: [
+              { faction: "ashforge", amount: 25 },
+              { faction: "heartmoor_cult", amount: -20 },
+              { faction: "lodge", amount: -15 },
+              { faction: "pale_record", amount: -10 },
+            ],
             reply: "Vorn's people move in with picks and ledgers. The cult and the Lodge will remember you didn't choose them.",
           },
           {
             label: "The Lodge protects it.",
             flags: ["act2_seam_choice_lodge"],
+            rep: [
+              { faction: "lodge", amount: 25 },
+              { faction: "heartmoor_cult", amount: -30 },
+              { faction: "ashforge", amount: -10 },
+              { faction: "pale_record", amount: -5 },
+            ],
             reply: "The Wardens close the ground and let the wood take it back. The cult comes for it — and you stand with Maret when they do.",
           },
           {
             label: "The Order seals and studies it.",
             flags: ["act2_seam_choice_order"],
+            rep: [
+              { faction: "pale_record", amount: 25 },
+              { faction: "ashforge", amount: -10 },
+              { faction: "lodge", amount: -5 },
+              { faction: "heartmoor_cult", amount: -15 },
+            ],
             reply: "Sera's people ward the seam and read it slowly. No one digs; no one prays. The question stays open.",
           },
           {
             label: "Keep it active. For the Heartmoor.",
             flags: ["act2_seam_choice_sabotage", "cult_path_committed"],
+            rep: [
+              { faction: "heartmoor_cult", amount: 25 },
+              { faction: "ashforge", amount: -20 },
+              { faction: "lodge", amount: -30 },
+              { faction: "pale_record", amount: -10 },
+            ],
             reply: "You keep the warm stone flowing to Calder's people. The Brotherhood and the Lodge call it betrayal. The cult calls you faithful.",
           },
         ],

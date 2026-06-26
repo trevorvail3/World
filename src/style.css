@@ -115,7 +115,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1px;
-  cursor: default;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: inherit;
+}
+.skill-cell:hover {
+  border-color: var(--ember);
+  background: rgba(210, 116, 44, 0.16);
 }
 
 .sc-icon {
@@ -1235,3 +1241,149 @@ button.inv-slot {
   pointer-events: none;
 }
 .inv-slot.unsellable { opacity: 0.5; cursor: default; }
+
+/* --- Factions tab --- */
+.faction-block {
+  margin-bottom: 9px;
+}
+.faction-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 13px;
+}
+.faction-ic {
+  font-size: 14px;
+}
+.faction-name {
+  color: var(--ink);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.faction-stand {
+  font-size: 11px;
+  font-style: italic;
+}
+.faction-stand.pos { color: #7fc06a; }
+.faction-stand.neg { color: #d2724c; }
+.faction-stand.neutral { color: var(--ink-dim); }
+.faction-rep {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  color: var(--ember);
+  min-width: 34px;
+  text-align: right;
+}
+.faction-bar {
+  height: 4px;
+  margin-top: 3px;
+  background: #2a2118;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.faction-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4a6a2e, #7fc06a);
+  transition: width 0.3s ease;
+}
+.faction-fill.neg { background: #6a2f22; }
+
+/* --- Skill detail popup (level + unlock ladder) --- */
+.skilldetail-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 62;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+.skilldetail-backdrop.hidden { display: none; }
+.skilldetail-modal {
+  width: min(320px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+.skilldetail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.skilldetail-title {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+.skilldetail-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.skilldetail-close:hover { color: var(--ember); }
+.sd-level {
+  margin: 8px 0 4px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.sd-level b { color: var(--ember); font-family: "Cinzel", serif; }
+.sd-xpbar {
+  height: 5px;
+  background: #2a2118;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.sd-xpfill {
+  height: 100%;
+  background: linear-gradient(90deg, #8a6a2a, #e0b54a);
+}
+.sd-note {
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: 13px;
+  margin-top: 8px;
+}
+.sd-laddertitle {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border-bottom: 1px solid rgba(74, 61, 44, 0.4);
+  padding-bottom: 3px;
+}
+.sd-ladder { display: flex; flex-direction: column; gap: 2px; }
+.sd-rung {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 13px;
+  padding: 2px 0;
+}
+.sd-rung-lvl {
+  font-family: "Cinzel", serif;
+  min-width: 38px;
+  color: var(--ink-dim);
+}
+.sd-rung-mark { width: 14px; text-align: center; }
+.sd-rung-names { flex: 1; }
+.sd-rung.done .sd-rung-lvl,
+.sd-rung.done .sd-rung-mark { color: #7fc06a; }
+.sd-rung.done .sd-rung-names { color: var(--ink); }
+.sd-rung.next .sd-rung-lvl,
+.sd-rung.next .sd-rung-mark,
+.sd-rung.next .sd-rung-names { color: var(--ember); font-weight: 600; }
+.sd-rung.locked { opacity: 0.55; }

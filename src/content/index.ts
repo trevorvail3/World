@@ -13,6 +13,7 @@ import { map } from "./map.ts";
 import { monsters } from "./monsters.ts";
 import { quests } from "./quests.ts";
 import { shops } from "./shops.ts";
+import { factions } from "./factions.ts";
 import { objects, playerSpawn } from "./spawns.ts";
 import { skills } from "./skills.ts";
 import { xpForLevel } from "./xpCurve.ts";
@@ -25,6 +26,7 @@ export const content: Content = {
   actions,
   quests,
   shops,
+  factions,
   xpForLevel,
   skills,
 };

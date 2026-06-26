@@ -24,6 +24,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { ITEM_COLORS } from "./itemColors.ts";
+import { SkillDetailModal } from "./skillDetail.ts";
 
 const MAX_LOG_LINES = 8;
 
@@ -37,7 +38,7 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
   crafting: "Crafting…",
 };
 
-type TabId = "inventory" | "skills" | "equipment" | "character" | "quests" | "settings";
+type TabId = "inventory" | "skills" | "equipment" | "character" | "quests" | "factions" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
@@ -45,8 +46,19 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "equipment", icon: "🛡️", title: "Equipment" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
+  { id: "factions", icon: "🤝", title: "Factions" },
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
+
+/** A reputation number → a standing word + tone class. */
+function standing(rep: number): { word: string; tone: string } {
+  if (rep >= 60) return { word: "Allied", tone: "pos" };
+  if (rep >= 25) return { word: "Friendly", tone: "pos" };
+  if (rep >= 1) return { word: "Warming", tone: "pos" };
+  if (rep === 0) return { word: "Neutral", tone: "neutral" };
+  if (rep <= -25) return { word: "Hostile", tone: "neg" };
+  return { word: "Wary", tone: "neg" };
+}
 
 /** The equipment slots the player can fill, in display order. */
 const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
@@ -89,6 +101,9 @@ export class Hud {
   private charHp!: HTMLElement;
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
+  private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
+  private skillDetail!: SkillDetailModal;
+  private lastState: WorldState | null = null;
   private equipCells = new Map<EquipSlot, HTMLElement>();
   private equipStats!: HTMLElement;
   private lastEquipment: Partial<Record<EquipSlot, ItemId>> = {};
@@ -109,6 +124,7 @@ export class Hud {
     this.onReset = onReset;
     this.menu = menu;
     this.dispatch = dispatch;
+    this.skillDetail = new SkillDetailModal(root, content);
     this.build(root);
   }
 
@@ -202,13 +218,17 @@ export class Hud {
         grid.className = "skill-grid";
         (Object.keys(this.content.skills) as SkillId[]).forEach((sid) => {
           const meta = this.content.skills[sid];
-          const cell = document.createElement("div");
+          const cell = document.createElement("button");
+          cell.type = "button";
           cell.className = "skill-cell";
           cell.title = meta.name;
           cell.innerHTML = `
             <span class="sc-icon">${meta.icon}</span>
             <span class="sc-lvl">1</span>
             <span class="sc-bar"><span class="sc-fill"></span></span>`;
+          cell.addEventListener("click", () => {
+            if (this.lastState) this.skillDetail.show(this.lastState, sid);
+          });
           this.skillRows.set(sid, cell.querySelector(".sc-lvl") as HTMLElement);
           this.skillFills.set(sid, cell.querySelector(".sc-fill") as HTMLElement);
           grid.appendChild(cell);
@@ -284,6 +304,29 @@ export class Hud {
         list.className = "quest-list";
         this.questList = list;
         p.appendChild(list);
+        break;
+      }
+      case "factions": {
+        for (const f of this.content.factions) {
+          const row = document.createElement("div");
+          row.className = "faction-block";
+          row.title = f.blurb;
+          row.innerHTML = `
+            <div class="faction-row">
+              <span class="faction-ic">${f.icon}</span>
+              <span class="faction-name">${f.name}</span>
+              <span class="faction-stand">Neutral</span>
+              <span class="faction-rep">0</span>
+            </div>
+            <div class="faction-bar"><div class="faction-fill"></div></div>`;
+          this.factionRows.set(f.id, {
+            rep: row.querySelector(".faction-rep") as HTMLElement,
+            stand: row.querySelector(".faction-stand") as HTMLElement,
+            fill: row.querySelector(".faction-fill") as HTMLElement,
+          });
+          p.appendChild(row);
+        }
+        p.appendChild(note("Standing rises and falls with your deeds and your choices."));
         break;
       }
       case "settings": {
@@ -444,6 +487,7 @@ export class Hud {
   update(state: WorldState): void {
     const { player } = state;
     this.invData = player.inventory;
+    this.lastState = state;
 
     // Skills: level + progress-to-next-level bar.
     const table = this.content.xpForLevel;
@@ -467,6 +511,20 @@ export class Hud {
         cell.title = `${meta.name} · Lv ${s.level} · ${xpLine}`;
       }
     });
+
+    // Faction standings.
+    for (const f of this.content.factions) {
+      const els = this.factionRows.get(f.id);
+      if (!els) continue;
+      const rep = player.reputation[f.id] ?? 0;
+      const s = standing(rep);
+      els.rep.textContent = rep > 0 ? `+${rep}` : String(rep);
+      els.stand.textContent = s.word;
+      els.stand.className = `faction-stand ${s.tone}`;
+      // Bar fills right for positive standing, capped at +100; empty when ≤ 0.
+      els.fill.style.width = `${Math.max(0, Math.min(1, rep / 100)) * 100}%`;
+      els.fill.className = `faction-fill ${s.tone}`;
+    }
 
     // Hitpoints (always-on bar) + low-HP warning.
     const pct = Math.max(0, Math.min(1, player.hp / player.maxHp));

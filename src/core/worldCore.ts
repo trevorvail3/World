@@ -29,6 +29,7 @@ import type {
   Player,
   QuestDef,
   QuestState,
+  RepChange,
   SkillAction,
   SkillId,
   Vec2,
@@ -226,6 +227,7 @@ export function createWorld(
     questsDone: [],
     flags: [],
     gold: STARTING_GOLD,
+    reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -1396,6 +1398,22 @@ function grantQuestReward(
     player.gold += def.reward.gold;
     events.push({ type: "LOG", message: `You receive ${def.reward.gold}g.` });
   }
+  applyRep(player, content, def.reward.rep, events);
+}
+
+/** Adjust faction standing and announce each change. */
+function applyRep(
+  player: Player,
+  content: Content,
+  changes: RepChange[] | undefined,
+  events: WorldEvent[],
+): void {
+  for (const c of changes ?? []) {
+    player.reputation[c.faction] = (player.reputation[c.faction] ?? 0) + c.amount;
+    const name = content.factions.find((f) => f.id === c.faction)?.name ?? c.faction;
+    const sign = c.amount >= 0 ? "+" : "";
+    events.push({ type: "LOG", message: `${name}: ${sign}${c.amount} standing.` });
+  }
 }
 
 /** Is a quest offerable now (not active/done, prerequisites + flag gates met)? */
@@ -1434,6 +1452,7 @@ function applyChoice(
     player.gold += pick.gold;
     events.push({ type: "LOG", message: `You're paid ${pick.gold}g.` });
   }
+  applyRep(player, content, pick.rep, events);
   if (pick.reply) events.push({ type: "LOG", message: pick.reply });
   advanceQuest(state, content, def, st, events);
 }
