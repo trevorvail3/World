@@ -1392,6 +1392,10 @@ function grantQuestReward(
   for (const f of def.reward.flags ?? []) {
     if (!player.flags.includes(f)) player.flags.push(f);
   }
+  if (def.reward.gold) {
+    player.gold += def.reward.gold;
+    events.push({ type: "LOG", message: `You receive ${def.reward.gold}g.` });
+  }
 }
 
 /** Is a quest offerable now (not active/done, prerequisites + flag gates met)? */
@@ -1420,6 +1424,16 @@ function applyChoice(
   const pick = obj.options[option];
   if (!pick) return;
   for (const f of pick.flags) if (!player.flags.includes(f)) player.flags.push(f);
+  // A "sell" option hands over an item for coin — only pay if it's in the pack.
+  let paid = true;
+  if (pick.takeItem) {
+    if (countItem(player, pick.takeItem) > 0) removeOneItem(player, pick.takeItem);
+    else paid = false;
+  }
+  if (pick.gold && paid) {
+    player.gold += pick.gold;
+    events.push({ type: "LOG", message: `You're paid ${pick.gold}g.` });
+  }
   if (pick.reply) events.push({ type: "LOG", message: pick.reply });
   advanceQuest(state, content, def, st, events);
 }

@@ -76,8 +76,10 @@ export const quests: QuestDef[] = [
         prompt: "The warm shard — what do you do with it?",
         options: [
           {
-            label: "Sell it to Calder. The Heartmoor pays.",
+            label: "Sell it to Calder. The Heartmoor pays (1500g).",
             flags: ["q_first_shard_sold_cult", "shard_answer_warm"],
+            gold: 1500,
+            takeItem: "shard_of_orun",
             reply: "Calder weighs the coin into your hand and the warmth into his. 'The Heartmoor thanks you.'",
           },
           {
@@ -86,8 +88,10 @@ export const quests: QuestDef[] = [
             reply: "Calder smiles, not unkindly. 'A person who wants to understand a thing first is the only kind I trust. The offer keeps.'",
           },
           {
-            label: "Sell it to Skritt the goblin instead.",
+            label: "Sell it to Skritt the goblin instead (1800g).",
             flags: ["q_first_shard_kept", "q_first_shard_prefers_skritt"],
+            gold: 1800,
+            takeItem: "shard_of_orun",
             reply: "Calder's smile thins. 'The goblin's coin spends the same. But the Heartmoor remembers who it dealt with.'",
           },
         ],

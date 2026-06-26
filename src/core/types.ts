@@ -1073,6 +1073,10 @@ export interface QuestChoice {
   flags: string[];
   /** A line acknowledging the choice. */
   reply?: string;
+  /** Coins granted for picking this option (e.g. selling the shard). */
+  gold?: number;
+  /** One of this item is consumed when the option is taken (e.g. the shard sold). */
+  takeItem?: ItemId;
 }
 
 /** One thing a quest step asks of the player. */
@@ -1090,6 +1094,8 @@ export interface QuestReward {
   items?: { item: ItemId; qty: number }[];
   /** Story flags set on completion (faction joins, plot beats). */
   flags?: string[];
+  /** Coins granted on completion. */
+  gold?: number;
 }
 
 /** A quest: a chain of objectives offered by a giver NPC. */
