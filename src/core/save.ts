@@ -36,6 +36,9 @@ export interface SavedProgress {
   equipment: Record<string, string>;
   /** Arrows nocked behind the worn `ammo` slot. */
   quiver: number;
+  /** Run/walk toggle + current run energy. */
+  running: boolean;
+  energy: number;
   /** Selected melee combat style. */
   combatStyle: string;
   /** Active quests: id -> { step, killCount }. */
@@ -90,6 +93,8 @@ export function serializePlayer(state: WorldState): SavedProgress {
     bank: { ...player.bank } as Record<string, number>,
     equipment: { ...player.equipment } as Record<string, string>,
     quiver: player.quiver,
+    running: player.running,
+    energy: player.energy,
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
@@ -185,6 +190,12 @@ export function hydratePlayer(
   player.quiver = finiteNum(savedQuiver) && savedQuiver > 0 ? Math.floor(savedQuiver) : 0;
   if (!player.equipment.ammo) player.quiver = 0;
   else if (player.quiver <= 0) delete player.equipment.ammo;
+
+  // Run/walk preference + energy (winded is derived, never persisted).
+  if (typeof raw["running"] === "boolean") player.running = raw["running"];
+  const savedEnergy = raw["energy"];
+  if (finiteNum(savedEnergy)) player.energy = Math.max(0, Math.min(100, savedEnergy));
+  player.winded = player.energy <= 0;
   // Tools are wielded in the mainhand now. Make sure the player still owns each
   // basic tool so saves from before this change can gather: if they hold no
   // tool of a kind anywhere (hand, pack or bank), drop a tier-1 one in the pack.

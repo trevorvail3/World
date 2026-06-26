@@ -49,7 +49,15 @@ import type {
 // ---------------------------------------------------------------------------
 
 const MOVE_SPEED = 3.5; // tiles per second
-const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost (a sprint/walk system comes later)
+const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost on top of everything
+
+// Run/walk (OSRS-style): running moves SPRINT_MULT× faster but drains run energy
+// per tile travelled; energy recovers while walking or standing still.
+const SPRINT_MULT = 1.9;
+const ENERGY_MAX = 100;
+const ENERGY_DRAIN = 1.7; // energy spent per tile sprinted (~58 tiles on a full bar)
+const ENERGY_REGEN = 7; // energy recovered per second when not sprinting
+const ENERGY_RECOVER = 20; // after running dry, you must regen this much before sprinting again
 
 // Predators that strike when you stray too close (everything else waits to be
 // attacked). Kept here rather than in content so it's easy to tune.
@@ -273,6 +281,9 @@ export function createWorld(
     equipment: { mainhand: "hatchet_1" },
     quiver: 0,
     combatStyle: "vigour",
+    running: true,
+    energy: ENERGY_MAX,
+    winded: false,
     quests: {},
     questsDone: [],
     flags: [],
@@ -744,6 +755,10 @@ export function applyIntent(
         type: "LOG",
         message: `Combat style: ${intent.style[0]!.toUpperCase()}${intent.style.slice(1)}.`,
       });
+      break;
+    }
+    case "TOGGLE_RUN": {
+      player.running = !player.running;
       break;
     }
   }
@@ -1500,9 +1515,15 @@ export function tick(
       events.push({ type: "PLAYER_RESPAWNED" });
     }
   } else {
-    // 2) Movement.
+    // 2) Movement. Sprinting drains run energy; otherwise it recovers.
     const wasMoving = player.path.length > 0;
-    if (wasMoving) stepMovement(player, dt);
+    const sprintTiles = wasMoving ? stepMovement(player, dt) : 0;
+    if (sprintTiles <= 0) {
+      if (player.energy < ENERGY_MAX) {
+        player.energy = Math.min(ENERGY_MAX, player.energy + (ENERGY_REGEN * dt) / 1000);
+      }
+      if (player.winded && player.energy >= ENERGY_RECOVER) player.winded = false; // caught your breath
+    }
     const arrived = wasMoving && player.path.length === 0;
     if (arrived && player.pendingInteractId) {
       startInteraction(state, content, player.pendingInteractId, ctx, events);
@@ -1699,9 +1720,13 @@ function randRange(ctx: Ctx, min: number, max: number): number {
   return min + Math.floor(ctx.rng() * (max - min + 1));
 }
 
-function stepMovement(player: Player, dt: number): void {
-  const speed = MOVE_SPEED * (player.equipment.mount ? MOUNT_SPEED_MULT : 1);
-  let budget = (speed * dt) / 1000; // tiles of travel allowed this tick
+/** Advance the player along their path; returns the tiles travelled while sprinting. */
+function stepMovement(player: Player, dt: number): number {
+  const sprinting = player.running && player.energy > 0 && !player.winded;
+  const speed =
+    MOVE_SPEED * (player.equipment.mount ? MOUNT_SPEED_MULT : 1) * (sprinting ? SPRINT_MULT : 1);
+  const startBudget = (speed * dt) / 1000; // tiles of travel allowed this tick
+  let budget = startBudget;
   while (budget > 0 && player.path.length > 0) {
     const target = player.path[0]!;
     const dx = target.x - player.pos.x;
@@ -1719,6 +1744,13 @@ function stepMovement(player: Player, dt: number): void {
       budget = 0;
     }
   }
+  const moved = startBudget - budget; // tiles actually walked this tick
+  if (sprinting && moved > 0) {
+    player.energy = Math.max(0, player.energy - moved * ENERGY_DRAIN);
+    if (player.energy <= 0) player.winded = true; // out of breath — walk to recover
+    return moved;
+  }
+  return 0;
 }
 
 function processActivity(

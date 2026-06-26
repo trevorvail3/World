@@ -54,6 +54,7 @@ const GLYPHS: Record<string, string> = {
   sparkle: solid(`<path d="M12 3 L13.6 10.4 L21 12 L13.6 13.6 L12 21 L10.4 13.6 L3 12 L10.4 10.4 Z"/>`),
   peak: line(`<path d="M3 19 L9 8 L13 14 L16 9 L21 19 Z"/><path d="M7.5 11 L9 9.5 L10.5 11"/>`),
   question: line(`<circle cx="12" cy="12" r="8"/><path d="M9.5 9.5 Q9.5 6.5 12 6.5 Q14.5 6.5 14.5 9 Q14.5 11 12 12 V14"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/>`),
+  boot: line(`<path d="M9 4 L13 4 L13 13 L19 15 Q21 16 21 18 L21 20 L9 20 Z"/><path d="M9 17 H21"/><path d="M3 9 H6 M2 13 H5"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.

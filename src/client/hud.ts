@@ -113,6 +113,9 @@ export class Hud {
   private vitals!: HTMLElement;
   private logPanel!: HTMLElement;
   private hudRoot!: HTMLElement;
+  private runControl!: HTMLElement;
+  private runEnergyFill!: HTMLElement;
+  private runEnergyText!: HTMLElement;
   private statusPill!: HTMLElement;
   private statusText!: HTMLElement;
   private buffStrip!: HTMLElement;
@@ -175,6 +178,21 @@ export class Hud {
     this.goldText = vitals.querySelector(".gold-text") as HTMLElement;
     this.vitals = vitals;
     root.appendChild(vitals);
+
+    // --- Run/walk toggle + energy bar (under the minimap, top-right) ---
+    const runCtl = document.createElement("div");
+    runCtl.className = "hud-panel run-control";
+    runCtl.innerHTML =
+      `<button class="run-toggle" type="button" title="Toggle run / walk">${glyph("boot")}</button>` +
+      `<div class="run-energy"><div class="run-energy-fill"></div><span class="run-energy-text">100%</span></div>`;
+    (runCtl.querySelector(".run-toggle") as HTMLElement).addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.dispatch({ type: "TOGGLE_RUN" });
+    });
+    this.runEnergyFill = runCtl.querySelector(".run-energy-fill") as HTMLElement;
+    this.runEnergyText = runCtl.querySelector(".run-energy-text") as HTMLElement;
+    this.runControl = runCtl;
+    root.appendChild(runCtl);
 
     // --- A stacking column under vitals: active buffs + pinned quest tracker ---
     const topLeft = document.createElement("div");
@@ -694,6 +712,14 @@ export class Hud {
     this.hpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
     this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
+
+    // Run/walk: bar width, percentage, on/off and low-energy styling.
+    const energy = Math.round(player.energy);
+    this.runEnergyFill.style.width = `${energy}%`;
+    this.runEnergyText.textContent = `${energy}%`;
+    this.runControl.classList.toggle("on", player.running && player.energy > 0);
+    this.runControl.classList.toggle("spent", player.running && player.energy <= 0);
+    this.runEnergyFill.classList.toggle("lowenergy", energy <= 25);
 
     // "What am I doing" status pill.
     const verb = ACTIVITY_VERB[player.activity.kind];

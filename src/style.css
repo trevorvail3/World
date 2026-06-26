@@ -1923,3 +1923,63 @@ button.inv-slot {
   60% { opacity: 0.7; }
   100% { opacity: 0; }
 }
+
+/* ── Run/walk toggle + energy bar (under the minimap, top-right) ───────────── */
+.run-control {
+  position: absolute;
+  top: 156px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px 5px 6px;
+}
+.run-toggle {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ink-dim);
+}
+.run-toggle .g-ico { width: 17px; height: 17px; }
+.run-control.on .run-toggle { color: var(--ember); border-color: var(--ember); background: rgba(210, 116, 44, 0.16); }
+.run-control.spent .run-toggle { color: #b5564a; border-color: #7d3a2a; }
+.run-energy {
+  position: relative;
+  width: 62px;
+  height: 12px;
+  background: #2a1f17;
+  border: 1px solid #503a26;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.run-energy-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #6a8a3a, #b6d24a);
+  transition: width 0.2s ease;
+}
+.run-energy-fill.lowenergy { background: linear-gradient(90deg, #7d1f15, #c43a23); }
+.run-energy-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--ink);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.04em;
+}
+/* On phones the vitals readout moves to the log box; nudge the run control up
+   to sit just under the (smaller) minimap. */
+@media (max-width: 520px) {
+  .run-control { top: 132px; padding: 4px 6px; }
+  .run-energy { width: 52px; }
+}

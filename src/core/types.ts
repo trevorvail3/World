@@ -976,6 +976,16 @@ export interface Player {
   quiver: number;
   /** The melee combat style trained on the next kill. */
   combatStyle: CombatStyle;
+  /** Run toggle: when on (and energy remains), the player moves at sprint speed. */
+  running: boolean;
+  /** Run energy, 0–100. Drains while sprinting, regenerates otherwise. */
+  energy: number;
+  /**
+   * Set when energy hits 0; forces walking until energy recovers a little, so
+   * the player doesn't micro-stutter between sprint and walk on an empty bar.
+   * Transient — derived from energy, not persisted.
+   */
+  winded: boolean;
   /** Active quests, keyed by quest id. */
   quests: Record<string, QuestState>;
   /** Ids of quests already completed. */
@@ -1117,6 +1127,11 @@ export interface SetStyleIntent {
   style: CombatStyle;
 }
 
+/** Flip the run/walk toggle. */
+export interface ToggleRunIntent {
+  type: "TOGGLE_RUN";
+}
+
 /** "Pick option N at a quest's choice step." */
 export interface ChooseIntent {
   type: "CHOOSE";
@@ -1192,6 +1207,7 @@ export type Intent =
   | UnequipIntent
   | CraftIntent
   | SetStyleIntent
+  | ToggleRunIntent
   | ChooseIntent;
 
 // ---------------------------------------------------------------------------
