@@ -262,6 +262,7 @@ export function createWorld(
     stats: { goldEarned: 0, monstersSlain: 0 },
     achievements: [],
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
+    buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -350,6 +351,8 @@ function beginGather(
     }
     speedMult = TOOL_TIER_SPEED[tier] ?? 1;
   }
+  // A gathering tincture speeds every gather (fishing has no tool but still buffs).
+  speedMult *= 1 - Math.min(0.6, buffVal(player, "gather_speed"));
   const stepInterval = Math.round(interval * speedMult);
   player.activity = {
     kind,
@@ -439,6 +442,8 @@ function grantXp(
   if (comp?.meta?.["petSkill"] === skill && typeof comp.meta["bonusAmt"] === "number") {
     amount = amount * (1 + (comp.meta["bonusAmt"] as number));
   }
+  // A smoked-fish XP boost lifts all XP gains while it lasts.
+  amount = amount * (1 + buffVal(state.player, "xp_boost"));
   s.xp += amount;
   events.push({ type: "XP_GAINED", skill, amount });
   const after = levelFromXp(content.xpForLevel, s.xp);
@@ -636,7 +641,7 @@ export function applyIntent(
       break;
     }
     case "EAT": {
-      eatSlot(player, content, intent.slot, events);
+      eatSlot(player, content, intent.slot, ctx, events);
       break;
     }
     case "DEPOSIT": {
@@ -956,26 +961,52 @@ function eatSlot(
   player: Player,
   content: Content,
   slot: number,
+  ctx: Ctx,
   events: WorldEvent[],
 ): void {
   const data = player.inventory[slot];
   if (!data) return;
   const def = content.items[data.item];
-  if (!def.heals) {
-    events.push({ type: "LOG", message: `You can't eat the ${def.name}.` });
+  const canHeal = !!def.heals;
+  const canBuff = !!(def.buff && def.buffMs);
+  if (!canHeal && !canBuff) {
+    events.push({ type: "LOG", message: `You can't use the ${def.name}.` });
     return;
   }
-  if (player.hp >= player.maxHp) {
+  // Don't waste a pure-heal at full HP; a buffed item is still worth using.
+  if (canHeal && !canBuff && player.hp >= player.maxHp) {
     events.push({ type: "LOG", message: "You are already at full health." });
     return;
   }
-  player.hp = Math.min(player.maxHp, player.hp + def.heals);
+
+  let msg = canHeal && def.buff ? `You drink the ${def.name}.` : `You ${def.cat === "Food" || canHeal ? "eat" : "drink"} the ${def.name}.`;
+  if (canHeal) {
+    player.hp = Math.min(player.maxHp, player.hp + def.heals!);
+    msg += ` (+${def.heals})`;
+  }
+  if (canBuff) {
+    player.buffs[def.buff!] = { amount: def.buffAmt ?? 0, until: ctx.now + def.buffMs! };
+    msg += ` ${BUFF_LABEL[def.buff!] ?? def.buff} for ${Math.round(def.buffMs! / 60000)} min.`;
+  }
   data.qty -= 1;
   if (data.qty <= 0) player.inventory[slot] = null;
-  events.push({
-    type: "LOG",
-    message: `You eat the ${def.name}. (+${def.heals})`,
-  });
+  events.push({ type: "LOG", message: msg });
+}
+
+/** Player-facing names for each buff kind (used in the log + HUD). */
+const BUFF_LABEL: Record<string, string> = {
+  melee_acc: "+Accuracy",
+  ranged_acc: "+Accuracy",
+  melee_dmg: "+Damage",
+  ranged_dmg: "+Damage",
+  defence: "+Defence",
+  gather_speed: "+Gathering speed",
+  xp_boost: "+XP",
+};
+
+/** The amount of an active buff kind, or 0 if none is active. */
+function buffVal(player: Player, kind: string): number {
+  return player.buffs[kind]?.amount ?? 0;
 }
 
 /** Move every one of an item from the pack into the bank. */
@@ -1296,6 +1327,14 @@ export function tick(
 
   // 0) Keep max HP in step with the Vitality level (leveling up heals you).
   syncMaxHp(player);
+
+  // 0b) Expire any temporary buffs whose time is up.
+  for (const kind of Object.keys(player.buffs)) {
+    if (ctx.now >= player.buffs[kind]!.until) {
+      delete player.buffs[kind];
+      events.push({ type: "LOG", message: `Your ${(BUFF_LABEL[kind] ?? kind).replace(/^\+/, "")} boost fades.` });
+    }
+  }
 
   // 1) Respawn the player if they're dead and their timer is up.
   if (!player.alive) {
@@ -2138,18 +2177,20 @@ function weaponStyle(player: Player, content: Content): string | undefined {
  */
 function playerAccuracy(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "edge" ? COMBAT.styleBonus : 0;
-  return skillLvl(player, "edge") + equipStat(player, content, "acc") + styleBonus;
+  const buff = buffVal(player, "melee_acc") + buffVal(player, "ranged_acc");
+  return skillLvl(player, "edge") + equipStat(player, content, "acc") + styleBonus + buff;
 }
 
 /** Player max hit: Vigour + summed gear dmg (weapon, amulet) + Vigour bonus. */
 function playerMaxHit(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "vigour" ? COMBAT.styleBonus : 0;
-  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus;
+  const buff = buffVal(player, "melee_dmg") + buffVal(player, "ranged_dmg");
+  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus + buff;
 }
 
-/** Player defence rating: Ward + summed armour defence. */
+/** Player defence rating: Ward + summed armour defence (+ any Defence buff). */
 function playerDefence(player: Player, content: Content): number {
-  return skillLvl(player, "ward") + equipStat(player, content, "def");
+  return skillLvl(player, "ward") + equipStat(player, content, "def") + buffVal(player, "defence");
 }
 
 /** The player's swing interval (ms): the main-hand weapon's speed, or default. */

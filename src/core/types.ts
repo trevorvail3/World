@@ -981,6 +981,12 @@ export interface Player {
   achievements: string[];
   /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
   bounty: BountyState;
+  /**
+   * Active temporary buffs from food and potions, keyed by buff kind (one per
+   * kind; re-using refreshes it). `until` is a monotonic `ctx.now` deadline —
+   * not persisted, so buffs clear on reload.
+   */
+  buffs: Record<string, { amount: number; until: number }>;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:

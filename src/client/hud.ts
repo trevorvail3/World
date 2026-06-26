@@ -86,6 +86,17 @@ const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
 /** Canon slot strings this UI can wear (matches EquipSlot). */
 const WEARABLE = new Set<string>(EQUIP_SLOTS.map((s) => s.slot));
 
+/** Icon + label for each temporary-buff kind, shown in the buff strip. */
+const BUFF_DISPLAY: Record<string, { icon: string; label: string }> = {
+  melee_acc: { icon: "🎯", label: "Accuracy" },
+  ranged_acc: { icon: "🎯", label: "Accuracy" },
+  melee_dmg: { icon: "⚔️", label: "Damage" },
+  ranged_dmg: { icon: "🏹", label: "Damage" },
+  defence: { icon: "🛡️", label: "Defence" },
+  gather_speed: { icon: "⛏️", label: "Gathering speed" },
+  xp_boost: { icon: "✨", label: "XP boost" },
+};
+
 export class Hud {
   private content: Content;
   private skillRows = new Map<SkillId, HTMLElement>();
@@ -96,6 +107,8 @@ export class Hud {
   private vitals!: HTMLElement;
   private statusPill!: HTMLElement;
   private statusText!: HTMLElement;
+  private buffStrip!: HTMLElement;
+  private questTracker!: HTMLElement;
   private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
   private logLines: string[] = [];
@@ -152,6 +165,17 @@ export class Hud {
     this.goldText = vitals.querySelector(".gold-text") as HTMLElement;
     this.vitals = vitals;
     root.appendChild(vitals);
+
+    // --- A stacking column under vitals: active buffs + pinned quest tracker ---
+    const topLeft = document.createElement("div");
+    topLeft.className = "hud-topleft";
+    this.buffStrip = document.createElement("div");
+    this.buffStrip.className = "hud-buffs";
+    this.questTracker = document.createElement("div");
+    this.questTracker.className = "hud-panel hud-quest hidden";
+    topLeft.appendChild(this.buffStrip);
+    topLeft.appendChild(this.questTracker);
+    root.appendChild(topLeft);
 
     // --- "What am I doing" status pill + Stop (top-centre) ---
     this.statusPill = document.createElement("div");
@@ -405,12 +429,51 @@ export class Hud {
     if (nearBottom) el.scrollTop = el.scrollHeight;
   }
 
+  /** Active food/potion buffs as chips with a live countdown. */
+  private renderBuffs(player: WorldState["player"]): void {
+    const now = performance.now();
+    const entries = Object.entries(player.buffs).filter(([, b]) => b.until > now);
+    if (entries.length === 0) {
+      if (this.buffStrip.childElementCount) this.buffStrip.innerHTML = "";
+      return;
+    }
+    this.buffStrip.innerHTML = entries
+      .map(([kind, b]) => {
+        const secs = Math.max(0, Math.round((b.until - now) / 1000));
+        const time = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+        const meta = BUFF_DISPLAY[kind] ?? { icon: "✨", label: kind };
+        const amt = kind === "xp_boost" || kind === "gather_speed"
+          ? `+${Math.round(b.amount * 100)}%`
+          : `+${b.amount}`;
+        return `<div class="buff-chip" title="${meta.label} ${amt}"><span>${meta.icon}</span><span class="buff-amt">${amt}</span><span class="buff-time">${time}</span></div>`;
+      })
+      .join("");
+  }
+
+  /** A pinned card showing the active quest and its current objective. */
+  private renderQuestTracker(player: WorldState["player"]): void {
+    const ids = Object.keys(player.quests);
+    if (ids.length === 0) { this.questTracker.classList.add("hidden"); return; }
+    const qid = ids[0]!;
+    const def = this.content.quests.find((q) => q.id === qid);
+    const st = player.quests[qid];
+    if (!def || !st) { this.questTracker.classList.add("hidden"); return; }
+    const step = def.steps[st.step] as { type?: string; text?: string; count?: number } | undefined;
+    let obj = step?.text ?? "Return to the quest-giver.";
+    if (step?.type === "kill" && typeof step.count === "number") {
+      obj = `${obj.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/, "")} (${st.killCount}/${step.count})`;
+    }
+    this.questTracker.innerHTML =
+      `<div class="quest-title">📜 ${escapeHtml(def.name)}</div><div class="quest-obj">${escapeHtml(obj)}</div>`;
+    this.questTracker.classList.remove("hidden");
+  }
+
   /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */
   private tapItem(index: number, screenX: number, screenY: number): void {
     const data = this.invData[index];
     if (!data) return;
     const def = this.content.items[data.item];
-    if (def.heals) {
+    if (def.heals || def.buff) {
       this.dispatch({ type: "EAT", slot: index });
     } else if (def.slot && WEARABLE.has(def.slot)) {
       this.dispatch({ type: "EQUIP", slot: index });
@@ -425,9 +488,9 @@ export class Hud {
     if (!data || !this.menu) return;
     const def = this.content.items[data.item];
     const items: MenuItem[] = [];
-    if (def.heals) {
+    if (def.heals || def.buff) {
       items.push({
-        label: "Eat",
+        label: def.buff && !def.heals ? "Drink" : "Eat",
         target: def.name,
         tone: "action",
         onSelect: () => this.dispatch({ type: "EAT", slot: index }),
@@ -530,6 +593,9 @@ export class Hud {
     const { player } = state;
     this.invData = player.inventory;
     this.lastState = state;
+
+    this.renderBuffs(player);
+    this.renderQuestTracker(player);
 
     // Skills: level + progress-to-next-level bar.
     const table = this.content.xpForLevel;
