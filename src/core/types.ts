@@ -678,18 +678,37 @@ export interface Drop {
   /** Optional quantity range (defaults to 1). */
   min?: number;
   max?: number;
+  /** Canon rarity label: "always" | "common" | "uncommon" | "rare" | "legendary". */
+  tier?: string;
 }
 
-/** The combat stats + loot table for a kind of monster (pure data). */
+/**
+ * The combat stats + loot table for a kind of monster, ported verbatim from the
+ * idle game's `MONSTERS` table. `acc`/`def`/`speed`/`attackStyle`/`weakness` are
+ * carried so the combat-math upgrade can use them; today's simplified combat
+ * uses `maxHit`/`hp`/`xp` only. See docs/CANON_LEDGER.md.
+ */
 export interface MonsterStats {
   id: string;
   name: string;
+  /** Canon icon glyph. */
+  icon?: string;
   level: number;
   hp: number;
+  /** Attack accuracy rating. */
+  acc?: number;
+  /** Defence rating (reduces the player's hit chance). */
+  def?: number;
   /** Highest damage the monster can deal in one hit. */
   maxHit: number;
+  /** Attack interval in ms. */
+  speed?: number;
   /** Combat XP granted (to each combat skill) on a kill. */
   xp: number;
+  /** Attack style: "slash" | "stab" | "crush". */
+  attackStyle?: string;
+  /** Styles this monster is weak to (extra damage). */
+  weakness?: string[];
   drops: Drop[];
   desc: string;
 }
