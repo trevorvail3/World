@@ -148,11 +148,15 @@ Source: `MONSTERS` (~3801–4018). Dest: `src/content/monsters.ts`.
 weakness + full drop tables (with canon `tier` labels). TypeScript validates all
 98 drop item ids against the item registry. MonsterStats expanded to the superset.
 
-> Today's combat still uses hp/maxHit/xp only. The **combat-math upgrade**
-> (accuracy vs defence, weakness multipliers, attack styles, `ward` defence,
-> per-monster attack speed) is the next gameplay bundle — the data is now here
-> for it to consume. Dungeon `DUNGEONS` structure + authoritative boss drops
-> come with the zone/dungeon bundles (Phase 2).
+> **Combat-math upgrade — ✅ DONE.** Combat now uses the full idle-game model,
+> ported verbatim: linear hit-chance `clamp(0.5 + (att−def)·0.012, 0.05, 0.95)`,
+> damage `randInt(1, maxHit)`, weakness ×1.2 acc / ×1.1 dmg off the weapon's
+> attack style, Ward flat absorption `floor(def/15)`, **separate per-side attack
+> clocks** (weapon `speed` vs monster `speed`), max HP `10 + Vitality`, and
+> kill-XP `Vitality += floor(xp·0.33)` + the chosen style skill `+= floor(xp)`.
+> Added a **combat-style selector** (Edge/Vigour/Ward) on the Character tab.
+> Dungeon `DUNGEONS` structure + authoritative boss drops come with the
+> zone/dungeon bundles (Phase 2).
 
 | group | count | status |
 |---|---|---|

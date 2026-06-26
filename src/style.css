@@ -326,6 +326,54 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* Combat style selector */
+.style-select {
+  margin-top: 12px;
+}
+
+.style-label {
+  font-size: 12px;
+  color: var(--ink-dim);
+  margin-bottom: 5px;
+}
+
+.style-row {
+  display: flex;
+  gap: 6px;
+}
+
+.style-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ink-dim);
+  background: rgba(10, 8, 6, 0.5);
+  border: 1px solid #4a3f30;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.style-btn:hover {
+  border-color: #6a5a3a;
+  color: var(--ink);
+}
+
+.style-btn.active {
+  color: #1a140f;
+  background: var(--ember, #d2742c);
+  border-color: #f2cf6b;
+  font-weight: 600;
+}
+
+.style-ic {
+  font-size: 13px;
+}
+
 /* Character sheet */
 .char-name {
   font-family: "Cinzel", serif;
