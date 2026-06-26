@@ -44,6 +44,8 @@ export type SkillId =
   | "mining"
   | "forestry"
   | "fishing"
+  | "cooking"
+  | "smithing"
   | "vitality"
   | "edge"
   | "vigour";
@@ -60,11 +62,15 @@ export interface SkillState {
 export type ItemId =
   | "ashwood_log"
   | "knucklestone_ore"
+  | "knucklestone_bar"
   | "ashfin_raw"
+  | "ashfin_cooked"
   | "raw_rat_meat"
+  | "cooked_rat_meat"
   | "raw_hide"
   | "rat_tail"
   | "raw_wolf_meat"
+  | "cooked_wolf_meat"
   | "wolf_pelt"
   | "wolf_fang"
   | "worn_coin"
@@ -76,6 +82,8 @@ export interface ItemDef {
   name: string;
   /** Short flavour text shown in tooltips / the log. */
   description: string;
+  /** Food only: hit points restored when eaten. */
+  heals?: number;
 }
 
 /** One occupied inventory slot. The inventory is an array of 28 of these. */
@@ -103,7 +111,15 @@ export interface WorldMap {
 // World objects (trees, rocks, fishing spots, the NPC, the monster).
 // ---------------------------------------------------------------------------
 
-export type ObjKind = "tree" | "rock" | "fishing_spot" | "npc" | "monster";
+export type ObjKind =
+  | "tree"
+  | "rock"
+  | "fishing_spot"
+  | "npc"
+  | "monster"
+  | "bank"
+  | "fire"
+  | "furnace";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -173,7 +189,9 @@ export type ActivityKind =
   | "woodcutting"
   | "mining"
   | "fishing"
-  | "combat";
+  | "combat"
+  | "cooking"
+  | "smelting";
 
 export interface Activity {
   kind: ActivityKind;
@@ -199,6 +217,8 @@ export interface Player {
   skills: Record<SkillId, SkillState>;
   /** Fixed-length array of length 28; empty slots are null. */
   inventory: (InventorySlot | null)[];
+  /** The bank chest: unlimited, stacked storage (item id -> quantity). */
+  bank: Partial<Record<ItemId, number>>;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -250,7 +270,31 @@ export interface CancelIntent {
   type: "CANCEL";
 }
 
-export type Intent = MoveIntent | InteractIntent | CancelIntent;
+/** "Eat the food in this inventory slot" (restores HP). */
+export interface EatIntent {
+  type: "EAT";
+  slot: number;
+}
+
+/** "Deposit every one of this item from my pack into the bank." */
+export interface DepositIntent {
+  type: "DEPOSIT";
+  item: ItemId;
+}
+
+/** "Withdraw one of this item from the bank into my pack." */
+export interface WithdrawIntent {
+  type: "WITHDRAW";
+  item: ItemId;
+}
+
+export type Intent =
+  | MoveIntent
+  | InteractIntent
+  | CancelIntent
+  | EatIntent
+  | DepositIntent
+  | WithdrawIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -271,11 +315,19 @@ export type WorldEvent =
   | { type: "OBJECT_RESPAWNED"; objId: string }
   | { type: "MONSTER_KILLED"; objId: string }
   | { type: "PLAYER_DIED" }
-  | { type: "PLAYER_RESPAWNED" };
+  | { type: "PLAYER_RESPAWNED" }
+  | { type: "OPEN_BANK" };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
 // ---------------------------------------------------------------------------
+
+/** A processing recipe: one input item becomes one output item, for XP. */
+export interface Recipe {
+  input: ItemId;
+  output: ItemId;
+  xp: number;
+}
 
 export interface Content {
   map: WorldMap;
@@ -283,6 +335,8 @@ export interface Content {
   items: Record<ItemId, ItemDef>;
   /** Monster combat stats + loot, keyed by MonsterStats id. */
   monsters: Record<string, MonsterStats>;
+  /** Processing recipes for the camp stations. */
+  recipes: { cooking: Recipe[]; smelting: Recipe[] };
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name, etc.). */

@@ -23,6 +23,9 @@ const MM_OBJ: Record<ObjKind, string> = {
   fishing_spot: "#6fa0c0",
   npc: "#c9a24a",
   monster: "#cc4a3a",
+  bank: "#caa05a",
+  fire: "#e08a3a",
+  furnace: "#b06a48",
 };
 
 export class Minimap {

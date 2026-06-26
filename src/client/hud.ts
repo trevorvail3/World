@@ -11,24 +11,11 @@
  * state itself (RULE 2). (The Reset button lives in main.ts, top-right.)
  */
 
-import type { Content, InventorySlot, ItemId, SkillId, WorldState } from "../core/types.ts";
-import type { ContextMenu } from "./contextMenu.ts";
+import type { Content, Intent, InventorySlot, SkillId, WorldState } from "../core/types.ts";
+import type { ContextMenu, MenuItem } from "./contextMenu.ts";
+import { ITEM_COLORS } from "./itemColors.ts";
 
 const MAX_LOG_LINES = 8;
-
-const ITEM_COLORS: Record<ItemId, string> = {
-  ashwood_log: "#8a6a44",
-  knucklestone_ore: "#6f7079",
-  ashfin_raw: "#5d7488",
-  raw_rat_meat: "#9c6b5a",
-  raw_hide: "#7a5638",
-  rat_tail: "#866a54",
-  raw_wolf_meat: "#8a4f44",
-  wolf_pelt: "#8f8a7e",
-  wolf_fang: "#d8d2c2",
-  worn_coin: "#c9a24a",
-  shard_of_orun: "#2a2320",
-};
 
 type TabId = "inventory" | "skills" | "equipment" | "character" | "settings";
 
@@ -67,6 +54,7 @@ export class Hud {
 
   private onReset: () => void;
   private menu: ContextMenu | null;
+  private dispatch: (intent: Intent) => void;
   private invData: (InventorySlot | null)[] = [];
 
   constructor(
@@ -74,10 +62,12 @@ export class Hud {
     content: Content,
     onReset: () => void = () => {},
     menu: ContextMenu | null = null,
+    dispatch: (intent: Intent) => void = () => {},
   ) {
     this.content = content;
     this.onReset = onReset;
     this.menu = menu;
+    this.dispatch = dispatch;
     this.build(root);
   }
 
@@ -233,7 +223,16 @@ export class Hud {
     const data = this.invData[index];
     if (!data || !this.menu) return;
     const def = this.content.items[data.item];
-    this.menu.show(screenX, screenY, def.name, [], def.description);
+    const items: MenuItem[] = [];
+    if (def.heals) {
+      items.push({
+        label: "Eat",
+        target: def.name,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "EAT", slot: index }),
+      });
+    }
+    this.menu.show(screenX, screenY, def.name, items, def.description);
   }
 
   /** Fire `onLong` if the pointer is held still on `el` for a moment. */

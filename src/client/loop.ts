@@ -25,6 +25,7 @@ import type {
   WorldObjectDef,
   WorldState,
 } from "../core/types.ts";
+import { BankUI } from "./bankUI.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
@@ -85,6 +86,9 @@ const VERB: Record<ObjKind, string> = {
   fishing_spot: "Fish",
   npc: "Talk to",
   monster: "Attack",
+  bank: "Open",
+  fire: "Cook at",
+  furnace: "Smelt at",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -93,6 +97,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   fishing_spot: "Dark ripples at the head of the Redrun; ashfin move below.",
   npc: "Aldric, a Man of the Knuckle Hills, mending a wall.",
   monster: "A wild thing of the hills.",
+  bank: "A sturdy iron-bound chest. Your goods are safe in it.",
+  fire: "A steady cooking fire. Raw catch goes in; a meal comes out.",
+  furnace: "A small stone furnace, hot enough to render ore to bar.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -111,6 +118,7 @@ export class Game {
 
   private menu: ContextMenu;
   private minimap: Minimap;
+  private bank: BankUI;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -130,6 +138,7 @@ export class Game {
     this.g = g;
     this.menu = menu;
     this.minimap = new Minimap(uiRoot);
+    this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -144,10 +153,16 @@ export class Game {
   start(): void {
     this.hud.log("Welcome to The Knuckle Hills.");
     const frame = (now: number) => {
+      requestAnimationFrame(frame); // schedule next first so one bad frame can't stop the loop
       this.update(now);
-      requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+  }
+
+  /** Send an intent and immediately react to its events (for UI actions). */
+  dispatch(intent: Intent): void {
+    const events = this.bridge.send(intent);
+    this.handleEvents(events, performance.now());
   }
 
   private resize(): void {
@@ -219,6 +234,9 @@ export class Game {
         case "PLAYER_RESPAWNED":
           this.hud.log("You wake up, dazed but alive.");
           break;
+        case "OPEN_BANK":
+          this.bank.show(this.bridge.state);
+          break;
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -260,7 +278,7 @@ export class Game {
       this.marker = null;
       return;
     }
-    const t = age / MARKER_LIFE;
+    const t = Math.max(0, Math.min(1, age / MARKER_LIFE));
     const { x: cx, y: cy } = this.toScreen(this.marker.x, this.marker.y);
     const alpha = 1 - t;
 
@@ -312,7 +330,7 @@ export class Game {
       } else {
         const pos = this.positionOf(this.tapFlash.objId);
         if (pos) {
-          const t = age / FLASH_LIFE;
+          const t = Math.max(0, Math.min(1, age / FLASH_LIFE));
           const { x: cx, y: cy } = this.toScreen(pos.x, pos.y);
           this.g.globalAlpha = 1 - t;
           this.g.strokeStyle = "#f2cf6b";
@@ -401,7 +419,7 @@ export class Game {
       this.dialogue.advance();
       return;
     }
-    if (this.menu.isOpen()) return;
+    if (this.menu.isOpen() || this.bank.isOpen()) return;
 
     const tile = this.tileAtScreen(e.clientX, e.clientY);
     this.press = {
@@ -531,7 +549,7 @@ export class Game {
     const path = findPath(this.bridge.walkable, player.pos, tile);
     if (path.length === 0) return; // already there, or unreachable
     this.setMarker(tile);
-    this.bridge.send({ type: "MOVE", path });
+    this.dispatch({ type: "MOVE", path });
   }
 
   private walkBeside(tile: Vec2): void {
@@ -543,7 +561,7 @@ export class Game {
     );
     if (!reachable || alreadyAdjacent) return;
     this.setMarker(path[path.length - 1] ?? tile);
-    this.bridge.send({ type: "MOVE", path });
+    this.dispatch({ type: "MOVE", path });
   }
 
   private interactObject(objId: string, tile: Vec2): void {
@@ -559,6 +577,6 @@ export class Game {
     }
     this.setMarker(tile);
     this.tapFlash = { objId, born: performance.now() };
-    this.bridge.send({ type: "INTERACT", objId, path });
+    this.dispatch({ type: "INTERACT", objId, path });
   }
 }

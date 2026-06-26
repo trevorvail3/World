@@ -26,6 +26,7 @@ import type {
   ItemId,
   MonsterStats,
   Player,
+  Recipe,
   SkillId,
   Vec2,
   WorldEvent,
@@ -45,6 +46,8 @@ const MOVE_SPEED = 3.5; // tiles per second
 const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000 };
 const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000 };
 const FISHING = { interval: 1400, success: 0.5, xp: 20 };
+const COOKING_INTERVAL = 1400;
+const SMELTING_INTERVAL = 1800;
 
 const PLAYER_MAX_HP = 10;
 const PLAYER_RESPAWN = 4000;
@@ -61,7 +64,15 @@ const INVENTORY_SIZE = 28;
 // Walkability — shared with the client's pathfinder.
 // ---------------------------------------------------------------------------
 
-const BLOCKING_KINDS = new Set(["tree", "rock", "npc", "monster"]);
+const BLOCKING_KINDS = new Set([
+  "tree",
+  "rock",
+  "npc",
+  "monster",
+  "bank",
+  "fire",
+  "furnace",
+]);
 
 /**
  * Build a fast "can I stand on this tile?" function from the content.
@@ -120,6 +131,7 @@ export function createWorld(
     spawn: { x: spawn.x, y: spawn.y },
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
+    bank: {},
     activity: { kind: "idle", targetId: null, nextActionAt: 0 },
     pendingInteractId: null,
     alive: true,
@@ -203,6 +215,27 @@ function clearActivity(player: Player): void {
   player.activity = { kind: "idle", targetId: null, nextActionAt: 0 };
 }
 
+/** Does the player hold at least one of this item? */
+function hasItem(player: Player, item: ItemId): boolean {
+  return player.inventory.some((slot) => slot?.item === item && slot.qty > 0);
+}
+
+/** Does the player hold any input for one of these recipes? */
+function hasRecipeInput(player: Player, recipes: Recipe[]): boolean {
+  return recipes.some((r) => hasItem(player, r.input));
+}
+
+/** Remove a single unit of an item from the inventory. */
+function removeOneItem(player: Player, item: ItemId): void {
+  const idx = player.inventory.findIndex(
+    (slot) => slot?.item === item && slot.qty > 0,
+  );
+  if (idx === -1) return;
+  const slot = player.inventory[idx]!;
+  slot.qty -= 1;
+  if (slot.qty <= 0) player.inventory[idx] = null;
+}
+
 // ---------------------------------------------------------------------------
 // Handling intents (RULE 2: the only player-driven way to change the world).
 // ---------------------------------------------------------------------------
@@ -240,8 +273,69 @@ export function applyIntent(
       clearActivity(player);
       break;
     }
+    case "EAT": {
+      eatSlot(player, content, intent.slot, events);
+      break;
+    }
+    case "DEPOSIT": {
+      depositAll(player, intent.item);
+      break;
+    }
+    case "WITHDRAW": {
+      withdrawOne(player, intent.item, events);
+      break;
+    }
   }
   return events;
+}
+
+/** Eat the food in a slot, restoring HP (no-op if it's not food or full). */
+function eatSlot(
+  player: Player,
+  content: Content,
+  slot: number,
+  events: WorldEvent[],
+): void {
+  const data = player.inventory[slot];
+  if (!data) return;
+  const def = content.items[data.item];
+  if (!def.heals) {
+    events.push({ type: "LOG", message: `You can't eat the ${def.name}.` });
+    return;
+  }
+  if (player.hp >= player.maxHp) {
+    events.push({ type: "LOG", message: "You are already at full health." });
+    return;
+  }
+  player.hp = Math.min(player.maxHp, player.hp + def.heals);
+  data.qty -= 1;
+  if (data.qty <= 0) player.inventory[slot] = null;
+  events.push({
+    type: "LOG",
+    message: `You eat the ${def.name}. (+${def.heals})`,
+  });
+}
+
+/** Move every one of an item from the pack into the bank. */
+function depositAll(player: Player, item: ItemId): void {
+  let moved = 0;
+  for (let i = 0; i < player.inventory.length; i++) {
+    const slot = player.inventory[i];
+    if (slot && slot.item === item) {
+      moved += slot.qty;
+      player.inventory[i] = null;
+    }
+  }
+  if (moved > 0) player.bank[item] = (player.bank[item] ?? 0) + moved;
+}
+
+/** Withdraw one of an item from the bank into the pack (if there's room). */
+function withdrawOne(player: Player, item: ItemId, events: WorldEvent[]): void {
+  const have = player.bank[item] ?? 0;
+  if (have <= 0) return;
+  if (!addItem(player, item, 1, events)) return; // pack full; bank untouched
+  if (have - 1 <= 0) delete player.bank[item];
+  else player.bank[item] = have - 1;
 }
 
 function startInteraction(
@@ -319,6 +413,36 @@ function startInteraction(
         nextActionAt: ctx.now + COMBAT.attackInterval,
       };
       events.push({ type: "LOG", message: `You engage the ${def.name}.` });
+      break;
+
+    case "bank":
+      events.push({ type: "OPEN_BANK" });
+      break;
+
+    case "fire":
+      if (!hasRecipeInput(player, content.recipes.cooking)) {
+        events.push({ type: "LOG", message: "You've nothing to cook." });
+        return;
+      }
+      player.activity = {
+        kind: "cooking",
+        targetId: objId,
+        nextActionAt: ctx.now + COOKING_INTERVAL,
+      };
+      events.push({ type: "LOG", message: "You set your catch over the fire." });
+      break;
+
+    case "furnace":
+      if (!hasRecipeInput(player, content.recipes.smelting)) {
+        events.push({ type: "LOG", message: "You've no ore to smelt." });
+        return;
+      }
+      player.activity = {
+        kind: "smelting",
+        targetId: objId,
+        nextActionAt: ctx.now + SMELTING_INTERVAL,
+      };
+      events.push({ type: "LOG", message: "You feed ore into the furnace." });
       break;
   }
 }
@@ -470,7 +594,65 @@ function processActivity(
       resolveCombatSwing(state, content, def, obj, ctx, events);
       break;
     }
+
+    case "cooking": {
+      const done = processOneRecipe(
+        state,
+        content,
+        content.recipes.cooking,
+        "cooking",
+        events,
+      );
+      if (done) {
+        events.push({ type: "LOG", message: "There's nothing left to cook." });
+        clearActivity(player);
+      } else {
+        act.nextActionAt = ctx.now + COOKING_INTERVAL;
+      }
+      break;
+    }
+
+    case "smelting": {
+      const done = processOneRecipe(
+        state,
+        content,
+        content.recipes.smelting,
+        "smithing",
+        events,
+      );
+      if (done) {
+        events.push({ type: "LOG", message: "There's no more ore to smelt." });
+        clearActivity(player);
+      } else {
+        act.nextActionAt = ctx.now + SMELTING_INTERVAL;
+      }
+      break;
+    }
   }
+}
+
+/**
+ * Convert one input item into its output for a station. Returns true when
+ * there is nothing left to process (so the caller stops the activity).
+ */
+function processOneRecipe(
+  state: WorldState,
+  content: Content,
+  recipes: Recipe[],
+  skill: SkillId,
+  events: WorldEvent[],
+): boolean {
+  const { player } = state;
+  const recipe = recipes.find((r) => hasItem(player, r.input));
+  if (!recipe) return true;
+  removeOneItem(player, recipe.input);
+  grantXp(state, content, skill, recipe.xp, events);
+  addItem(player, recipe.output, 1, events);
+  events.push({
+    type: "LOG",
+    message: `You make ${content.items[recipe.output].name}.`,
+  });
+  return false;
 }
 
 function resolveCombatSwing(

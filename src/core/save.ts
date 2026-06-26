@@ -23,6 +23,8 @@ export interface SavedProgress {
   skills: Partial<Record<SkillId, number>>;
   /** Fixed-length inventory; null = empty slot. */
   inventory: ({ item: string; qty: number } | null)[];
+  /** Banked items: item id -> quantity. */
+  bank: Record<string, number>;
   hp: number;
   pos: { x: number; y: number };
 }
@@ -37,6 +39,7 @@ export function serializePlayer(player: Player): SavedProgress {
     version: SAVE_VERSION,
     skills,
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
+    bank: { ...player.bank } as Record<string, number>,
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -84,6 +87,19 @@ export function hydratePlayer(
       }
     }
     player.inventory = inv;
+  }
+
+  // --- Bank (drop unknown/renamed items gracefully) ---
+  const savedBank = raw["bank"];
+  if (isRecord(savedBank)) {
+    const bank: Player["bank"] = {};
+    for (const key of Object.keys(savedBank)) {
+      const qty = savedBank[key];
+      if (key in content.items && typeof qty === "number" && qty > 0) {
+        bank[key as ItemId] = Math.floor(qty);
+      }
+    }
+    player.bank = bank;
   }
 
   // --- HP (clamped to the player's range) ---

@@ -19,16 +19,34 @@ export const items: Record<ItemId, ItemDef> = {
     description:
       "The most common stone of the Knuckle Hills. Soft and grey-brown, worked easily by any hand.",
   },
+  knucklestone_bar: {
+    id: "knucklestone_bar",
+    name: "Knucklestone Bar",
+    description:
+      "Brittle but workable. A beginner's first bar, smelted from the grey stone of the Knuckle Hills.",
+  },
   ashfin_raw: {
     id: "ashfin_raw",
     name: "Raw Ashfin",
     description:
       "Small and silver. Every child in Varath has caught one. Barely worth cleaning alone.",
   },
+  ashfin_cooked: {
+    id: "ashfin_cooked",
+    name: "Cooked Ashfin",
+    description: "Barely a meal, but warm. Better than nothing on a cold night.",
+    heals: 10,
+  },
   raw_rat_meat: {
     id: "raw_rat_meat",
     name: "Raw Rat Meat",
     description: "Stringy and gamey. It cooks up edible, if you're hungry enough.",
+  },
+  cooked_rat_meat: {
+    id: "cooked_rat_meat",
+    name: "Cooked Rat Meat",
+    description: "Charred and chewy. It fills a hollow belly and little else.",
+    heals: 6,
   },
   raw_hide: {
     id: "raw_hide",
@@ -44,6 +62,12 @@ export const items: Record<ItemId, ItemDef> = {
     id: "raw_wolf_meat",
     name: "Raw Wolf Meat",
     description: "Lean, dark meat. Tough, but it keeps a hunter going.",
+  },
+  cooked_wolf_meat: {
+    id: "cooked_wolf_meat",
+    name: "Cooked Wolf Meat",
+    description: "Dark and rich over the coals. A proper meal for a long day.",
+    heals: 14,
   },
   wolf_pelt: {
     id: "wolf_pelt",

@@ -696,6 +696,102 @@ body {
   display: none;
 }
 
+/* --- Bank chest window --- */
+.bank-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.bank-backdrop.hidden {
+  display: none;
+}
+
+.bank-modal {
+  width: min(360px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+.bank-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bank-title {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+
+.bank-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bank-close:hover {
+  color: var(--ember);
+}
+
+.bank-label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  border-bottom: 1px solid rgba(74, 61, 44, 0.4);
+  padding-bottom: 3px;
+}
+
+.bank-hint {
+  float: right;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: #6f655a;
+}
+
+.bank-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 30px);
+  grid-auto-rows: 30px;
+  gap: 4px;
+  min-height: 34px;
+}
+
+.bank-empty {
+  grid-column: 1 / -1;
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: 13px;
+  padding: 6px 2px;
+}
+
+/* Slots used as buttons (bank + pack) reset the button chrome. */
+button.inv-slot {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
 @media (max-width: 520px) {
   .hud-log {
     max-height: 120px;

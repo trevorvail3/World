@@ -11,6 +11,8 @@ export const skills: Record<SkillId, { name: string }> = {
   mining: { name: "Mining" },
   forestry: { name: "Forestry" },
   fishing: { name: "Fishing" },
+  cooking: { name: "Cooking" },
+  smithing: { name: "Smithing" },
   vitality: { name: "Vitality" },
   edge: { name: "Edge" },
   vigour: { name: "Vigour" },
