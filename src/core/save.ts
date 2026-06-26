@@ -141,7 +141,7 @@ export function hydratePlayer(
         slot["item"] in content.items
       ) {
         const rawQty = slot["qty"];
-        const qty = typeof rawQty === "number" && rawQty > 0 ? Math.floor(rawQty) : 1;
+        const qty = finiteNum(rawQty) && rawQty > 0 ? Math.floor(rawQty) : 1;
         inv[i] = { item: slot["item"] as ItemId, qty };
       }
     }
@@ -154,7 +154,7 @@ export function hydratePlayer(
     const bank: Player["bank"] = {};
     for (const key of Object.keys(savedBank)) {
       const qty = savedBank[key];
-      if (key in content.items && typeof qty === "number" && qty > 0) {
+      if (key in content.items && finiteNum(qty) && qty > 0) {
         bank[key as ItemId] = Math.floor(qty);
       }
     }
@@ -222,8 +222,8 @@ export function hydratePlayer(
   const savedStats = raw["stats"];
   if (isRecord(savedStats)) {
     const g = savedStats["goldEarned"], k = savedStats["monstersSlain"];
-    if (typeof g === "number" && g >= 0) player.stats.goldEarned = Math.floor(g);
-    if (typeof k === "number" && k >= 0) player.stats.monstersSlain = Math.floor(k);
+    if (finiteNum(g) && g >= 0) player.stats.goldEarned = Math.floor(g);
+    if (finiteNum(k) && k >= 0) player.stats.monstersSlain = Math.floor(k);
   }
   const savedAch = raw["achievements"];
   if (Array.isArray(savedAch)) {
@@ -246,7 +246,7 @@ export function hydratePlayer(
   const savedBounty = raw["bounty"];
   if (isRecord(savedBounty)) {
     const marks = savedBounty["marks"];
-    if (typeof marks === "number" && marks >= 0) player.bounty.marks = Math.floor(marks);
+    if (finiteNum(marks) && marks >= 0) player.bounty.marks = Math.floor(marks);
     const gid = savedBounty["guideId"];
     if (typeof gid === "string" && content.bountyGuides.some((g) => g.id === gid)) {
       player.bounty.guideId = gid;
@@ -256,10 +256,10 @@ export function hydratePlayer(
       isRecord(t) &&
       typeof t["monster"] === "string" &&
       t["monster"] in content.monsters &&
-      typeof t["required"] === "number" &&
-      typeof t["progress"] === "number" &&
-      typeof t["xp"] === "number" &&
-      typeof t["marks"] === "number"
+      finiteNum(t["required"]) &&
+      finiteNum(t["progress"]) &&
+      finiteNum(t["xp"]) &&
+      finiteNum(t["marks"])
     ) {
       const guideId = typeof t["guideId"] === "string" ? t["guideId"] : player.bounty.guideId;
       player.bounty.task = {
@@ -293,8 +293,8 @@ export function hydratePlayer(
       const s = savedQuests[id];
       if (!def || !isRecord(s)) continue;
       if (player.questsDone.includes(id)) continue; // done wins over active
-      const step = typeof s["step"] === "number" ? s["step"] : 0;
-      const killCount = typeof s["killCount"] === "number" ? s["killCount"] : 0;
+      const step = finiteNum(s["step"]) ? s["step"] : 0;
+      const killCount = finiteNum(s["killCount"]) ? s["killCount"] : 0;
       if (step >= 0 && step < def.steps.length) {
         quests[id] = { step: Math.floor(step), killCount: Math.max(0, Math.floor(killCount)) };
       }
@@ -335,6 +335,11 @@ export function hydratePlayer(
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
+}
+
+/** A real, finite number — rejects NaN and ±Infinity from a corrupt save. */
+function finiteNum(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v);
 }
 
 function levelFromTable(table: number[], xp: number): number {

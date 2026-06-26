@@ -109,12 +109,17 @@ function boot(newChar: CreatedCharacter | null): void {
     },
   };
 
+  // Once wiped, no autosave may run again this session — otherwise the reload's
+  // own `pagehide` would re-serialise the player and resurrect the cleared save.
+  let wiped = false;
+
   // Reset wipes this account's save and returns to the login screen.
   const resetProgress = (): void => {
     const ok = window.confirm(
       "Reset this character? This erases their skills, levels and pack for good.",
     );
     if (!ok) return;
+    wiped = true;
     clearSave();
     window.location.reload();
   };
@@ -128,12 +133,19 @@ function boot(newChar: CreatedCharacter | null): void {
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 
   // Autosave: periodically and whenever the tab is hidden.
-  const persist = (): void => writeSave(serializePlayer(state));
+  const persist = (): void => {
+    if (wiped) return;
+    writeSave(serializePlayer(state));
+  };
   window.setInterval(persist, 4000);
   window.addEventListener("pagehide", persist);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") persist();
   });
+
+  // Write an immediate save so a brand-new character's name and colours survive
+  // a quit inside the first autosave window (4s).
+  persist();
 
   game.start();
 
