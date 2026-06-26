@@ -11,11 +11,29 @@
  * state itself (RULE 2). (The Reset button lives in main.ts, top-right.)
  */
 
-import type { Content, Intent, InventorySlot, SkillId, WorldState } from "../core/types.ts";
+import type {
+  ActivityKind,
+  Content,
+  Intent,
+  InventorySlot,
+  SkillId,
+  WorldState,
+} from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { ITEM_COLORS } from "./itemColors.ts";
 
 const MAX_LOG_LINES = 8;
+
+/** What the status pill says for each kind of activity ("" = hidden). */
+const ACTIVITY_VERB: Record<ActivityKind, string> = {
+  idle: "",
+  woodcutting: "Chopping…",
+  mining: "Mining…",
+  fishing: "Fishing…",
+  combat: "Fighting…",
+  cooking: "Cooking…",
+  smelting: "Smelting…",
+};
 
 type TabId = "inventory" | "skills" | "equipment" | "character" | "settings";
 
@@ -39,6 +57,10 @@ export class Hud {
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
+  private vitals!: HTMLElement;
+  private statusPill!: HTMLElement;
+  private statusText!: HTMLElement;
+  private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
   private logLines: string[] = [];
 
@@ -79,7 +101,19 @@ export class Hud {
       <div class="hp-bar"><div class="hp-fill"></div></div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
+    this.vitals = vitals;
     root.appendChild(vitals);
+
+    // --- "What am I doing" status pill + Stop (top-centre) ---
+    this.statusPill = document.createElement("div");
+    this.statusPill.className = "status-pill hidden";
+    this.statusPill.innerHTML = `<span class="status-text"></span><button class="status-stop" type="button">Stop</button>`;
+    this.statusText = this.statusPill.querySelector(".status-text") as HTMLElement;
+    (this.statusPill.querySelector(".status-stop") as HTMLElement).addEventListener(
+      "click",
+      () => this.dispatch({ type: "CANCEL" }),
+    );
+    root.appendChild(this.statusPill);
 
     // --- Game log (bottom-left) ---
     const logPanel = panel("hud-panel hud-log");
@@ -142,11 +176,14 @@ export class Hud {
       }
       case "skills": {
         (Object.keys(this.content.skills) as SkillId[]).forEach((sid) => {
-          const row = document.createElement("div");
-          row.className = "skill-row";
-          row.innerHTML = `<span class="skill-name">${this.content.skills[sid].name}</span><span class="skill-val">1</span>`;
-          this.skillRows.set(sid, row.querySelector(".skill-val") as HTMLElement);
-          p.appendChild(row);
+          const block = document.createElement("div");
+          block.className = "skill-block";
+          block.innerHTML = `
+            <div class="skill-row"><span class="skill-name">${this.content.skills[sid].name}</span><span class="skill-val">1</span></div>
+            <div class="skill-xpbar"><div class="skill-xpfill"></div></div>`;
+          this.skillRows.set(sid, block.querySelector(".skill-val") as HTMLElement);
+          this.skillFills.set(sid, block.querySelector(".skill-xpfill") as HTMLElement);
+          p.appendChild(block);
         });
         break;
       }
@@ -304,16 +341,35 @@ export class Hud {
     const { player } = state;
     this.invData = player.inventory;
 
-    // Skills
+    // Skills: level + progress-to-next-level bar.
+    const table = this.content.xpForLevel;
     (Object.keys(this.content.skills) as SkillId[]).forEach((id) => {
+      const s = player.skills[id];
       const el = this.skillRows.get(id);
-      if (el) el.textContent = String(player.skills[id].level);
+      if (el) el.textContent = String(s.level);
+      const fill = this.skillFills.get(id);
+      if (fill) {
+        const cur = table[s.level] ?? 0;
+        const next = table[s.level + 1];
+        const pct = next && next > cur ? (s.xp - cur) / (next - cur) : 1;
+        fill.style.width = `${Math.max(0, Math.min(1, pct)) * 100}%`;
+      }
     });
 
-    // Hitpoints (always-on bar)
+    // Hitpoints (always-on bar) + low-HP warning.
     const pct = Math.max(0, Math.min(1, player.hp / player.maxHp));
     this.hpFill.style.width = `${pct * 100}%`;
     this.hpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
+
+    // "What am I doing" status pill.
+    const verb = ACTIVITY_VERB[player.activity.kind];
+    if (verb) {
+      this.statusText.textContent = verb;
+      this.statusPill.classList.remove("hidden");
+    } else {
+      this.statusPill.classList.add("hidden");
+    }
 
     // Character sheet
     const ids = Object.keys(this.content.skills) as SkillId[];

@@ -43,8 +43,10 @@ import { COMBAT_SKILLS } from "./types.ts";
 
 const MOVE_SPEED = 3.5; // tiles per second
 
-const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000 };
-const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000 };
+// `deplete` is the chance, on a successful gather, that the node runs out and
+// the player stops — otherwise they keep gathering until the pack is full.
+const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000, deplete: 0.25 };
+const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000, deplete: 0.3 };
 const FISHING = { interval: 1400, success: 0.5, xp: 20 };
 const COOKING_INTERVAL = 1400;
 const SMELTING_INTERVAL = 1800;
@@ -218,6 +220,11 @@ function clearActivity(player: Player): void {
 /** Does the player hold at least one of this item? */
 function hasItem(player: Player, item: ItemId): boolean {
   return player.inventory.some((slot) => slot?.item === item && slot.qty > 0);
+}
+
+/** Is there room in the pack for this item (a matching stack or an empty slot)? */
+function canAddItem(player: Player, item: ItemId): boolean {
+  return player.inventory.some((slot) => slot === null || slot.item === item);
 }
 
 /** Does the player hold any input for one of these recipes? */
@@ -554,16 +561,23 @@ function processActivity(
         return;
       }
       if (ctx.rng() < WOODCUTTING.success) {
+        if (!canAddItem(player, "ashwood_log")) {
+          events.push({ type: "INVENTORY_FULL" });
+          clearActivity(player);
+          return;
+        }
         grantXp(state, content, "forestry", WOODCUTTING.xp, events);
         addItem(player, "ashwood_log", 1, events);
         events.push({ type: "LOG", message: "You get some Ashwood Logs." });
-        obj.available = false;
-        obj.respawnAt = ctx.now + WOODCUTTING.respawn;
-        events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
-        clearActivity(player);
-      } else {
-        act.nextActionAt = ctx.now + WOODCUTTING.interval;
+        if (ctx.rng() < WOODCUTTING.deplete) {
+          obj.available = false;
+          obj.respawnAt = ctx.now + WOODCUTTING.respawn;
+          events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
+          clearActivity(player);
+          return;
+        }
       }
+      act.nextActionAt = ctx.now + WOODCUTTING.interval; // keep chopping
       break;
     }
 
@@ -573,21 +587,33 @@ function processActivity(
         return;
       }
       if (ctx.rng() < MINING.success) {
+        if (!canAddItem(player, "knucklestone_ore")) {
+          events.push({ type: "INVENTORY_FULL" });
+          clearActivity(player);
+          return;
+        }
         grantXp(state, content, "mining", MINING.xp, events);
         addItem(player, "knucklestone_ore", 1, events);
         events.push({ type: "LOG", message: "You mine some Knucklestone." });
-        obj.available = false;
-        obj.respawnAt = ctx.now + MINING.respawn;
-        events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
-        clearActivity(player);
-      } else {
-        act.nextActionAt = ctx.now + MINING.interval;
+        if (ctx.rng() < MINING.deplete) {
+          obj.available = false;
+          obj.respawnAt = ctx.now + MINING.respawn;
+          events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
+          clearActivity(player);
+          return;
+        }
       }
+      act.nextActionAt = ctx.now + MINING.interval; // keep mining
       break;
     }
 
     case "fishing": {
       if (ctx.rng() < FISHING.success) {
+        if (!canAddItem(player, "ashfin_raw")) {
+          events.push({ type: "INVENTORY_FULL" });
+          clearActivity(player);
+          return;
+        }
         grantXp(state, content, "fishing", FISHING.xp, events);
         addItem(player, "ashfin_raw", 1, events);
         events.push({ type: "LOG", message: "You catch an Ashfin." });
@@ -651,6 +677,10 @@ function processOneRecipe(
   const { player } = state;
   const recipe = recipes.find((r) => hasItem(player, r.input));
   if (!recipe) return true;
+  if (!canAddItem(player, recipe.output)) {
+    events.push({ type: "INVENTORY_FULL" });
+    return true; // stop; don't consume the input with nowhere to put the output
+  }
   removeOneItem(player, recipe.input);
   grantXp(state, content, skill, recipe.xp, events);
   addItem(player, recipe.output, 1, events);
