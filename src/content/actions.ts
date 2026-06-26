@@ -2298,7 +2298,7 @@ export const actions: SkillAction[] = [
     "xp": 12,
     "baseTime": 3000,
     "requires": {
-      "glass_flask": 1,
+      "glass_vial": 1,
       "forage_mushroom": 2,
       "forage_thornberry": 1
     },
@@ -2313,7 +2313,7 @@ export const actions: SkillAction[] = [
     "xp": 21,
     "baseTime": 4000,
     "requires": {
-      "glass_flask": 1,
+      "glass_vial": 1,
       "herb_ashweed": 1,
       "forage_mushroom": 1
     },
@@ -2732,21 +2732,6 @@ export const actions: SkillAction[] = [
     "produceQty": 4,
     "group": "sawmill",
     "note": "Run ashwood through the sawmill — yields rough boards for basic framing."
-  },
-  {
-    "id": "con_plank_bri",
-    "skill": "construction",
-    "name": "Mill Coldpine Planks ×4",
-    "levelReq": 10,
-    "xp": 35,
-    "baseTime": 4000,
-    "requires": {
-      "coldpine_log": 1
-    },
-    "produces": "plank_coldpine",
-    "produceQty": 4,
-    "group": "sawmill",
-    "note": "Dense-grained coldpine boards. Takes nails cleanly."
   },
   {
     "id": "con_plank_col",

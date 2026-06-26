@@ -31,10 +31,25 @@ export const shops: ShopDef[] = [
       { item: "seed_bloodberry", price: 69, qty: 3 },
       { item: "seed_coldmoss", price: 108, qty: 3 },
       { item: "seed_ashwood", price: 60, qty: 3 },
+      // Higher Farming/Herblore seeds — these had no source before, so the herb
+      // line above Coldmoss (and the brews that need those herbs) was unreachable.
+      { item: "seed_ironleaf", price: 150, qty: 2 },
+      { item: "seed_greybloom", price: 220, qty: 2 },
+      { item: "seed_spinethistle", price: 320, qty: 2 },
+      { item: "seed_ruevine", price: 480, qty: 2 },
+      { item: "seed_duskshade", price: 700, qty: 2 },
+      { item: "seed_marrowflower", price: 1000, qty: 2 },
+      { item: "seed_hearthbloom", price: 1500, qty: 2 },
+      { item: "seed_orunroot", price: 2200, qty: 2 },
+      // Stabled mounts — a worn mount speeds overworld travel. (Canon ride costs.)
+      { item: "mount_pony", price: 500, qty: 1 },
+      { item: "mount_horse", price: 2000, qty: 1 },
+      { item: "mount_destrier", price: 8000, qty: 1 },
       { item: "fertilizer_basic", price: 55, qty: 1 },
       { item: "forage_mushroom", price: 52, qty: 5 },
-      // Glass flasks for Herblore — every brew needs one (blow your own once
-      // Crafting's glassblowing is open; buy them here in the meantime).
+      // Glass for Herblore — tinctures take a small vial, full brews a flask
+      // (blow your own once Crafting's glassblowing is open; buy them meanwhile).
+      { item: "glass_vial", price: 25, qty: 2 },
       { item: "glass_flask", price: 45, qty: 1 },
       // Starter gathering tools (round(sell × 1.3)).
       { item: "pickaxe_1", price: 20, qty: 1 },

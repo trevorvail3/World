@@ -3726,7 +3726,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "ammo",
     "acc": 10,
     "dmg": 5,
-    "sell": 12
+    "sell": 44
   },
   "arrow_hearthite": {
     "id": "arrow_hearthite",

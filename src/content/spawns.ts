@@ -424,6 +424,30 @@ export const objects: WorldObjectDef[] = [
   { id: "boss_marrow", kind: "monster", monster: "marrow_keeper", x: 56, y: 115, name: "The Marrow Keeper" },
   { id: "marrow_add1", kind: "monster", monster: "cave_crawler", x: 53, y: 117, name: "Deep Crawler" },
   { id: "marrow_add2", kind: "monster", monster: "marrow_wraith", x: 59, y: 117, name: "Vault Wraith" },
+
+  // --- Audit fix: gathering nodes the action graph assumed but never spawned ---
+  // (gold + silica ore, and the high-tier Forestry trees above Greyoak). Tiles
+  // chosen by the placement finder: each sits on land with a reachable adjacent
+  // walkable tile, validated against buildWalkability + a spawn-reachability BFS.
+  { id: "silica_1", kind: "rock", x: 91, y: 63, name: "Silica Sands", resource: "mine_silica" },
+  { id: "silica_2", kind: "rock", x: 92, y: 63, name: "Silica Sands", resource: "mine_silica" },
+  { id: "silica_3", kind: "rock", x: 93, y: 63, name: "Silica Sands", resource: "mine_silica" },
+  { id: "gold_1", kind: "rock", x: 44, y: 16, name: "Gold Vein", resource: "mine_gold" },
+  { id: "gold_2", kind: "rock", x: 45, y: 16, name: "Gold Vein", resource: "mine_gold" },
+  { id: "gold_3", kind: "rock", x: 46, y: 16, name: "Gold Vein", resource: "mine_gold" },
+  { id: "tree_stonewood_1", kind: "tree", x: 10, y: 46, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "tree_stonewood_2", kind: "tree", x: 11, y: 46, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "tree_stonewood_3", kind: "tree", x: 12, y: 46, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "tree_ironbark_1", kind: "tree", x: 28, y: 48, name: "Ironbark", resource: "fell_ironbark", species: "ironbark" },
+  { id: "tree_ironbark_2", kind: "tree", x: 29, y: 48, name: "Ironbark", resource: "fell_ironbark", species: "ironbark" },
+  { id: "tree_ironbark_3", kind: "tree", x: 27, y: 49, name: "Ironbark", resource: "fell_ironbark", species: "ironbark" },
+  { id: "tree_ruewood_1", kind: "tree", x: 9, y: 56, name: "Ruewood", resource: "fell_ruewood", species: "ruewood" },
+  { id: "tree_ruewood_2", kind: "tree", x: 10, y: 56, name: "Ruewood", resource: "fell_ruewood", species: "ruewood" },
+  { id: "tree_ruewood_3", kind: "tree", x: 11, y: 56, name: "Ruewood", resource: "fell_ruewood", species: "ruewood" },
+  { id: "tree_heartoak_1", kind: "tree", x: 29, y: 55, name: "Heartoak", resource: "fell_heartoak", species: "heartoak" },
+  { id: "tree_heartoak_2", kind: "tree", x: 30, y: 55, name: "Heartoak", resource: "fell_heartoak", species: "heartoak" },
+  { id: "tree_deeproot_1", kind: "tree", x: 23, y: 59, name: "Deeproot", resource: "fell_deeproot", species: "deeproot" },
+  { id: "tree_deeproot_2", kind: "tree", x: 24, y: 59, name: "Deeproot", resource: "fell_deeproot", species: "deeproot" },
 ];
 
 /** Where the player first appears — the civic yard at the heart of Ironvale. */
