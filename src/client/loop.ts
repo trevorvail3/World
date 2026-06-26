@@ -25,7 +25,7 @@ import type {
   WorldObjectDef,
   WorldState,
 } from "../core/types.ts";
-import { ContextMenu, type MenuItem } from "./contextMenu.ts";
+import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import { Hud } from "./hud.ts";
 import { Minimap } from "./minimap.ts";
@@ -121,11 +121,12 @@ export class Game {
     private hud: Hud,
     private dialogue: Dialogue,
     uiRoot: HTMLElement,
+    menu: ContextMenu,
   ) {
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D canvas context.");
     this.g = g;
-    this.menu = new ContextMenu(uiRoot);
+    this.menu = menu;
     this.minimap = new Minimap(uiRoot);
 
     this.resize();
@@ -424,9 +425,11 @@ export class Game {
     const obj = this.objectAt(tile);
     const items: MenuItem[] = [];
     let title: string;
+    let description: string;
 
     if (obj) {
       title = obj.name;
+      description = this.examineObject(obj); // shown as the inspect line
       items.push({
         label: VERB[obj.kind],
         target: obj.name,
@@ -437,13 +440,9 @@ export class Game {
         label: "Walk here",
         onSelect: () => this.walkBeside({ x: obj.x, y: obj.y }),
       });
-      items.push({
-        label: "Examine",
-        target: obj.name,
-        onSelect: () => this.hud.log(this.examineObject(obj)),
-      });
     } else {
       title = "Ground";
+      description = EXAMINE_TILE[this.tileType(tile)];
       if (this.bridge.walkable(tile.x, tile.y)) {
         items.push({
           label: "Walk here",
@@ -451,13 +450,9 @@ export class Game {
           onSelect: () => this.walkTo(tile),
         });
       }
-      items.push({
-        label: "Examine",
-        onSelect: () => this.hud.log(EXAMINE_TILE[this.tileType(tile)]),
-      });
     }
 
-    this.menu.show(screenX, screenY, title, items);
+    this.menu.show(screenX, screenY, title, items, description);
   }
 
   private objectAt(tile: Vec2) {

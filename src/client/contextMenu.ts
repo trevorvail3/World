@@ -39,13 +39,27 @@ export class ContextMenu {
     return this.open;
   }
 
-  show(screenX: number, screenY: number, title: string, items: MenuItem[]): void {
+  show(
+    screenX: number,
+    screenY: number,
+    title: string,
+    items: MenuItem[],
+    description?: string,
+  ): void {
     this.menu.innerHTML = "";
 
     const head = document.createElement("div");
     head.className = "ctx-title";
     head.textContent = title;
     this.menu.appendChild(head);
+
+    // Inspect text — what the thing IS — shown under the title.
+    if (description) {
+      const desc = document.createElement("div");
+      desc.className = "ctx-desc";
+      desc.textContent = description;
+      this.menu.appendChild(desc);
+    }
 
     for (const item of items) {
       const btn = document.createElement("button");

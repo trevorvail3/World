@@ -22,6 +22,7 @@ import {
   tick,
 } from "./core/worldCore.ts";
 import { hydratePlayer, serializePlayer } from "./core/save.ts";
+import { ContextMenu } from "./client/contextMenu.ts";
 import { Dialogue } from "./client/dialogue.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
@@ -72,9 +73,12 @@ function resetProgress(): void {
   window.location.reload();
 }
 
-const hud = new Hud(hudRoot, content, resetProgress);
+// One shared action/inspect menu for both the world and the inventory.
+const menu = new ContextMenu(app);
+
+const hud = new Hud(hudRoot, content, resetProgress, menu);
 const dialogue = new Dialogue(app);
-const game = new Game(canvas, bridge, hud, dialogue, app);
+const game = new Game(canvas, bridge, hud, dialogue, app, menu);
 
 // --- Autosave: persist progress periodically and whenever the tab is hidden. ---
 function persist(): void {
