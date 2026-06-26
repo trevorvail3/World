@@ -730,6 +730,8 @@ export interface WorldObjectDef {
   target?: Vec2;
   /** Boss-dungeon entrance only: the dungeon id it leads to (for display). */
   dungeon?: string;
+  /** Portal only: combat level required to enter (boss-arena gate). */
+  req?: number;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */

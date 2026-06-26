@@ -355,6 +355,55 @@ export const objects: WorldObjectDef[] = [
   { id: "rd_serpent_1", kind: "monster", monster: "river_serpent", x: 51, y: 44, name: "River Serpent" },
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 51, y: 48, name: "Ancient Orc" },
   { id: "rd_ferryman", kind: "monster", monster: "dread_ferryman", x: 51, y: 45, name: "The Dread Ferryman" },
+
+  // === BOSS DUNGEONS ========================================================
+  // Each boss has its own sealed arena in the hidden band below the overworld.
+  // An overworld portal teleports you in; a return portal brings you home. The
+  // boss drops its loot + a rare chance at its companion pet.
+
+  // --- The Hollow Barrows (Knuckle Hills · combat 30) — arena at x=2 ---
+  {
+    id: "portal_hollow", kind: "portal", x: 25, y: 4, name: "The Hollow Barrows",
+    dungeon: "hollow_barrows", req: 30, target: { x: 8, y: 66 },
+    lines: ["You descend into the Hollow Barrows."],
+  },
+  { id: "ret_hollow", kind: "portal", x: 8, y: 67, name: "Barrow Exit", target: { x: 24, y: 4 }, lines: ["You climb back into the daylight."] },
+  { id: "boss_hollow", kind: "monster", monster: "hollow_warden", x: 8, y: 63, name: "The Hollow Warden" },
+  { id: "hollow_add1", kind: "monster", monster: "wild_boar", x: 5, y: 65, name: "Barrow Boar" },
+  { id: "hollow_add2", kind: "monster", monster: "forest_bear", x: 11, y: 65, name: "Barrow Bear" },
+
+  // --- The Bog Barrow (Heartmoor · combat 38) — arena at x=18 ---
+  {
+    id: "portal_bog", kind: "portal", x: 7, y: 52, name: "The Bog Barrow",
+    dungeon: "bog_barrow", req: 38, target: { x: 24, y: 66 },
+    lines: ["You wade down into the Bog Barrow."],
+  },
+  { id: "ret_bog", kind: "portal", x: 24, y: 67, name: "Barrow Exit", target: { x: 8, y: 52 }, lines: ["You haul yourself back out of the mire."] },
+  { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 63, name: "The Bog Warden" },
+  { id: "bog_add1", kind: "monster", monster: "heartmoor_hound", x: 21, y: 65, name: "Barrow Hound" },
+  { id: "bog_add2", kind: "monster", monster: "bog_knight", x: 27, y: 65, name: "Sunken Knight" },
+
+  // --- The Spine Vault (The Spine · combat 55) — arena at x=34 ---
+  {
+    id: "portal_spine", kind: "portal", x: 42, y: 28, name: "The Spine Vault",
+    dungeon: "spine_vault", req: 55, target: { x: 40, y: 66 },
+    lines: ["You break the seal on the Spine Vault."],
+  },
+  { id: "ret_spine", kind: "portal", x: 40, y: 67, name: "Vault Exit", target: { x: 41, y: 28 }, lines: ["You leave the vault to its silence."] },
+  { id: "boss_spine", kind: "monster", monster: "spine_warlord", x: 40, y: 63, name: "The Spine Warlord" },
+  { id: "spine_add1", kind: "monster", monster: "stone_crawler", x: 37, y: 65, name: "Vault Crawler" },
+  { id: "spine_add2", kind: "monster", monster: "mountain_troll", x: 43, y: 65, name: "Guard Troll" },
+
+  // --- The Marrow Vault (The Marrow Deeps · combat 68) — arena at x=50 ---
+  {
+    id: "portal_marrow", kind: "portal", x: 58, y: 8, name: "The Marrow Vault",
+    dungeon: "marrow_vault", req: 68, target: { x: 56, y: 66 },
+    lines: ["The vault door lets you pass."],
+  },
+  { id: "ret_marrow", kind: "portal", x: 56, y: 67, name: "Vault Exit", target: { x: 57, y: 8 }, lines: ["The door closes behind you."] },
+  { id: "boss_marrow", kind: "monster", monster: "marrow_keeper", x: 56, y: 63, name: "The Marrow Keeper" },
+  { id: "marrow_add1", kind: "monster", monster: "cave_crawler", x: 53, y: 65, name: "Deep Crawler" },
+  { id: "marrow_add2", kind: "monster", monster: "marrow_wraith", x: 59, y: 65, name: "Vault Wraith" },
 ];
 
 /** Where the player first appears (a path tile, next to Aldric). */

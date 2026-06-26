@@ -1053,6 +1053,10 @@ function usePortal(
 ): void {
   if (!def.target) return;
   const { player } = state;
+  if (def.req && combatLevel(player) < def.req) {
+    events.push({ type: "LOG", message: `You need combat level ${def.req} to enter the ${def.name}.` });
+    return;
+  }
   player.pos = { x: def.target.x, y: def.target.y };
   player.path = [];
   player.pendingInteractId = null;

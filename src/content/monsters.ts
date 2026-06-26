@@ -592,6 +592,11 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "The thing that was left to watch the vault. It is still watching.",
     "drops": [
       {
+        "item": "pet_marrow_keeper",
+        "chance": 0.0025,
+        "tier": "legendary"
+      },
+      {
         "item": "marrow_keep_plate",
         "chance": 0.08,
         "tier": "rare"
@@ -921,6 +926,11 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "An armoured revenant. It carries a weapon from before smithing had names.",
     "drops": [
       {
+        "item": "pet_hollow_warden",
+        "chance": 0.0025,
+        "tier": "legendary"
+      },
+      {
         "item": "blade_of_graves",
         "chance": 0.12,
         "tier": "legendary"
@@ -987,6 +997,11 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "An orc warlord who refused to die. The Spine took him in instead.",
     "drops": [
       {
+        "item": "pet_spine_warlord",
+        "chance": 0.0025,
+        "tier": "legendary"
+      },
+      {
         "item": "orun_reaver",
         "chance": 0.1,
         "tier": "legendary"
@@ -1047,6 +1062,11 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "Something that was buried in the mire with purpose. It has been here longer than the settlement that forgot it.",
     "drops": [
+      {
+        "item": "pet_bog_warden",
+        "chance": 0.0025,
+        "tier": "legendary"
+      },
       {
         "item": "worn_coin",
         "chance": 1,

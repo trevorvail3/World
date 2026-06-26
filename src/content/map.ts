@@ -18,7 +18,25 @@
 import type { TileType, WorldMap } from "../core/types.ts";
 
 const WIDTH = 64;
-const HEIGHT = 56;
+/** The overworld is rows 0–55; rows 56–71 are a sealed band of boss arenas. */
+export const OVERWORLD_HEIGHT = 56;
+const ARENA_BAND = 16;
+const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND;
+
+/**
+ * The four boss arenas, isolated in the hidden band below the overworld (you can
+ * only reach them by a portal that teleports you in). Each is a walled room with
+ * a floor tile of its own. x is the left column; the room is ARENA_W × ARENA_H.
+ */
+export const ARENA_W = 13;
+export const ARENA_H = 12;
+export const ARENA_TOP = 58;
+export const ARENAS: { dungeon: string; x: number; floor: TileType }[] = [
+  { dungeon: "hollow_barrows", x: 2, floor: "dirt" },
+  { dungeon: "bog_barrow", x: 18, floor: "bog" },
+  { dungeon: "spine_vault", x: 34, floor: "stone" },
+  { dungeon: "marrow_vault", x: 50, floor: "cave" },
+];
 
 // --- The Knuckle Hills + Ironvale, drawn by hand (rows 0–17, cols 0–27) ---
 // Ironvale is the walled central city: dressed-stone ramparts ('W') with a
@@ -121,7 +139,9 @@ function decode(): WorldMap {
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
       let t: TileType = "grass";
-      if (x < 28 && y < 18) {
+      if (y >= OVERWORLD_HEIGHT) {
+        t = "wall"; // the sealed arena band — carved into rooms below
+      } else if (x < 28 && y < 18) {
         const ch = HILL_ROWS[y]?.[x] ?? ".";
         t = CHAR_TO_TILE[ch] ?? "grass";
       } else if (x < 28 && y < 34) t = forestTile(x, y);
@@ -131,6 +151,17 @@ function decode(): WorldMap {
       else if (x < 48) t = ashfenTile(x, y);
       else t = redrunTile(x, y);
       set(x, y, t);
+    }
+  }
+
+  // --- Carve each sealed boss arena: a floor room inside the wall band ---
+  for (const a of ARENAS) {
+    for (let y = ARENA_TOP; y < ARENA_TOP + ARENA_H; y++) {
+      for (let x = a.x; x < a.x + ARENA_W; x++) {
+        // leave a one-tile wall border around the room
+        const edge = x === a.x || x === a.x + ARENA_W - 1 || y === ARENA_TOP || y === ARENA_TOP + ARENA_H - 1;
+        set(x, y, edge ? "wall" : a.floor);
+      }
     }
   }
 

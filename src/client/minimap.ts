@@ -8,6 +8,7 @@
 
 import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
+import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
 
 const MM_TILE: Record<TileType, string> = {
@@ -183,6 +184,8 @@ export class WorldMapModal {
   constructor(root: HTMLElement, content: Content, onWalk: (tile: Vec2) => void) {
     const m = content.map;
     const cell = 9; // px per tile on the big map
+    // Only the overworld is shown; the sealed boss-arena band stays hidden.
+    const mapH = OVERWORLD_HEIGHT;
     this.backdrop = document.createElement("div");
     this.backdrop.className = "worldmap-backdrop hidden";
     this.backdrop.innerHTML = `
@@ -191,7 +194,7 @@ export class WorldMapModal {
           <span class="worldmap-title">Varath — World Map</span>
           <button class="worldmap-close" type="button">✕</button>
         </div>
-        <canvas class="worldmap-canvas" width="${m.width * cell}" height="${m.height * cell}"></canvas>
+        <canvas class="worldmap-canvas" width="${m.width * cell}" height="${mapH * cell}"></canvas>
         <div class="worldmap-hint">Tap anywhere to walk there.</div>
       </div>`;
     const canvas = this.backdrop.querySelector(".worldmap-canvas") as HTMLCanvasElement;
@@ -206,7 +209,7 @@ export class WorldMapModal {
       const r = canvas.getBoundingClientRect();
       onWalk({
         x: Math.floor(((e.clientX - r.left) / r.width) * m.width),
-        y: Math.floor(((e.clientY - r.top) / r.height) * m.height),
+        y: Math.floor(((e.clientY - r.top) / r.height) * OVERWORLD_HEIGHT),
       });
       this.close();
     });
@@ -245,11 +248,12 @@ export class WorldMapModal {
     const g = this.g;
     const m = state.map;
     const cell = g.canvas.width / m.width;
+    const rows = OVERWORLD_HEIGHT; // only the overworld; arena band stays hidden
 
     g.fillStyle = "#0c0907";
     g.fillRect(0, 0, g.canvas.width, g.canvas.height);
 
-    for (let y = 0; y < m.height; y++) {
+    for (let y = 0; y < rows; y++) {
       for (let x = 0; x < m.width; x++) {
         g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
         g.fillRect(x * cell, y * cell, cell + 0.6, cell + 0.6);
@@ -260,17 +264,20 @@ export class WorldMapModal {
       if (!color) continue;
       const obj = state.objects[def.id];
       const p = objectPos(def, obj);
+      if (p.y >= rows) continue; // hide arena-band objects
       g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
       g.beginPath();
       g.arc((p.x + 0.5) * cell, (p.y + 0.5) * cell, Math.max(1.6, cell * 0.36), 0, Math.PI * 2);
       g.fill();
     }
-    // What the main view currently shows.
-    g.strokeStyle = "rgba(255,255,255,0.3)";
-    g.lineWidth = 1.5;
-    g.strokeRect((cam.x / TILE) * cell, (cam.y / TILE) * cell, (viewW / TILE) * cell, (viewH / TILE) * cell);
+    // What the main view currently shows (only while in the overworld).
+    if (cam.y / TILE < rows) {
+      g.strokeStyle = "rgba(255,255,255,0.3)";
+      g.lineWidth = 1.5;
+      g.strokeRect((cam.x / TILE) * cell, (cam.y / TILE) * cell, (viewW / TILE) * cell, (viewH / TILE) * cell);
+    }
 
     const p = state.player.pos;
-    drawPlayerDot(g, (p.x + 0.5) * cell, (p.y + 0.5) * cell);
+    if (p.y < rows) drawPlayerDot(g, (p.x + 0.5) * cell, (p.y + 0.5) * cell);
   }
 }
