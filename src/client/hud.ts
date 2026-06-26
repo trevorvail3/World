@@ -28,7 +28,9 @@ import { ITEM_COLORS } from "./itemColors.ts";
 import { evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
-const MAX_LOG_LINES = 8;
+// How many lines of history the log keeps (you can scroll back through them).
+// The panel itself shows ~7 at a time; older lines stay available above.
+const MAX_LOG_LINES = 100;
 
 /** What the status pill says for each kind of activity ("" = hidden). */
 const ACTIVITY_VERB: Record<ActivityKind, string> = {
@@ -393,9 +395,14 @@ export class Hud {
   log(message: string): void {
     this.logLines.push(message);
     if (this.logLines.length > MAX_LOG_LINES) this.logLines.shift();
-    this.logEl.innerHTML = this.logLines
+    // Stay pinned to the newest line *unless* the player has scrolled up to
+    // read history — then leave their scroll position alone.
+    const el = this.logEl;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+    el.innerHTML = this.logLines
       .map((l) => `<div class="log-line">${escapeHtml(l)}</div>`)
       .join("");
+    if (nearBottom) el.scrollTop = el.scrollHeight;
   }
 
   /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */

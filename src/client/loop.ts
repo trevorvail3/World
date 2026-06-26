@@ -104,6 +104,8 @@ const VERB: Record<ObjKind, string> = {
   portal: "Enter",
   trap: "Set snare",
   bounty_board: "Read",
+  cauldron: "Brew at",
+  workbench: "Build at",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -122,6 +124,8 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   portal: "A dark archway. Something waits on the other side.",
   trap: "A snare set among the runs and burrows. Patience catches game.",
   bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
+  cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
+  workbench: "A sturdy builder's bench, racked with saws and chisels.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {

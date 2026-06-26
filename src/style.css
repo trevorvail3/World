@@ -485,10 +485,24 @@ body {
 .hud-log {
   bottom: 10px;
   left: 10px;
-  width: min(300px, 50vw);
-  max-height: 150px;
-  overflow: hidden;
+  width: min(320px, 52vw);
   padding-top: 8px;
+  pointer-events: auto;
+}
+
+/* The scrollable history: shows ~7 lines, scroll up for older messages. */
+.log-lines {
+  max-height: 152px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 162, 74, 0.4) transparent;
+}
+.log-lines::-webkit-scrollbar { width: 6px; }
+.log-lines::-webkit-scrollbar-thumb {
+  background: rgba(201, 162, 74, 0.4);
+  border-radius: 3px;
 }
 
 .log-line {
@@ -1105,7 +1119,9 @@ button.inv-slot {
   /* Keep the bottom-left log and bottom-right dock from crowding each other. */
   .hud-log {
     width: min(230px, 44vw);
-    max-height: 92px;
+  }
+  .log-lines {
+    max-height: 124px;
   }
   .dock-body {
     min-width: 132px;

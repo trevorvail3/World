@@ -33,6 +33,9 @@ export const shops: ShopDef[] = [
       { item: "seed_ashwood", price: 60, qty: 3 },
       { item: "fertilizer_basic", price: 55, qty: 1 },
       { item: "forage_mushroom", price: 52, qty: 5 },
+      // Glass flasks for Herblore — every brew needs one (blow your own once
+      // Crafting's glassblowing is open; buy them here in the meantime).
+      { item: "glass_flask", price: 45, qty: 1 },
       // Starter gathering tools (round(sell × 1.3)).
       { item: "pickaxe_1", price: 20, qty: 1 },
       { item: "hatchet_1", price: 20, qty: 1 },

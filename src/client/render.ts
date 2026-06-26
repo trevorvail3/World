@@ -259,7 +259,75 @@ function drawObject(
     case "bounty_board":
       drawBountyBoard(g, cx, cy);
       break;
+    case "cauldron":
+      drawCauldron(g, cx, cy, now);
+      break;
+    case "workbench":
+      drawWorkbench(g, cx, cy);
+      break;
   }
+}
+
+/** A Herblore cauldron: a black pot over coals with a faint green simmer. */
+function drawCauldron(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  shadow(g, cx, cy + 10, 12, 4);
+  // Glowing coals beneath.
+  const glow = 0.5 + 0.5 * Math.sin(now / 300);
+  g.fillStyle = `rgba(214,110,40,${0.45 + 0.35 * glow})`;
+  g.beginPath();
+  g.ellipse(cx, cy + 8, 9, 3, 0, 0, Math.PI * 2);
+  g.fill();
+  // The iron pot.
+  g.fillStyle = "#26242a";
+  g.beginPath();
+  g.moveTo(cx - 9, cy - 1);
+  g.quadraticCurveTo(cx - 11, cy + 7, cx, cy + 8);
+  g.quadraticCurveTo(cx + 11, cy + 7, cx + 9, cy - 1);
+  g.closePath();
+  g.fill();
+  // The rim.
+  g.fillStyle = "#3b3942";
+  g.fillRect(cx - 10, cy - 3, 20, 3);
+  // A bubbling green brew.
+  g.fillStyle = `rgba(120,180,96,${0.7 + 0.3 * glow})`;
+  g.beginPath();
+  g.ellipse(cx, cy - 2, 8, 2.4, 0, 0, Math.PI * 2);
+  g.fill();
+  // A rising bubble.
+  g.fillStyle = "rgba(150,200,120,0.55)";
+  g.beginPath();
+  g.arc(cx + 2, cy - 5 - 2 * glow, 1.4, 0, Math.PI * 2);
+  g.fill();
+}
+
+/** A Construction workbench: a timber bench with a board and tools. */
+function drawWorkbench(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 10, 13, 4);
+  // Legs.
+  g.fillStyle = "#3a2c1d";
+  g.fillRect(cx - 11, cy + 1, 3, 10);
+  g.fillRect(cx + 8, cy + 1, 3, 10);
+  // The benchtop.
+  g.fillStyle = "#7a5a34";
+  g.fillRect(cx - 13, cy - 4, 26, 6);
+  g.fillStyle = "#8a6a40";
+  g.fillRect(cx - 13, cy - 4, 26, 2);
+  // A plank being worked, with plank lines.
+  g.fillStyle = "#a07a44";
+  g.fillRect(cx - 9, cy - 7, 16, 4);
+  g.strokeStyle = "rgba(60,40,20,0.5)";
+  g.lineWidth = 0.7;
+  g.beginPath();
+  g.moveTo(cx - 9, cy - 5);
+  g.lineTo(cx + 7, cy - 5);
+  g.stroke();
+  // A saw leaning against the bench.
+  g.strokeStyle = "#b9bcc4";
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(cx + 9, cy - 6);
+  g.lineTo(cx + 13, cy + 2);
+  g.stroke();
 }
 
 /** A Hunter snare: a bent-sapling spring trap. Greyed/sprung when depleted. */

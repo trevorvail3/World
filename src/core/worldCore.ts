@@ -95,6 +95,9 @@ export function stationActions(content: Content, station: string): SkillAction[]
     if (station === "anvil") {
       return a.skill === "smithing" && !a.id.startsWith("smelt_") && !a.meltAll;
     }
+    // The cauldron brews all Herblore; the workbench builds all Construction.
+    if (station === "cauldron") return a.skill === "herblore";
+    if (station === "workbench") return a.skill === "construction";
     return false;
   });
 }
@@ -151,6 +154,8 @@ const BLOCKING_KINDS = new Set([
   "portal",
   "trap",
   "bounty_board",
+  "cauldron",
+  "workbench",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -982,6 +987,8 @@ function startInteraction(
     case "fire":
     case "furnace":
     case "anvil":
+    case "cauldron":
+    case "workbench":
       events.push({ type: "OPEN_CRAFT", station: def.kind, objId });
       break;
 

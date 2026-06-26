@@ -37,6 +37,9 @@ export const objects: WorldObjectDef[] = [
   { id: "fire_1", kind: "fire", x: 17, y: 11, name: "Cooking Fire" },
   { id: "furnace_1", kind: "furnace", x: 18, y: 10, name: "Furnace" },
   { id: "anvil_1", kind: "anvil", x: 19, y: 11, name: "Anvil" },
+  // The herbalist's cauldron and the builder's workbench, by the market stalls.
+  { id: "cauldron_1", kind: "cauldron", x: 15, y: 9, name: "Herbalist's Cauldron" },
+  { id: "workbench_1", kind: "workbench", x: 19, y: 9, name: "Builder's Workbench" },
 
   // --- The Ironvale market traders (shops to come) ---
   {

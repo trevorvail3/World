@@ -702,7 +702,11 @@ export type ObjKind =
   /** A Hunter snare/trap node: set it, catch game, collect hide + meat. */
   | "trap"
   /** A Bounty board: take a slay-task, claim it for Hunt Marks + Bounty XP. */
-  | "bounty_board";
+  | "bounty_board"
+  /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
+  | "cauldron"
+  /** A Construction workbench: cut, frame and fit building components. */
+  | "workbench";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
