@@ -1805,3 +1805,48 @@ button.inv-slot {
   color: var(--ink-dim);
 }
 .levelup-unlock b { color: var(--gold); font-weight: 600; }
+
+/* ── Procedural UI glyphs (replace emoji across the chrome) ───────────────────
+   One inline SVG style; size set per context, colour inherited via currentColor
+   so each spot tints its own glyph (gold skill icons, ink tabs, etc.). */
+.g-ico {
+  width: 1.05em;
+  height: 1.05em;
+  display: inline-block;
+  vertical-align: -0.16em;
+  flex: 0 0 auto;
+}
+/* Tab rail: centre the glyph, gild the active tab. */
+.dock-tab { display: flex; align-items: center; justify-content: center; }
+.dock-tab .g-ico { width: 21px; height: 21px; vertical-align: middle; }
+.dock-tab.active { color: var(--gold); }
+/* Skills tab + level-up + skill detail */
+.sc-icon { color: var(--gold); }
+.sc-icon .g-ico { width: 17px; height: 17px; vertical-align: middle; }
+.levelup-icon .g-ico { width: 27px; height: 27px; color: var(--gold); vertical-align: middle; }
+.skilldetail-ic .g-ico { width: 22px; height: 22px; vertical-align: -0.2em; color: var(--gold); }
+/* Combat styles + factions */
+.style-ic .g-ico { width: 15px; height: 15px; }
+.faction-ic { color: var(--gold); }
+.faction-ic .g-ico { width: 18px; height: 18px; vertical-align: middle; }
+/* Buffs, gold, marks, quest tracker */
+.buff-ic .g-ico { width: 14px; height: 14px; }
+.gold-coin .g-ico, .mark-ic .g-ico { width: 13px; height: 13px; vertical-align: -0.2em; color: var(--gold); }
+.gold-coin, .mark-ic { display: inline-block; }
+.quest-ic .g-ico { width: 14px; height: 14px; vertical-align: -0.18em; color: var(--gold); }
+.title-ic .g-ico { width: 16px; height: 16px; vertical-align: -0.2em; }
+/* Companions: owned pets draw their item sprite, locked show a question glyph */
+.comp-ic { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+.comp-ic .item-svg { width: 100%; height: 100%; }
+.comp-ic .g-ico { width: 22px; height: 22px; color: var(--ink-dim); }
+/* Achievements */
+.achieve-ic { color: var(--gold); display: inline-flex; align-items: center; justify-content: center; }
+.achieve-ic .g-ico { width: 18px; height: 18px; }
+.achieve-row:not(.done) .achieve-ic { color: var(--ink-dim); }
+.achieve-lock .g-ico, .bounty-lock .g-ico { width: 12px; height: 12px; }
+/* Bounty guides + world-map button */
+.bounty-guide-icon { color: var(--gold); }
+.bounty-guide-icon .g-ico { width: 20px; height: 20px; }
+.minimap-worldbtn { display: flex; align-items: center; justify-content: center; }
+.minimap-worldbtn .g-ico { width: 19px; height: 19px; }
+.sd-rung-mark .g-ico { width: 12px; height: 12px; vertical-align: -0.1em; }

@@ -7,6 +7,7 @@
  */
 
 import type { Content, SkillId, WorldState } from "../core/types.ts";
+import { iconize } from "./glyph.ts";
 
 /** How the action-less skills are trained (no recipe ladder of their own). */
 const TRAIN_NOTE: Partial<Record<SkillId, string>> = {
@@ -61,7 +62,7 @@ export class SkillDetailModal {
     const s = state.player.skills[skill];
     const table = this.content.xpForLevel;
     (this.backdrop.querySelector(".skilldetail-title") as HTMLElement).innerHTML =
-      `${meta.icon} ${meta.name}`;
+      `<span class="skilldetail-ic">${iconize(meta.icon)}</span> ${meta.name}`;
 
     const cur = table[s.level] ?? 0;
     const next = table[s.level + 1];
@@ -93,7 +94,7 @@ export class SkillDetailModal {
         const unlocked = s.level >= lvl;
         let cls = unlocked ? "done" : "locked";
         if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
-        const mark = unlocked ? "✓" : cls === "next" ? "▶" : "🔒";
+        const mark = unlocked ? "✓" : cls === "next" ? "▶" : iconize("🔒");
         html += `
           <div class="sd-rung ${cls}">
             <span class="sd-rung-lvl">Lv ${lvl}</span>

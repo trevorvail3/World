@@ -10,6 +10,7 @@ import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types
 import { objectPos } from "../core/worldCore.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
+import { iconize } from "./glyph.ts";
 
 const MM_TILE: Record<TileType, string> = {
   grass: "#34402d",
@@ -106,7 +107,7 @@ export class Minimap {
     btn.type = "button";
     btn.className = "minimap-worldbtn";
     btn.title = "World map";
-    btn.textContent = "🗺";
+    btn.innerHTML = iconize("🗺");
     btn.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
       onWorldMap();

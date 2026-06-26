@@ -25,6 +25,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { iconize } from "./glyph.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
@@ -159,7 +160,7 @@ export class Hud {
     vitals.innerHTML = `
       <div class="vitals-label">Hitpoints <span class="hp-text">10 / 10</span></div>
       <div class="hp-bar"><div class="hp-fill"></div></div>
-      <div class="gold-line">🪙 <span class="gold-text">0</span>g</div>`;
+      <div class="gold-line"><span class="gold-coin">${iconize("🪙")}</span><span class="gold-text">0</span>g</div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
     this.goldText = vitals.querySelector(".gold-text") as HTMLElement;
@@ -208,7 +209,7 @@ export class Hud {
       btn.type = "button";
       btn.className = "dock-tab";
       btn.title = t.title;
-      btn.textContent = t.icon;
+      btn.innerHTML = iconize(t.icon);
       btn.addEventListener("click", () => this.setTab(t.id));
       tabsCol.appendChild(btn);
       this.tabButtons.set(t.id, btn);
@@ -259,7 +260,7 @@ export class Hud {
           cell.className = "skill-cell";
           cell.title = meta.name;
           cell.innerHTML = `
-            <span class="sc-icon">${meta.icon}</span>
+            <span class="sc-icon">${iconize(meta.icon)}</span>
             <span class="sc-lvl">1</span>
             <span class="sc-bar"><span class="sc-fill"></span></span>`;
           cell.addEventListener("click", () => {
@@ -324,7 +325,7 @@ export class Hud {
           const b = document.createElement("button");
           b.type = "button";
           b.className = "style-btn";
-          b.innerHTML = `<span class="style-ic">${st.icon}</span>${st.name}`;
+          b.innerHTML = `<span class="style-ic">${iconize(st.icon)}</span>${st.name}`;
           b.title = `Train ${st.name} — bonus to ${st.hint}`;
           b.addEventListener("click", () => this.dispatch({ type: "SET_STYLE", style: st.id }));
           this.styleButtons.set(st.id, b);
@@ -349,7 +350,7 @@ export class Hud {
           row.title = f.blurb;
           row.innerHTML = `
             <div class="faction-row">
-              <span class="faction-ic">${f.icon}</span>
+              <span class="faction-ic">${iconize(f.icon)}</span>
               <span class="faction-name">${f.name}</span>
               <span class="faction-stand">Neutral</span>
               <span class="faction-rep">0</span>
@@ -445,7 +446,7 @@ export class Hud {
         const amt = kind === "xp_boost" || kind === "gather_speed"
           ? `+${Math.round(b.amount * 100)}%`
           : `+${b.amount}`;
-        return `<div class="buff-chip" title="${meta.label} ${amt}"><span>${meta.icon}</span><span class="buff-amt">${amt}</span><span class="buff-time">${time}</span></div>`;
+        return `<div class="buff-chip" title="${meta.label} ${amt}"><span class="buff-ic">${iconize(meta.icon)}</span><span class="buff-amt">${amt}</span><span class="buff-time">${time}</span></div>`;
       })
       .join("");
   }
@@ -464,7 +465,7 @@ export class Hud {
       obj = `${obj.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/, "")} (${st.killCount}/${step.count})`;
     }
     this.questTracker.innerHTML =
-      `<div class="quest-title">📜 ${escapeHtml(def.name)}</div><div class="quest-obj">${escapeHtml(obj)}</div>`;
+      `<div class="quest-title"><span class="quest-ic">${iconize("📜")}</span>${escapeHtml(def.name)}</div><div class="quest-obj">${escapeHtml(obj)}</div>`;
     this.questTracker.classList.remove("hidden");
   }
 
@@ -772,7 +773,7 @@ export class Hud {
       cell.title = owned
         ? `${def.name}${active ? " (summoned)" : ""} — ${def.description}`
         : "An undiscovered companion. Keep training.";
-      cell.innerHTML = `<span class="comp-ic">${owned ? def.icon ?? "🐾" : "❓"}</span>${
+      cell.innerHTML = `<span class="comp-ic">${owned ? itemIconSVG(def) : iconize("❓")}</span>${
         active ? `<span class="comp-star">★</span>` : ""
       }`;
       if (owned) cell.addEventListener("click", () => this.summonCompanion(id));
@@ -814,10 +815,10 @@ export class Hud {
           ? `<span class="achieve-check">✓</span>`
           : ev.target > 1
             ? `<span class="achieve-prog">${Math.min(ev.cur, ev.target).toLocaleString()} / ${ev.target.toLocaleString()}</span>`
-            : `<span class="achieve-lock">🔒</span>`;
+            : `<span class="achieve-lock">${iconize("🔒")}</span>`;
         parts.push(
           `<div class="achieve-row ${done ? "done" : ""}">
-            <span class="achieve-ic">${done ? a.icon : "🔒"}</span>
+            <span class="achieve-ic">${iconize(done ? a.icon : "🔒")}</span>
             <span class="achieve-info"><span class="achieve-name">${escapeHtml(a.name)}</span><span class="achieve-desc">${escapeHtml(a.desc)}</span></span>
             ${right}
           </div>`,

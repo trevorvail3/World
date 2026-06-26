@@ -390,12 +390,12 @@ export class Game {
         case "COMPANION_FOUND": {
           const p = this.bridge.state.player.pos;
           const name = this.bridge.content.items[ev.item]?.name ?? "A companion";
-          this.floats.push({ x: p.x, y: p.y - 0.7, text: `🐾 ${name}!`, color: "#9fd07a", born: now, size: 17 });
+          this.floats.push({ x: p.x, y: p.y - 0.7, text: `${name} joins you!`, color: "#9fd07a", born: now, size: 17 });
           break;
         }
         case "ACHIEVEMENT": {
           const p = this.bridge.state.player.pos;
-          this.floats.push({ x: p.x, y: p.y - 0.9, text: `🏆 ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
+          this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
         }
         case "DAMAGE": {
@@ -567,7 +567,7 @@ export class Game {
       const mins = Math.round(c.growthMs / 60000);
       const time = mins >= 60 ? `${Math.round(mins / 60)}h` : `${mins}m`;
       return {
-        label: `${c.icon} ${c.name}`,
+        label: c.name,
         target: ok ? `${time} · ${seeds} seed${seeds === 1 ? "" : "s"}` : `Lv ${c.levelReq}`,
         tone: ok ? "action" : "normal",
         onSelect: () => {

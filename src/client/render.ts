@@ -511,13 +511,49 @@ function drawPatch(
     g.arc(cx, cy, TILE * 0.42, 0, Math.PI * 2);
     g.stroke();
   }
-  // The crop icon, scaling up as it matures.
-  const size = (ripe ? 20 : 9 + frac * 9) * (def.type === "tree" ? 1.1 : 1);
-  g.font = `${size}px serif`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.globalAlpha = ripe ? 1 : 0.55 + frac * 0.4;
-  g.fillText(def.icon, cx, cy);
+  // A drawn plant that grows with maturity — a sprout that bushes out, or a
+  // sapling that fills into a tree. Greens (no emoji), with ripe fruit/bloom
+  // dots tinted per crop so patches read apart at a glance.
+  const isTree = def.type === "tree";
+  let hsh = 0;
+  for (let i = 0; i < (crop ?? "").length; i++) hsh = (hsh * 31 + (crop as string).charCodeAt(i)) >>> 0;
+  const grow = 0.4 + frac * 0.6;
+  const baseY = cy + TILE * 0.2;
+  const stalk = (isTree ? TILE * 0.52 : TILE * 0.34) * grow;
+  const topY = baseY - stalk;
+  const leafR = (isTree ? TILE * 0.27 : TILE * 0.17) * grow;
+  g.globalAlpha = ripe ? 1 : 0.7 + frac * 0.3;
+  // stem / trunk
+  g.strokeStyle = isTree ? "#6b4a2c" : "#4f7a3a";
+  g.lineWidth = isTree ? 3.2 * grow : 2;
+  g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(cx, baseY);
+  g.lineTo(cx, topY + leafR * 0.4);
+  g.stroke();
+  // foliage — a few overlapping leaf blobs, hue nudged per crop
+  const hue = (isTree ? 105 : 95) + (hsh % 40) - 20;
+  g.fillStyle = `hsl(${hue} 38% ${isTree ? 30 : 38}%)`;
+  for (const [dx, dy, rr] of [[0, -leafR * 0.35, leafR], [-leafR * 0.62, leafR * 0.2, leafR * 0.72], [leafR * 0.62, leafR * 0.2, leafR * 0.72]] as const) {
+    g.beginPath();
+    g.arc(cx + dx, topY + dy, rr, 0, Math.PI * 2);
+    g.fill();
+  }
+  g.fillStyle = `hsl(${hue} 40% ${isTree ? 42 : 52}%)`;
+  g.beginPath();
+  g.arc(cx - leafR * 0.3, topY - leafR * 0.35, leafR * 0.5, 0, Math.PI * 2);
+  g.fill();
+  // ripe fruit / blossoms
+  if (ripe) {
+    g.fillStyle = `hsl(${(hsh % 360)} 62% 58%)`;
+    const dots = isTree ? 4 : 3;
+    for (let i = 0; i < dots; i++) {
+      const a = (i / dots) * Math.PI * 2 + (hsh % 7);
+      g.beginPath();
+      g.arc(cx + Math.cos(a) * leafR * 0.6, topY + Math.sin(a) * leafR * 0.55, 2.1, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
   g.globalAlpha = 1;
 }
 

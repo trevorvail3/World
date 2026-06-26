@@ -14,6 +14,7 @@
 
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { iconize } from "./glyph.ts";
 
 export class BountyUI {
   private backdrop: HTMLElement;
@@ -31,8 +32,8 @@ export class BountyUI {
     this.backdrop.innerHTML = `
       <div class="shop-modal bounty-modal">
         <div class="shop-head">
-          <span class="shop-title">🎯 Bounty Board</span>
-          <span class="bounty-marks">0 🎯</span>
+          <span class="shop-title"><span class="title-ic">${iconize("🎯")}</span> Bounty Board</span>
+          <span class="bounty-marks">0 <span class="mark-ic">${iconize("🎯")}</span></span>
           <button class="shop-close" type="button">✕</button>
         </div>
         <div class="bounty-body"></div>
@@ -74,8 +75,8 @@ export class BountyUI {
     const { player } = this.state;
     const b = player.bounty;
     const level = player.skills.bounty?.level ?? 1;
-    (this.backdrop.querySelector(".bounty-marks") as HTMLElement).textContent =
-      `${b.marks.toLocaleString()} 🎯`;
+    (this.backdrop.querySelector(".bounty-marks") as HTMLElement).innerHTML =
+      `${b.marks.toLocaleString()} <span class="mark-ic">${iconize("🎯")}</span>`;
 
     const guide = this.content.bountyGuides.find((g) => g.id === b.guideId)
       ?? this.content.bountyGuides[0];
@@ -89,9 +90,9 @@ export class BountyUI {
         <button class="bounty-guide${active ? " active" : ""}${locked ? " locked" : ""}"
                 data-guide="${g.id}" type="button"
                 title="${g.title} — ${g.desc}${locked ? ` (needs Bounty ${g.levelReq})` : ""}">
-          <span class="bounty-guide-icon">${g.icon}</span>
+          <span class="bounty-guide-icon">${iconize(g.icon)}</span>
           <span class="bounty-guide-name">${g.name}</span>
-          <span class="bounty-guide-sub">${locked ? `🔒 Lv ${g.levelReq}` : g.title}</span>
+          <span class="bounty-guide-sub">${locked ? `<span class="bounty-lock">${iconize("🔒")}</span> Lv ${g.levelReq}` : g.title}</span>
         </button>`;
     }
     html += `</div>`;
@@ -142,7 +143,7 @@ export class BountyUI {
             <span class="bounty-shop-name">${line.label}${bundle}</span>
             <span class="bounty-shop-desc">${line.desc}</span>
           </span>
-          <button class="bounty-buy${afford ? "" : " disabled"}" data-item="${line.item}" type="button">${line.cost} 🎯</button>
+          <button class="bounty-buy${afford ? "" : " disabled"}" data-item="${line.item}" type="button">${line.cost} <span class="mark-ic">${iconize("🎯")}</span></button>
         </div>`;
     }
     html += `</div>`;

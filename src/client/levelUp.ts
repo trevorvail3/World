@@ -8,6 +8,7 @@
  */
 
 import type { Content, SkillId } from "../core/types.ts";
+import { iconize } from "./glyph.ts";
 
 export class LevelUp {
   private el: HTMLElement;
@@ -37,7 +38,7 @@ export class LevelUp {
     this.el.innerHTML = `
       <div class="levelup-eyebrow">✦ Level Up ✦</div>
       <div class="levelup-row">
-        <span class="levelup-icon">${meta.icon}</span>
+        <span class="levelup-icon">${iconize(meta.icon)}</span>
         <div>
           <div class="levelup-skill">${meta.name}</div>
           <div class="levelup-level">Level ${item.level}</div>
