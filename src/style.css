@@ -108,6 +108,13 @@ body {
   color: var(--ink);
 }
 
+.skill-icon {
+  display: inline-block;
+  width: 1.3em;
+  margin-right: 2px;
+  text-align: center;
+}
+
 .skill-val {
   font-family: "Cinzel", serif;
   color: var(--ember);
