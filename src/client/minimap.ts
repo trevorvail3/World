@@ -50,6 +50,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   cart: "#b89357",
   fountain: "#6fa0c0",
   sawmill: "#9a7b4e",
+  critter: "", // ambient wildlife isn't marked on the minimap
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

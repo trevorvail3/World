@@ -110,6 +110,7 @@ const VERB: Record<ObjKind, string> = {
   cart: "Examine",
   fountain: "Examine",
   sawmill: "Mill at",
+  critter: "Watch",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -134,6 +135,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   cart: "A market stall, its awning faded by weather and woodsmoke.",
   fountain: "A stone fountain, the water bright over old green-stained basins.",
   sawmill: "A sawmill bench — frame-saws, a shaving-horse and a bowyer's vice.",
+  critter: "A wild thing, going about its small business. It startles as you near.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {

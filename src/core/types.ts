@@ -720,7 +720,9 @@ export type ObjKind =
   /** A town fountain — the central square's centrepiece (examine-only). */
   | "fountain"
   /** A Woodcraft sawmill / bowyer's bench: planks, shafts, rods, bows, arrows. */
-  | "sawmill";
+  | "sawmill"
+  /** Ambient wildlife — wanders, flees the player, doesn't block (decorative). */
+  | "critter";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it

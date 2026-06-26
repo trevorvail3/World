@@ -402,6 +402,7 @@ export function drawWorld(
   }
 
   // --- Objects ---
+  const lights: Array<[number, number]> = []; // warm light sources, for night
   for (const def of content.objects) {
     const obj = state.objects[def.id];
     if (!obj) continue;
@@ -415,6 +416,9 @@ export function drawWorld(
     } else {
       drawObject(g, def, obj.available, px, py, now);
     }
+    if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
+      lights.push([px + TILE / 2, py + TILE / 2]);
+    }
     // Name label
     if (def.kind === "npc" || def.kind === "monster") {
       label(g, def.name, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
@@ -424,6 +428,49 @@ export function drawWorld(
   // --- Player ---
   if (state.player.alive) {
     drawPlayer(g, state.player.pos, cam, now);
+  }
+
+  // --- Time of day: a slow tint cycle, with firelight glowing through at night.
+  drawDaylight(g, w, h, lights);
+}
+
+/** One full day in real milliseconds (dawn → noon → dusk → night → dawn). */
+const DAY_CYCLE_MS = 420000; // 7 minutes
+
+/**
+ * Tint the whole scene by the hour. `phase` 0 = midnight, 0.5 = noon. Night lays
+ * a cool dark veil (with warm pools punched out around fires); dawn and dusk add
+ * a golden wash; midday is clear. Uses wall-clock time so it advances for real.
+ */
+function drawDaylight(
+  g: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  lights: Array<[number, number]>,
+): void {
+  const phase = (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS;
+  const sun = Math.sin(phase * Math.PI * 2 - Math.PI / 2); // -1 midnight … +1 noon
+  const night = Math.max(0, -sun) * 0.46;
+  const twilight = Math.max(0, 1 - Math.abs(sun) * 3) * 0.17;
+
+  if (night > 0.01) {
+    g.fillStyle = `rgba(12,16,38,${night.toFixed(3)})`;
+    g.fillRect(0, 0, w, h);
+    // Firelight: warm radial pools that lift the dark around hearths.
+    g.globalCompositeOperation = "lighter";
+    for (const [lx, ly] of lights) {
+      const r = 70;
+      const grd = g.createRadialGradient(lx, ly, 4, lx, ly, r);
+      grd.addColorStop(0, `rgba(230,150,70,${(night * 0.7).toFixed(3)})`);
+      grd.addColorStop(1, "rgba(230,150,70,0)");
+      g.fillStyle = grd;
+      g.beginPath(); g.arc(lx, ly, r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalCompositeOperation = "source-over";
+  }
+  if (twilight > 0.01) {
+    g.fillStyle = `rgba(214,120,50,${twilight.toFixed(3)})`;
+    g.fillRect(0, 0, w, h);
   }
 }
 
@@ -541,6 +588,95 @@ function drawObject(
     case "sawmill":
       drawSawmill(g, cx, cy);
       break;
+    case "critter":
+      drawCritter(g, def.species, cx, cy, now);
+      break;
+  }
+}
+
+/** Ambient wildlife — small, simple silhouettes by species. */
+function drawCritter(
+  g: CanvasRenderingContext2D,
+  species: string | undefined,
+  cx: number,
+  cy: number,
+  now: number,
+): void {
+  shadow(g, cx, cy + 7, 6, 2);
+  const bob = Math.sin(now / 220 + cx) * 1.2; // a little life
+  const y = cy + bob;
+  switch (species) {
+    case "deer": {
+      g.fillStyle = "#9a6b3e";
+      g.fillRect(cx - 6, y - 4, 11, 6); // body
+      g.fillRect(cx + 4, y - 8, 3, 5);  // neck
+      g.fillStyle = "#7a5230";
+      g.fillRect(cx + 4, y - 11, 3, 4); // head
+      g.strokeStyle = "#caa570"; g.lineWidth = 1; // antlers
+      g.beginPath(); g.moveTo(cx + 5, y - 11); g.lineTo(cx + 4, y - 14);
+      g.moveTo(cx + 6, y - 11); g.lineTo(cx + 8, y - 14); g.stroke();
+      g.strokeStyle = "#6a4628"; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(cx - 4, y + 2); g.lineTo(cx - 4, y + 6); g.moveTo(cx + 3, y + 2); g.lineTo(cx + 3, y + 6); g.stroke();
+      break;
+    }
+    case "sheep": {
+      g.fillStyle = "#e6e2d6";
+      g.beginPath(); g.ellipse(cx, y - 2, 7, 5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#33312c"; g.fillRect(cx + 5, y - 4, 3, 3); // head
+      g.strokeStyle = "#33312c"; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(cx - 3, y + 3); g.lineTo(cx - 3, y + 6); g.moveTo(cx + 3, y + 3); g.lineTo(cx + 3, y + 6); g.stroke();
+      break;
+    }
+    case "crow": {
+      g.fillStyle = "#1c1b22";
+      g.beginPath(); g.ellipse(cx, y, 5, 3.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#26252e"; g.beginPath(); g.arc(cx + 4, y - 2, 2.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#c8902c"; g.fillRect(cx + 6, y - 2.5, 2.5, 1.4); // beak
+      g.fillStyle = "#0f0e13"; g.beginPath(); g.moveTo(cx - 5, y); g.lineTo(cx - 9, y - 2); g.lineTo(cx - 5, y + 1); g.fill(); // tail
+      break;
+    }
+    case "duck": {
+      g.fillStyle = "#6e5a3a";
+      g.beginPath(); g.ellipse(cx, y, 6, 3.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#3a4a2e"; g.beginPath(); g.arc(cx + 5, y - 3, 2.4, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#c8902c"; g.fillRect(cx + 7, y - 3.5, 3, 1.6);
+      break;
+    }
+    case "frog": {
+      g.fillStyle = "#4a6a32";
+      g.beginPath(); g.ellipse(cx, y + 1, 5, 3.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#5e8240";
+      g.beginPath(); g.arc(cx - 2, y - 2, 1.6, 0, Math.PI * 2); g.arc(cx + 2, y - 2, 1.6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#1c2414"; g.fillRect(cx - 3, y - 3, 1, 1); g.fillRect(cx + 2, y - 3, 1, 1);
+      break;
+    }
+    case "butterfly": {
+      const flap = 0.4 + 0.5 * Math.abs(Math.sin(now / 90 + cx));
+      g.fillStyle = "#d2742c";
+      g.save(); g.translate(cx, y - 2); g.scale(flap, 1);
+      g.beginPath(); g.ellipse(-3, 0, 3, 4, 0, 0, Math.PI * 2); g.ellipse(3, 0, 3, 4, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#f0c187"; g.beginPath(); g.arc(-3, -1, 1, 0, Math.PI * 2); g.arc(3, -1, 1, 0, Math.PI * 2); g.fill();
+      g.restore();
+      g.fillStyle = "#2a2630"; g.fillRect(cx - 0.5, y - 5, 1, 6);
+      break;
+    }
+    case "cat": {
+      g.fillStyle = "#6a5b48";
+      g.beginPath(); g.ellipse(cx - 1, y, 6, 3.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#6a5b48"; g.beginPath(); g.arc(cx + 5, y - 3, 2.4, 0, Math.PI * 2); g.fill();
+      g.fillRect(cx + 3.5, y - 6, 1.5, 2); g.fillRect(cx + 6, y - 6, 1.5, 2); // ears
+      g.strokeStyle = "#6a5b48"; g.lineWidth = 1.6; // tail
+      g.beginPath(); g.moveTo(cx - 6, y); g.quadraticCurveTo(cx - 10, y - 1, cx - 9, y - 5); g.stroke();
+      break;
+    }
+    default: { // rabbit / hare
+      g.fillStyle = "#8a7a64";
+      g.beginPath(); g.ellipse(cx, y, 5, 3.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#9a8a72"; g.beginPath(); g.arc(cx + 4, y - 2, 2.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#8a7a64"; g.fillRect(cx + 3, y - 7, 1.6, 5); g.fillRect(cx + 5, y - 7, 1.6, 5); // ears
+      g.fillStyle = "#efe9dd"; g.beginPath(); g.arc(cx - 5, y + 1, 1.6, 0, Math.PI * 2); g.fill(); // tail
+      break;
+    }
   }
 }
 

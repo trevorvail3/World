@@ -349,6 +349,39 @@ export const objects: WorldObjectDef[] = [
   { id: "lm_short_shift", kind: "shrine", x: 56, y: 90, name: "The Short-Shift Diggings", lines: ["Cuttings worked in bursts, because no one can stand the heat for long. A miner won't come up at the end of his shift — geology, or zeal. Left open."] },
   { id: "lm_tended_seam", kind: "shrine", x: 66, y: 96, name: "The Tended Seam", lines: ["A warm patch kept clean of debris by hands that leave offerings, not tools. A Cult tender asks you to witness, not help. The discomfort is the point."] },
 
+  // === WILDLIFE — ambient critters (wander, flee, don't block) ==============
+  // City strays + birds:
+  { id: "cr_cat", kind: "critter", species: "cat", x: 58, y: 60, name: "A Cat" },
+  { id: "cr_pigeon1", kind: "critter", species: "crow", x: 61, y: 54, name: "Pigeons" },
+  { id: "cr_bfly_city", kind: "critter", species: "butterfly", x: 55, y: 56, name: "A Butterfly" },
+  // Knuckle Hills (around the city):
+  { id: "cr_hare1", kind: "critter", species: "rabbit", x: 48, y: 30, name: "A Moor Hare" },
+  { id: "cr_hare2", kind: "critter", species: "rabbit", x: 72, y: 31, name: "A Moor Hare" },
+  { id: "cr_crow1", kind: "critter", species: "crow", x: 63, y: 25, name: "A Crow" },
+  { id: "cr_sheep1", kind: "critter", species: "sheep", x: 50, y: 34, name: "A Hill Sheep" },
+  { id: "cr_bfly_hill", kind: "critter", species: "butterfly", x: 58, y: 27, name: "Butterflies" },
+  // Greyoak Wood:
+  { id: "cr_deer1", kind: "critter", species: "deer", x: 16, y: 52, name: "A Roe Deer" },
+  { id: "cr_deer2", kind: "critter", species: "deer", x: 24, y: 58, name: "A Roe Deer" },
+  { id: "cr_hare3", kind: "critter", species: "rabbit", x: 10, y: 50, name: "A Wood Hare" },
+  { id: "cr_crow2", kind: "critter", species: "crow", x: 28, y: 49, name: "A Crow" },
+  // The Spine (the walkable pass):
+  { id: "cr_crow3", kind: "critter", species: "crow", x: 43, y: 9, name: "A Crag Crow" },
+  { id: "cr_sheep2", kind: "critter", species: "sheep", x: 45, y: 13, name: "A Mountain Goat" },
+  // Heartmoor:
+  { id: "cr_frog1", kind: "critter", species: "frog", x: 18, y: 86, name: "A Marsh Frog" },
+  { id: "cr_frog2", kind: "critter", species: "frog", x: 26, y: 91, name: "A Marsh Frog" },
+  { id: "cr_duck1", kind: "critter", species: "duck", x: 14, y: 89, name: "A Moor Duck" },
+  { id: "cr_heron", kind: "critter", species: "crow", x: 22, y: 88, name: "A Bog Heron" },
+  // Ashfen Flats:
+  { id: "cr_bfly_ash", kind: "critter", species: "butterfly", x: 56, y: 88, name: "Ash-Moths" },
+  { id: "cr_crow4", kind: "critter", species: "crow", x: 61, y: 95, name: "A Crow" },
+  // The Redrun banks:
+  { id: "cr_duck2", kind: "critter", species: "duck", x: 91, y: 66, name: "A River Duck" },
+  { id: "cr_duck3", kind: "critter", species: "duck", x: 92, y: 74, name: "A River Duck" },
+  { id: "cr_frog3", kind: "critter", species: "frog", x: 95, y: 78, name: "A River Frog" },
+  { id: "cr_crow5", kind: "critter", species: "crow", x: 96, y: 68, name: "A River Crow" },
+
   // === BOSS ARENAS (sealed band below the overworld) ========================
   { id: "ret_bog", kind: "portal", x: 24, y: 119, name: "Barrow Exit", target: { x: 16, y: 98 }, lines: ["You haul yourself back out of the mire."] },
   { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 115, name: "The Bog Warden" },

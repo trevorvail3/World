@@ -221,11 +221,12 @@ export function createWorld(
     if (def.kind === "monster") base.hp = monsterFor(content, def)?.hp ?? 1;
     // NPCs and monsters start at their spawn tile and amble from there; stagger
     // their first step so they don't all set off in lockstep.
-    if (def.kind === "npc" || def.kind === "monster") {
+    if (def.kind === "npc" || def.kind === "monster" || def.kind === "critter") {
       base.pos = { x: def.x, y: def.y };
       base.wanderTarget = null;
       base.nextWanderAt = ctx.now + Math.floor(ctx.rng() * WANDER.pauseMax);
-      creatureTiles.add(`${def.x},${def.y}`);
+      // Critters don't block (the player walks through ambient wildlife).
+      if (def.kind !== "critter") creatureTiles.add(`${def.x},${def.y}`);
     }
     objects[def.id] = base;
   }
@@ -1074,7 +1075,8 @@ function startInteraction(
     case "shrine":
     case "cart":
     case "fountain":
-      // Examine-only landmark / city dressing: speak its line, if any.
+    case "critter":
+      // Examine-only landmark / city dressing / wildlife: speak its line, if any.
       events.push({
         type: "LOG",
         message: def.lines?.[0] ?? `You study the ${def.name}.`,
@@ -1334,6 +1336,7 @@ function wanderCreatures(
   const occupied = state.creatureTiles;
   occupied.clear();
   for (const def of content.objects) {
+    if (def.kind === "critter") continue; // ambient wildlife doesn't block
     const obj = state.objects[def.id];
     if (!obj || !obj.pos || !obj.available) continue;
     occupied.add(`${Math.round(obj.pos.x)},${Math.round(obj.pos.y)}`);
@@ -1341,13 +1344,15 @@ function wanderCreatures(
   }
 
   for (const def of content.objects) {
-    if (def.kind !== "npc" && def.kind !== "monster") continue;
+    if (def.kind !== "npc" && def.kind !== "monster" && def.kind !== "critter") continue;
     const obj = state.objects[def.id];
     if (!obj || !obj.pos || !obj.available) continue;
+    const isCritter = def.kind === "critter";
 
     // Mid-step: keep walking toward the reserved target tile.
     if (obj.wanderTarget) {
-      const reached = stepToward(obj.pos, obj.wanderTarget, (WANDER.speed * dt) / 1000);
+      const speed = isCritter ? WANDER.speed * 1.6 : WANDER.speed; // critters are quick
+      const reached = stepToward(obj.pos, obj.wanderTarget, (speed * dt) / 1000);
       if (reached) {
         obj.pos = { x: obj.wanderTarget.x, y: obj.wanderTarget.y };
         obj.wanderTarget = null;
@@ -1362,6 +1367,18 @@ function wanderCreatures(
     const engaged = player.activity.kind === "combat" && player.activity.targetId === def.id;
     const playerBeside = Math.max(Math.abs(here.x - pTile.x), Math.abs(here.y - pTile.y)) <= 1;
     if (engaged || playerBeside) {
+      // A startled critter bolts a step away instead of freezing.
+      if (isCritter && playerBeside && !engaged) {
+        const ax = here.x + (here.x === pTile.x ? (ctx.rng() < 0.5 ? 1 : -1) : Math.sign(here.x - pTile.x));
+        const ay = here.y + (here.y === pTile.y ? (ctx.rng() < 0.5 ? 1 : -1) : Math.sign(here.y - pTile.y));
+        for (const [nx, ny] of [[ax, here.y], [here.x, ay], [ax, ay]] as const) {
+          if (Math.max(Math.abs(nx - def.x), Math.abs(ny - def.y)) > WANDER.radius + 3) continue;
+          if (!walk(nx, ny) || (nx === pTile.x && ny === pTile.y)) continue;
+          obj.wanderTarget = { x: nx, y: ny };
+          break;
+        }
+        continue;
+      }
       obj.nextWanderAt = ctx.now + WANDER.pauseMin;
       continue;
     }
