@@ -106,6 +106,8 @@ export class Hud {
   private hpText!: HTMLElement;
   private goldText!: HTMLElement;
   private vitals!: HTMLElement;
+  private logPanel!: HTMLElement;
+  private hudRoot!: HTMLElement;
   private statusPill!: HTMLElement;
   private statusText!: HTMLElement;
   private buffStrip!: HTMLElement;
@@ -155,6 +157,7 @@ export class Hud {
   }
 
   private build(root: HTMLElement): void {
+    this.hudRoot = root;
     // --- Always-on Hitpoints (top-left) ---
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
@@ -191,6 +194,7 @@ export class Hud {
 
     // --- Game log (bottom-left) ---
     const logPanel = panel("hud-panel hud-log");
+    this.logPanel = logPanel;
     this.logEl = document.createElement("div");
     this.logEl.className = "log-lines";
     logPanel.appendChild(this.logEl);
@@ -226,6 +230,23 @@ export class Hud {
     root.appendChild(dock);
 
     this.applyTabState(); // start expanded on the default tab
+
+    // On phones the vitals readout rides on top of the log box instead of
+    // floating in the top-left corner; re-evaluate on rotate/resize.
+    this.placeVitals();
+    window.matchMedia("(max-width: 520px)").addEventListener("change", () => this.placeVitals());
+  }
+
+  /** Top-left on desktop; a header row on the log box on mobile. */
+  private placeVitals(): void {
+    const mobile = window.matchMedia("(max-width: 520px)").matches;
+    if (mobile) {
+      if (this.vitals.parentElement !== this.logPanel) {
+        this.logPanel.insertBefore(this.vitals, this.logPanel.firstChild);
+      }
+    } else if (this.vitals.parentElement !== this.hudRoot) {
+      this.hudRoot.appendChild(this.vitals);
+    }
   }
 
   private buildTab(id: TabId, title: string, p: HTMLElement): void {

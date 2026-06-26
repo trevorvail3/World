@@ -1169,40 +1169,37 @@ button.inv-slot {
 }
 
 @media (max-width: 520px) {
-  /* Minimal vitals: drop the panel chrome, the word "Hitpoints" and the bar.
-     Just a heart + HP and a coin + gold, floated over the map. */
+  /* Minimal vitals: it rides on top of the log box as a compact header row —
+     heart + HP and a coin + gold — instead of a panel in the top-left corner.
+     (placeVitals() reparents it into the log panel at this width.) */
   .hud-vitals {
+    position: static;
     min-width: 0;
-    top: 8px;
-    left: 8px;
-    padding: 0;
+    padding: 0 0 6px;
+    margin-bottom: 6px;
     background: none;
     border: none;
     box-shadow: none;
+    border-bottom: 1px solid rgba(74, 61, 44, 0.5);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
   }
   .hud-vitals.low { box-shadow: none; }
   .vitals-label {
     margin: 0;
     gap: 5px;
     align-items: center;
-    font-size: 15px;
+    font-size: 14px;
     color: var(--ink);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
   }
   .vitals-heart { display: inline-flex; }
   .vitals-name { display: none; }
   .hp-bar { display: none; }
-  .gold-line {
-    margin: 0;
-    font-size: 15px;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
-  }
+  .gold-line { margin: 0; font-size: 14px; }
   .hud-vitals.low .vitals-heart .g-ico { animation: hp-pulse 0.9s ease-in-out infinite; }
-  /* Buffs + quest tracker rise to meet the now-tiny vitals line. */
-  .hud-topleft { top: 38px; }
+  /* Top-left column (buffs + quest tracker) reclaims the freed corner. */
+  .hud-topleft { top: 10px; }
 
   /* Keep the bottom-left log and bottom-right dock from crowding each other. */
   .hud-log {
