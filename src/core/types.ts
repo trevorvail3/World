@@ -640,7 +640,7 @@ export interface InventorySlot {
 // The map (tiles).
 // ---------------------------------------------------------------------------
 
-export type TileType = "grass" | "dirt" | "path" | "stone" | "water";
+export type TileType = "grass" | "dirt" | "path" | "stone" | "water" | "moss";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {
@@ -682,6 +682,16 @@ export interface WorldObjectDef {
   name: string;
   /** Monsters only: which MonsterStats (in Content.monsters) this uses. */
   monster?: string;
+  /**
+   * Resource nodes (tree/rock/fishing_spot) only: the SkillAction id this node
+   * yields (e.g. "fell_coldpine"). Determines the item, XP and level required.
+   * Defaults to the tier-1 action for the node's kind if omitted.
+   */
+  resource?: string;
+  /** NPC only: the lines spoken when talked to. */
+  lines?: string[];
+  /** A tree/rock species tag for rendering variety (e.g. "greyoak", "coldpine"). */
+  species?: string;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */

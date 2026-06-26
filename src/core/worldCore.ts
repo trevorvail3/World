@@ -205,6 +205,54 @@ function monsterFor(
   return def.monster ? content.monsters[def.monster] : undefined;
 }
 
+/** The default tier-1 gathering action for each resource-node kind. */
+const DEFAULT_RESOURCE: Record<string, string> = {
+  tree: "fell_ashwood",
+  rock: "mine_knucklestone",
+  fishing_spot: "fish_ashfin",
+};
+
+/** The SkillAction a resource node yields (its `resource`, or the kind default). */
+function gatherAction(content: Content, def: WorldObjectDef): SkillAction | undefined {
+  const id = def.resource ?? DEFAULT_RESOURCE[def.kind];
+  return id ? content.actions.find((a) => a.id === id) : undefined;
+}
+
+/**
+ * Start gathering a resource node: resolve its action, check the skill level,
+ * and set the activity (carrying the action id). Returns false if it can't
+ * start (unknown resource or too low a level), having logged why.
+ */
+function beginGather(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  objId: string,
+  kind: "woodcutting" | "mining" | "fishing",
+  interval: number,
+  ctx: Ctx,
+  events: WorldEvent[],
+): boolean {
+  const { player } = state;
+  const action = gatherAction(content, def);
+  if (!action) return false;
+  if (skillLvl(player, action.skill) < action.levelReq) {
+    events.push({
+      type: "LOG",
+      message: `You need ${content.skills[action.skill].name} level ${action.levelReq} for that.`,
+    });
+    return false;
+  }
+  player.activity = {
+    kind,
+    targetId: objId,
+    actionId: action.id,
+    nextActionAt: ctx.now + interval,
+    actionInterval: interval,
+  };
+  return true;
+}
+
 function levelFromXp(xpTable: number[], xp: number): number {
   let level = 1;
   while (level + 1 < xpTable.length && (xpTable[level + 1] ?? Infinity) <= xp) {
@@ -607,58 +655,43 @@ function startInteraction(
   player.pendingInteractId = null;
 
   switch (def.kind) {
-    case "tree":
+    case "tree": {
       if (!obj.available) {
         events.push({ type: "LOG", message: "The tree has been felled." });
         return;
       }
-      player.activity = {
-        kind: "woodcutting",
-        targetId: objId,
-        actionId: null,
-        nextActionAt: ctx.now + WOODCUTTING.interval,
-        actionInterval: WOODCUTTING.interval,
-      };
+      if (!beginGather(state, content, def, objId, "woodcutting", WOODCUTTING.interval, ctx, events)) {
+        return;
+      }
       events.push({ type: "LOG", message: "You swing your axe at the tree." });
       break;
+    }
 
-    case "rock":
+    case "rock": {
       if (!obj.available) {
         events.push({ type: "LOG", message: "The rock is depleted." });
         return;
       }
-      player.activity = {
-        kind: "mining",
-        targetId: objId,
-        actionId: null,
-        nextActionAt: ctx.now + MINING.interval,
-        actionInterval: MINING.interval,
-      };
+      if (!beginGather(state, content, def, objId, "mining", MINING.interval, ctx, events)) {
+        return;
+      }
       events.push({ type: "LOG", message: "You swing your pick at the rock." });
       break;
+    }
 
-    case "fishing_spot":
-      player.activity = {
-        kind: "fishing",
-        targetId: objId,
-        actionId: null,
-        nextActionAt: ctx.now + FISHING.interval,
-        actionInterval: FISHING.interval,
-      };
-      events.push({ type: "LOG", message: "You cast your line into the pond." });
+    case "fishing_spot": {
+      if (!beginGather(state, content, def, objId, "fishing", FISHING.interval, ctx, events)) {
+        return;
+      }
+      events.push({ type: "LOG", message: "You cast your line into the water." });
       break;
+    }
 
     case "npc":
       events.push({
         type: "DIALOGUE",
         npc: def.name,
-        lines: [
-          "You've an honest look about you. Good — there's a thing that's been gnawing at me.",
-          "Found this old coin in the dirt by my wall. Old Varath mintage, struck before my grandfather's grandfather drew breath. Worn smooth — and no coin I've ever known.",
-          "Here's the strange of it: the moor rats keep turning the things up in their nests. A dead king's money, in a rat's hole. Why?",
-          "Humour an old man. Put one of those rats down and see what it carries. Hold a thing to study it first — then strike.",
-          "Ash and knuckle, that's all these hills are. But every road in Varath starts on one like it.",
-        ],
+        lines: def.lines ?? ["..."],
       });
       break;
 
@@ -806,78 +839,77 @@ function processActivity(
   if (ctx.now < act.nextActionAt) return;
 
   switch (act.kind) {
-    case "woodcutting": {
-      if (!obj.available) {
-        clearActivity(player);
-        return;
-      }
-      if (ctx.rng() < WOODCUTTING.success) {
-        if (!canAddItem(player, "ashwood_log")) {
-          events.push({ type: "INVENTORY_FULL" });
-          clearActivity(player);
-          return;
-        }
-        grantXp(state, content, "forestry", WOODCUTTING.xp, events);
-        addItem(player, "ashwood_log", 1, events);
-        events.push({ type: "LOG", message: "You get some Ashwood Logs." });
-        if (ctx.rng() < WOODCUTTING.deplete) {
-          obj.available = false;
-          obj.respawnAt = ctx.now + WOODCUTTING.respawn;
-          events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
-          clearActivity(player);
-          return;
-        }
-      }
-      act.nextActionAt = ctx.now + WOODCUTTING.interval; // keep chopping
+    case "woodcutting":
+      gatherStep(state, content, obj, ctx, events, WOODCUTTING, true);
       break;
-    }
-
-    case "mining": {
-      if (!obj.available) {
-        clearActivity(player);
-        return;
-      }
-      if (ctx.rng() < MINING.success) {
-        if (!canAddItem(player, "knucklestone_ore")) {
-          events.push({ type: "INVENTORY_FULL" });
-          clearActivity(player);
-          return;
-        }
-        grantXp(state, content, "mining", MINING.xp, events);
-        addItem(player, "knucklestone_ore", 1, events);
-        events.push({ type: "LOG", message: "You mine some Knucklestone." });
-        if (ctx.rng() < MINING.deplete) {
-          obj.available = false;
-          obj.respawnAt = ctx.now + MINING.respawn;
-          events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
-          clearActivity(player);
-          return;
-        }
-      }
-      act.nextActionAt = ctx.now + MINING.interval; // keep mining
+    case "mining":
+      gatherStep(state, content, obj, ctx, events, MINING, true);
       break;
-    }
-
-    case "fishing": {
-      if (ctx.rng() < FISHING.success) {
-        if (!canAddItem(player, "ashfin_raw")) {
-          events.push({ type: "INVENTORY_FULL" });
-          clearActivity(player);
-          return;
-        }
-        grantXp(state, content, "fishing", FISHING.xp, events);
-        addItem(player, "ashfin_raw", 1, events);
-        events.push({ type: "LOG", message: "You catch an Ashfin." });
-      }
-      act.nextActionAt = ctx.now + FISHING.interval; // continuous
+    case "fishing":
+      gatherStep(state, content, obj, ctx, events, FISHING, false);
       break;
-    }
-
-    case "crafting": {
+    case "crafting":
       processCraft(state, content, ctx, events);
       break;
+  }
+}
+
+/**
+ * One gathering "swing": roll for success, give the node's item + XP (read from
+ * the action the node yields), roll any rare drop, and — for depleting nodes —
+ * roll whether the node runs out. Continuous nodes (fishing) never deplete.
+ */
+function gatherStep(
+  state: WorldState,
+  content: Content,
+  obj: WorldObjectState,
+  ctx: Ctx,
+  events: WorldEvent[],
+  beh: { interval: number; success: number; deplete?: number; respawn?: number },
+  depletes: boolean,
+): void {
+  const { player } = state;
+  const act = player.activity;
+  const action = act.actionId
+    ? content.actions.find((a) => a.id === act.actionId)
+    : undefined;
+  if (!action || !action.produces) {
+    clearActivity(player);
+    return;
+  }
+  if (depletes && !obj.available) {
+    clearActivity(player);
+    return;
+  }
+  if (ctx.rng() < beh.success) {
+    if (!canAddItem(player, action.produces)) {
+      events.push({ type: "INVENTORY_FULL" });
+      clearActivity(player);
+      return;
+    }
+    grantXp(state, content, action.skill, action.xp, events);
+    addItem(player, action.produces, action.produceQty ?? 1, events);
+    events.push({
+      type: "LOG",
+      message: `You get ${content.items[action.produces].name}.`,
+    });
+    // A node's rare drop (bird nest, gem, etc.).
+    if (
+      action.rareDrop &&
+      ctx.rng() < action.rareDrop.chance &&
+      canAddItem(player, action.rareDrop.item)
+    ) {
+      addItem(player, action.rareDrop.item, 1, events);
+    }
+    if (depletes && ctx.rng() < (beh.deplete ?? 0)) {
+      obj.available = false;
+      obj.respawnAt = ctx.now + (beh.respawn ?? 7000);
+      events.push({ type: "OBJECT_DEPLETED", objId: obj.id });
+      clearActivity(player);
+      return;
     }
   }
+  act.nextActionAt = ctx.now + beh.interval;
 }
 
 /**

@@ -115,6 +115,14 @@ const EXAMINE_TILE: Record<TileType, string> = {
   path: "A worn stone path.",
   stone: "Cold grey stone underfoot.",
   water: "The cold head of the Redrun, where the hill-streams braid.",
+  moss: "Deep moss of the Greyoak floor, soft and damp underfoot.",
+};
+
+/** Examine flavour for the tree species. */
+const EXAMINE_TREE: Record<string, string> = {
+  ashwood: "A pale ashwood — common as dirt, and the forester's first tree.",
+  coldpine: "A cold blue-green pine of the Greyoak edge. Resinous and straight.",
+  greyoak: "A wide-canopied greyoak, old before Ironvale was named. Hard timber.",
 };
 
 export class Game {
@@ -673,6 +681,10 @@ export class Game {
       const stats = this.bridge.content.monsters[obj.monster];
       if (stats) return stats.desc;
     }
+    if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
+      return EXAMINE_TREE[obj.species]!;
+    }
+    if (obj.kind === "npc") return `${obj.name}, met on the road.`;
     return EXAMINE_OBJECT[obj.kind];
   }
 
