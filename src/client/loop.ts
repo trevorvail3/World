@@ -27,6 +27,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
+import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap } from "./minimap.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
@@ -122,6 +123,7 @@ export class Game {
     private dialogue: Dialogue,
     uiRoot: HTMLElement,
     menu: ContextMenu,
+    private guide: Guide,
   ) {
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D canvas context.");
@@ -157,6 +159,7 @@ export class Game {
     // 1) Advance the world and react to what happened.
     const events = this.bridge.tick(now);
     this.handleEvents(events, now);
+    this.guide.onEvents(events);
 
     // 2) Camera follows the player.
     this.followCamera();
@@ -165,6 +168,7 @@ export class Game {
     drawWorld(this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now);
     this.drawMarker(now);
     this.drawHighlights(now);
+    this.drawGuideTarget(now);
     this.drawFloats(now);
 
     // 4) Refresh the HUD readouts and the minimap.
@@ -320,6 +324,42 @@ export class Game {
         }
       }
     }
+  }
+
+  /** A bobbing gold chevron over whatever the onboarding guide points at. */
+  private drawGuideTarget(now: number): void {
+    const step = this.guide.currentStep;
+    let target: { x: number; y: number } | null = null;
+
+    if (step === "greet") {
+      const aldric = this.bridge.content.objects.find((o) => o.id === "aldric");
+      if (aldric) target = { x: aldric.x, y: aldric.y };
+    } else if (step === "hunt") {
+      // Point at the nearest living monster.
+      const p = this.bridge.state.player.pos;
+      let best = Infinity;
+      for (const o of this.bridge.content.objects) {
+        if (o.kind !== "monster") continue;
+        if (!this.bridge.state.objects[o.id]?.available) continue;
+        const d = (o.x - p.x) ** 2 + (o.y - p.y) ** 2;
+        if (d < best) {
+          best = d;
+          target = { x: o.x, y: o.y };
+        }
+      }
+    }
+    if (!target) return;
+
+    const { x: cx, y: cy } = this.toScreen(target.x, target.y);
+    const bob = Math.sin(now / 250) * 4;
+    const topY = cy - TILE * 0.7 + bob;
+    this.g.fillStyle = "#f2cf6b";
+    this.g.beginPath();
+    this.g.moveTo(cx - 7, topY - 8);
+    this.g.lineTo(cx + 7, topY - 8);
+    this.g.lineTo(cx, topY + 2);
+    this.g.closePath();
+    this.g.fill();
   }
 
   private drawFloats(now: number): void {

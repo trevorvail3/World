@@ -299,10 +299,11 @@ function startInteraction(
         type: "DIALOGUE",
         npc: def.name,
         lines: [
-          "Ash and knuckle — that's all these hills are. Pale stone and pale wood.",
-          "I'll not pretend it's much. But a man can make a start here: timber in the grove, ore in the stones, fish at the head of the Redrun.",
-          "Mind the moor rats, and the wolves when the cold sets in. Humble hunting, but it bites back.",
-          "Orun's been dead since before my grandfather's grandfather. Whatever he needs can wait. The east wall can't.",
+          "You've an honest look about you. Good — there's a thing that's been gnawing at me.",
+          "Found this old coin in the dirt by my wall. Old Varath mintage, struck before my grandfather's grandfather drew breath. Worn smooth — and no coin I've ever known.",
+          "Here's the strange of it: the moor rats keep turning the things up in their nests. A dead king's money, in a rat's hole. Why?",
+          "Humour an old man. Put one of those rats down and see what it carries. Hold a thing to study it first — then strike.",
+          "Ash and knuckle, that's all these hills are. But every road in Varath starts on one like it.",
         ],
       });
       break;
