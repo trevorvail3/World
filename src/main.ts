@@ -31,11 +31,12 @@ import { Hud } from "./client/hud.ts";
 import { clearSave, readSave, writeSave } from "./client/storage.ts";
 import { TitleScreen } from "./client/titleScreen.ts";
 
-// The opening atmosphere lines — mood first, mechanics never.
+// The opening atmosphere lines — mood first, mechanics never. Framed as legend
+// (never stated as fact) to honour the world's load-bearing ambiguity.
 const INTRO_LINES = [
-  "Two gods were. One died — and became the ground beneath your feet.",
-  "The other remains: the pale moon, watching. They name this the Age of Rumor.",
-  "You come to the Knuckle Hills with empty hands and an open road.",
+  "They say there were Two, before the world began. One perished — and the stone, the river, the mountain are his body still, and remember being a god.",
+  "The other remained: the pale moon, who watches — and will not say what she did, or why.",
+  "You come to the Knuckle Hills with empty hands, and a road that asks only that you walk it.",
 ];
 
 // --- The client supplies time + randomness (the core never does). ---
