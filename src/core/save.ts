@@ -34,6 +34,8 @@ export interface SavedProgress {
   bank: Record<string, number>;
   /** Worn gear: equip slot -> item id. */
   equipment: Record<string, string>;
+  /** Selected melee combat style. */
+  combatStyle: string;
   hp: number;
   pos: { x: number; y: number };
 }
@@ -50,6 +52,7 @@ export function serializePlayer(player: Player): SavedProgress {
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
     bank: { ...player.bank } as Record<string, number>,
     equipment: { ...player.equipment } as Record<string, string>,
+    combatStyle: player.combatStyle,
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -124,6 +127,15 @@ export function hydratePlayer(
     }
     player.equipment = equipment;
   }
+
+  // --- Combat style (preference) ---
+  const style = raw["combatStyle"];
+  if (style === "edge" || style === "vigour" || style === "ward") {
+    player.combatStyle = style;
+  }
+
+  // --- Max HP follows the loaded Vitality level, then HP clamps to it ---
+  player.maxHp = 10 + player.skills.vitality.level;
 
   // --- HP (clamped to the player's range) ---
   const hp = raw["hp"];

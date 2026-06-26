@@ -35,7 +35,6 @@ import type {
   WorldObjectState,
   WorldState,
 } from "./types.ts";
-import { COMBAT_SKILLS } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // Tunable game constants. These are behaviour, so they live here (not content).
@@ -52,14 +51,32 @@ const FISHING = { interval: 1400, success: 0.5, xp: 20 };
 const COOKING_INTERVAL = 1400;
 const SMELTING_INTERVAL = 1800;
 
-const PLAYER_MAX_HP = 10;
 const PLAYER_RESPAWN = 4000;
 
+// Combat math, ported from the Varath idle game (see docs/CANON_LEDGER.md).
 const COMBAT = {
-  attackInterval: 1200,
-  playerMaxHit: 3,
+  /** Default melee swing interval (ms) when no weapon speed is set. */
+  playerMeleeSpeed: 2400,
+  /** Fallback monster swing interval (ms) if a monster has no `speed`. */
+  monsterSpeed: 3000,
+  /** Hit-chance = clamp(base + (att - def) * slope, floor, cap). */
+  hitBase: 0.5,
+  hitSlope: 0.012,
+  hitFloor: 0.05,
+  hitCap: 0.95,
+  /** Exploiting a weakness multiplies accuracy / damage. */
+  weaknessAcc: 1.2,
+  weaknessDmg: 1.1,
+  /** Ward soaks floor(defence / this) flat damage per hit. */
+  wardDivisor: 15,
+  /** Small flat bonus the matching style grants. */
+  styleBonus: 3,
+  /** How long a slain monster stays down before respawning (ms). */
   respawn: 9000,
 };
+
+/** Base max HP before the Vitality level is added. */
+const BASE_MAX_HP = 10;
 
 const INVENTORY_SIZE = 28;
 
@@ -127,16 +144,18 @@ export function createWorld(
     skills[id] = { xp: 0, level: 1 };
   });
 
+  const maxHp = BASE_MAX_HP + (skills.vitality?.level ?? 1);
   const player: Player = {
     pos: { x: spawn.x, y: spawn.y },
     path: [],
-    hp: PLAYER_MAX_HP,
-    maxHp: PLAYER_MAX_HP,
+    hp: maxHp,
+    maxHp,
     spawn: { x: spawn.x, y: spawn.y },
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},
     equipment: {},
+    combatStyle: "vigour",
     activity: { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -332,6 +351,14 @@ export function applyIntent(
     }
     case "FORGE": {
       forgeItem(state, content, intent.output, events);
+      break;
+    }
+    case "SET_STYLE": {
+      player.combatStyle = intent.style;
+      events.push({
+        type: "LOG",
+        message: `Combat style: ${intent.style[0]!.toUpperCase()}${intent.style.slice(1)}.`,
+      });
       break;
     }
   }
@@ -531,19 +558,25 @@ function startInteraction(
       });
       break;
 
-    case "monster":
+    case "monster": {
       if (!obj.available) {
         events.push({ type: "LOG", message: "There is nothing here to fight." });
         return;
       }
+      // Each side keeps its own swing clock: the player swings on weapon speed,
+      // the monster on its own. Both start one interval out.
+      const pSpeed = playerSpeed(player, content);
+      const mSpeed = monsterFor(content, def)?.speed ?? COMBAT.monsterSpeed;
       player.activity = {
         kind: "combat",
         targetId: objId,
-        nextActionAt: ctx.now + COMBAT.attackInterval,
-        actionInterval: COMBAT.attackInterval,
+        nextActionAt: ctx.now + pSpeed,
+        actionInterval: pSpeed,
       };
+      obj.nextAttackAt = ctx.now + mSpeed;
       events.push({ type: "LOG", message: `You engage the ${def.name}.` });
       break;
+    }
 
     case "bank":
       events.push({ type: "OPEN_BANK" });
@@ -608,6 +641,9 @@ export function tick(
 
   const { player } = state;
 
+  // 0) Keep max HP in step with the Vitality level (leveling up heals you).
+  syncMaxHp(player);
+
   // 1) Respawn the player if they're dead and their timer is up.
   if (!player.alive) {
     if (ctx.now >= player.respawnAt) {
@@ -639,7 +675,10 @@ export function tick(
     if (!obj || obj.available) continue;
     if (ctx.now >= obj.respawnAt) {
       obj.available = true;
-      if (def.kind === "monster") obj.hp = monsterFor(content, def)?.hp ?? 1;
+      if (def.kind === "monster") {
+        obj.hp = monsterFor(content, def)?.hp ?? 1;
+        obj.nextAttackAt = 0;
+      }
       events.push({ type: "OBJECT_RESPAWNED", objId: def.id });
     }
   }
@@ -677,7 +716,6 @@ function processActivity(
   const { player } = state;
   const act = player.activity;
   if (act.kind === "idle" || act.targetId === null) return;
-  if (ctx.now < act.nextActionAt) return;
 
   const obj = state.objects[act.targetId];
   const def = findObjectDef(content, act.targetId);
@@ -685,6 +723,15 @@ function processActivity(
     clearActivity(player);
     return;
   }
+
+  // Combat has two independent clocks (player + monster), so it can't use the
+  // single-timer gate below — it manages its own timing.
+  if (act.kind === "combat") {
+    resolveCombat(state, content, def, obj, ctx, events);
+    return;
+  }
+
+  if (ctx.now < act.nextActionAt) return;
 
   switch (act.kind) {
     case "woodcutting": {
@@ -754,11 +801,6 @@ function processActivity(
       break;
     }
 
-    case "combat": {
-      resolveCombatSwing(state, content, def, obj, ctx, events);
-      break;
-    }
-
     case "cooking": {
       const done = processOneRecipe(
         state,
@@ -823,7 +865,72 @@ function processOneRecipe(
   return false;
 }
 
-function resolveCombatSwing(
+// --- Combat math, ported faithfully from the idle game (CANON_LEDGER 1e) -----
+
+/** A skill's current level (1 if somehow absent). */
+function skillLvl(player: Player, skill: SkillId): number {
+  return player.skills[skill]?.level ?? 1;
+}
+
+/** A stat off the equipped weapon (the "weapon" slot), or 0/undefined. */
+function weaponNum(player: Player, content: Content, field: "acc" | "dmg" | "speed"): number {
+  const id = player.equipment.weapon;
+  if (!id) return 0;
+  return content.items[id][field] ?? 0;
+}
+
+function weaponStyle(player: Player, content: Content): string | undefined {
+  const id = player.equipment.weapon;
+  return id ? content.items[id].attackStyle : undefined;
+}
+
+/** Player accuracy rating: Edge + weapon acc + the Edge-style bonus. */
+function playerAccuracy(player: Player, content: Content): number {
+  const styleBonus = player.combatStyle === "edge" ? COMBAT.styleBonus : 0;
+  return skillLvl(player, "edge") + weaponNum(player, content, "acc") + styleBonus;
+}
+
+/** Player max hit: Vigour + weapon dmg + the Vigour-style bonus. */
+function playerMaxHit(player: Player, content: Content): number {
+  const styleBonus = player.combatStyle === "vigour" ? COMBAT.styleBonus : 0;
+  return skillLvl(player, "vigour") + weaponNum(player, content, "dmg") + styleBonus;
+}
+
+/** Player defence rating: Ward + summed armour defence. */
+function playerDefence(player: Player, content: Content): number {
+  return skillLvl(player, "ward") + equipStat(player, content, "def");
+}
+
+/** The player's swing interval (ms): the weapon's speed, or the melee default. */
+function playerSpeed(player: Player, content: Content): number {
+  return weaponNum(player, content, "speed") || COMBAT.playerMeleeSpeed;
+}
+
+/** Keep max HP = base + Vitality level; growing it tops up current HP too. */
+function syncMaxHp(player: Player): void {
+  const m = BASE_MAX_HP + skillLvl(player, "vitality");
+  if (m > player.maxHp) player.hp += m - player.maxHp;
+  player.maxHp = m;
+  if (player.hp > player.maxHp) player.hp = player.maxHp;
+}
+
+/** The shared linear hit-chance: clamp(0.5 + (att - def) * 0.012, 0.05, 0.95). */
+function hitChance(att: number, def: number): number {
+  const c = COMBAT.hitBase + (att - def) * COMBAT.hitSlope;
+  return Math.max(COMBAT.hitFloor, Math.min(COMBAT.hitCap, c));
+}
+
+/** A uniform integer in [lo, hi] inclusive, drawn from the injected RNG. */
+function randInt(ctx: Ctx, lo: number, hi: number): number {
+  return Math.floor(ctx.rng() * (hi - lo + 1)) + lo;
+}
+
+/**
+ * Resolve combat for this tick. Player and monster each have their own swing
+ * clock; we process whichever swings are due, earliest first (player wins ties),
+ * exactly like the idle game's timestamp scheduler.
+ */
+function resolveCombat(
   state: WorldState,
   content: Content,
   def: WorldObjectDef,
@@ -837,33 +944,92 @@ function resolveCombatSwing(
     clearActivity(player);
     return;
   }
+  if (!obj.nextAttackAt) obj.nextAttackAt = ctx.now + (stats.speed ?? COMBAT.monsterSpeed);
 
-  // Player hits the monster. Worn weapons add to the top of the damage range.
-  const maxHit = COMBAT.playerMaxHit + equipStat(player, content, "dmg");
-  const hit = Math.floor(ctx.rng() * (maxHit + 1));
-  obj.hp -= hit;
-  events.push({ type: "DAMAGE", targetId: obj.id, amount: hit });
+  // Bounded loop: at most a handful of swings can come due in one 250ms tick.
+  let guard = 0;
+  while (
+    guard++ < 16 &&
+    obj.available &&
+    player.alive &&
+    obj.hp !== undefined &&
+    (ctx.now >= player.activity.nextActionAt || ctx.now >= obj.nextAttackAt)
+  ) {
+    const playerDue = ctx.now >= player.activity.nextActionAt;
+    const monsterDue = ctx.now >= obj.nextAttackAt;
+    const doPlayer =
+      playerDue && (!monsterDue || player.activity.nextActionAt <= obj.nextAttackAt);
+
+    if (doPlayer) {
+      player.activity.nextActionAt += playerSpeed(player, content);
+      playerSwing(state, content, def, obj, stats, ctx, events);
+    } else {
+      obj.nextAttackAt += stats.speed ?? COMBAT.monsterSpeed;
+      monsterSwing(state, content, def, stats, ctx, events);
+    }
+  }
+}
+
+function playerSwing(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  stats: MonsterStats,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  if (obj.hp === undefined) return;
+
+  const wStyle = weaponStyle(player, content);
+  const exploits = wStyle !== undefined && (stats.weakness ?? []).includes(wStyle);
+  const acc = exploits
+    ? Math.round(playerAccuracy(player, content) * COMBAT.weaknessAcc)
+    : playerAccuracy(player, content);
+
+  if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
+    const base = randInt(ctx, 1, Math.max(1, playerMaxHit(player, content)));
+    const dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
+    obj.hp -= dmg;
+    events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg });
+  } else {
+    events.push({ type: "DAMAGE", targetId: obj.id, amount: 0 });
+  }
 
   if (obj.hp <= 0) {
     obj.hp = 0;
     obj.available = false;
     obj.respawnAt = ctx.now + COMBAT.respawn;
-    // Combat trains the whole trio (Vitality, Edge, Vigour) on a kill.
-    for (const skill of COMBAT_SKILLS) {
-      grantXp(state, content, skill, stats.xp, events);
-    }
+    obj.nextAttackAt = 0;
+    // Vitality always trains; the chosen style trains its own skill.
+    grantXp(state, content, "vitality", Math.floor(stats.xp * 0.33), events);
+    grantXp(state, content, player.combatStyle, Math.floor(stats.xp), events);
     rollDrops(player, stats, ctx, events);
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
     clearActivity(player);
-    return;
   }
+}
 
-  // Monster hits back. Worn armour soaks a share of each incoming blow.
-  const soak = Math.floor(equipStat(player, content, "def") / 3);
-  const back = Math.max(0, Math.floor(ctx.rng() * (stats.maxHit + 1)) - soak);
-  player.hp -= back;
-  events.push({ type: "DAMAGE", targetId: "player", amount: back });
+function monsterSwing(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  stats: MonsterStats,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  if (ctx.rng() < hitChance(stats.acc ?? 0, playerDefence(player, content))) {
+    const raw = randInt(ctx, 1, stats.maxHit);
+    const soak = Math.floor(playerDefence(player, content) / COMBAT.wardDivisor);
+    const dmg = Math.max(1, raw - soak);
+    player.hp -= dmg;
+    events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
+  } else {
+    events.push({ type: "DAMAGE", targetId: "player", amount: 0 });
+  }
 
   if (player.hp <= 0) {
     player.hp = 0;
@@ -873,14 +1039,7 @@ function resolveCombatSwing(
     clearActivity(player);
     events.push({ type: "PLAYER_DIED" });
     events.push({ type: "LOG", message: `The ${def.name} knocks you out!` });
-    return;
   }
-
-  act_continue(player, ctx);
-}
-
-function act_continue(player: Player, ctx: Ctx): void {
-  player.activity.nextActionAt = ctx.now + COMBAT.attackInterval;
 }
 
 /** Roll a monster's loot table; each drop is an independent chance. */

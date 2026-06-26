@@ -69,6 +69,13 @@ export type SkillId =
  */
 export const COMBAT_SKILLS: SkillId[] = ["vitality", "edge", "vigour"];
 
+/**
+ * The melee combat style the player is using. It decides which combat skill
+ * trains on a kill and grants a small bonus (Edge → accuracy, Vigour → damage,
+ * Ward → defence/none), mirroring the idle game's style toggle.
+ */
+export type CombatStyle = "edge" | "vigour" | "ward";
+
 /** One unlocked skill on the player: how much XP, and the level it implies. */
 export interface SkillState {
   xp: number;
@@ -722,6 +729,8 @@ export interface WorldObjectState {
   respawnAt: number;
   /** Monsters only: current hit points (undefined for non-combat objects). */
   hp?: number;
+  /** Monsters only: time (ms) of the monster's next attack while in combat. */
+  nextAttackAt?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -773,6 +782,8 @@ export interface Player {
   bank: Partial<Record<ItemId, number>>;
   /** Worn gear: one item id per equipment slot (absent slots are empty). */
   equipment: Partial<Record<EquipSlot, ItemId>>;
+  /** The melee combat style trained on the next kill. */
+  combatStyle: CombatStyle;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -860,6 +871,12 @@ export interface ForgeIntent {
   output: ItemId;
 }
 
+/** "Switch my melee combat style" (which combat skill the next kill trains). */
+export interface SetStyleIntent {
+  type: "SET_STYLE";
+  style: CombatStyle;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -869,7 +886,8 @@ export type Intent =
   | WithdrawIntent
   | EquipIntent
   | UnequipIntent
-  | ForgeIntent;
+  | ForgeIntent
+  | SetStyleIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.

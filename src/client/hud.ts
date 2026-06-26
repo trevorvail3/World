@@ -13,6 +13,7 @@
 
 import type {
   ActivityKind,
+  CombatStyle,
   Content,
   EquipSlot,
   Intent,
@@ -77,6 +78,7 @@ export class Hud {
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
   private charHp!: HTMLElement;
+  private styleButtons = new Map<CombatStyle, HTMLElement>();
   private equipCells = new Map<EquipSlot, HTMLElement>();
   private equipStats!: HTMLElement;
   private lastEquipment: Partial<Record<EquipSlot, ItemId>> = {};
@@ -229,6 +231,31 @@ export class Hud {
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
         this.charHp = sheet.querySelector(".char-hp") as HTMLElement;
         p.appendChild(sheet);
+
+        // Combat style — picks which combat skill your next kill trains.
+        this.styleButtons.clear();
+        const styleWrap = document.createElement("div");
+        styleWrap.className = "style-select";
+        styleWrap.innerHTML = `<div class="style-label">Combat style</div>`;
+        const row = document.createElement("div");
+        row.className = "style-row";
+        const styles: { id: CombatStyle; name: string; icon: string; hint: string }[] = [
+          { id: "edge", name: "Edge", icon: "⚔️", hint: "accuracy" },
+          { id: "vigour", name: "Vigour", icon: "💪", hint: "damage" },
+          { id: "ward", name: "Ward", icon: "🛡️", hint: "defence" },
+        ];
+        for (const st of styles) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "style-btn";
+          b.innerHTML = `<span class="style-ic">${st.icon}</span>${st.name}`;
+          b.title = `Train ${st.name} — bonus to ${st.hint}`;
+          b.addEventListener("click", () => this.dispatch({ type: "SET_STYLE", style: st.id }));
+          this.styleButtons.set(st.id, b);
+          row.appendChild(b);
+        }
+        styleWrap.appendChild(row);
+        p.appendChild(styleWrap);
         p.appendChild(note("Name and background arrive with sign-in."));
         break;
       }
@@ -433,6 +460,9 @@ export class Hud {
     this.charCombat.textContent = String(combat);
     this.charTotal.textContent = String(total);
     this.charHp.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    this.styleButtons.forEach((btn, id) => {
+      btn.classList.toggle("active", id === player.combatStyle);
+    });
 
     // Inventory
     for (let i = 0; i < this.invSlots.length; i++) {
