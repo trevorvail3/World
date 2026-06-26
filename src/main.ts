@@ -24,10 +24,19 @@ import {
 import { hydratePlayer, serializePlayer } from "./core/save.ts";
 import { ContextMenu } from "./client/contextMenu.ts";
 import { Dialogue } from "./client/dialogue.ts";
+import { Guide } from "./client/guide.ts";
+import { Intro } from "./client/intro.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
 import { clearSave, readSave, writeSave } from "./client/storage.ts";
 import { TitleScreen } from "./client/titleScreen.ts";
+
+// The opening atmosphere lines — mood first, mechanics never.
+const INTRO_LINES = [
+  "Two gods were. One died — and became the ground beneath your feet.",
+  "The other remains: the pale moon, watching. They name this the Age of Rumor.",
+  "You come to the Knuckle Hills with empty hands and an open road.",
+];
 
 // --- The client supplies time + randomness (the core never does). ---
 function ctxAt(nowMs: number): Ctx {
@@ -75,10 +84,11 @@ function resetProgress(): void {
 
 // One shared action/inspect menu for both the world and the inventory.
 const menu = new ContextMenu(app);
+const guide = new Guide(app);
 
 const hud = new Hud(hudRoot, content, resetProgress, menu);
 const dialogue = new Dialogue(app);
-const game = new Game(canvas, bridge, hud, dialogue, app, menu);
+const game = new Game(canvas, bridge, hud, dialogue, app, menu, guide);
 
 // --- Autosave: persist progress periodically and whenever the tab is hidden. ---
 function persist(): void {
@@ -94,9 +104,14 @@ document.addEventListener("visibilitychange", () => {
 // screen sits on top and captures taps until the player chooses to enter.
 game.start();
 new TitleScreen(app, () => {
-  hud.log(
-    restored
-      ? "You return to The Knuckle Hills. Your progress is as you left it."
-      : "You step into The Knuckle Hills.",
-  );
+  // Tapping "Enter" plays the atmosphere intro, then drops into the world.
+  // New players get the gentle onboarding guide; returning players don't.
+  new Intro(app, INTRO_LINES, () => {
+    hud.log(
+      restored
+        ? "You return to The Knuckle Hills. Your progress is as you left it."
+        : "You step into The Knuckle Hills.",
+    );
+    if (!restored) guide.start();
+  });
 });

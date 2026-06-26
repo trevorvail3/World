@@ -578,6 +578,124 @@ body {
   color: var(--ink-dim);
 }
 
+/* --- Atmosphere intro --- */
+.intro-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  overflow: hidden;
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    #1a130f 0%,
+    #110d09 50%,
+    #070504 100%
+  );
+  opacity: 1;
+  transition: opacity 0.85s ease;
+}
+
+.intro-screen.leaving {
+  opacity: 0;
+}
+
+.intro-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80vmin;
+  height: 80vmin;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(210, 116, 44, 0.12) 0%,
+    rgba(210, 116, 44, 0) 62%
+  );
+  filter: blur(8px);
+  animation: title-pulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.intro-line {
+  position: relative;
+  max-width: 34ch;
+  padding: 0 26px;
+  text-align: center;
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: clamp(20px, 5.6vw, 30px);
+  line-height: 1.5;
+  color: #d8cbb0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+
+.intro-line.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-skip {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.intro-skip:hover {
+  color: var(--gold);
+}
+
+.intro-hint {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: "EB Garamond", serif;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: #6f655a;
+}
+
+/* --- Onboarding guide banner (top-centre, non-blocking) --- */
+.guide-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  max-width: min(440px, 80vw);
+  text-align: center;
+  pointer-events: none;
+  font-family: "EB Garamond", serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: rgba(20, 16, 12, 0.9);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 9px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+}
+
+.guide-banner.hidden {
+  display: none;
+}
+
 @media (max-width: 520px) {
   .hud-log {
     max-height: 120px;
