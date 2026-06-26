@@ -18,18 +18,20 @@ import { CITY_SPAWN } from "./map.ts";
 export const objects: WorldObjectDef[] = [
   // === IRONVALE — the central city =========================================
 
-  // --- Civic yard (west): the bank, the forge and the crafting stations ---
-  { id: "fire_1", kind: "fire", x: 47, y: 46, name: "Cooking Fire" },
-  { id: "bank_1", kind: "bank", x: 50, y: 46, name: "Bank Chest" },
-  { id: "furnace_1", kind: "furnace", x: 53, y: 46, name: "Furnace" },
-  { id: "anvil_1", kind: "anvil", x: 56, y: 46, name: "Anvil" },
-  { id: "cauldron_1", kind: "cauldron", x: 47, y: 48, name: "Herbalist's Cauldron" },
-  { id: "workbench_1", kind: "workbench", x: 50, y: 48, name: "Builder's Workbench" },
-  { id: "crafting_1", kind: "crafting_table", x: 53, y: 48, name: "Artisan's Table" },
+  // --- Civic yard (north-west): the forge stations, the bank, the crafting
+  //     stations — an open yard ringed by the Ashforge, the Vault and the
+  //     Pale Record buildings. ---
+  { id: "furnace_1", kind: "furnace", x: 49, y: 43, name: "Furnace" },
+  { id: "anvil_1", kind: "anvil", x: 50, y: 43, name: "Anvil" },
+  { id: "bank_1", kind: "bank", x: 54, y: 43, name: "Bank Chest" },
+  { id: "fire_1", kind: "fire", x: 56, y: 43, name: "Cooking Fire" },
+  { id: "cauldron_1", kind: "cauldron", x: 53, y: 48, name: "Herbalist's Cauldron" },
+  { id: "workbench_1", kind: "workbench", x: 55, y: 48, name: "Builder's Workbench" },
+  { id: "crafting_1", kind: "crafting_table", x: 57, y: 48, name: "Artisan's Table" },
 
   // --- Civic NPCs (the forge & archive folk) ---
   {
-    id: "vorn", kind: "npc", x: 56, y: 48, name: "Vorn",
+    id: "vorn", kind: "npc", x: 51, y: 43, name: "Vorn",
     lines: [
       "Hot work, smith. Mind the slag and we'll get along.",
       "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs, and then we wait to see if he picks it up anyway.",
@@ -37,7 +39,7 @@ export const objects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "sera", kind: "npc", x: 47, y: 44, name: "Sera",
+    id: "sera", kind: "npc", x: 49, y: 48, name: "Sera",
     lines: [
       "Careful with the dust — half of it is older than the kingdom.",
       "The Pale Record keeps what the world would rather forget. The Underloft. The warm stone they buried their dead with. The coins that keep surfacing.",
@@ -45,7 +47,7 @@ export const objects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "berric", kind: "npc", x: 50, y: 44, name: "Berric",
+    id: "berric", kind: "npc", x: 51, y: 48, name: "Berric",
     lines: [
       "New blood. Vorn's project, are you. He does like to collect strays.",
       "Stone's stone, friend. A seam doesn't care who surveys it or who buys the map after. Only a fool leaves money in the ground out of sentiment.",
@@ -55,7 +57,7 @@ export const objects: WorldObjectDef[] = [
 
   // --- Aldric, by the central crossroads (the opening quest-giver) ---
   {
-    id: "aldric", kind: "npc", x: 57, y: 50, name: "Aldric",
+    id: "aldric", kind: "npc", x: 56, y: 54, name: "Aldric",
     lines: [
       "You've an honest look about you. Good — there's a thing that's been gnawing at me.",
       "Found this old coin in the dirt by my wall. Old Varath mintage, struck before my grandfather's grandfather drew breath. Worn smooth — and no coin I've ever known.",
@@ -65,36 +67,39 @@ export const objects: WorldObjectDef[] = [
     ],
   },
 
-  // --- Market street (east): shop keepers, each at their stall ---
+  // --- Market square (north-east): the shopkeepers stand at their stalls in
+  //     front of the Store and the Armoury, the rest of the square full of carts. ---
   {
-    id: "shop_quartermaster", kind: "npc", x: 67, y: 44, name: "Hespa, Quartermaster",
+    id: "shop_quartermaster", kind: "npc", x: 64, y: 42, name: "Hespa, Quartermaster",
     lines: [
       "Ironvale's market, friend. Cramped, loud, and the only honest counter for three days' walk.",
       "Tools, packs, rations, seeds — it's all on the stall. Sell me your odds and ends, too.",
     ],
   },
-  { id: "cart_hespa", kind: "cart", x: 67, y: 43, name: "Quartermaster's Stall", lines: ["Hespa's stall — tools and sundries stacked to the awning."] },
+  { id: "cart_hespa", kind: "cart", x: 63, y: 42, name: "Quartermaster's Stall", lines: ["Hespa's stall — tools and sundries stacked to the awning."] },
   {
-    id: "shop_armourer", kind: "npc", x: 73, y: 44, name: "Doran, Armourer",
+    id: "shop_armourer", kind: "npc", x: 70, y: 42, name: "Doran, Armourer",
     lines: [
       "You stand like someone who's been hit before. Good — means you'll buy mail and mean it.",
       "Shields, helms, plate — Ashforge seconds, tiers I through III. The heavy stuff you forge yourself.",
     ],
   },
-  { id: "cart_doran", kind: "cart", x: 73, y: 43, name: "Armourer's Stall", lines: ["A rack of field steel and dented Ashforge seconds."] },
+  { id: "cart_doran", kind: "cart", x: 71, y: 42, name: "Armourer's Stall", lines: ["A rack of field steel and dented Ashforge seconds."] },
+  { id: "cart_produce", kind: "cart", x: 64, y: 47, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
+  { id: "cart_cloth", kind: "cart", x: 70, y: 47, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
+  { id: "cart_spice", kind: "cart", x: 67, y: 45, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },
+  // --- Skritt keeps his exchange on the south-east trade row ---
   {
-    id: "shop_trader", kind: "npc", x: 67, y: 60, name: "Skritt",
+    id: "shop_trader", kind: "npc", x: 64, y: 63, name: "Skritt",
     lines: [
       "Pssst. Goblin prices, friend — better than honest, worse than fair.",
       "Skritt buys what others won't, sells what others can't. The warm stone especially. Skritt is always interested in the warm stone.",
     ],
   },
-  { id: "cart_skritt", kind: "cart", x: 67, y: 59, name: "Skritt's Cart", lines: ["A goblin's cart, piled with things best not examined too closely."] },
-  { id: "cart_produce", kind: "cart", x: 73, y: 60, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
-  { id: "cart_cloth", kind: "cart", x: 73, y: 58, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
+  { id: "cart_skritt", kind: "cart", x: 63, y: 63, name: "Skritt's Cart", lines: ["A goblin's cart, piled with things best not examined too closely."] },
 
-  // --- The bounty board, on the market street ---
-  { id: "bounty_board_1", kind: "bounty_board", x: 64, y: 58, name: "Bounty Board" },
+  // --- The bounty board, on the market square ---
+  { id: "bounty_board_1", kind: "bounty_board", x: 66, y: 49, name: "Bounty Board" },
 
   // === THE KNUCKLE HILLS — the home hills wrapping the city =================
 
@@ -250,9 +255,9 @@ export const objects: WorldObjectDef[] = [
   { id: "tree_hill_2", kind: "tree", x: 20, y: 22, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
 
   // --- Ironvale's districts (the city's named institutions) ---
-  { id: "lm_watchtower", kind: "shrine", x: 46, y: 40, name: "The Watchtower", lines: ["A timber frame going up against the inside of the wall. Nobody finishes the sentence about what it's for. Ironvale is beginning to think defensively — against what, no one writes down."] },
-  { id: "lm_mending", kind: "shrine", x: 52, y: 58, name: "The Mending House", lines: ["Where Ironvale brings what the world breaks. The cots are seldom all empty, and seldom all full."] },
-  { id: "lm_wayfarers", kind: "shrine", x: 74, y: 50, name: "The Wayfarers' Lodge", lines: ["Where civilians are kitted and sent out into the world, and usually return. A board by the door lists expeditions overdue. Usually it is short."] },
+  { id: "lm_watchtower", kind: "shrine", x: 74, y: 43, name: "The Watchtower", lines: ["A timber frame going up against the inside of the wall. Nobody finishes the sentence about what it's for. Ironvale is beginning to think defensively — against what, no one writes down."] },
+  { id: "lm_mending", kind: "shrine", x: 54, y: 63, name: "The Mending House", lines: ["Where Ironvale brings what the world breaks. The cots are seldom all empty, and seldom all full."] },
+  { id: "lm_wayfarers", kind: "shrine", x: 70, y: 63, name: "The Wayfarers' Lodge", lines: ["Where civilians are kitted and sent out into the world, and usually return. A board by the door lists expeditions overdue. Usually it is short."] },
 
   // --- Greyoak Wood ---
   { id: "lm_oldgrowth", kind: "shrine", x: 12, y: 63, name: "The Old Growth Edge", lines: ["Last year's boundary stakes stand a full pace inside this year's living wood. You can mark the retreat. You do not learn what walks in the cleared ground."] },

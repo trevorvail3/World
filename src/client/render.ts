@@ -16,7 +16,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
-import { tileAt } from "../content/map.ts";
+import { type RoofStyle, cityDoor, cityRoof, tileAt } from "../content/map.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -68,9 +68,12 @@ function paintTile(
   const hv = hash(x, y);
 
   switch (tile) {
-    case "wall":
-      drawWall(g, px, py, x, y, map);
-      return; // walls draw their own edges
+    case "wall": {
+      const roof = cityRoof(x, y);
+      if (roof) drawRoof(g, px, py, x, y, roof);
+      else drawWall(g, px, py, x, y, map);
+      return; // walls/roofs draw their own edges
+    }
     case "water":
     case "deep": {
       // Layered ripples that drift, plus a hashed glint.
@@ -265,6 +268,101 @@ function drawWall(
     grad.addColorStop(1, "rgba(0,0,0,0.32)");
     g.fillStyle = grad;
     g.fillRect(px, py + TILE - 6, TILE, 10);
+  }
+}
+
+/** Roof palettes: [base, light ridge, shingle line]. */
+const ROOF_COLORS: Record<RoofStyle, [string, string, string]> = {
+  slate: ["#454a57", "#5b6170", "#363a44"],
+  tile: ["#8a4632", "#a85c44", "#6e3526"],
+  thatch: ["#8a7642", "#a08a52", "#6e5d33"],
+  tower: ["#3e3d47", "#54535f", "#2c2b33"],
+};
+
+/**
+ * A building roof, drawn per-tile but neighbour-aware so a multi-tile building
+ * reads as one pitched, shingled roof: a lit ridge along its top edge, eaves
+ * shadow and a doorway at the bottom, and a stone-wall sliver on the sides.
+ */
+function drawRoof(
+  g: CanvasRenderingContext2D,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+  style: RoofStyle,
+): void {
+  const [base, ridge, line] = ROOF_COLORS[style];
+  const sameRoof = (dx: number, dy: number) => cityRoof(x + dx, y + dy) === style;
+  const topEdge = !sameRoof(0, -1);
+  const botEdge = !sameRoof(0, 1);
+  const leftEdge = !sameRoof(-1, 0);
+  const rightEdge = !sameRoof(1, 0);
+
+  // A thin masonry course shows under the eaves at the very bottom of a building.
+  if (botEdge) {
+    g.fillStyle = "#5d544b";
+    g.fillRect(px, py, TILE, TILE);
+  }
+  const roofBottom = botEdge ? py + TILE - 7 : py + TILE;
+
+  // Roof field with a top-lit gradient.
+  const grad = g.createLinearGradient(0, py, 0, roofBottom);
+  grad.addColorStop(0, ridge);
+  grad.addColorStop(0.25, base);
+  grad.addColorStop(1, line);
+  g.fillStyle = grad;
+  g.fillRect(px, py, TILE, roofBottom - py);
+
+  // Shingle / thatch texture: rows of short strokes.
+  g.strokeStyle = "rgba(0,0,0,0.22)";
+  g.lineWidth = 1;
+  const rows = style === "thatch" ? 5 : 3;
+  for (let r = 1; r < rows; r++) {
+    const ry = py + (r / rows) * (roofBottom - py);
+    g.beginPath(); g.moveTo(px, ry); g.lineTo(px + TILE, ry); g.stroke();
+  }
+  if (style === "thatch") { // vertical straw hints
+    g.strokeStyle = "rgba(255,240,200,0.10)";
+    for (let i = 0; i < 5; i++) {
+      const sx = px + 4 + i * 8 + (hash(x, y + i) * 3);
+      g.beginPath(); g.moveTo(sx, py + 3); g.lineTo(sx, roofBottom - 2); g.stroke();
+    }
+  } else { // tile/slate shingle offset dashes
+    g.fillStyle = line;
+    for (let r = 0; r < rows; r++) {
+      const ry = py + (r / rows) * (roofBottom - py) + 2;
+      const off = (r % 2) * 6;
+      for (let c = 0; c < 4; c++) g.fillRect(px + off + c * 11, ry, 5, 1.5);
+    }
+  }
+
+  // Lit ridge cap along the top edge of the building.
+  if (topEdge) {
+    g.fillStyle = ridge;
+    g.fillRect(px, py, TILE, 3);
+    g.fillStyle = "rgba(255,245,225,0.25)";
+    g.fillRect(px, py, TILE, 1.2);
+  }
+  // Eaves shadow + doorway along the bottom.
+  if (botEdge) {
+    g.fillStyle = "rgba(0,0,0,0.35)";
+    g.fillRect(px, roofBottom, TILE, 2);
+    if (cityDoor(x, y)) {
+      g.fillStyle = "#1c150f";
+      g.fillRect(px + TILE / 2 - 4, roofBottom + 1, 8, 6);
+      g.fillStyle = "rgba(210,160,90,0.4)"; // a warm sliver of lamplight
+      g.fillRect(px + TILE / 2 - 4, roofBottom + 1, 2, 6);
+    }
+  }
+  // Side wall slivers for depth.
+  g.fillStyle = "rgba(0,0,0,0.18)";
+  if (leftEdge) g.fillRect(px, py, 2, roofBottom - py);
+  if (rightEdge) { g.fillStyle = "rgba(255,240,210,0.08)"; g.fillRect(px + TILE - 2, py, 2, roofBottom - py); }
+  // Tower: a crenellated cap instead of a ridge.
+  if (style === "tower" && topEdge) {
+    g.fillStyle = "#2c2b33";
+    for (let i = 0; i < 4; i += 2) g.fillRect(px + i * (TILE / 4), py, TILE / 4, 4);
   }
 }
 

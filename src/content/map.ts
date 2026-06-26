@@ -140,7 +140,51 @@ export const GATES = {
   east: { x: CITY.x1, y: 52 },
 };
 /** A good, central, walkable spawn tile for the player (the civic yard). */
-export const CITY_SPAWN = { x: 54, y: 52 };
+export const CITY_SPAWN = { x: 55, y: 52 };
+
+/** A roofed building in Ironvale. Its footprint blocks; the renderer roofs it. */
+export type RoofStyle = "slate" | "tile" | "thatch" | "tower";
+export interface Building {
+  x0: number; y0: number; x1: number; y1: number;
+  roof: RoofStyle;
+  /** Door cell (on the building's front), for the rendered doorway. */
+  door?: { x: number; y: number };
+}
+
+// The city's buildings, by district. Footprints avoid the gate-streets
+// (x59–61 / y51–53) and leave a walkable frontage where the shopkeepers stand.
+// Buildings hug the inside of the ramparts, leaving the central yards and the
+// gate-streets (x59–61 / y51–53) open for the stalls, stations and crowds.
+export const BUILDINGS: Building[] = [
+  // --- North wall row ---
+  { x0: 45, y0: 39, x1: 49, y1: 41, roof: "slate", door: { x: 47, y: 41 } },  // The Ashforge
+  { x0: 51, y0: 39, x1: 55, y1: 41, roof: "tile", door: { x: 53, y: 41 } },   // The Varath Vault
+  { x0: 62, y0: 39, x1: 66, y1: 41, roof: "tile", door: { x: 64, y: 41 } },   // Quartermaster's Store
+  { x0: 68, y0: 39, x1: 72, y1: 41, roof: "slate", door: { x: 70, y: 41 } },  // The Armoury
+  { x0: 75, y0: 39, x1: 78, y1: 42, roof: "tower", door: { x: 76, y: 42 } },  // The Watchtower
+  // --- West wall ---
+  { x0: 45, y0: 44, x1: 47, y1: 49, roof: "slate", door: { x: 47, y: 49 } },  // The Pale Record
+  { x0: 45, y0: 55, x1: 47, y1: 60, roof: "thatch", door: { x: 47, y: 60 } }, // houses
+  // --- East wall ---
+  { x0: 76, y0: 44, x1: 78, y1: 49, roof: "thatch", door: { x: 76, y: 49 } },
+  { x0: 76, y0: 55, x1: 78, y1: 60, roof: "thatch", door: { x: 76, y: 55 } },
+  // --- South wall row ---
+  { x0: 45, y0: 64, x1: 50, y1: 66, roof: "slate", door: { x: 47, y: 64 } },  // The Craftworks
+  { x0: 52, y0: 64, x1: 57, y1: 66, roof: "tile", door: { x: 54, y: 64 } },   // The Mending House
+  { x0: 62, y0: 64, x1: 66, y1: 66, roof: "thatch", door: { x: 64, y: 64 } }, // Skritt's Exchange
+  { x0: 68, y0: 64, x1: 73, y1: 66, roof: "tile", door: { x: 70, y: 64 } },   // The Wayfarers' Lodge
+  { x0: 75, y0: 64, x1: 78, y1: 66, roof: "thatch", door: { x: 76, y: 64 } },
+];
+
+/** Roof style at a tile (so the renderer knows which walls are buildings). */
+const roofCells = new Map<string, RoofStyle>();
+const doorCells = new Set<string>();
+for (const b of BUILDINGS) {
+  for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) roofCells.set(`${x},${y}`, b.roof);
+  if (b.door) doorCells.add(`${b.door.x},${b.door.y}`);
+}
+export function cityRoof(x: number, y: number): RoofStyle | undefined { return roofCells.get(`${x},${y}`); }
+export function cityDoor(x: number, y: number): boolean { return doorCells.has(`${x},${y}`); }
 
 function decode(): WorldMap {
   const tiles: TileType[] = new Array(WIDTH * HEIGHT).fill("grass");
@@ -185,13 +229,14 @@ function decode(): WorldMap {
   //    Main streets (a cross joining the four gates).
   carve(59, CITY.y0, 61, CITY.y1, "path"); // N–S high street
   carve(CITY.x0, 51, CITY.x1, 53, "path"); // E–W high street
-  //    The market lane: a path up the east half, with stall plots either side.
-  carve(70, CITY.y0 + 2, 70, CITY.y1 - 2, "path");
   //    Four gates (open the wall ring where the roads meet it).
   carve(GATES.north.x - 1, CITY.y0, GATES.north.x + 1, CITY.y0, "path");
   carve(GATES.south.x - 1, CITY.y1, GATES.south.x + 1, CITY.y1, "path");
   carve(CITY.x0, GATES.west.y - 1, CITY.x0, GATES.west.y + 1, "path");
   carve(CITY.x1, GATES.east.y - 1, CITY.x1, GATES.east.y + 1, "path");
+  //    The buildings: each footprint becomes blocking masonry (the renderer
+  //    lays a roof over it). The streets and frontages stay clear between them.
+  for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");
 
   // 4b) Countryside features — the bible's named landmarks get real ground, so
   //     the open country between regions reads as places, not blank field.
