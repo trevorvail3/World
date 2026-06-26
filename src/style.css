@@ -366,9 +366,10 @@ body {
 
 .equip-slot.filled {
   border: 1px solid #6a5a3a;
-  background: var(--item-color, #777);
+  background: radial-gradient(circle at 50% 38%, rgba(70, 58, 40, 0.55), rgba(18, 14, 10, 0.7));
   box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
   cursor: pointer;
+  overflow: hidden;
 }
 
 .equip-name {
@@ -508,11 +509,18 @@ body {
 
 .inv-icon {
   position: absolute;
-  inset: 6px;
-  border-radius: 3px;
-  background: var(--item-color, #777);
-  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+  inset: 3px;
+  display: block;
 }
+
+/* Procedural item sprites: fill their slot/swatch, crisp little drop shadow. */
+.item-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
+}
+.equip-slot.filled .item-svg { padding: 1px; box-sizing: border-box; }
 
 .inv-qty {
   position: absolute;
@@ -1273,11 +1281,8 @@ button.inv-slot {
   padding: 3px 4px;
 }
 .shop-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  background: var(--item-color, #888);
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
 }
 .shop-row-name { flex: 1; font-size: 13px; color: var(--ink); }
@@ -1376,6 +1381,7 @@ button.inv-slot {
   padding: 4px 4px;
   border-bottom: 1px solid rgba(74, 61, 44, 0.25);
 }
+.bounty-shop-swatch { width: 26px; height: 26px; flex: 0 0 auto; }
 .bounty-shop-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
 .bounty-shop-name { font-size: 13px; color: var(--ink); }
 .bounty-shop-desc { font-size: 10px; color: var(--ink-dim); }

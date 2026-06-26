@@ -24,7 +24,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
-import { ITEM_COLORS } from "./itemColors.ts";
+import { itemIconSVG } from "./itemIcon.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
@@ -681,9 +681,8 @@ export class Hud {
       }
       const def = this.content.items[data.item];
       slot.className = "inv-slot filled";
-      slot.style.setProperty("--item-color", ITEM_COLORS[data.item]);
       slot.title = `${def.name} — ${def.description}`;
-      slot.innerHTML = `<span class="inv-icon"></span>${
+      slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;
     }
@@ -701,11 +700,11 @@ export class Hud {
         dmg += item.dmg ?? 0;
         def += item.def ?? 0;
         icon.className = "equip-slot filled";
-        icon.style.setProperty("--item-color", ITEM_COLORS[id]);
+        icon.innerHTML = itemIconSVG(item);
         icon.title = `${item.name} — ${item.description}`;
       } else {
         icon.className = "equip-slot";
-        icon.style.removeProperty("--item-color");
+        icon.innerHTML = "";
         icon.title = "";
       }
     });

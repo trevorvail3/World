@@ -13,6 +13,7 @@
  */
 
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
+import { itemIconSVG } from "./itemIcon.ts";
 
 export class BountyUI {
   private backdrop: HTMLElement;
@@ -136,8 +137,9 @@ export class BountyUI {
       const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
       html += `
         <div class="bounty-shop-row">
+          <span class="bounty-shop-swatch">${itemIconSVG(def)}</span>
           <span class="bounty-shop-info">
-            <span class="bounty-shop-name">${def.icon ?? ""} ${line.label}${bundle}</span>
+            <span class="bounty-shop-name">${line.label}${bundle}</span>
             <span class="bounty-shop-desc">${line.desc}</span>
           </span>
           <button class="bounty-buy${afford ? "" : " disabled"}" data-item="${line.item}" type="button">${line.cost} 🎯</button>

@@ -7,7 +7,7 @@
  */
 
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
-import { ITEM_COLORS } from "./itemColors.ts";
+import { itemIconSVG } from "./itemIcon.ts";
 
 export class BankUI {
   private backdrop: HTMLElement;
@@ -130,9 +130,8 @@ export class BankUI {
     const slot = document.createElement("button");
     slot.type = "button";
     slot.className = "inv-slot filled";
-    slot.style.setProperty("--item-color", ITEM_COLORS[item]);
     slot.title = `${def.name} — ${def.description}`;
-    slot.innerHTML = `<span class="inv-icon"></span>${
+    slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
       qty > 1 ? `<span class="inv-qty">${qty}</span>` : ""
     }`;
     slot.addEventListener("pointerdown", (e) => {

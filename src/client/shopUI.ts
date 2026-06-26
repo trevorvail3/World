@@ -13,7 +13,7 @@ import type {
   ShopDef,
   WorldState,
 } from "../core/types.ts";
-import { ITEM_COLORS } from "./itemColors.ts";
+import { itemIconSVG } from "./itemIcon.ts";
 
 export class ShopUI {
   private backdrop: HTMLElement;
@@ -97,8 +97,8 @@ export class ShopUI {
       row.className = "shop-row";
       const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
       row.innerHTML = `
-        <span class="shop-swatch" style="--item-color:${ITEM_COLORS[line.item]}"></span>
-        <span class="shop-row-name">${def.icon ?? ""} ${def.name}${bundle}</span>
+        <span class="shop-swatch">${itemIconSVG(def)}</span>
+        <span class="shop-row-name">${def.name}${bundle}</span>
         <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${line.price.toLocaleString()}g</button>`;
       const btn = row.querySelector(".shop-buy") as HTMLElement;
       btn.title = def.description;
@@ -126,11 +126,10 @@ export class ShopUI {
       const slot = document.createElement("button");
       slot.type = "button";
       slot.className = "inv-slot filled" + (value > 0 ? "" : " unsellable");
-      slot.style.setProperty("--item-color", ITEM_COLORS[data.item]);
       slot.title = value > 0
         ? `Sell ${data.qty}× ${def.name} for ${value * data.qty}g`
         : `${def.name} — can't be sold`;
-      slot.innerHTML = `<span class="inv-icon"></span>${
+      slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;
       if (value > 0) {
