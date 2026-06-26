@@ -87,9 +87,13 @@ function resetProgress(): void {
 const menu = new ContextMenu(app);
 const guide = new Guide(app);
 
-const hud = new Hud(hudRoot, content, resetProgress, menu);
+// Late-bound so UI actions (e.g. eating from the pack) route through the game.
+let game: Game;
+const dispatch = (intent: Intent): void => game.dispatch(intent);
+
+const hud = new Hud(hudRoot, content, resetProgress, menu, dispatch);
 const dialogue = new Dialogue(app);
-const game = new Game(canvas, bridge, hud, dialogue, app, menu, guide);
+game = new Game(canvas, bridge, hud, dialogue, app, menu, guide);
 
 // --- Autosave: persist progress periodically and whenever the tab is hidden. ---
 function persist(): void {

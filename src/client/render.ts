@@ -144,7 +144,83 @@ function drawObject(
         drawRat(g, cx, cy, now);
       }
       break;
+    case "bank":
+      drawBank(g, cx, cy);
+      break;
+    case "fire":
+      drawFire(g, cx, cy, now);
+      break;
+    case "furnace":
+      drawFurnace(g, cx, cy, now);
+      break;
   }
+}
+
+// --- Bank chest: iron-bound wooden chest ---
+function drawBank(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 12, 4);
+  g.fillStyle = "#5a4327"; // body
+  g.fillRect(cx - 12, cy - 4, 24, 16);
+  g.fillStyle = "#6e5331"; // lid
+  g.fillRect(cx - 12, cy - 10, 24, 7);
+  g.fillStyle = "#3a3a40"; // iron bands
+  g.fillRect(cx - 12, cy - 4, 24, 2);
+  g.fillRect(cx - 2, cy - 10, 4, 22);
+  g.fillStyle = "#c9a24a"; // lock
+  g.fillRect(cx - 2, cy + 1, 4, 4);
+}
+
+// --- Cooking fire: logs with animated flame ---
+function drawFire(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  shadow(g, cx, cy + 11, 12, 4);
+  g.strokeStyle = "#4a3320"; // logs
+  g.lineWidth = 4;
+  g.beginPath();
+  g.moveTo(cx - 11, cy + 9);
+  g.lineTo(cx + 9, cy + 5);
+  g.moveTo(cx - 9, cy + 5);
+  g.lineTo(cx + 11, cy + 9);
+  g.stroke();
+  const flick = 0.7 + 0.3 * Math.sin(now / 120);
+  g.fillStyle = "#7d1f15"; // outer flame
+  flame(g, cx, cy + 2, 9 * flick, 16 * flick);
+  g.fillStyle = "#d2742c"; // mid
+  flame(g, cx, cy + 3, 6 * flick, 12 * flick);
+  g.fillStyle = "#f2cf6b"; // core
+  flame(g, cx, cy + 4, 3 * flick, 7 * flick);
+}
+
+function flame(g: CanvasRenderingContext2D, cx: number, baseY: number, w: number, h: number): void {
+  g.beginPath();
+  g.moveTo(cx - w, baseY);
+  g.quadraticCurveTo(cx - w * 0.6, baseY - h, cx, baseY - h);
+  g.quadraticCurveTo(cx + w * 0.6, baseY - h, cx + w, baseY);
+  g.quadraticCurveTo(cx, baseY + 3, cx - w, baseY);
+  g.fill();
+}
+
+// --- Furnace: a small stone furnace with a glowing mouth ---
+function drawFurnace(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  shadow(g, cx, cy + 11, 12, 4);
+  g.fillStyle = "#4a4b53"; // stone body
+  g.beginPath();
+  g.moveTo(cx - 12, cy + 12);
+  g.lineTo(cx - 9, cy - 11);
+  g.lineTo(cx + 9, cy - 11);
+  g.lineTo(cx + 12, cy + 12);
+  g.closePath();
+  g.fill();
+  g.fillStyle = "#5b5c64";
+  g.fillRect(cx - 11, cy - 13, 22, 4); // chimney rim
+  const glow = 0.6 + 0.4 * Math.sin(now / 180);
+  g.fillStyle = `rgba(226, 120, 44, ${glow})`; // glowing mouth
+  g.beginPath();
+  g.arc(cx, cy + 4, 5, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = `rgba(242, 207, 107, ${glow})`;
+  g.beginPath();
+  g.arc(cx, cy + 4, 2.5, 0, Math.PI * 2);
+  g.fill();
 }
 
 /** A soft contact shadow under a sprite. */
