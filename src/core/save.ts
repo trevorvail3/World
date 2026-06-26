@@ -34,6 +34,8 @@ export interface SavedProgress {
   bank: Record<string, number>;
   /** Worn gear: equip slot -> item id. */
   equipment: Record<string, string>;
+  /** Arrows nocked behind the worn `ammo` slot. */
+  quiver: number;
   /** Selected melee combat style. */
   combatStyle: string;
   /** Active quests: id -> { step, killCount }. */
@@ -85,6 +87,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
     bank: { ...player.bank } as Record<string, number>,
     equipment: { ...player.equipment } as Record<string, string>,
+    quiver: player.quiver,
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
@@ -173,6 +176,12 @@ export function hydratePlayer(
     }
     player.equipment = equipment;
   }
+  // Arrows nocked behind the `ammo` slot. Keep the count and the slot in sync:
+  // no quiver without arrows worn, and an empty quiver clears the slot.
+  const savedQuiver = raw["quiver"];
+  player.quiver = finiteNum(savedQuiver) && savedQuiver > 0 ? Math.floor(savedQuiver) : 0;
+  if (!player.equipment.ammo) player.quiver = 0;
+  else if (player.quiver <= 0) delete player.equipment.ammo;
   // Tools are wielded in the mainhand now. Make sure the player still owns each
   // basic tool so saves from before this change can gather: if they hold no
   // tool of a kind anywhere (hand, pack or bank), drop a tier-1 one in the pack.

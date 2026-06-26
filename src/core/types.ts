@@ -572,7 +572,12 @@ export type EquipSlot =
   | "ring"
   | "necklace"
   | "cape"
-  | "companion";
+  | "companion"
+  // A bow in `ranged` makes the player fight at range (training Draw), drawing
+  // from arrows worn in `ammo`. A `mount` grants faster overworld movement.
+  | "ranged"
+  | "ammo"
+  | "mount";
 
 /**
  * A static description of an item. Lives in src/content/items.ts.
@@ -963,6 +968,12 @@ export interface Player {
   bank: Partial<Record<ItemId, number>>;
   /** Worn gear: one item id per equipment slot (absent slots are empty). */
   equipment: Partial<Record<EquipSlot, ItemId>>;
+  /**
+   * Arrows currently nocked — the count behind the worn `ammo` slot (equipment
+   * stores only the arrow id, so the quantity lives here). Each ranged swing
+   * spends one; when it hits 0 the `ammo` slot empties.
+   */
+  quiver: number;
   /** The melee combat style trained on the next kill. */
   combatStyle: CombatStyle;
   /** Active quests, keyed by quest id. */

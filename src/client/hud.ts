@@ -74,6 +74,8 @@ function standing(rep: number): { word: string; tone: string } {
 const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "mainhand", name: "Weapon" },
   { slot: "offhand", name: "Shield" },
+  { slot: "ranged", name: "Bow" },
+  { slot: "ammo", name: "Arrows" },
   { slot: "helmet", name: "Helm" },
   { slot: "armor", name: "Body" },
   { slot: "legs", name: "Legs" },
@@ -81,6 +83,7 @@ const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "ring", name: "Ring" },
   { slot: "necklace", name: "Amulet" },
   { slot: "cape", name: "Cape" },
+  { slot: "mount", name: "Mount" },
   { slot: "companion", name: "Companion" },
 ];
 
@@ -724,6 +727,11 @@ export class Hud {
         icon.className = "equip-slot filled";
         icon.innerHTML = itemIconSVG(item);
         icon.title = `${item.name} — ${item.description}`;
+        // The quiver shows how many arrows are nocked.
+        if (slot === "ammo" && player.quiver > 0) {
+          icon.innerHTML += `<span class="equip-qty">${player.quiver}</span>`;
+          icon.title = `${item.name} — ${player.quiver} nocked`;
+        }
       } else {
         icon.className = "equip-slot";
         icon.innerHTML = "";

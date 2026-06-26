@@ -49,6 +49,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 const MOVE_SPEED = 3.5; // tiles per second
+const MOUNT_SPEED_MULT = 1.45; // a worn mount makes overworld travel this much faster
 
 // Playable level ceiling. The XP table (content) is built a little past this so
 // look-ups never fall off the end, but a skill never *reads* above the cap.
@@ -253,6 +254,7 @@ export function createWorld(
     // in the pack). Gathering auto-wields whichever tool the job needs, so the
     // one mainhand slot is never a chore — and there's a clear upgrade path.
     equipment: { mainhand: "hatchet_1" },
+    quiver: 0,
     combatStyle: "vigour",
     quests: {},
     questsDone: [],
@@ -597,8 +599,10 @@ function equipStat(
   field: "acc" | "dmg" | "def",
 ): number {
   let total = 0;
-  for (const id of Object.values(player.equipment)) {
+  for (const [slot, id] of Object.entries(player.equipment)) {
     if (!id) continue;
+    // The bow and arrows feed ranged math only — never melee accuracy/damage.
+    if (slot === "ranged" || slot === "ammo") continue;
     total += content.items[id][field] ?? 0;
   }
   return total;
@@ -725,6 +729,9 @@ const EQUIP_SLOTS = new Set<string>([
   "necklace",
   "cape",
   "companion",
+  "ranged",
+  "ammo",
+  "mount",
 ]);
 
 /** Chance, per successful skill action, of a matching skilling-pet companion. */
@@ -834,6 +841,11 @@ function equipSlot(
     events.push({ type: "LOG", message: `You can't wear the ${def.name}.` });
     return;
   }
+  // Arrows are worn as a whole stack into the quiver, not one at a time.
+  if (eslot === "ammo") {
+    equipAmmo(player, content, slot, events);
+    return;
+  }
   // Honour the level requirement: tools gate on their gathering skill, combat
   // gear on combat level (e.g. a Ribstone Pickaxe needs Mining 30 to wield).
   const req = equipRequirement(content, data.item);
@@ -900,6 +912,31 @@ function equipSlot(
   events.push({ type: "LOG", message: `You equip the ${def.name}.` });
 }
 
+/** Nock a whole stack of arrows into the quiver, returning any other type held. */
+function equipAmmo(
+  player: Player,
+  content: Content,
+  slot: number,
+  events: WorldEvent[],
+): void {
+  const data = player.inventory[slot];
+  if (!data) return;
+  const def = content.items[data.item];
+  const current = player.equipment.ammo;
+  const addQty = data.qty;
+  // Take the whole stack out — freeing this slot guarantees room for any arrows
+  // of a different type we hand back.
+  player.inventory[slot] = null;
+  if (current === data.item) {
+    player.quiver += addQty;
+  } else {
+    if (current) addItem(player, current, player.quiver, events);
+    player.equipment.ammo = data.item;
+    player.quiver = addQty;
+  }
+  events.push({ type: "LOG", message: `You ready ${player.quiver}× ${def.name}.` });
+}
+
 /** Take a worn item off and return it to the pack (if there's room). */
 function unequipSlot(
   player: Player,
@@ -911,6 +948,15 @@ function unequipSlot(
   if (!worn) return;
   if (!canAddItem(player, worn)) {
     events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  // Arrows return as the whole nocked stack and reset the quiver.
+  if (eslot === "ammo") {
+    const qty = Math.max(1, player.quiver);
+    delete player.equipment.ammo;
+    player.quiver = 0;
+    addItem(player, worn, qty, events);
+    events.push({ type: "LOG", message: `You unstring ${qty}× ${content.items[worn].name}.` });
     return;
   }
   delete player.equipment[eslot];
@@ -1545,7 +1591,8 @@ function randRange(ctx: Ctx, min: number, max: number): number {
 }
 
 function stepMovement(player: Player, dt: number): void {
-  let budget = (MOVE_SPEED * dt) / 1000; // tiles of travel allowed this tick
+  const speed = MOVE_SPEED * (player.equipment.mount ? MOUNT_SPEED_MULT : 1);
+  let budget = (speed * dt) / 1000; // tiles of travel allowed this tick
   while (budget > 0 && player.path.length > 0) {
     const target = player.path[0]!;
     const dx = target.x - player.pos.x;
@@ -2178,15 +2225,36 @@ function weaponStyle(player: Player, content: Content): string | undefined {
  */
 function playerAccuracy(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "edge" ? COMBAT.styleBonus : 0;
-  const buff = buffVal(player, "melee_acc") + buffVal(player, "ranged_acc");
-  return skillLvl(player, "edge") + equipStat(player, content, "acc") + styleBonus + buff;
+  return skillLvl(player, "edge") + equipStat(player, content, "acc") + styleBonus + buffVal(player, "melee_acc");
 }
 
 /** Player max hit: Vigour + summed gear dmg (weapon, amulet) + Vigour bonus. */
 function playerMaxHit(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "vigour" ? COMBAT.styleBonus : 0;
-  const buff = buffVal(player, "melee_dmg") + buffVal(player, "ranged_dmg");
-  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus + buff;
+  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus + buffVal(player, "melee_dmg");
+}
+
+/** Is the player set to fight at range? (a bow worn in the ranged slot). */
+function isRanged(player: Player): boolean {
+  return !!player.equipment.ranged;
+}
+
+/** Ranged accuracy: Draw + bow + arrow accuracy + any ranged-accuracy buff. */
+function rangedAccuracy(player: Player, content: Content): number {
+  const bow = player.equipment.ranged;
+  const ammo = player.equipment.ammo;
+  const ba = bow ? content.items[bow].acc ?? 0 : 0;
+  const aa = ammo ? content.items[ammo].acc ?? 0 : 0;
+  return skillLvl(player, "draw") + ba + aa + buffVal(player, "ranged_acc");
+}
+
+/** Ranged max hit: Draw + bow + arrow damage + any ranged-damage buff. */
+function rangedMaxHit(player: Player, content: Content): number {
+  const bow = player.equipment.ranged;
+  const ammo = player.equipment.ammo;
+  const bd = bow ? content.items[bow].dmg ?? 0 : 0;
+  const ad = ammo ? content.items[ammo].dmg ?? 0 : 0;
+  return skillLvl(player, "draw") + bd + ad + buffVal(player, "ranged_dmg");
 }
 
 /** Player defence rating: Ward + summed armour defence (+ any Defence buff). */
@@ -2194,9 +2262,9 @@ function playerDefence(player: Player, content: Content): number {
   return skillLvl(player, "ward") + equipStat(player, content, "def") + buffVal(player, "defence");
 }
 
-/** The player's swing interval (ms): the main-hand weapon's speed, or default. */
+/** The player's swing interval (ms): the active weapon's speed, or default. */
 function playerSpeed(player: Player, content: Content): number {
-  const id = player.equipment.mainhand;
+  const id = isRanged(player) ? player.equipment.ranged : player.equipment.mainhand;
   const speed = id ? content.items[id].speed : undefined;
   return speed || COMBAT.playerMeleeSpeed;
 }
@@ -2277,14 +2345,29 @@ function playerSwing(
   const { player } = state;
   if (obj.hp === undefined) return;
 
-  const wStyle = weaponStyle(player, content);
+  const ranged = isRanged(player);
+
+  // Ranged fighting spends one arrow per loosed shot; with an empty quiver the
+  // attack simply can't continue.
+  if (ranged) {
+    if (player.quiver <= 0 || !player.equipment.ammo) {
+      events.push({ type: "LOG", message: "You're out of arrows." });
+      clearActivity(player);
+      return;
+    }
+    player.quiver -= 1;
+    if (player.quiver <= 0) delete player.equipment.ammo;
+  }
+
+  // Melee can exploit a monster's style weakness; ranged doesn't (no melee style).
+  const wStyle = ranged ? undefined : weaponStyle(player, content);
   const exploits = wStyle !== undefined && (stats.weakness ?? []).includes(wStyle);
-  const acc = exploits
-    ? Math.round(playerAccuracy(player, content) * COMBAT.weaknessAcc)
-    : playerAccuracy(player, content);
+  const baseAcc = ranged ? rangedAccuracy(player, content) : playerAccuracy(player, content);
+  const acc = exploits ? Math.round(baseAcc * COMBAT.weaknessAcc) : baseAcc;
+  const maxHit = ranged ? rangedMaxHit(player, content) : playerMaxHit(player, content);
 
   if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
-    const base = randInt(ctx, 1, Math.max(1, playerMaxHit(player, content)));
+    const base = randInt(ctx, 1, Math.max(1, maxHit));
     const dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg });
@@ -2297,9 +2380,9 @@ function playerSwing(
     obj.available = false;
     obj.respawnAt = ctx.now + COMBAT.respawn;
     obj.nextAttackAt = 0;
-    // Vitality always trains; the chosen style trains its own skill.
+    // Vitality always trains; ranged kills train Draw, melee the chosen style.
     grantXp(state, content, "vitality", Math.floor(stats.xp * 0.33), events);
-    grantXp(state, content, player.combatStyle, Math.floor(stats.xp), events);
+    grantXp(state, content, ranged ? "draw" : player.combatStyle, Math.floor(stats.xp), events);
     rollDrops(player, stats, ctx, events);
     player.stats.monstersSlain += 1;
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
