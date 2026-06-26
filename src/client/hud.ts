@@ -36,6 +36,7 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
   woodcutting: "Chopping…",
   mining: "Mining…",
   fishing: "Fishing…",
+  trapping: "Trapping…",
   combat: "Fighting…",
   crafting: "Crafting…",
 };

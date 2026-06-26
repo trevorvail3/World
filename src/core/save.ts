@@ -50,6 +50,12 @@ export interface SavedProgress {
   stats: { goldEarned: number; monstersSlain: number };
   /** Unlocked achievement ids. */
   achievements: string[];
+  /** Bounty progression: Hunt Marks, chosen guide, the active task (if any). */
+  bounty: {
+    marks: number;
+    guideId: string;
+    task: { monster: string; required: number; progress: number; xp: number; marks: number; guideId: string } | null;
+  };
   /** Farming patches: patch id -> what's planted and when (epoch ms). */
   farms: Record<string, { crop: string; plantedAt: number }>;
   hp: number;
@@ -85,6 +91,11 @@ export function serializePlayer(state: WorldState): SavedProgress {
     reputation: { ...player.reputation },
     stats: { ...player.stats },
     achievements: [...player.achievements],
+    bounty: {
+      marks: player.bounty.marks,
+      guideId: player.bounty.guideId,
+      task: player.bounty.task ? { ...player.bounty.task } : null,
+    },
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -199,6 +210,37 @@ export function hydratePlayer(
     player.achievements = savedAch.filter(
       (id): id is string => typeof id === "string" && content.achievements.some((a) => a.id === id),
     );
+  }
+  // Bounty: restore marks, the chosen guide, and any active task — all guarded so
+  // a save from before Bounty existed (no `bounty` key) just keeps the fresh state.
+  const savedBounty = raw["bounty"];
+  if (isRecord(savedBounty)) {
+    const marks = savedBounty["marks"];
+    if (typeof marks === "number" && marks >= 0) player.bounty.marks = Math.floor(marks);
+    const gid = savedBounty["guideId"];
+    if (typeof gid === "string" && content.bountyGuides.some((g) => g.id === gid)) {
+      player.bounty.guideId = gid;
+    }
+    const t = savedBounty["task"];
+    if (
+      isRecord(t) &&
+      typeof t["monster"] === "string" &&
+      t["monster"] in content.monsters &&
+      typeof t["required"] === "number" &&
+      typeof t["progress"] === "number" &&
+      typeof t["xp"] === "number" &&
+      typeof t["marks"] === "number"
+    ) {
+      const guideId = typeof t["guideId"] === "string" ? t["guideId"] : player.bounty.guideId;
+      player.bounty.task = {
+        monster: t["monster"],
+        required: Math.max(1, Math.floor(t["required"])),
+        progress: Math.max(0, Math.floor(t["progress"])),
+        xp: Math.max(0, Math.floor(t["xp"])),
+        marks: Math.max(0, Math.floor(t["marks"])),
+        guideId,
+      };
+    }
   }
   // Farming patches keep growing in real time: restore what was planted + when.
   const savedFarms = raw["farms"];

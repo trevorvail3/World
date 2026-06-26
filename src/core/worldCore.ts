@@ -21,6 +21,7 @@
 
 import type {
   AchievementCond,
+  BountyTaskDef,
   Content,
   CropDef,
   Ctx,
@@ -73,6 +74,9 @@ const WANDER = {
 const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000, deplete: 0.25 };
 const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000, deplete: 0.3 };
 const FISHING = { interval: 1400, success: 0.5, xp: 20 };
+// Hunter: a snare you set and check. A catch "springs" the trap (it depletes),
+// then the game wanders back and the trap resets after a short wait.
+const HUNTER = { interval: 2400, success: 0.5, respawn: 9000, deplete: 0.4 };
 
 // Re-tuned: one station-craft step every CRAFT_INTERVAL ms (the idle game's
 // per-recipe baseTimes are far slower; a single snappy interval feels right
@@ -145,6 +149,8 @@ const BLOCKING_KINDS = new Set([
   "plant_patch",
   "tree_patch",
   "portal",
+  "trap",
+  "bounty_board",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -236,6 +242,7 @@ export function createWorld(
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
     achievements: [],
+    bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -272,6 +279,7 @@ const DEFAULT_RESOURCE: Record<string, string> = {
   tree: "fell_ashwood",
   rock: "mine_knucklestone",
   fishing_spot: "fish_ashfin",
+  trap: "hunt_hare",
 };
 
 /** The SkillAction a resource node yields (its `resource`, or the kind default). */
@@ -290,7 +298,7 @@ function beginGather(
   content: Content,
   def: WorldObjectDef,
   objId: string,
-  kind: "woodcutting" | "mining" | "fishing",
+  kind: "woodcutting" | "mining" | "fishing" | "trapping",
   interval: number,
   ctx: Ctx,
   events: WorldEvent[],
@@ -576,6 +584,22 @@ export function applyIntent(
     }
     case "PLANT": {
       plantSeed(state, content, intent.patchId, intent.crop, ctx, events);
+      break;
+    }
+    case "BOUNTY_TASK": {
+      takeBountyTask(state, content, intent.guideId, ctx, events);
+      break;
+    }
+    case "BOUNTY_CLAIM": {
+      claimBountyTask(state, content, events);
+      break;
+    }
+    case "BOUNTY_ABANDON": {
+      abandonBountyTask(player, events);
+      break;
+    }
+    case "BOUNTY_BUY": {
+      buyBountyItem(player, content, intent.item, events);
       break;
     }
     case "SET_STYLE": {
@@ -885,6 +909,23 @@ function startInteraction(
         return;
       }
       events.push({ type: "LOG", message: "You cast your line into the water." });
+      break;
+    }
+
+    case "trap": {
+      if (!obj.available) {
+        events.push({ type: "LOG", message: "The trap has sprung — give it time to reset." });
+        return;
+      }
+      if (!beginGather(state, content, def, objId, "trapping", HUNTER.interval, ctx, events)) {
+        return;
+      }
+      events.push({ type: "LOG", message: "You set the snare and wait for game." });
+      break;
+    }
+
+    case "bounty_board": {
+      events.push({ type: "OPEN_BOUNTY", objId });
       break;
     }
 
@@ -1328,6 +1369,9 @@ function processActivity(
     case "fishing":
       gatherStep(state, content, obj, ctx, events, FISHING, false);
       break;
+    case "trapping":
+      gatherStep(state, content, obj, ctx, events, HUNTER, true);
+      break;
     case "crafting":
       processCraft(state, content, ctx, events);
       break;
@@ -1731,6 +1775,135 @@ function advanceKillQuests(
   }
 }
 
+// --- Bounty: a slay-task board, ported from the idle game's bounty loop -------
+
+/** A kill counts toward the active bounty task if it targets that monster. */
+function trackBountyKill(
+  player: Player,
+  content: Content,
+  monster: string | undefined,
+  events: WorldEvent[],
+): void {
+  if (!monster) return;
+  const task = player.bounty.task;
+  if (!task || task.monster !== monster) return;
+  if (task.progress >= task.required) return; // already done; don't overcount
+  task.progress += 1;
+  const name = content.monsters[monster]?.name ?? monster;
+  if (task.progress >= task.required) {
+    events.push({ type: "LOG", message: `Bounty complete — return to the board to claim it.` });
+  } else {
+    events.push({ type: "LOG", message: `Bounty: ${task.progress}/${task.required} ${name}.` });
+  }
+}
+
+/** Take a fresh task from a guide: roll its zone pool, filtered by Bounty level. */
+function takeBountyTask(
+  state: WorldState,
+  content: Content,
+  guideId: string,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  player.bounty.guideId = guideId;
+  if (player.bounty.task) {
+    events.push({ type: "LOG", message: "Finish or abandon your current task first." });
+    return;
+  }
+  const guide = content.bountyGuides.find((g) => g.id === guideId);
+  if (!guide) return;
+  const level = skillLvl(player, "bounty");
+  if (level < guide.levelReq) {
+    events.push({ type: "LOG", message: `${guide.name} won't deal with you until Bounty ${guide.levelReq}.` });
+    return;
+  }
+  const pool: BountyTaskDef[] = [];
+  for (const zone of guide.zones) {
+    for (const t of content.bountyTasks[zone] ?? []) {
+      if (level >= t.minLevel) pool.push(t);
+    }
+  }
+  if (pool.length === 0) {
+    events.push({ type: "LOG", message: "No tasks available — try a lower-tier guide." });
+    return;
+  }
+  const pick = pool[Math.floor(ctx.rng() * pool.length)]!;
+  const xp = Math.round(pick.xp * guide.xpMult);
+  const marks = Math.round(pick.marks * guide.marksMult);
+  player.bounty.task = {
+    monster: pick.monster,
+    required: pick.required,
+    progress: 0,
+    xp,
+    marks,
+    guideId,
+  };
+  const name = content.monsters[pick.monster]?.name ?? pick.monster;
+  events.push({ type: "LOG", message: `${guide.name}: slay ${pick.required} ${name}.` });
+}
+
+/** Claim a finished task: pay Hunt Marks + Bounty XP (Hunter's Kit boosts XP). */
+function claimBountyTask(
+  state: WorldState,
+  content: Content,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const task = player.bounty.task;
+  if (!task) {
+    events.push({ type: "LOG", message: "You have no bounty to claim." });
+    return;
+  }
+  if (task.progress < task.required) {
+    const name = content.monsters[task.monster]?.name ?? task.monster;
+    events.push({ type: "LOG", message: `Not yet — ${task.required - task.progress} more ${name} to go.` });
+    return;
+  }
+  // A Hunter's Kit in the pack sweetens the XP and is consumed on claim.
+  const hasKit = hasItem(player, "hunters_kit");
+  const xp = hasKit ? Math.round(task.xp * 1.5) : task.xp;
+  if (hasKit) removeOneItem(player, "hunters_kit");
+  player.bounty.marks += task.marks;
+  player.bounty.task = null;
+  grantXp(state, content, "bounty", xp, events);
+  events.push({
+    type: "LOG",
+    message: hasKit
+      ? `Bounty claimed! +${task.marks} Hunt Marks · +${xp} Bounty XP (Hunter's Kit bonus).`
+      : `Bounty claimed! +${task.marks} Hunt Marks · +${xp} Bounty XP.`,
+  });
+}
+
+/** Abandon the current task — no reward, but the board is free again. */
+function abandonBountyTask(player: Player, events: WorldEvent[]): void {
+  if (!player.bounty.task) return;
+  player.bounty.task = null;
+  events.push({ type: "LOG", message: "Bounty abandoned." });
+}
+
+/** Spend Hunt Marks at the Bounty board's shop. */
+function buyBountyItem(
+  player: Player,
+  content: Content,
+  item: ItemId,
+  events: WorldEvent[],
+): void {
+  const line = content.bountyShop.find((l) => l.item === item);
+  if (!line) return;
+  if (player.bounty.marks < line.cost) {
+    events.push({ type: "LOG", message: `You need ${line.cost} Hunt Marks for that.` });
+    return;
+  }
+  if (!canAddItem(player, item)) {
+    events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  player.bounty.marks -= line.cost;
+  addItem(player, item, line.qty, events);
+  events.push({ type: "LOG", message: `Bought ${content.items[item]?.name ?? item}.` });
+}
+
 /** Auto-advance any passive objective ("gather" / "reach") now satisfied. */
 function checkGatherQuests(
   state: WorldState,
@@ -1897,6 +2070,7 @@ function playerSwing(
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
     advanceKillQuests(state, content, def.monster, events);
+    trackBountyKill(player, content, def.monster, events);
     clearActivity(player);
   }
 }

@@ -42,6 +42,8 @@ const MM_OBJ: Record<ObjKind, string> = {
   plant_patch: "#6a8a4a",
   tree_patch: "#4e7a3e",
   portal: "#b0593a",
+  trap: "#9c7b46",
+  bounty_board: "#c8a24a",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

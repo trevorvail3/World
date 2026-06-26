@@ -698,7 +698,11 @@ export type ObjKind =
   | "plant_patch"
   | "tree_patch"
   /** A boss-dungeon entrance / exit that teleports the player. */
-  | "portal";
+  | "portal"
+  /** A Hunter snare/trap node: set it, catch game, collect hide + meat. */
+  | "trap"
+  /** A Bounty board: take a slay-task, claim it for Hunt Marks + Bounty XP. */
+  | "bounty_board";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -835,6 +839,8 @@ export type ActivityKind =
   | "woodcutting"
   | "mining"
   | "fishing"
+  /** Setting and checking a Hunter trap (a depleting gather, like a snare). */
+  | "trapping"
   | "combat"
   /** Any station recipe (cooking, smelting, smithing, firemaking…). */
   | "crafting";
@@ -849,6 +855,66 @@ export interface Activity {
   nextActionAt: number;
   /** How long one swing/roll takes (ms) — lets the client show progress. */
   actionInterval: number;
+}
+
+/**
+ * A Bounty guide (task-giver). Each covers a pair of zones and scales the flat
+ * rewards of the tasks it hands out. Ported from the idle game's BOUNTY_GUIDES.
+ */
+export interface BountyGuide {
+  id: string;
+  name: string;
+  title: string;
+  icon: string;
+  desc: string;
+  /** Bounty level needed to take tasks from this guide. */
+  levelReq: number;
+  /** The task-pool zone keys this guide draws from (keys of Content.bountyTasks). */
+  zones: string[];
+  /** Multipliers applied to a task's flat xp / marks rewards. */
+  xpMult: number;
+  marksMult: number;
+}
+
+/** A bounty-task template: slay N of a monster for Bounty XP + Hunt Marks. */
+export interface BountyTaskDef {
+  monster: string;
+  required: number;
+  xp: number;
+  marks: number;
+  /** Bounty level needed before this template can be rolled. */
+  minLevel: number;
+}
+
+/** A live, assigned bounty task — a template plus running progress. */
+export interface BountyTask {
+  monster: string;
+  required: number;
+  progress: number;
+  /** Rewards already scaled by the assigning guide's multipliers. */
+  xp: number;
+  marks: number;
+  /** Which guide assigned it (for display). */
+  guideId: string;
+}
+
+/** The player's Bounty progression: marks, the chosen guide, the active task. */
+export interface BountyState {
+  /** Hunt Marks — the Bounty currency, spent at the Bounty board's shop. */
+  marks: number;
+  /** The currently selected guide id (whose board hands out tasks). */
+  guideId: string;
+  /** The active task, or null when none is taken. */
+  task: BountyTask | null;
+}
+
+/** One listing in the Bounty board's Hunt-Marks shop. */
+export interface BountyShopListing {
+  item: ItemId;
+  cost: number;
+  qty: number;
+  label: string;
+  desc: string;
 }
 
 export interface Player {
@@ -887,6 +953,8 @@ export interface Player {
   stats: { goldEarned: number; monstersSlain: number };
   /** Ids of achievements already unlocked (so they stay unlocked). */
   achievements: string[];
+  /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
+  bounty: BountyState;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -1019,6 +1087,28 @@ export interface PlantIntent {
   crop: string;
 }
 
+/** "Take a new bounty task from this guide" (replaces no current task). */
+export interface BountyTaskIntent {
+  type: "BOUNTY_TASK";
+  guideId: string;
+}
+
+/** "Claim my finished bounty task" (pays out Hunt Marks + Bounty XP). */
+export interface BountyClaimIntent {
+  type: "BOUNTY_CLAIM";
+}
+
+/** "Abandon my current bounty task" (no reward; frees up a new one). */
+export interface BountyAbandonIntent {
+  type: "BOUNTY_ABANDON";
+}
+
+/** "Buy one listing from the Bounty board's Hunt-Marks shop." */
+export interface BountyBuyIntent {
+  type: "BOUNTY_BUY";
+  item: ItemId;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1029,6 +1119,10 @@ export type Intent =
   | BuyIntent
   | SellIntent
   | PlantIntent
+  | BountyTaskIntent
+  | BountyClaimIntent
+  | BountyAbandonIntent
+  | BountyBuyIntent
   | EquipIntent
   | UnequipIntent
   | CraftIntent
@@ -1060,6 +1154,8 @@ export type WorldEvent =
   | { type: "OPEN_SHOP"; shop: string }
   /** Open the seed-choice menu for an empty farming patch. */
   | { type: "OPEN_PLANT"; patchId: string; patchType: "plant" | "tree" }
+  /** Open the Bounty board (guides, current task, Hunt-Marks shop). */
+  | { type: "OPEN_BOUNTY"; objId: string }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   | { type: "QUEST_STARTED"; quest: string }
@@ -1286,6 +1382,12 @@ export interface Content {
   achievements: AchievementDef[];
   /** Farmable crops, keyed by crop id. */
   crops: Record<string, CropDef>;
+  /** Bounty task-givers (data). */
+  bountyGuides: BountyGuide[];
+  /** Bounty task templates, keyed by zone (data). */
+  bountyTasks: Record<string, BountyTaskDef[]>;
+  /** What the Bounty board sells for Hunt Marks (data). */
+  bountyShop: BountyShopListing[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

@@ -356,6 +356,36 @@ export const objects: WorldObjectDef[] = [
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 51, y: 48, name: "Ancient Orc" },
   { id: "rd_ferryman", kind: "monster", monster: "dread_ferryman", x: 51, y: 45, name: "The Dread Ferryman" },
 
+  // === HUNTER & BOUNTY ======================================================
+  // Snares (Hunter) sit on the game-runs in each zone — a depleting gather that
+  // yields hide + meat, tiered by Hunter level. The Bounty board in Ironvale
+  // hands out slay-tasks, paid in Hunt Marks.
+
+  // --- The Ironvale bounty board, by the market ---
+  { id: "bounty_board_1", kind: "bounty_board", x: 13, y: 11, name: "Bounty Board" },
+
+  // --- Hare snares: open Knuckle Hills (Hunter 1) ---
+  { id: "trap_hare_1", kind: "trap", x: 24, y: 6, name: "Snare", resource: "hunt_hare" },
+  { id: "trap_hare_2", kind: "trap", x: 26, y: 8, name: "Snare", resource: "hunt_hare" },
+
+  // --- Boar snares: Greyoak understory (Hunter 20) ---
+  { id: "trap_boar_1", kind: "trap", x: 11, y: 20, name: "Boar Snare", resource: "hunt_boar" },
+  { id: "trap_boar_2", kind: "trap", x: 20, y: 23, name: "Boar Snare", resource: "hunt_boar" },
+
+  // --- Wolf snares: Greyoak deep wood (Hunter 30) ---
+  { id: "trap_wolf_1", kind: "trap", x: 13, y: 29, name: "Wolf Snare", resource: "hunt_wolf" },
+
+  // --- Bear snares: the cleared ground at the wood's edge (Hunter 45) ---
+  { id: "trap_bear_1", kind: "trap", x: 7, y: 31, name: "Bear Snare", resource: "hunt_bear" },
+  { id: "trap_bear_2", kind: "trap", x: 20, y: 30, name: "Bear Snare", resource: "hunt_bear" },
+
+  // --- Stag snares: the open Heartmoor (Hunter 60) ---
+  { id: "trap_stag_1", kind: "trap", x: 10, y: 45, name: "Stag Snare", resource: "hunt_stag" },
+  { id: "trap_stag_2", kind: "trap", x: 19, y: 47, name: "Stag Snare", resource: "hunt_stag" },
+
+  // --- Aurochs snares: deep Heartmoor, the largest game (Hunter 90) ---
+  { id: "trap_aurochs_1", kind: "trap", x: 14, y: 50, name: "Aurochs Snare", resource: "hunt_aurochs" },
+
   // === BOSS DUNGEONS ========================================================
   // Each boss has its own sealed arena in the hidden band below the overworld.
   // An overworld portal teleports you in; a return portal brings you home. The

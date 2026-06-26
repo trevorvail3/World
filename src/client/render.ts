@@ -253,6 +253,73 @@ function drawObject(
     case "portal":
       drawPortal(g, cx, cy, now);
       break;
+    case "trap":
+      drawTrap(g, cx, cy, available);
+      break;
+    case "bounty_board":
+      drawBountyBoard(g, cx, cy);
+      break;
+  }
+}
+
+/** A Hunter snare: a bent-sapling spring trap. Greyed/sprung when depleted. */
+function drawTrap(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+  shadow(g, cx, cy + 10, 10, 3);
+  const wood = available ? "#7a5a32" : "#4a4038";
+  const cord = available ? "#c9b079" : "#6b6258";
+  // Two stakes and a noose loop on the ground.
+  g.strokeStyle = wood;
+  g.lineWidth = 2.5;
+  g.beginPath();
+  g.moveTo(cx - 7, cy + 6);
+  g.lineTo(cx - 7, cy - 4);
+  g.moveTo(cx + 7, cy + 6);
+  g.lineTo(cx + 7, cy - 4);
+  g.stroke();
+  // The snare loop (open when set, slack when sprung).
+  g.strokeStyle = cord;
+  g.lineWidth = 1.6;
+  g.beginPath();
+  if (available) {
+    g.ellipse(cx, cy + 3, 6, 3.4, 0, 0, Math.PI * 2);
+  } else {
+    g.moveTo(cx - 6, cy + 5);
+    g.quadraticCurveTo(cx, cy + 9, cx + 6, cy + 5);
+  }
+  g.stroke();
+  // A trigger line strung between the stakes.
+  g.strokeStyle = cord;
+  g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(cx - 7, cy - 3);
+  g.lineTo(cx + 7, cy - 3);
+  g.stroke();
+}
+
+/** A Bounty board: a notice board of nailed-up contracts. */
+function drawBountyBoard(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 13, 4);
+  // Two posts.
+  g.fillStyle = "#3a2c1d";
+  g.fillRect(cx - 11, cy - 8, 3, 20);
+  g.fillRect(cx + 8, cy - 8, 3, 20);
+  // The board face.
+  g.fillStyle = "#6b4f30";
+  g.fillRect(cx - 12, cy - 12, 24, 16);
+  g.fillStyle = "#5a4128";
+  g.fillRect(cx - 12, cy - 12, 24, 3); // top rail shadow
+  // A scatter of pinned notices.
+  const notes = [
+    [cx - 9, cy - 9, 7, 6],
+    [cx + 1, cy - 10, 8, 6],
+    [cx - 7, cy - 2, 6, 5],
+    [cx + 2, cy - 2, 7, 5],
+  ] as const;
+  for (const [nx, ny, w, h] of notes) {
+    g.fillStyle = "#d8cba6";
+    g.fillRect(nx, ny, w, h);
+    g.fillStyle = "#8a2c22"; // a wax-seal dot
+    g.fillRect(nx + w / 2 - 1, ny + h - 2, 2, 2);
   }
 }
 

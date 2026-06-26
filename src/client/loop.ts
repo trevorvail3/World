@@ -29,6 +29,7 @@ import type {
 } from "../core/types.ts";
 import { BankUI } from "./bankUI.ts";
 import { ShopUI } from "./shopUI.ts";
+import { BountyUI } from "./bountyUI.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
@@ -101,6 +102,8 @@ const VERB: Record<ObjKind, string> = {
   plant_patch: "Tend",
   tree_patch: "Tend",
   portal: "Enter",
+  trap: "Set snare",
+  bounty_board: "Read",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -117,6 +120,8 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   plant_patch: "A bed of tilled soil, waiting for a seed.",
   tree_patch: "A cleared plot where a sapling could take root.",
   portal: "A dark archway. Something waits on the other side.",
+  trap: "A snare set among the runs and burrows. Patience catches game.",
+  bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -154,6 +159,7 @@ export class Game {
   private worldMap: WorldMapModal;
   private bank: BankUI;
   private shop: ShopUI;
+  private bounty: BountyUI;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -180,6 +186,7 @@ export class Game {
     );
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
+    this.bounty = new BountyUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -309,6 +316,9 @@ export class Game {
         }
         case "OPEN_PLANT":
           this.openPlant(ev.patchId, ev.patchType);
+          break;
+        case "OPEN_BOUNTY":
+          this.bounty.show(this.bridge.state);
           break;
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);

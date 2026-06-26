@@ -1242,6 +1242,99 @@ button.inv-slot {
 }
 .inv-slot.unsellable { opacity: 0.5; cursor: default; }
 
+/* --- Bounty board --- */
+.bounty-marks {
+  font-family: "Cinzel", serif;
+  color: var(--ember);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.bounty-section-label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  border-bottom: 1px solid rgba(74, 61, 44, 0.4);
+  padding-bottom: 3px;
+}
+.bounty-guides { display: flex; gap: 6px; }
+.bounty-guide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 7px 4px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.bounty-guide.active { border-color: var(--ember); background: rgba(210, 116, 44, 0.12); }
+.bounty-guide.locked { opacity: 0.45; cursor: default; }
+.bounty-guide-icon { font-size: 19px; }
+.bounty-guide-name { font-family: "Cinzel", serif; font-size: 12px; color: var(--gold); }
+.bounty-guide-sub { font-size: 9px; color: var(--ink-dim); text-align: center; }
+.bounty-contract {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.bounty-task-name { font-size: 14px; color: var(--ink); margin-bottom: 6px; }
+.bounty-empty { font-size: 13px; color: var(--ink-dim); font-style: italic; margin-bottom: 8px; }
+.bounty-progress {
+  height: 7px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.bounty-progress-fill { height: 100%; background: var(--ember); }
+.bounty-task-count { font-family: "Cinzel", serif; font-size: 12px; color: var(--ember); }
+.bounty-task-rewards { font-size: 11px; color: #8aa06a; font-style: italic; margin: 6px 0 9px; }
+.bounty-actions { display: flex; gap: 8px; }
+.bounty-btn {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  color: var(--gold);
+  background: rgba(210, 116, 44, 0.12);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+.bounty-btn:hover { border-color: var(--ember); color: #f0c187; }
+.bounty-btn.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+.bounty-claim { border-color: var(--gold); color: var(--gold); }
+.bounty-abandon { color: #b5564a; }
+.bounty-shop { display: flex; flex-direction: column; gap: 5px; }
+.bounty-shop-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px;
+  border-bottom: 1px solid rgba(74, 61, 44, 0.25);
+}
+.bounty-shop-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.bounty-shop-name { font-size: 13px; color: var(--ink); }
+.bounty-shop-desc { font-size: 10px; color: var(--ink-dim); }
+.bounty-buy {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  color: var(--ember);
+  background: rgba(210, 116, 44, 0.12);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bounty-buy:hover { border-color: var(--ember); color: #f0c187; }
+.bounty-buy.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
 /* --- Factions tab --- */
 .faction-block {
   margin-bottom: 9px;
