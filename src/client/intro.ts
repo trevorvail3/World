@@ -50,7 +50,7 @@ export class Intro {
     this.lineEl.textContent = this.lines[this.idx] ?? "";
     this.lineEl.classList.add("show");
     this.clearTimer();
-    this.timer = window.setTimeout(() => this.advance(), 4200);
+    this.timer = window.setTimeout(() => this.advance(), 8400);
   }
 
   private advance(): void {
