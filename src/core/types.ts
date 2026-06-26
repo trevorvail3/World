@@ -572,11 +572,7 @@ export type EquipSlot =
   | "ring"
   | "necklace"
   | "cape"
-  | "companion"
-  // Gathering tools — wielded to gather (and required for it).
-  | "pickaxe"
-  | "hatchet"
-  | "rod";
+  | "companion";
 
 /**
  * A static description of an item. Lives in src/content/items.ts.
@@ -611,6 +607,12 @@ export interface ItemDef {
   slot?: string;
   /** Tier on the canon material ladder (1–10). */
   tier?: number;
+  /**
+   * Gathering-tool kind. Tools are wielded in the mainhand (slot "mainhand")
+   * but tagged here so the core knows a mainhand item is a hatchet/pickaxe/rod
+   * and which gathering skill gates and uses it.
+   */
+  tool?: "hatchet" | "pickaxe" | "rod";
   /** Weapon accuracy bonus. */
   acc?: number;
   /** Weapon damage bonus / added to max hit. */

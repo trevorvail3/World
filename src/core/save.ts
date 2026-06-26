@@ -170,18 +170,22 @@ export function hydratePlayer(
     }
     player.equipment = equipment;
   }
-  // Gathering now needs a tool wielded. Backfill any empty tool slot with the
-  // basic tier-1 tool so saves from before this change can still gather.
-  const STARTER_TOOLS: Partial<Record<EquipSlot, ItemId>> = {
-    hatchet: "hatchet_1" as ItemId,
-    pickaxe: "pickaxe_1" as ItemId,
-    rod: "rod_1" as ItemId,
+  // Tools are wielded in the mainhand now. Make sure the player still owns each
+  // basic tool so saves from before this change can gather: if they hold no
+  // tool of a kind anywhere (hand, pack or bank), drop a tier-1 one in the pack.
+  const STARTER_TOOLS: ItemId[] = ["hatchet_1", "pickaxe_1", "rod_1"] as ItemId[];
+  const ownsTool = (kind: string): boolean => {
+    const has = (id: ItemId | undefined) => !!id && content.items[id]?.tool === kind;
+    if (has(player.equipment.mainhand)) return true;
+    if (player.inventory.some((s) => s && has(s.item))) return true;
+    return Object.keys(player.bank).some((id) => has(id as ItemId));
   };
-  for (const slot of Object.keys(STARTER_TOOLS) as EquipSlot[]) {
-    const fallback = STARTER_TOOLS[slot];
-    if (!player.equipment[slot] && fallback && fallback in content.items) {
-      player.equipment[slot] = fallback;
-    }
+  for (const id of STARTER_TOOLS) {
+    if (!(id in content.items)) continue;
+    const kind = content.items[id].tool;
+    if (!kind || ownsTool(kind)) continue;
+    const empty = player.inventory.findIndex((s) => s === null);
+    if (empty !== -1) player.inventory[empty] = { item: id, qty: 1 };
   }
 
   // --- Combat style (preference) ---

@@ -139,7 +139,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Rough-forged from knucklestone. Gets the job done, slowly.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 1,
     "sell": 15
   },
@@ -149,7 +150,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Ashiron head on a stonewood handle. A significant step up.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 3,
     "sell": 80
   },
@@ -159,7 +161,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Heavy, dense, noticeably faster in the seam.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 4,
     "sell": 150
   },
@@ -169,7 +172,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The reddish head cuts through stone with unsettling ease.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 6,
     "sell": 420
   },
@@ -179,7 +183,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Near-black, cold in the hand. The finest mineable pick before Hearthite.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 9,
     "sell": 840
   },
@@ -189,7 +194,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Warm in the hand even in the deep cold. The finest pick in Varath.",
     "icon": "⛏️",
     "cat": "Tools",
-    "slot": "pickaxe",
+    "slot": "mainhand",
+    "tool": "pickaxe",
     "tier": 10,
     "sell": 1050
   },
@@ -199,7 +205,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A crude hatchet. Works, but slowly.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 1,
     "sell": 15
   },
@@ -209,7 +216,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Splits most logs cleanly. A journeyman forester's companion.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 3,
     "sell": 80
   },
@@ -219,7 +227,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Heavy and reliable. Good for the denser timbers.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 4,
     "sell": 150
   },
@@ -229,7 +238,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The reddish edge bites deep. Ancient wood offers little resistance.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 6,
     "sell": 420
   },
@@ -239,7 +249,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Dark and perfectly weighted. Deeproot yields to it easily.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 9,
     "sell": 840
   },
@@ -249,7 +260,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The finest felling tool made in Varath. Deeproot yields to it like softwood.",
     "icon": "🪓",
     "cat": "Tools",
-    "slot": "hatchet",
+    "slot": "mainhand",
+    "tool": "hatchet",
     "tier": 10,
     "sell": 1050
   },
@@ -259,7 +271,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A simple ashwood rod. Slow, but it catches fish.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 1,
     "sell": 50
   },
@@ -269,7 +282,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Coldpine bends without snapping. Better casting, better catch.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 3,
     "sell": 120
   },
@@ -279,7 +293,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The red wood is oddly supple. Good for deep pools.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 4,
     "sell": 220
   },
@@ -289,7 +304,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Ashwood braced with ashiron. Handles stronger fish with ease.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 6,
     "sell": 600
   },
@@ -299,7 +315,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A coldpine rod reinforced with bloodore. Favored by serious anglers.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 9,
     "sell": 1000
   },
@@ -309,7 +326,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Ruewood and voidstone. The finest fishing rod in Varath. Even the Eyeless Pike cannot resist it.",
     "icon": "🎣",
     "cat": "Tools",
-    "slot": "rod",
+    "slot": "mainhand",
+    "tool": "rod",
     "tier": 10,
     "sell": 1800
   },

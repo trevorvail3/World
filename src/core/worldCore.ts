@@ -241,9 +241,10 @@ export function createWorld(
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},
-    // Start with the basic tier-1 tools wielded, so gathering works from the
-    // off (and there's a clear upgrade path as the gathering skills climb).
-    equipment: { hatchet: "hatchet_1", pickaxe: "pickaxe_1", rod: "rod_1" },
+    // Start carrying the basic tier-1 tools (a hatchet in hand, pickaxe and rod
+    // in the pack). Gathering auto-wields whichever tool the job needs, so the
+    // one mainhand slot is never a chore — and there's a clear upgrade path.
+    equipment: { mainhand: "hatchet_1" },
     combatStyle: "vigour",
     quests: {},
     questsDone: [],
@@ -258,6 +259,10 @@ export function createWorld(
     alive: true,
     respawnAt: 0,
   };
+
+  // The starter pickaxe and rod ride in the pack; the hatchet is in hand.
+  player.inventory[0] = { item: "pickaxe_1" as ItemId, qty: 1 };
+  player.inventory[1] = { item: "rod_1" as ItemId, qty: 1 };
 
   return {
     map: content.map,
@@ -323,17 +328,18 @@ function beginGather(
     });
     return false;
   }
-  // This kind of gathering needs the matching tool wielded; a better tool tier
-  // gathers faster. (Trapping needs no tool.)
-  const toolSlot = GATHER_TOOL[kind];
+  // This kind of gathering needs the matching tool wielded in the mainhand; a
+  // better tool tier gathers faster. If the right tool isn't in hand we try to
+  // wield one from the pack, so you never have to swap tools by hand. (Trapping
+  // needs no tool.)
+  const toolKind = GATHER_TOOL[kind];
   let speedMult = 1;
-  if (toolSlot) {
-    const toolId = player.equipment[toolSlot];
-    if (!toolId) {
-      events.push({ type: "LOG", message: TOOL_MISSING[toolSlot] ?? "You need the right tool for that." });
+  if (toolKind) {
+    const tier = wieldGatherTool(player, content, toolKind, events);
+    if (tier === null) {
+      events.push({ type: "LOG", message: TOOL_MISSING[toolKind] ?? "You need the right tool for that." });
       return false;
     }
-    const tier = content.items[toolId]?.tier ?? 1;
     speedMult = TOOL_TIER_SPEED[tier] ?? 1;
   }
   const stepInterval = Math.round(interval * speedMult);
@@ -349,10 +355,54 @@ function beginGather(
 
 /** What to tell the player when they try to gather without the right tool. */
 const TOOL_MISSING: Record<string, string> = {
-  hatchet: "You need a hatchet equipped to chop here.",
-  pickaxe: "You need a pickaxe equipped to mine here.",
-  rod: "You need a fishing rod equipped to fish here.",
+  hatchet: "You need a hatchet to chop here.",
+  pickaxe: "You need a pickaxe to mine here.",
+  rod: "You need a fishing rod to fish here.",
 };
+
+/**
+ * Make sure the player is wielding a usable tool of `toolKind`, auto-swapping
+ * the best one out of the pack if their hands are empty or holding the wrong
+ * thing. Returns the wielded tool's tier, or null if they own no usable tool.
+ * "Usable" means the player's gathering level meets the tool's wield requirement.
+ */
+function wieldGatherTool(
+  player: Player,
+  content: Content,
+  toolKind: "hatchet" | "pickaxe" | "rod",
+  events: WorldEvent[],
+): number | null {
+  const level = skillLvl(player, TOOL_SLOT_SKILL[toolKind]);
+  const usable = (id: ItemId | undefined): boolean => {
+    if (!id) return false;
+    const d = content.items[id];
+    if (!d || d.tool !== toolKind) return false;
+    return level >= (TOOL_TIER_REQS[d.tier ?? 1] ?? 1);
+  };
+
+  // Already holding a usable tool of this kind?
+  const inHand = player.equipment.mainhand;
+  if (usable(inHand)) return content.items[inHand!].tier ?? 1;
+
+  // Otherwise wield the best usable one from the pack (swap with whatever's
+  // in hand). Tools are unique per tier, so this is a clean 1-for-1 swap.
+  let bestIdx = -1;
+  let bestTier = -1;
+  for (let i = 0; i < player.inventory.length; i++) {
+    const slot = player.inventory[i];
+    if (!slot || !usable(slot.item)) continue;
+    const t = content.items[slot.item].tier ?? 1;
+    if (t > bestTier) { bestTier = t; bestIdx = i; }
+  }
+  if (bestIdx === -1) return null;
+
+  const toolId = player.inventory[bestIdx]!.item;
+  const displaced = player.equipment.mainhand;
+  player.equipment.mainhand = toolId;
+  player.inventory[bestIdx] = displaced ? { item: displaced, qty: 1 } : null;
+  events.push({ type: "LOG", message: `You ready your ${content.items[toolId].name}.` });
+  return bestTier;
+}
 
 function levelFromXp(xpTable: number[], xp: number): number {
   let level = 1;
@@ -657,9 +707,6 @@ const EQUIP_SLOTS = new Set<string>([
   "necklace",
   "cape",
   "companion",
-  "pickaxe",
-  "hatchet",
-  "rod",
 ]);
 
 /** Chance, per successful skill action, of a matching skilling-pet companion. */
@@ -705,14 +752,14 @@ function tryPetDrop(
 /** Combat level needed to equip each gear tier (idle game GEAR_TIER_REQS). */
 const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
 
-/** Which gathering skill each tool slot trains/serves. */
-const TOOL_SLOT_SKILL: Partial<Record<string, SkillId>> = {
+/** Which gathering skill each tool kind serves. */
+const TOOL_SLOT_SKILL: Record<"hatchet" | "pickaxe" | "rod", SkillId> = {
   hatchet: "forestry",
   pickaxe: "mining",
   rod: "fishing",
 };
 
-/** The gather-activity kind each tool slot powers. */
+/** The tool kind each gather activity needs wielded. */
 const GATHER_TOOL: Partial<Record<string, "hatchet" | "pickaxe" | "rod">> = {
   woodcutting: "hatchet",
   mining: "pickaxe",
@@ -736,10 +783,9 @@ export function equipRequirement(
 ): { skill: SkillId | "combat"; level: number } | null {
   const def = content.items[itemId];
   if (!def || def.tier === undefined) return null;
-  const toolSkill = def.slot ? TOOL_SLOT_SKILL[def.slot] : undefined;
-  if (toolSkill) {
+  if (def.tool) {
     const level = TOOL_TIER_REQS[def.tier] ?? 1;
-    return level > 1 ? { skill: toolSkill, level } : null;
+    return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
   const level = GEAR_TIER_REQS[def.tier] ?? 0;
   return level > 1 ? { skill: "combat", level } : null;

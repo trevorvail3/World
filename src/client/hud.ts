@@ -81,9 +81,6 @@ const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "necklace", name: "Amulet" },
   { slot: "cape", name: "Cape" },
   { slot: "companion", name: "Companion" },
-  { slot: "hatchet", name: "Hatchet" },
-  { slot: "pickaxe", name: "Pickaxe" },
-  { slot: "rod", name: "Rod" },
 ];
 
 /** Canon slot strings this UI can wear (matches EquipSlot). */
@@ -797,9 +794,6 @@ const SLOT_LABEL: Record<string, string> = {
   ring: "Ring",
   necklace: "Amulet",
   cape: "Cape",
-  hatchet: "Hatchet",
-  pickaxe: "Pickaxe",
-  rod: "Fishing Rod",
 };
 
 /** A one-line "Weapon · +2 damage" summary for a piece of gear (or ""). */
@@ -808,7 +802,13 @@ function gearLine(def: {
   acc?: number;
   dmg?: number;
   def?: number;
+  tool?: "hatchet" | "pickaxe" | "rod";
 }): string {
+  // Tools live in the mainhand but read as tools, not weapons.
+  if (def.tool) {
+    const kind = def.tool === "rod" ? "Fishing rod" : def.tool[0]!.toUpperCase() + def.tool.slice(1);
+    return `${kind} · wielded in hand`;
+  }
   if (!def.slot || !(def.slot in SLOT_LABEL)) return "";
   const bits: string[] = [];
   if (def.acc) bits.push(`+${def.acc} accuracy`);
