@@ -137,6 +137,9 @@ body {
   justify-content: space-between;
   margin-bottom: 5px;
 }
+/* The heart only shows in the compact mobile readout (hidden on desktop). */
+.vitals-heart { display: none; }
+.vitals-heart .g-ico { width: 15px; height: 15px; color: #e2483a; vertical-align: -0.2em; }
 
 /* Skills tab — OSRS-style grid of small skill buttons (icon · level · XP bar).
    Sized so the grid matches the Pack tab's footprint. */
@@ -1166,6 +1169,41 @@ button.inv-slot {
 }
 
 @media (max-width: 520px) {
+  /* Minimal vitals: drop the panel chrome, the word "Hitpoints" and the bar.
+     Just a heart + HP and a coin + gold, floated over the map. */
+  .hud-vitals {
+    min-width: 0;
+    top: 8px;
+    left: 8px;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hud-vitals.low { box-shadow: none; }
+  .vitals-label {
+    margin: 0;
+    gap: 5px;
+    align-items: center;
+    font-size: 15px;
+    color: var(--ink);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
+  }
+  .vitals-heart { display: inline-flex; }
+  .vitals-name { display: none; }
+  .hp-bar { display: none; }
+  .gold-line {
+    margin: 0;
+    font-size: 15px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
+  }
+  .hud-vitals.low .vitals-heart .g-ico { animation: hp-pulse 0.9s ease-in-out infinite; }
+  /* Buffs + quest tracker rise to meet the now-tiny vitals line. */
+  .hud-topleft { top: 38px; }
+
   /* Keep the bottom-left log and bottom-right dock from crowding each other. */
   .hud-log {
     width: min(230px, 44vw);

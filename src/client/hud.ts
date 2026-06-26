@@ -25,7 +25,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
-import { iconize } from "./glyph.ts";
+import { glyph, iconize } from "./glyph.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
@@ -158,7 +158,7 @@ export class Hud {
     // --- Always-on Hitpoints (top-left) ---
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
-      <div class="vitals-label">Hitpoints <span class="hp-text">10 / 10</span></div>
+      <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="vitals-name">Hitpoints</span> <span class="hp-text">10 / 10</span></div>
       <div class="hp-bar"><div class="hp-fill"></div></div>
       <div class="gold-line"><span class="gold-coin">${iconize("🪙")}</span><span class="gold-text">0</span>g</div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
