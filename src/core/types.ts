@@ -730,8 +730,6 @@ export interface WorldObjectDef {
   target?: Vec2;
   /** Boss-dungeon entrance only: the dungeon id it leads to (for display). */
   dungeon?: string;
-  /** Portal only: combat level required to enter (boss-arena gate). */
-  req?: number;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -775,7 +773,20 @@ export interface MonsterStats {
   weakness?: string[];
   drops: Drop[];
   desc: string;
+  /** Boss only: special moves that fire during combat. */
+  mechanics?: BossMechanic[];
 }
+
+/** A boss's special move. Fires inside the monster's attack resolution. */
+export type BossMechanic =
+  /** Every `every`-th hit lands as a telegraphed heavy blow (×`mult` damage). */
+  | { type: "heavy"; every: number; mult: number; tell: string }
+  /** Below `below` HP fraction, the boss enrages once: all damage ×`mult`. */
+  | { type: "enrage"; below: number; mult: number; tell: string }
+  /** Each landed hit heals the boss for `frac` of the damage it dealt. */
+  | { type: "lifedrain"; frac: number; tell: string }
+  /** Below `below` HP fraction, the boss heals `amount` once. */
+  | { type: "selfheal"; below: number; amount: number; tell: string };
 
 /** The mutable runtime state for a single world object. */
 export interface WorldObjectState {
@@ -802,6 +813,11 @@ export interface WorldObjectState {
   crop?: string;
   /** Farming patch: wall-clock epoch (ms) the seed was planted. */
   plantedAt?: number;
+  /** Boss combat: how many times it has swung (drives the "heavy" cadence). */
+  swings?: number;
+  /** Boss combat: whether the one-shot enrage / self-heal have fired. */
+  enraged?: boolean;
+  healed?: boolean;
 }
 
 // ---------------------------------------------------------------------------

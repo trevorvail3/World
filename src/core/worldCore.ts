@@ -1053,10 +1053,6 @@ function usePortal(
 ): void {
   if (!def.target) return;
   const { player } = state;
-  if (def.req && combatLevel(player) < def.req) {
-    events.push({ type: "LOG", message: `You need combat level ${def.req} to enter the ${def.name}.` });
-    return;
-  }
   player.pos = { x: def.target.x, y: def.target.y };
   player.path = [];
   player.pendingInteractId = null;
@@ -1124,6 +1120,10 @@ export function tick(
         obj.pos = { x: def.x, y: def.y };
         obj.wanderTarget = null;
         obj.nextWanderAt = ctx.now + WANDER.pauseMin;
+        // Fresh boss fight: reset its special-move state.
+        obj.swings = 0;
+        obj.enraged = false;
+        obj.healed = false;
       }
       events.push({ type: "OBJECT_RESPAWNED", objId: def.id });
     }
@@ -1852,7 +1852,7 @@ function resolveCombat(
       playerSwing(state, content, def, obj, stats, ctx, events);
     } else {
       obj.nextAttackAt += stats.speed ?? COMBAT.monsterSpeed;
-      monsterSwing(state, content, def, stats, ctx, events);
+      monsterSwing(state, content, def, obj, stats, ctx, events);
     }
   }
 }
@@ -1905,17 +1905,53 @@ function monsterSwing(
   state: WorldState,
   content: Content,
   def: WorldObjectDef,
+  obj: WorldObjectState,
   stats: MonsterStats,
   ctx: Ctx,
   events: WorldEvent[],
 ): void {
   const { player } = state;
+  const mechanics = stats.mechanics ?? [];
+
+  // --- HP-threshold triggers (each fires once): enrage, self-heal ---
+  if (mechanics.length && obj.hp !== undefined) {
+    const frac = obj.hp / stats.hp;
+    for (const m of mechanics) {
+      if (m.type === "enrage" && !obj.enraged && frac < m.below) {
+        obj.enraged = true;
+        events.push({ type: "LOG", message: m.tell });
+      }
+      if (m.type === "selfheal" && !obj.healed && frac < m.below) {
+        obj.healed = true;
+        obj.hp = Math.min(stats.hp, obj.hp + m.amount);
+        events.push({ type: "LOG", message: m.tell });
+      }
+    }
+  }
+
+  // --- This swing's damage multiplier: a periodic "heavy" blow + enrage ---
+  obj.swings = (obj.swings ?? 0) + 1;
+  let dmgMult = 1;
+  for (const m of mechanics) {
+    if (m.type === "heavy" && obj.swings % m.every === 0) {
+      dmgMult *= m.mult;
+      events.push({ type: "LOG", message: m.tell });
+    }
+    if (m.type === "enrage" && obj.enraged) dmgMult *= m.mult;
+  }
+
   if (ctx.rng() < hitChance(stats.acc ?? 0, playerDefence(player, content))) {
     const raw = randInt(ctx, 1, stats.maxHit);
     const soak = Math.floor(playerDefence(player, content) / COMBAT.wardDivisor);
-    const dmg = Math.max(1, raw - soak);
+    const dmg = Math.max(1, Math.round((raw - soak) * dmgMult));
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
+    // Life-drain: the boss heals a fraction of the harm it does.
+    const ld = mechanics.find((m) => m.type === "lifedrain");
+    if (ld && ld.type === "lifedrain" && obj.hp !== undefined && obj.hp < stats.hp) {
+      obj.hp = Math.min(stats.hp, obj.hp + Math.max(1, Math.round(dmg * ld.frac)));
+      if (ctx.rng() < 0.4) events.push({ type: "LOG", message: ld.tell });
+    }
   } else {
     events.push({ type: "DAMAGE", targetId: "player", amount: 0 });
   }

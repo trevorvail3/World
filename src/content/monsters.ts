@@ -590,6 +590,10 @@ export const monsters: Record<string, MonsterStats> = {
       "slash"
     ],
     "desc": "The thing that was left to watch the vault. It is still watching.",
+    "mechanics": [
+      { "type": "lifedrain", "frac": 0.4, "tell": "The Keeper draws the marrow from your bones." },
+      { "type": "heavy", "every": 5, "mult": 2.5, "tell": "The Marrow Keeper strikes to shatter — Bone-break!" }
+    ],
     "drops": [
       {
         "item": "pet_marrow_keeper",
@@ -924,6 +928,10 @@ export const monsters: Record<string, MonsterStats> = {
       "crush"
     ],
     "desc": "An armoured revenant. It carries a weapon from before smithing had names.",
+    "mechanics": [
+      { "type": "heavy", "every": 4, "mult": 2, "tell": "The Hollow Warden raises its ancient blade — Grave Slam!" },
+      { "type": "enrage", "below": 0.3, "mult": 1.5, "tell": "The Warden's hollow eyes blaze with old fury." }
+    ],
     "drops": [
       {
         "item": "pet_hollow_warden",
@@ -995,6 +1003,10 @@ export const monsters: Record<string, MonsterStats> = {
       "stab"
     ],
     "desc": "An orc warlord who refused to die. The Spine took him in instead.",
+    "mechanics": [
+      { "type": "heavy", "every": 3, "mult": 2, "tell": "The Warlord bellows a war-cry — Crushing Blow!" },
+      { "type": "enrage", "below": 0.25, "mult": 1.6, "tell": "The Spine Warlord refuses to fall." }
+    ],
     "drops": [
       {
         "item": "pet_spine_warlord",
@@ -1061,6 +1073,10 @@ export const monsters: Record<string, MonsterStats> = {
       "crush"
     ],
     "desc": "Something that was buried in the mire with purpose. It has been here longer than the settlement that forgot it.",
+    "mechanics": [
+      { "type": "lifedrain", "frac": 0.5, "tell": "The Bog Warden drinks deep of your strength." },
+      { "type": "selfheal", "below": 0.4, "amount": 50, "tell": "The mire surges up and knits the Bog Warden whole." }
+    ],
     "drops": [
       {
         "item": "pet_bog_warden",

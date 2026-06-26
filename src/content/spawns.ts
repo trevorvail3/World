@@ -364,7 +364,7 @@ export const objects: WorldObjectDef[] = [
   // --- The Hollow Barrows (Knuckle Hills · combat 30) — arena at x=2 ---
   {
     id: "portal_hollow", kind: "portal", x: 25, y: 4, name: "The Hollow Barrows",
-    dungeon: "hollow_barrows", req: 30, target: { x: 8, y: 66 },
+    dungeon: "hollow_barrows", target: { x: 8, y: 66 },
     lines: ["You descend into the Hollow Barrows."],
   },
   { id: "ret_hollow", kind: "portal", x: 8, y: 67, name: "Barrow Exit", target: { x: 24, y: 4 }, lines: ["You climb back into the daylight."] },
@@ -375,7 +375,7 @@ export const objects: WorldObjectDef[] = [
   // --- The Bog Barrow (Heartmoor · combat 38) — arena at x=18 ---
   {
     id: "portal_bog", kind: "portal", x: 7, y: 52, name: "The Bog Barrow",
-    dungeon: "bog_barrow", req: 38, target: { x: 24, y: 66 },
+    dungeon: "bog_barrow", target: { x: 24, y: 66 },
     lines: ["You wade down into the Bog Barrow."],
   },
   { id: "ret_bog", kind: "portal", x: 24, y: 67, name: "Barrow Exit", target: { x: 8, y: 52 }, lines: ["You haul yourself back out of the mire."] },
@@ -386,7 +386,7 @@ export const objects: WorldObjectDef[] = [
   // --- The Spine Vault (The Spine · combat 55) — arena at x=34 ---
   {
     id: "portal_spine", kind: "portal", x: 42, y: 28, name: "The Spine Vault",
-    dungeon: "spine_vault", req: 55, target: { x: 40, y: 66 },
+    dungeon: "spine_vault", target: { x: 40, y: 66 },
     lines: ["You break the seal on the Spine Vault."],
   },
   { id: "ret_spine", kind: "portal", x: 40, y: 67, name: "Vault Exit", target: { x: 41, y: 28 }, lines: ["You leave the vault to its silence."] },
@@ -397,7 +397,7 @@ export const objects: WorldObjectDef[] = [
   // --- The Marrow Vault (The Marrow Deeps · combat 68) — arena at x=50 ---
   {
     id: "portal_marrow", kind: "portal", x: 58, y: 8, name: "The Marrow Vault",
-    dungeon: "marrow_vault", req: 68, target: { x: 56, y: 66 },
+    dungeon: "marrow_vault", target: { x: 56, y: 66 },
     lines: ["The vault door lets you pass."],
   },
   { id: "ret_marrow", kind: "portal", x: 56, y: 67, name: "Vault Exit", target: { x: 57, y: 8 }, lines: ["The door closes behind you."] },
