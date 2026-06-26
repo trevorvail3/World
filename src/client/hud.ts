@@ -70,6 +70,7 @@ export class Hud {
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
+  private goldText!: HTMLElement;
   private vitals!: HTMLElement;
   private statusPill!: HTMLElement;
   private statusText!: HTMLElement;
@@ -116,9 +117,11 @@ export class Hud {
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
       <div class="vitals-label">Hitpoints <span class="hp-text">10 / 10</span></div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>`;
+      <div class="hp-bar"><div class="hp-fill"></div></div>
+      <div class="gold-line">🪙 <span class="gold-text">0</span>g</div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
+    this.goldText = vitals.querySelector(".gold-text") as HTMLElement;
     this.vitals = vitals;
     root.appendChild(vitals);
 
@@ -453,6 +456,7 @@ export class Hud {
     const pct = Math.max(0, Math.min(1, player.hp / player.maxHp));
     this.hpFill.style.width = `${pct * 100}%`;
     this.hpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
 
     // "What am I doing" status pill.

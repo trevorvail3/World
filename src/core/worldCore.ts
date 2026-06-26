@@ -120,6 +120,9 @@ const BASE_MAX_HP = 10;
 
 const INVENTORY_SIZE = 28;
 
+/** A small starting purse so the market isn't dead on arrival. */
+const STARTING_GOLD = 30;
+
 // ---------------------------------------------------------------------------
 // Walkability — shared with the client's pathfinder.
 // ---------------------------------------------------------------------------
@@ -222,6 +225,7 @@ export function createWorld(
     quests: {},
     questsDone: [],
     flags: [],
+    gold: STARTING_GOLD,
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -368,6 +372,54 @@ function canAddItem(player: Player, item: ItemId): boolean {
   return player.inventory.some((slot) => slot === null || slot.item === item);
 }
 
+/** Buy one listing (its whole bundle) from a shop — needs gold and pack room. */
+function buyFromShop(
+  player: Player,
+  content: Content,
+  shopId: string,
+  item: ItemId,
+  events: WorldEvent[],
+): void {
+  const shop = content.shops.find((s) => s.id === shopId);
+  const line = shop?.stock.find((s) => s.item === item);
+  if (!line) return;
+  if (player.gold < line.price) {
+    events.push({ type: "LOG", message: "You can't afford that." });
+    return;
+  }
+  if (!canAddItem(player, item)) {
+    events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  player.gold -= line.price;
+  addItem(player, item, line.qty, events);
+  const name = content.items[item].name;
+  const bundle = line.qty > 1 ? `${line.qty}× ` : "";
+  events.push({ type: "LOG", message: `Bought ${bundle}${name} for ${line.price}g.` });
+}
+
+/** Sell up to `qty` of an item from the pack at the market for its gold value. */
+function sellToMarket(
+  player: Player,
+  content: Content,
+  item: ItemId,
+  qty: number,
+  events: WorldEvent[],
+): void {
+  const def = content.items[item];
+  const value = def?.sell ?? 0;
+  if (value <= 0) {
+    events.push({ type: "LOG", message: `No one will buy the ${def?.name ?? "item"}.` });
+    return;
+  }
+  const toSell = Math.min(Math.max(0, Math.floor(qty)), countItem(player, item));
+  if (toSell <= 0) return;
+  for (let i = 0; i < toSell; i++) removeOneItem(player, item);
+  player.gold += value * toSell;
+  const bundle = toSell > 1 ? `${toSell}× ` : "";
+  events.push({ type: "LOG", message: `Sold ${bundle}${def.name} for ${value * toSell}g.` });
+}
+
 /** Does the player hold everything a recipe needs (requires + requiresAny)? */
 function hasIngredients(player: Player, action: SkillAction): boolean {
   if (action.requires) {
@@ -495,6 +547,14 @@ export function applyIntent(
     }
     case "CHOOSE": {
       applyChoice(state, content, intent.quest, intent.option, events);
+      break;
+    }
+    case "BUY": {
+      buyFromShop(player, content, intent.shop, intent.item, events);
+      break;
+    }
+    case "SELL": {
+      sellToMarket(player, content, intent.item, intent.qty, events);
       break;
     }
     case "SET_STYLE": {
@@ -767,6 +827,13 @@ function startInteraction(
     }
 
     case "npc": {
+      // A shopkeeper opens their trade window — unless a quest step needs them
+      // right now (so a quest can still send you to a shopkeeper NPC).
+      const shop = content.shops.find((s) => s.npc === def.id);
+      if (shop && !questStepTargets(state.player, content, def.id)) {
+        events.push({ type: "OPEN_SHOP", shop: shop.id });
+        break;
+      }
       const lines = handleNpcTalk(state, content, def, events);
       if (lines.length > 0) {
         events.push({ type: "DIALOGUE", npc: def.name, lines });
@@ -1186,6 +1253,27 @@ function processCraft(
 }
 
 // --- Quests --------------------------------------------------------------
+
+/** Does any active quest's current step (talk/deliver/choice) target this NPC? */
+function questStepTargets(
+  player: Player,
+  content: Content,
+  npcId: string,
+): boolean {
+  for (const qid of Object.keys(player.quests)) {
+    const def = content.quests.find((q) => q.id === qid);
+    if (!def) continue;
+    const step = def.steps[player.quests[qid]!.step];
+    if (!step) continue;
+    if (
+      (step.type === "talk" || step.type === "deliver" || step.type === "choice") &&
+      step.npc === npcId
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Decide what an NPC says when talked to, handling quest accept / progress /

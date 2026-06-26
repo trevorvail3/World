@@ -841,6 +841,8 @@ export interface Player {
   questsDone: string[];
   /** Story flags set by quests (faction joins, plot beats, choices). */
   flags: string[];
+  /** Coins. Spent at shops; earned by selling and (later) quest rewards. */
+  gold: number;
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -952,6 +954,20 @@ export interface ChooseIntent {
   option: number;
 }
 
+/** "Buy one listing (its bundle of `qty`) of this item from this shop." */
+export interface BuyIntent {
+  type: "BUY";
+  shop: string;
+  item: ItemId;
+}
+
+/** "Sell this many of an item from my pack for its gold value." */
+export interface SellIntent {
+  type: "SELL";
+  item: ItemId;
+  qty: number;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -959,6 +975,8 @@ export type Intent =
   | EatIntent
   | DepositIntent
   | WithdrawIntent
+  | BuyIntent
+  | SellIntent
   | EquipIntent
   | UnequipIntent
   | CraftIntent
@@ -986,6 +1004,8 @@ export type WorldEvent =
   | { type: "PLAYER_DIED" }
   | { type: "PLAYER_RESPAWNED" }
   | { type: "OPEN_BANK" }
+  /** Open a shopkeeper's trade window. */
+  | { type: "OPEN_SHOP"; shop: string }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   | { type: "QUEST_STARTED"; quest: string }
@@ -1103,6 +1123,26 @@ export interface QuestState {
   killCount: number;
 }
 
+/** One buyable line in a shop: a bundle of `qty` of `item` for `price` gold. */
+export interface ShopStock {
+  item: ItemId;
+  /** Total gold for the whole bundle (not per-unit). */
+  price: number;
+  /** How many units one purchase grants. */
+  qty: number;
+}
+
+/** A shopkeeper's wares. Selling back happens at the item's own `sell` value. */
+export interface ShopDef {
+  id: string;
+  /** The NPC id whose tap opens this shop. */
+  npc: string;
+  name: string;
+  /** A line shown atop the trade window. */
+  greeting: string;
+  stock: ShopStock[];
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -1113,6 +1153,8 @@ export interface Content {
   actions: SkillAction[];
   /** The quest chains (data). */
   quests: QuestDef[];
+  /** Shopkeeper wares (data). */
+  shops: ShopDef[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

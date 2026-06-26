@@ -28,6 +28,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { BankUI } from "./bankUI.ts";
+import { ShopUI } from "./shopUI.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
@@ -145,6 +146,7 @@ export class Game {
   private menu: ContextMenu;
   private minimap: Minimap;
   private bank: BankUI;
+  private shop: ShopUI;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -165,6 +167,7 @@ export class Game {
     this.menu = menu;
     this.minimap = new Minimap(uiRoot);
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
+    this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -278,6 +281,11 @@ export class Game {
         case "OPEN_BANK":
           this.bank.show(this.bridge.state);
           break;
+        case "OPEN_SHOP": {
+          const shopDef = this.bridge.content.shops.find((s) => s.id === ev.shop);
+          if (shopDef) this.shop.show(this.bridge.state, shopDef);
+          break;
+        }
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
@@ -681,7 +689,7 @@ export class Game {
       this.dialogue.advance();
       return;
     }
-    if (this.menu.isOpen() || this.bank.isOpen()) return;
+    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen()) return;
 
     const tile = this.tileAtScreen(e.clientX, e.clientY);
     this.press = {
@@ -750,8 +758,10 @@ export class Game {
     if (obj) {
       title = obj.name;
       description = this.examineObject(obj); // shown as the inspect line
+      const isShopkeeper =
+        obj.kind === "npc" && this.bridge.content.shops.some((s) => s.npc === obj.id);
       items.push({
-        label: VERB[obj.kind],
+        label: isShopkeeper ? "Trade with" : VERB[obj.kind],
         target: obj.name,
         tone: "action",
         onSelect: () => this.interactObject(obj.id, this.liveTile(obj)),

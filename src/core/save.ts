@@ -42,6 +42,8 @@ export interface SavedProgress {
   questsDone: string[];
   /** Story flags. */
   flags: string[];
+  /** Coins. */
+  gold: number;
   hp: number;
   pos: { x: number; y: number };
 }
@@ -62,6 +64,7 @@ export function serializePlayer(player: Player): SavedProgress {
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
     flags: [...player.flags],
+    gold: player.gold,
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -153,6 +156,10 @@ export function hydratePlayer(
   const savedFlags = raw["flags"];
   if (Array.isArray(savedFlags)) {
     player.flags = savedFlags.filter((f): f is string => typeof f === "string");
+  }
+  const savedGold = raw["gold"];
+  if (typeof savedGold === "number" && Number.isFinite(savedGold) && savedGold >= 0) {
+    player.gold = Math.floor(savedGold);
   }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {

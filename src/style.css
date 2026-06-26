@@ -1031,3 +1031,110 @@ button.inv-slot {
     padding: 11px 12px;
   }
 }
+
+/* --- Gold readout under the Hitpoints bar --- */
+.gold-line {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+}
+
+/* --- Shopkeeper trade window (mirrors the bank modal) --- */
+.shop-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+.shop-backdrop.hidden { display: none; }
+.shop-modal {
+  width: min(380px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+.shop-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.shop-title {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+.shop-gold {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 14px;
+}
+.shop-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.shop-close:hover { color: var(--ember); }
+.shop-greeting {
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: 12px;
+  margin: 6px 0 2px;
+}
+.shop-label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  border-bottom: 1px solid rgba(74, 61, 44, 0.4);
+  padding-bottom: 3px;
+}
+.shop-wares { display: flex; flex-direction: column; gap: 4px; }
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+}
+.shop-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--item-color, #888);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  flex: 0 0 auto;
+}
+.shop-row-name { flex: 1; font-size: 13px; color: var(--ink); }
+.shop-buy {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  color: var(--gold);
+  background: rgba(210, 116, 44, 0.12);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shop-buy:hover { border-color: var(--ember); color: #f0c187; }
+.shop-buy.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.inv-slot.unsellable { opacity: 0.5; cursor: default; }
