@@ -418,6 +418,8 @@ export function drawWorld(
     }
     if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
       lights.push([px + TILE / 2, py + TILE / 2]);
+    } else if (def.kind === "lamppost") {
+      lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
     }
     // Name label
     if (def.kind === "npc" || def.kind === "monster") {
@@ -591,7 +593,68 @@ function drawObject(
     case "critter":
       drawCritter(g, def.species, cx, cy, now);
       break;
+    case "lamppost":
+      drawLamppost(g, cx, cy);
+      break;
+    case "signpost":
+      drawSignpost(g, cx, cy);
+      break;
+    case "waystone":
+      drawWaystone(g, cx, cy, now);
+      break;
   }
+}
+
+/** A street lamp: tall post with an iron lantern (its glow is in the night pass). */
+function drawLamppost(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 12, 5, 2);
+  g.strokeStyle = "#2c2a30"; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(cx, cy + 12); g.lineTo(cx, cy - 8); g.stroke();
+  g.fillStyle = "#3a3740"; // base
+  g.fillRect(cx - 3, cy + 9, 6, 4);
+  // The lantern housing.
+  g.fillStyle = "#26242b";
+  g.fillRect(cx - 4, cy - 14, 8, 7);
+  g.fillStyle = "#3a3740";
+  g.beginPath(); g.moveTo(cx - 5, cy - 14); g.lineTo(cx, cy - 18); g.lineTo(cx + 5, cy - 14); g.closePath(); g.fill();
+  // The flame (always lit; the night overlay makes it read as a glow).
+  g.fillStyle = "#f7c66a";
+  g.fillRect(cx - 2, cy - 13, 4, 5);
+  g.fillStyle = "rgba(247,198,106,0.5)";
+  g.beginPath(); g.arc(cx, cy - 10, 5, 0, Math.PI * 2); g.fill();
+}
+
+/** A directional fingerpost at a junction. */
+function drawSignpost(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 5, 2);
+  g.fillStyle = "#5a4128"; // post
+  g.fillRect(cx - 1.5, cy - 8, 3, 19);
+  // Two fingerboards pointing opposite ways.
+  g.fillStyle = "#7a5a34";
+  g.beginPath();
+  g.moveTo(cx - 11, cy - 5); g.lineTo(cx + 2, cy - 5); g.lineTo(cx + 2, cy - 1); g.lineTo(cx - 11, cy - 1); g.lineTo(cx - 13, cy - 3); g.closePath(); g.fill();
+  g.fillStyle = "#6b4f30";
+  g.beginPath();
+  g.moveTo(cx + 11, cy + 1); g.lineTo(cx - 2, cy + 1); g.lineTo(cx - 2, cy + 5); g.lineTo(cx + 11, cy + 5); g.lineTo(cx + 13, cy + 3); g.closePath(); g.fill();
+  g.fillStyle = "rgba(0,0,0,0.3)"; // faint "lettering"
+  g.fillRect(cx - 9, cy - 3.5, 7, 1); g.fillRect(cx + 1, cy + 2.5, 7, 1);
+}
+
+/** A Courier waystone: a carved standing stone with a painted rider-mark. */
+function drawWaystone(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  shadow(g, cx, cy + 11, 9, 3);
+  g.fillStyle = "#5b5762";
+  g.beginPath();
+  g.moveTo(cx - 7, cy + 11); g.lineTo(cx - 6, cy - 9); g.lineTo(cx, cy - 13);
+  g.lineTo(cx + 6, cy - 9); g.lineTo(cx + 7, cy + 11); g.closePath(); g.fill();
+  g.fillStyle = "#6c6775";
+  g.beginPath(); g.moveTo(cx - 6, cy - 9); g.lineTo(cx, cy - 13); g.lineTo(cx + 1, cy + 11); g.lineTo(cx - 7, cy + 11); g.closePath(); g.fill();
+  // The ember rider-mark, faintly pulsing.
+  const pulse = 0.55 + 0.45 * Math.sin(now / 500);
+  g.fillStyle = `rgba(210,116,44,${(0.5 + 0.4 * pulse).toFixed(2)})`;
+  g.beginPath(); g.arc(cx - 1, cy - 2, 4, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(247,198,106,0.8)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx - 4, cy - 2); g.lineTo(cx + 2, cy - 2); g.moveTo(cx - 1, cy - 5); g.lineTo(cx - 1, cy + 1); g.stroke();
 }
 
 /** Ambient wildlife — small, simple silhouettes by species. */

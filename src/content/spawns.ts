@@ -349,6 +349,35 @@ export const objects: WorldObjectDef[] = [
   { id: "lm_short_shift", kind: "shrine", x: 56, y: 90, name: "The Short-Shift Diggings", lines: ["Cuttings worked in bursts, because no one can stand the heat for long. A miner won't come up at the end of his shift — geology, or zeal. Left open."] },
   { id: "lm_tended_seam", kind: "shrine", x: 66, y: 96, name: "The Tended Seam", lines: ["A warm patch kept clean of debris by hands that leave offerings, not tools. A Cult tender asks you to witness, not help. The discomfort is the point."] },
 
+  // === STREET DRESSING & THE COURIER WAYSTONES ==============================
+  // Lamps (lit at night), fingerpost signs at the gates, and the Courier's
+  // waystone network — pay a toll to ride between them (a gold sink + fast travel).
+
+  // --- Ironvale street lamps (around the square, streets and gates) ---
+  { id: "lamp_1", kind: "lamppost", x: 57, y: 49, name: "Street Lamp" },
+  { id: "lamp_2", kind: "lamppost", x: 63, y: 49, name: "Street Lamp" },
+  { id: "lamp_3", kind: "lamppost", x: 57, y: 55, name: "Street Lamp" },
+  { id: "lamp_4", kind: "lamppost", x: 63, y: 55, name: "Street Lamp" },
+  { id: "lamp_5", kind: "lamppost", x: 49, y: 52, name: "Street Lamp" },
+  { id: "lamp_6", kind: "lamppost", x: 71, y: 52, name: "Street Lamp" },
+  { id: "lamp_7", kind: "lamppost", x: 60, y: 41, name: "Gate Lamp" },
+  { id: "lamp_8", kind: "lamppost", x: 60, y: 64, name: "Gate Lamp" },
+
+  // --- Fingerpost signs at the city's approaches ---
+  { id: "sign_west", kind: "signpost", x: 42, y: 54, name: "Fingerpost", lines: ["◀ GREYOAK WOOD — the Lodge road.   IRONVALE ▶, the gate behind you."] },
+  { id: "sign_north", kind: "signpost", x: 57, y: 35, name: "Fingerpost", lines: ["▲ THE SPINE — the high pass, and the Marrow caves beyond.   IRONVALE ▼."] },
+  { id: "sign_south", kind: "signpost", x: 62, y: 70, name: "Fingerpost", lines: ["▼ THE ASHFEN FLATS, and the HEARTMOOR away south-west.   IRONVALE ▲."] },
+  { id: "sign_east", kind: "signpost", x: 84, y: 52, name: "Fingerpost", lines: ["▶ THE REDRUN and the river road to the sea.   IRONVALE ◀."] },
+
+  // --- The Courier waystones (one in the city, one per region) ---
+  { id: "ws_ironvale", kind: "waystone", x: 58, y: 50, name: "Ironvale", target: { x: 57, y: 50 } },
+  { id: "ws_greyoak", kind: "waystone", x: 20, y: 53, name: "Greyoak Wood", target: { x: 21, y: 53 } },
+  { id: "ws_spine", kind: "waystone", x: 44, y: 8, name: "The Spine", target: { x: 43, y: 7 } },
+  { id: "ws_heartmoor", kind: "waystone", x: 19, y: 82, name: "Heartmoor", target: { x: 18, y: 81 } },
+  { id: "ws_ashfen", kind: "waystone", x: 62, y: 86, name: "Ashfen Flats", target: { x: 61, y: 87 } },
+  { id: "ws_marrow", kind: "waystone", x: 90, y: 16, name: "The Marrow Deeps", target: { x: 89, y: 15 } },
+  { id: "ws_redrun", kind: "waystone", x: 90, y: 70, name: "The Redrun", target: { x: 91, y: 71 } },
+
   // === WILDLIFE — ambient critters (wander, flee, don't block) ==============
   // City strays + birds:
   { id: "cr_cat", kind: "critter", species: "cat", x: 58, y: 60, name: "A Cat" },
@@ -364,7 +393,7 @@ export const objects: WorldObjectDef[] = [
   { id: "cr_deer1", kind: "critter", species: "deer", x: 16, y: 52, name: "A Roe Deer" },
   { id: "cr_deer2", kind: "critter", species: "deer", x: 24, y: 58, name: "A Roe Deer" },
   { id: "cr_hare3", kind: "critter", species: "rabbit", x: 10, y: 50, name: "A Wood Hare" },
-  { id: "cr_crow2", kind: "critter", species: "crow", x: 28, y: 49, name: "A Crow" },
+  { id: "cr_crow2", kind: "critter", species: "crow", x: 27, y: 48, name: "A Crow" },
   // The Spine (the walkable pass):
   { id: "cr_crow3", kind: "critter", species: "crow", x: 43, y: 9, name: "A Crag Crow" },
   { id: "cr_sheep2", kind: "critter", species: "sheep", x: 45, y: 13, name: "A Mountain Goat" },

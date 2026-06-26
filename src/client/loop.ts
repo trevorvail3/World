@@ -36,7 +36,7 @@ import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
-import { objectPos } from "../core/worldCore.ts";
+import { objectPos, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
 /**
@@ -111,6 +111,9 @@ const VERB: Record<ObjKind, string> = {
   fountain: "Examine",
   sawmill: "Mill at",
   critter: "Watch",
+  lamppost: "Examine",
+  signpost: "Read",
+  waystone: "Travel from",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -136,6 +139,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   fountain: "A stone fountain, the water bright over old green-stained basins.",
   sawmill: "A sawmill bench — frame-saws, a shaving-horse and a bowyer's vice.",
   critter: "A wild thing, going about its small business. It startles as you near.",
+  lamppost: "An iron lamp on a tall post. Lit against the dark by whoever walks the rounds.",
+  signpost: "A weathered fingerpost, its boards pointing the old roads.",
+  waystone: "A Courier waystone. Pay the toll and a rider will see you to another.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -337,6 +343,9 @@ export class Game {
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
+        case "OPEN_TRAVEL":
+          this.openTravel(ev.objId);
+          break;
         case "QUEST_COMPLETED": {
           const p = this.bridge.state.player.pos;
           this.floats.push({
@@ -446,6 +455,43 @@ export class Game {
       title,
       items,
       "Pick a recipe — you'll keep making it until the materials run out.",
+    );
+  }
+
+  /** The Courier's waystone network: pick a destination and pay the toll. */
+  private openTravel(srcId: string): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const dests = content.objects
+      .filter((o) => o.kind === "waystone" && o.id !== srcId && o.target)
+      .map((o) => ({ o, fare: travelFare(player.pos, o.target!) }))
+      .sort((a, b) => a.fare - b.fare);
+
+    const items: MenuItem[] = dests.map(({ o, fare }) => {
+      const afford = player.gold >= fare;
+      return {
+        label: o.name,
+        target: `${fare}g`,
+        tone: afford ? "action" : "normal",
+        onSelect: () => {
+          if (!afford) {
+            this.hud.log(`The toll to ${o.name} is ${fare}g — you can't cover it.`);
+            return;
+          }
+          this.dispatch({ type: "TRAVEL", to: o.id });
+        },
+      };
+    });
+    if (items.length === 0) {
+      this.hud.log("This is the only waystone you know.");
+      return;
+    }
+    this.menu.show(
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      "Courier Waystone",
+      items,
+      `Pay the toll to ride elsewhere. You carry ${player.gold.toLocaleString()}g.`,
     );
   }
 

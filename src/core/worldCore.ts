@@ -163,6 +163,9 @@ const BLOCKING_KINDS = new Set([
   "cart",
   "fountain",
   "sawmill",
+  "lamppost",
+  "signpost",
+  "waystone",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -664,6 +667,10 @@ export function applyIntent(
       buyFromShop(player, content, intent.shop, intent.item, events);
       break;
     }
+    case "TRAVEL": {
+      travelTo(state, content, intent.to, events);
+      break;
+    }
     case "SELL": {
       sellToMarket(player, content, intent.item, intent.qty, events);
       break;
@@ -1076,11 +1083,17 @@ function startInteraction(
     case "cart":
     case "fountain":
     case "critter":
-      // Examine-only landmark / city dressing / wildlife: speak its line, if any.
+    case "lamppost":
+    case "signpost":
+      // Examine-only landmark / city dressing / wildlife / signage.
       events.push({
         type: "LOG",
         message: def.lines?.[0] ?? `You study the ${def.name}.`,
       });
+      break;
+
+    case "waystone":
+      events.push({ type: "OPEN_TRAVEL", objId });
       break;
 
     case "monster": {
@@ -1219,6 +1232,35 @@ function plantSeed(
   grantXp(state, content, "farming", crop.xpPlant, events);
   const mins = Math.ceil(crop.growthMs / 60000);
   events.push({ type: "LOG", message: `You plant ${crop.name}. Ready in about ${mins} min.` });
+}
+
+/** The Courier's toll between two points — scales with distance, with a floor. */
+export function travelFare(from: Vec2, destTarget: Vec2): number {
+  const d = Math.max(Math.abs(from.x - destTarget.x), Math.abs(from.y - destTarget.y));
+  return Math.max(15, Math.round(d));
+}
+
+/** Pay the toll and fast-travel to a waystone's arrival tile. */
+function travelTo(
+  state: WorldState,
+  content: Content,
+  toObjId: string,
+  events: WorldEvent[],
+): void {
+  const def = findObjectDef(content, toObjId);
+  if (!def || def.kind !== "waystone" || !def.target) return;
+  const { player } = state;
+  const fare = travelFare(player.pos, def.target);
+  if (player.gold < fare) {
+    events.push({ type: "LOG", message: `The toll to ${def.name} is ${fare}g — you can't cover it.` });
+    return;
+  }
+  player.gold -= fare;
+  player.pos = { x: def.target.x, y: def.target.y };
+  player.path = [];
+  player.pendingInteractId = null;
+  clearActivity(player);
+  events.push({ type: "LOG", message: `You pay the Courier ${fare}g and ride to ${def.name}.` });
 }
 
 /** A portal teleports the player to its paired destination (boss arena ↔ home). */

@@ -722,7 +722,13 @@ export type ObjKind =
   /** A Woodcraft sawmill / bowyer's bench: planks, shafts, rods, bows, arrows. */
   | "sawmill"
   /** Ambient wildlife — wanders, flees the player, doesn't block (decorative). */
-  | "critter";
+  | "critter"
+  /** A street lamp — city dressing that casts warm light at night. */
+  | "lamppost"
+  /** A directional signpost at a junction (examine for the way). */
+  | "signpost"
+  /** A waystone: pay the Courier's toll to fast-travel between them. */
+  | "waystone";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -1086,6 +1092,12 @@ export interface ChooseIntent {
   option: number;
 }
 
+/** "Pay the toll and fast-travel to this waystone." */
+export interface TravelIntent {
+  type: "TRAVEL";
+  to: string;
+}
+
 /** "Buy one listing (its bundle of `qty`) of this item from this shop." */
 export interface BuyIntent {
   type: "BUY";
@@ -1138,6 +1150,7 @@ export type Intent =
   | WithdrawIntent
   | BuyIntent
   | SellIntent
+  | TravelIntent
   | PlantIntent
   | BountyTaskIntent
   | BountyClaimIntent
@@ -1176,6 +1189,8 @@ export type WorldEvent =
   | { type: "OPEN_PLANT"; patchId: string; patchType: "plant" | "tree" }
   /** Open the Bounty board (guides, current task, Hunt-Marks shop). */
   | { type: "OPEN_BOUNTY"; objId: string }
+  /** Open the fast-travel menu at a waystone. */
+  | { type: "OPEN_TRAVEL"; objId: string }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   | { type: "QUEST_STARTED"; quest: string }
