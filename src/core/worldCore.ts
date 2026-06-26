@@ -20,10 +20,12 @@
  */
 
 import type {
+  AchievementCond,
   Content,
   Ctx,
   EquipSlot,
   Intent,
+  ItemDef,
   ItemId,
   MonsterStats,
   Player,
@@ -228,6 +230,8 @@ export function createWorld(
     flags: [],
     gold: STARTING_GOLD,
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
+    stats: { goldEarned: 0, monstersSlain: 0 },
+    achievements: [],
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
@@ -328,6 +332,12 @@ function grantXp(
 ): void {
   const s = state.player.skills[skill];
   const before = s.level;
+  // A summoned skilling companion sweetens XP for its own skill. Kept fractional
+  // so a small % still accrues on low-XP actions (the display rounds it).
+  const comp = activeCompanion(state.player, content);
+  if (comp?.meta?.["petSkill"] === skill && typeof comp.meta["bonusAmt"] === "number") {
+    amount = amount * (1 + (comp.meta["bonusAmt"] as number));
+  }
   s.xp += amount;
   events.push({ type: "XP_GAINED", skill, amount });
   const after = levelFromXp(content.xpForLevel, s.xp);
@@ -418,6 +428,7 @@ function sellToMarket(
   if (toSell <= 0) return;
   for (let i = 0; i < toSell; i++) removeOneItem(player, item);
   player.gold += value * toSell;
+  player.stats.goldEarned += value * toSell;
   const bundle = toSell > 1 ? `${toSell}× ` : "";
   events.push({ type: "LOG", message: `Sold ${bundle}${def.name} for ${value * toSell}g.` });
 }
@@ -582,7 +593,48 @@ const EQUIP_SLOTS = new Set<string>([
   "ring",
   "necklace",
   "cape",
+  "companion",
 ]);
+
+/** Chance, per successful skill action, of a matching skilling-pet companion. */
+const PET_DROP_CHANCE = 0.004;
+
+/** The companion currently summoned, or undefined. */
+function activeCompanion(player: Player, content: Content): ItemDef | undefined {
+  const id = player.equipment.companion;
+  return id ? content.items[id] : undefined;
+}
+
+/** Does the player already have this companion anywhere (pack/bank/summoned)? */
+function ownsItem(player: Player, item: ItemId): boolean {
+  if (player.equipment.companion === item) return true;
+  if ((player.bank[item] ?? 0) > 0) return true;
+  return player.inventory.some((s) => s?.item === item);
+}
+
+/**
+ * A successful action in a gathering/processing skill can turn up that skill's
+ * companion (a rare pet), once. Skilling pets carry meta.petSkill === skill.
+ */
+function tryPetDrop(
+  state: WorldState,
+  content: Content,
+  skill: SkillId,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  if (ctx.rng() >= PET_DROP_CHANCE) return;
+  const player = state.player;
+  for (const id of Object.keys(content.items) as ItemId[]) {
+    const def = content.items[id];
+    if (def.slot !== "companion" || def.meta?.["petSkill"] !== skill) continue;
+    if (ownsItem(player, id) || !canAddItem(player, id)) return;
+    addItem(player, id, 1, events);
+    events.push({ type: "COMPANION_FOUND", item: id });
+    events.push({ type: "LOG", message: `A companion has found you: ${def.name}!` });
+    return;
+  }
+}
 
 /** Combat level needed to equip each gear tier (idle game GEAR_TIER_REQS). */
 const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
@@ -954,6 +1006,9 @@ export function tick(
   // 5) Idle wandering: npcs + monsters amble within reach of their spawn.
   wanderCreatures(state, content, ctx, dt);
 
+  // 6) Light up any newly-earned achievements.
+  checkAchievements(state, content, events);
+
   return events;
 }
 
@@ -1192,6 +1247,7 @@ function gatherStep(
       type: "LOG",
       message: `You get ${content.items[action.produces].name}.`,
     });
+    tryPetDrop(state, content, action.skill, ctx, events);
     // A node's rare drop (bird nest, gem, etc.).
     if (
       action.rareDrop &&
@@ -1251,6 +1307,7 @@ function processCraft(
     type: "LOG",
     message: `You make ${content.items[action.produces].name}.`,
   });
+  tryPetDrop(state, content, action.skill, ctx, events);
   act.nextActionAt = ctx.now + CRAFT_INTERVAL;
 }
 
@@ -1396,9 +1453,72 @@ function grantQuestReward(
   }
   if (def.reward.gold) {
     player.gold += def.reward.gold;
+    player.stats.goldEarned += def.reward.gold;
     events.push({ type: "LOG", message: `You receive ${def.reward.gold}g.` });
   }
   applyRep(player, content, def.reward.rep, events);
+}
+
+/** How many distinct companion items the player owns (pack/bank/summoned). */
+export function companionCount(player: Player, content: Content): number {
+  const owned = new Set<ItemId>();
+  for (const s of player.inventory) {
+    if (s && content.items[s.item]?.slot === "companion") owned.add(s.item);
+  }
+  for (const id of Object.keys(player.bank) as ItemId[]) {
+    if ((player.bank[id] ?? 0) > 0 && content.items[id]?.slot === "companion") owned.add(id);
+  }
+  if (player.equipment.companion) owned.add(player.equipment.companion);
+  return owned.size;
+}
+
+/** Evaluate one achievement condition: current value, target, and met? */
+export function evalAchievement(
+  player: Player,
+  content: Content,
+  cond: AchievementCond,
+): { cur: number; target: number; met: boolean } {
+  const done = (cur: number, target: number) => ({ cur, target, met: cur >= target });
+  const skillLevels = Object.values(player.skills).map((s) => s.level);
+  switch (cond.type) {
+    case "skillLevel":
+      return done(skillLvl(player, cond.skill), cond.level);
+    case "anySkillLevel":
+      return done(Math.max(...skillLevels), cond.level);
+    case "totalLevel":
+      return done(skillLevels.reduce((n, l) => n + l, 0), cond.total);
+    case "combatLevel":
+      return done(combatLevel(player), cond.level);
+    case "questDone":
+      return done(player.questsDone.includes(cond.quest) ? 1 : 0, 1);
+    case "flag":
+      return done(player.flags.includes(cond.flag) ? 1 : 0, 1);
+    case "goldEarned":
+      return done(player.stats.goldEarned, cond.amount);
+    case "monstersSlain":
+      return done(player.stats.monstersSlain, cond.count);
+    case "companions":
+      return done(companionCount(player, content), cond.count);
+    case "anyRepAtLeast":
+      return done(Math.max(...Object.values(player.reputation)), cond.amount);
+  }
+}
+
+/** Unlock any newly-earned achievements and announce them. */
+function checkAchievements(
+  state: WorldState,
+  content: Content,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  for (const a of content.achievements) {
+    if (player.achievements.includes(a.id)) continue;
+    if (evalAchievement(player, content, a.cond).met) {
+      player.achievements.push(a.id);
+      events.push({ type: "ACHIEVEMENT", id: a.id, name: a.name });
+      events.push({ type: "LOG", message: `Achievement unlocked: ${a.name}!` });
+    }
+  }
 }
 
 /** Adjust faction standing and announce each change. */
@@ -1450,6 +1570,7 @@ function applyChoice(
   }
   if (pick.gold && paid) {
     player.gold += pick.gold;
+    player.stats.goldEarned += pick.gold;
     events.push({ type: "LOG", message: `You're paid ${pick.gold}g.` });
   }
   applyRep(player, content, pick.rep, events);
@@ -1646,6 +1767,7 @@ function playerSwing(
     grantXp(state, content, "vitality", Math.floor(stats.xp * 0.33), events);
     grantXp(state, content, player.combatStyle, Math.floor(stats.xp), events);
     rollDrops(player, stats, ctx, events);
+    player.stats.monstersSlain += 1;
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
     advanceKillQuests(state, content, def.monster, events);

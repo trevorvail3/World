@@ -46,6 +46,10 @@ export interface SavedProgress {
   gold: number;
   /** Faction standings. */
   reputation: Record<string, number>;
+  /** Cumulative achievement tallies. */
+  stats: { goldEarned: number; monstersSlain: number };
+  /** Unlocked achievement ids. */
+  achievements: string[];
   hp: number;
   pos: { x: number; y: number };
 }
@@ -68,6 +72,8 @@ export function serializePlayer(player: Player): SavedProgress {
     flags: [...player.flags],
     gold: player.gold,
     reputation: { ...player.reputation },
+    stats: { ...player.stats },
+    achievements: [...player.achievements],
     hp: player.hp,
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
@@ -170,6 +176,18 @@ export function hydratePlayer(
       const v = savedRep[fid];
       if (typeof v === "number" && Number.isFinite(v)) player.reputation[fid] = Math.round(v);
     }
+  }
+  const savedStats = raw["stats"];
+  if (isRecord(savedStats)) {
+    const g = savedStats["goldEarned"], k = savedStats["monstersSlain"];
+    if (typeof g === "number" && g >= 0) player.stats.goldEarned = Math.floor(g);
+    if (typeof k === "number" && k >= 0) player.stats.monstersSlain = Math.floor(k);
+  }
+  const savedAch = raw["achievements"];
+  if (Array.isArray(savedAch)) {
+    player.achievements = savedAch.filter(
+      (id): id is string => typeof id === "string" && content.achievements.some((a) => a.id === id),
+    );
   }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {

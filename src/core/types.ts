@@ -565,7 +565,8 @@ export type EquipSlot =
   | "boots"
   | "ring"
   | "necklace"
-  | "cape";
+  | "cape"
+  | "companion";
 
 /**
  * A static description of an item. Lives in src/content/items.ts.
@@ -845,6 +846,10 @@ export interface Player {
   gold: number;
   /** Standing with each of the four factions (can be negative). */
   reputation: Record<FactionId, number>;
+  /** Cumulative tallies for achievements. */
+  stats: { goldEarned: number; monstersSlain: number };
+  /** Ids of achievements already unlocked (so they stay unlocked). */
+  achievements: string[];
   activity: Activity;
   /**
    * A pending interaction queued while the player walks toward something:
@@ -1014,7 +1019,11 @@ export type WorldEvent =
   | { type: "QUEST_ADVANCED"; quest: string }
   | { type: "QUEST_COMPLETED"; quest: string }
   /** A quest is asking the player to choose; the client shows the options. */
-  | { type: "QUEST_CHOICE"; quest: string; prompt: string; options: string[] };
+  | { type: "QUEST_CHOICE"; quest: string; prompt: string; options: string[] }
+  /** A companion has joined you (a rare pet drop). */
+  | { type: "COMPANION_FOUND"; item: ItemId }
+  /** An achievement just unlocked. */
+  | { type: "ACHIEVEMENT"; id: string; name: string };
 
 // ---------------------------------------------------------------------------
 // Content bundle: all the game DATA handed to the core when a world is made.
@@ -1074,6 +1083,29 @@ export type FactionId = "ashforge" | "lodge" | "pale_record" | "heartmoor_cult";
 export interface RepChange {
   faction: FactionId;
   amount: number;
+}
+
+/** The condition that unlocks an achievement, evaluated against player state. */
+export type AchievementCond =
+  | { type: "skillLevel"; skill: SkillId; level: number }
+  | { type: "anySkillLevel"; level: number }
+  | { type: "totalLevel"; total: number }
+  | { type: "combatLevel"; level: number }
+  | { type: "questDone"; quest: string }
+  | { type: "flag"; flag: string }
+  | { type: "goldEarned"; amount: number }
+  | { type: "monstersSlain"; count: number }
+  | { type: "companions"; count: number }
+  | { type: "anyRepAtLeast"; amount: number };
+
+export interface AchievementDef {
+  id: string;
+  name: string;
+  desc: string;
+  icon: string;
+  /** Display grouping, e.g. "Skills", "Combat", "Wealth", "Story". */
+  category: string;
+  cond: AchievementCond;
 }
 
 /** One choice a player can make at a "choose" step. */
@@ -1178,6 +1210,8 @@ export interface Content {
   shops: ShopDef[];
   /** The factions and their display metadata (data). */
   factions: { id: FactionId; name: string; icon: string; blurb: string }[];
+  /** The achievements (data). */
+  achievements: AchievementDef[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name + icon glyph). */

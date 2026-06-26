@@ -319,6 +319,17 @@ export class Game {
         case "QUEST_CHOICE":
           this.openChoice(ev.quest, ev.prompt, ev.options);
           break;
+        case "COMPANION_FOUND": {
+          const p = this.bridge.state.player.pos;
+          const name = this.bridge.content.items[ev.item]?.name ?? "A companion";
+          this.floats.push({ x: p.x, y: p.y - 0.7, text: `🐾 ${name}!`, color: "#9fd07a", born: now, size: 17 });
+          break;
+        }
+        case "ACHIEVEMENT": {
+          const p = this.bridge.state.player.pos;
+          this.floats.push({ x: p.x, y: p.y - 0.9, text: `🏆 ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
+          break;
+        }
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -342,7 +353,7 @@ export class Game {
       this.floats.push({
         x: p.x,
         y: p.y,
-        text: `+${xpSum} XP`,
+        text: `+${Math.round(xpSum)} XP`,
         color: "#e0b54a",
         born: now,
       });

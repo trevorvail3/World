@@ -19,11 +19,13 @@ import type {
   Intent,
   InventorySlot,
   ItemId,
+  Player,
   SkillId,
   WorldState,
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { ITEM_COLORS } from "./itemColors.ts";
+import { evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
 const MAX_LOG_LINES = 8;
@@ -38,7 +40,9 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
   crafting: "Crafting…",
 };
 
-type TabId = "inventory" | "skills" | "equipment" | "character" | "quests" | "factions" | "settings";
+type TabId =
+  | "inventory" | "skills" | "equipment" | "character"
+  | "quests" | "factions" | "companions" | "achievements" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
@@ -47,6 +51,8 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
   { id: "factions", icon: "🤝", title: "Factions" },
+  { id: "companions", icon: "🐾", title: "Companions" },
+  { id: "achievements", icon: "🏆", title: "Achievements" },
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
 
@@ -71,6 +77,7 @@ const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "ring", name: "Ring" },
   { slot: "necklace", name: "Amulet" },
   { slot: "cape", name: "Cape" },
+  { slot: "companion", name: "Companion" },
 ];
 
 /** Canon slot strings this UI can wear (matches EquipSlot). */
@@ -102,6 +109,8 @@ export class Hud {
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
+  private companionGrid?: HTMLElement;
+  private achieveList?: HTMLElement;
   private skillDetail!: SkillDetailModal;
   private lastState: WorldState | null = null;
   private equipCells = new Map<EquipSlot, HTMLElement>();
@@ -329,6 +338,21 @@ export class Hud {
         p.appendChild(note("Standing rises and falls with your deeds and your choices."));
         break;
       }
+      case "companions": {
+        const grid = document.createElement("div");
+        grid.className = "companion-grid";
+        this.companionGrid = grid;
+        p.appendChild(grid);
+        p.appendChild(note("Companions turn up while you train their skill. Tap one to summon it."));
+        break;
+      }
+      case "achievements": {
+        const list = document.createElement("div");
+        list.className = "achieve-list";
+        this.achieveList = list;
+        p.appendChild(list);
+        break;
+      }
       case "settings": {
         p.appendChild(note("More settings coming soon — audio, display and more."));
         const reset = document.createElement("button");
@@ -512,6 +536,9 @@ export class Hud {
       }
     });
 
+    if (this.activeTab === "companions") this.renderCompanions(player);
+    if (this.activeTab === "achievements") this.renderAchievements(player);
+
     // Faction standings.
     for (const f of this.content.factions) {
       const els = this.factionRows.get(f.id);
@@ -640,6 +667,81 @@ export class Hud {
       parts.push(note("No quests yet. Talk to the folk you meet — a marker means they've something to ask.").outerHTML);
     }
     this.questList.innerHTML = parts.join("");
+  }
+
+  /** The companion collection: owned ones tappable to summon; rest locked. */
+  private renderCompanions(player: Player): void {
+    if (!this.companionGrid) return;
+    this.companionGrid.innerHTML = "";
+    const comps = (Object.keys(this.content.items) as ItemId[]).filter(
+      (id) => this.content.items[id].slot === "companion",
+    );
+    for (const id of comps) {
+      const def = this.content.items[id];
+      const owned =
+        player.equipment.companion === id ||
+        player.inventory.some((s) => s?.item === id) ||
+        (player.bank[id] ?? 0) > 0;
+      const active = player.equipment.companion === id;
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "comp-cell" + (owned ? " owned" : " locked") + (active ? " active" : "");
+      cell.title = owned
+        ? `${def.name}${active ? " (summoned)" : ""} — ${def.description}`
+        : "An undiscovered companion. Keep training.";
+      cell.innerHTML = `<span class="comp-ic">${owned ? def.icon ?? "🐾" : "❓"}</span>${
+        active ? `<span class="comp-star">★</span>` : ""
+      }`;
+      if (owned) cell.addEventListener("click", () => this.summonCompanion(id));
+      this.companionGrid.appendChild(cell);
+    }
+  }
+
+  private summonCompanion(id: ItemId): void {
+    const player = this.lastState?.player;
+    if (!player) return;
+    if (player.equipment.companion === id) {
+      this.dispatch({ type: "UNEQUIP", equipSlot: "companion" });
+      return;
+    }
+    const idx = player.inventory.findIndex((s) => s?.item === id);
+    if (idx >= 0) {
+      this.dispatch({ type: "EQUIP", slot: idx });
+    } else if ((player.bank[id] ?? 0) > 0) {
+      this.dispatch({ type: "WITHDRAW", item: id });
+      this.log("Brought it to your pack — tap again to summon it.");
+    }
+  }
+
+  /** The achievements, grouped by category, with ✓ or progress. */
+  private renderAchievements(player: Player): void {
+    if (!this.achieveList) return;
+    const all = this.content.achievements;
+    const cats: string[] = [];
+    for (const a of all) if (!cats.includes(a.category)) cats.push(a.category);
+    const parts: string[] = [
+      `<div class="achieve-summary">${player.achievements.length} / ${all.length} unlocked</div>`,
+    ];
+    for (const cat of cats) {
+      parts.push(`<div class="achieve-cat">${cat}</div>`);
+      for (const a of all.filter((x) => x.category === cat)) {
+        const done = player.achievements.includes(a.id);
+        const ev = evalAchievement(player, this.content, a.cond);
+        const right = done
+          ? `<span class="achieve-check">✓</span>`
+          : ev.target > 1
+            ? `<span class="achieve-prog">${Math.min(ev.cur, ev.target).toLocaleString()} / ${ev.target.toLocaleString()}</span>`
+            : `<span class="achieve-lock">🔒</span>`;
+        parts.push(
+          `<div class="achieve-row ${done ? "done" : ""}">
+            <span class="achieve-ic">${done ? a.icon : "🔒"}</span>
+            <span class="achieve-info"><span class="achieve-name">${escapeHtml(a.name)}</span><span class="achieve-desc">${escapeHtml(a.desc)}</span></span>
+            ${right}
+          </div>`,
+        );
+      }
+    }
+    this.achieveList.innerHTML = parts.join("");
   }
 }
 
