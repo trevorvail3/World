@@ -282,7 +282,7 @@ export class Game {
     this.drawMarker(now);
     this.drawHighlights(now);
     this.drawActivityFeedback(now);
-    this.drawGuideTarget(now);
+    this.drawTutorialArrow(now);
     this.drawQuestMarkers(now);
     this.drawSparks(now);
     this.drawFloats(now);
@@ -747,40 +747,128 @@ export class Game {
   }
 
   /** A bobbing gold chevron over whatever the onboarding guide points at. */
-  private drawGuideTarget(now: number): void {
-    const step = this.guide.currentStep;
-    let target: { x: number; y: number } | null = null;
-
-    if (step === "greet") {
-      const aldric = this.bridge.content.objects.find((o) => o.id === "aldric");
-      if (aldric) target = objectPos(aldric, this.bridge.state.objects[aldric.id]);
-    } else if (step === "hunt") {
-      // Point at the nearest living monster.
-      const p = this.bridge.state.player.pos;
-      let best = Infinity;
-      for (const o of this.bridge.content.objects) {
-        if (o.kind !== "monster") continue;
-        if (!this.bridge.state.objects[o.id]?.available) continue;
-        const op = objectPos(o, this.bridge.state.objects[o.id]);
-        const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
-        if (d < best) {
-          best = d;
-          target = op;
-        }
-      }
-    }
-    if (!target) return;
-
-    const { x: cx, y: cy } = this.toScreen(target.x, target.y);
-    const bob = Math.sin(now / 250) * 4;
-    const topY = cy - TILE * 0.7 + bob;
+  /**
+   * Hand-holding for the first couple of tasks: a flashing arrow at the next
+   * objective — bobbing above it when on-screen, or pinned to the screen edge
+   * pointing the way when it's off-screen. The quest tracker says what to do;
+   * this says where.
+   */
+  private drawTutorialArrow(now: number): void {
+    const t = this.tutorialTarget();
+    if (!t) return;
+    const sx = t.x * TILE + TILE / 2 - this.cam.x;
+    const sy = t.y * TILE + TILE / 2 - this.cam.y;
+    const W = this.canvas.width, H = this.canvas.height;
+    const m = 48; // edge inset
+    const flash = 0.5 + 0.5 * Math.sin(now / 180); // the "flashing"
+    const onScreen = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
+    this.g.save();
+    this.g.globalAlpha = 0.45 + 0.55 * flash;
     this.g.fillStyle = "#f2cf6b";
+    this.g.strokeStyle = "rgba(0,0,0,0.55)";
+    this.g.lineWidth = 1.5;
+    if (onScreen) {
+      const bob = Math.sin(now / 240) * 5;
+      this.tri(sx, sy - TILE * 0.95 + bob, Math.PI / 2, 13); // points down at it
+    } else {
+      const ang = Math.atan2(sy - H / 2, sx - W / 2);
+      const ex = Math.max(m, Math.min(W - m, sx));
+      const ey = Math.max(m, Math.min(H - m, sy));
+      this.tri(ex, ey, ang, 17); // points toward the off-screen target
+    }
+    this.g.restore();
+  }
+
+  /** A filled triangle at (x,y) pointing along `ang`. */
+  private tri(x: number, y: number, ang: number, size: number): void {
+    this.g.save();
+    this.g.translate(x, y);
+    this.g.rotate(ang);
     this.g.beginPath();
-    this.g.moveTo(cx - 7, topY - 8);
-    this.g.lineTo(cx + 7, topY - 8);
-    this.g.lineTo(cx, topY + 2);
+    this.g.moveTo(size, 0);
+    this.g.lineTo(-size * 0.7, -size * 0.75);
+    this.g.lineTo(-size * 0.7, size * 0.75);
     this.g.closePath();
     this.g.fill();
+    this.g.stroke();
+    this.g.restore();
+  }
+
+  /** The tile the next objective sits on, while still hand-holding (else null). */
+  private tutorialTarget(): { x: number; y: number } | null {
+    const { state, content } = this.bridge;
+    const player = state.player;
+    if (player.questsDone.length >= 2) return null; // only the first couple of tasks
+
+    const activeId = Object.keys(player.quests)[0];
+    if (activeId) {
+      const def = content.quests.find((q) => q.id === activeId);
+      const st = player.quests[activeId];
+      const step = def && st ? def.steps[st.step] : undefined;
+      if (step) {
+        const s = step as { type: string; npc?: string; monster?: string; item?: string };
+        if ((s.type === "talk" || s.type === "deliver" || s.type === "choice") && s.npc) {
+          return this.objTile(s.npc);
+        }
+        if (s.type === "kill" && s.monster) return this.nearestMonster(s.monster);
+        if (s.type === "gather" && s.item) return this.gatherTarget(s.item);
+        return null; // "reach a skill level" has nowhere to point
+      }
+    }
+    // Not started yet: point to whoever offers the opening quest.
+    const offer = content.quests.find(
+      (q) =>
+        q.giver && !player.quests[q.id] && !player.questsDone.includes(q.id) &&
+        (!q.requires || player.questsDone.includes(q.requires)) &&
+        (!q.requiresFlags || q.requiresFlags.every((f) => player.flags.includes(f))),
+    );
+    return offer?.giver ? this.objTile(offer.giver) : null;
+  }
+
+  private objTile(id: string): { x: number; y: number } | null {
+    const def = this.bridge.content.objects.find((o) => o.id === id);
+    return def ? objectPos(def, this.bridge.state.objects[id]) : null;
+  }
+
+  private nearestMonster(monster: string): { x: number; y: number } | null {
+    const p = this.bridge.state.player.pos;
+    let best = Infinity, found: { x: number; y: number } | null = null;
+    for (const o of this.bridge.content.objects) {
+      if (o.kind !== "monster" || o.monster !== monster) continue;
+      if (!this.bridge.state.objects[o.id]?.available) continue;
+      const op = objectPos(o, this.bridge.state.objects[o.id]);
+      const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
+      if (d < best) { best = d; found = op; }
+    }
+    return found;
+  }
+
+  /** Where to get a gathered/made item: a resource node, a station, or (last) a monster. */
+  private gatherTarget(item: string): { x: number; y: number } | null {
+    const { state, content } = this.bridge;
+    const p = state.player.pos;
+    const nearestOf = (pred: (o: typeof content.objects[number]) => boolean): { x: number; y: number } | null => {
+      let best = Infinity, found: { x: number; y: number } | null = null;
+      for (const o of content.objects) {
+        if (!pred(o)) continue;
+        const op = objectPos(o, state.objects[o.id]);
+        const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
+        if (d < best) { best = d; found = op; }
+      }
+      return found;
+    };
+    // 1) A resource node that yields the item directly (mine/chop/fish/snare).
+    const node = nearestOf((o) => {
+      if (!o.resource) return false;
+      return content.actions.find((a) => a.id === o.resource)?.produces === item;
+    });
+    if (node) return node;
+    // 2) A station whose recipes make the item (smelt at a furnace, etc.).
+    const kinds: ObjKind[] = ["furnace", "anvil", "fire", "cauldron", "workbench", "crafting_table", "sawmill"];
+    const kind = kinds.find((k) => this.bridge.stationRecipes(k).some((a) => a.produces === item));
+    if (kind) { const st = nearestOf((o) => o.kind === kind); if (st) return st; }
+    // 3) Otherwise it's a drop — point at the nearest creature.
+    return nearestOf((o) => o.kind === "monster" && !!state.objects[o.id]?.available);
   }
 
   /** A "!" over an NPC with a quest to give, or "?" when one's ready to hand in. */
