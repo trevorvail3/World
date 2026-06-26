@@ -27,7 +27,7 @@ import type {
   ItemId,
   MonsterStats,
   Player,
-  Recipe,
+  SkillAction,
   SkillId,
   Vec2,
   WorldEvent,
@@ -48,8 +48,27 @@ const MOVE_SPEED = 3.5; // tiles per second
 const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000, deplete: 0.25 };
 const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000, deplete: 0.3 };
 const FISHING = { interval: 1400, success: 0.5, xp: 20 };
-const COOKING_INTERVAL = 1400;
-const SMELTING_INTERVAL = 1800;
+
+// Re-tuned: one station-craft step every CRAFT_INTERVAL ms (the idle game's
+// per-recipe baseTimes are far slower; a single snappy interval feels right
+// when you're standing at the station).
+const CRAFT_INTERVAL = 1200;
+
+/** Which actions each station offers, by the station's ObjKind. */
+export function stationActions(content: Content, station: string): SkillAction[] {
+  return content.actions.filter((a) => {
+    if (!a.produces) return false;
+    if (station === "fire") {
+      return a.skill === "cooking" || (a.skill === "survivalist" && a.group === "fire");
+    }
+    if (station === "furnace") return a.id.startsWith("smelt_");
+    // The anvil forges everything smithing that isn't smelting or reforging.
+    if (station === "anvil") {
+      return a.skill === "smithing" && !a.id.startsWith("smelt_") && !a.meltAll;
+    }
+    return false;
+  });
+}
 
 const PLAYER_RESPAWN = 4000;
 
@@ -156,7 +175,7 @@ export function createWorld(
     bank: {},
     equipment: {},
     combatStyle: "vigour",
-    activity: { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 },
+    activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
     respawnAt: 0,
@@ -236,7 +255,7 @@ function addItem(
 }
 
 function clearActivity(player: Player): void {
-  player.activity = { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 };
+  player.activity = { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 };
 }
 
 /** Does the player hold at least one of this item? */
@@ -249,9 +268,30 @@ function canAddItem(player: Player, item: ItemId): boolean {
   return player.inventory.some((slot) => slot === null || slot.item === item);
 }
 
-/** Does the player hold any input for one of these recipes? */
-function hasRecipeInput(player: Player, recipes: Recipe[]): boolean {
-  return recipes.some((r) => hasItem(player, r.input));
+/** Does the player hold everything a recipe needs (requires + requiresAny)? */
+function hasIngredients(player: Player, action: SkillAction): boolean {
+  if (action.requires) {
+    for (const [item, qty] of Object.entries(action.requires)) {
+      if (countItem(player, item as ItemId) < (qty ?? 0)) return false;
+    }
+  }
+  if (action.requiresAny && action.requiresAny.length > 0) {
+    if (!action.requiresAny.some((item) => hasItem(player, item))) return false;
+  }
+  return true;
+}
+
+/** Consume one batch of a recipe's inputs from the pack. */
+function consumeIngredients(player: Player, action: SkillAction): void {
+  if (action.requires) {
+    for (const [item, qty] of Object.entries(action.requires)) {
+      for (let i = 0; i < (qty ?? 0); i++) removeOneItem(player, item as ItemId);
+    }
+  }
+  if (action.requiresAny && action.requiresAny.length > 0) {
+    const choice = action.requiresAny.find((item) => hasItem(player, item));
+    if (choice) removeOneItem(player, choice);
+  }
 }
 
 /** Remove a single unit of an item from the inventory. */
@@ -349,8 +389,8 @@ export function applyIntent(
       unequipSlot(player, content, intent.equipSlot, events);
       break;
     }
-    case "FORGE": {
-      forgeItem(state, content, intent.output, events);
+    case "CRAFT": {
+      startCraft(state, content, intent.actionId, intent.objId, ctx, events);
       break;
     }
     case "SET_STYLE": {
@@ -467,34 +507,40 @@ function unequipSlot(
   });
 }
 
-/** Forge bars into a piece of gear at the anvil (consumes bars, grants XP). */
-function forgeItem(
+/**
+ * Begin repeating a station recipe (cooking/smelting/smithing/firemaking). The
+ * actual making happens each tick in processActivity; this just validates the
+ * choice and starts the activity so the client shows progress on the station.
+ */
+function startCraft(
   state: WorldState,
   content: Content,
-  output: ItemId,
+  actionId: string,
+  objId: string,
+  ctx: Ctx,
   events: WorldEvent[],
 ): void {
   const { player } = state;
-  const recipe = content.forging.find((r) => r.output === output);
-  if (!recipe) return;
-  if (countItem(player, recipe.input) < recipe.count) {
+  const action = content.actions.find((a) => a.id === actionId);
+  if (!action || !action.produces) return;
+  if (skillLvl(player, action.skill) < action.levelReq) {
     events.push({
       type: "LOG",
-      message: `You need ${recipe.count} ${content.items[recipe.input].name}.`,
+      message: `You need ${content.skills[action.skill].name} level ${action.levelReq}.`,
     });
     return;
   }
-  if (!canAddItem(player, recipe.output)) {
-    events.push({ type: "INVENTORY_FULL" });
+  if (!hasIngredients(player, action)) {
+    events.push({ type: "LOG", message: "You don't have the materials." });
     return;
   }
-  for (let i = 0; i < recipe.count; i++) removeOneItem(player, recipe.input);
-  grantXp(state, content, "smithing", recipe.xp, events);
-  addItem(player, recipe.output, 1, events);
-  events.push({
-    type: "LOG",
-    message: `You forge a ${content.items[recipe.output].name}.`,
-  });
+  player.activity = {
+    kind: "crafting",
+    targetId: objId,
+    actionId,
+    nextActionAt: ctx.now + CRAFT_INTERVAL,
+    actionInterval: CRAFT_INTERVAL,
+  };
 }
 
 /** Eat the food in a slot, restoring HP (no-op if it's not food or full). */
@@ -569,6 +615,7 @@ function startInteraction(
       player.activity = {
         kind: "woodcutting",
         targetId: objId,
+        actionId: null,
         nextActionAt: ctx.now + WOODCUTTING.interval,
         actionInterval: WOODCUTTING.interval,
       };
@@ -583,6 +630,7 @@ function startInteraction(
       player.activity = {
         kind: "mining",
         targetId: objId,
+        actionId: null,
         nextActionAt: ctx.now + MINING.interval,
         actionInterval: MINING.interval,
       };
@@ -593,6 +641,7 @@ function startInteraction(
       player.activity = {
         kind: "fishing",
         targetId: objId,
+        actionId: null,
         nextActionAt: ctx.now + FISHING.interval,
         actionInterval: FISHING.interval,
       };
@@ -625,6 +674,7 @@ function startInteraction(
       player.activity = {
         kind: "combat",
         targetId: objId,
+        actionId: null,
         nextActionAt: ctx.now + pSpeed,
         actionInterval: pSpeed,
       };
@@ -637,45 +687,12 @@ function startInteraction(
       events.push({ type: "OPEN_BANK" });
       break;
 
+    // The processing stations open a recipe menu; the client lists what the
+    // player can make (from content.actions) and sends back a CRAFT intent.
     case "fire":
-      if (!hasRecipeInput(player, content.recipes.cooking)) {
-        events.push({ type: "LOG", message: "You've nothing to cook." });
-        return;
-      }
-      player.activity = {
-        kind: "cooking",
-        targetId: objId,
-        nextActionAt: ctx.now + COOKING_INTERVAL,
-        actionInterval: COOKING_INTERVAL,
-      };
-      events.push({ type: "LOG", message: "You set your catch over the fire." });
-      break;
-
     case "furnace":
-      if (!hasRecipeInput(player, content.recipes.smelting)) {
-        events.push({ type: "LOG", message: "You've no ore to smelt." });
-        return;
-      }
-      player.activity = {
-        kind: "smelting",
-        targetId: objId,
-        nextActionAt: ctx.now + SMELTING_INTERVAL,
-        actionInterval: SMELTING_INTERVAL,
-      };
-      events.push({ type: "LOG", message: "You feed ore into the furnace." });
-      break;
-
     case "anvil":
-      // The forge is a menu, not a timed activity: opening it lets the player
-      // pick what to make. Forging itself happens via the FORGE intent.
-      if (!hasItem(player, "knucklestone_bar")) {
-        events.push({
-          type: "LOG",
-          message: "You need bars to forge. Smelt ore at the furnace first.",
-        });
-        return;
-      }
-      events.push({ type: "OPEN_FORGE" });
+      events.push({ type: "OPEN_CRAFT", station: def.kind, objId });
       break;
   }
 }
@@ -856,68 +873,54 @@ function processActivity(
       break;
     }
 
-    case "cooking": {
-      const done = processOneRecipe(
-        state,
-        content,
-        content.recipes.cooking,
-        "cooking",
-        events,
-      );
-      if (done) {
-        events.push({ type: "LOG", message: "There's nothing left to cook." });
-        clearActivity(player);
-      } else {
-        act.nextActionAt = ctx.now + COOKING_INTERVAL;
-      }
-      break;
-    }
-
-    case "smelting": {
-      const done = processOneRecipe(
-        state,
-        content,
-        content.recipes.smelting,
-        "smithing",
-        events,
-      );
-      if (done) {
-        events.push({ type: "LOG", message: "There's no more ore to smelt." });
-        clearActivity(player);
-      } else {
-        act.nextActionAt = ctx.now + SMELTING_INTERVAL;
-      }
+    case "crafting": {
+      processCraft(state, content, ctx, events);
       break;
     }
   }
 }
 
 /**
- * Convert one input item into its output for a station. Returns true when
- * there is nothing left to process (so the caller stops the activity).
+ * Make one unit of the activity's recipe, then keep going. Stops cleanly when
+ * the materials run out, the pack is full, or the level no longer qualifies.
  */
-function processOneRecipe(
+function processCraft(
   state: WorldState,
   content: Content,
-  recipes: Recipe[],
-  skill: SkillId,
+  ctx: Ctx,
   events: WorldEvent[],
-): boolean {
+): void {
   const { player } = state;
-  const recipe = recipes.find((r) => hasItem(player, r.input));
-  if (!recipe) return true;
-  if (!canAddItem(player, recipe.output)) {
-    events.push({ type: "INVENTORY_FULL" });
-    return true; // stop; don't consume the input with nowhere to put the output
+  const act = player.activity;
+  const action = act.actionId
+    ? content.actions.find((a) => a.id === act.actionId)
+    : undefined;
+  if (!action || !action.produces) {
+    clearActivity(player);
+    return;
   }
-  removeOneItem(player, recipe.input);
-  grantXp(state, content, skill, recipe.xp, events);
-  addItem(player, recipe.output, 1, events);
+  if (skillLvl(player, action.skill) < action.levelReq) {
+    clearActivity(player);
+    return;
+  }
+  if (!hasIngredients(player, action)) {
+    events.push({ type: "LOG", message: "You've run out of materials." });
+    clearActivity(player);
+    return;
+  }
+  if (!canAddItem(player, action.produces)) {
+    events.push({ type: "INVENTORY_FULL" });
+    clearActivity(player);
+    return;
+  }
+  consumeIngredients(player, action);
+  grantXp(state, content, action.skill, action.xp, events);
+  addItem(player, action.produces, action.produceQty ?? 1, events);
   events.push({
     type: "LOG",
-    message: `You make ${content.items[recipe.output].name}.`,
+    message: `You make ${content.items[action.produces].name}.`,
   });
-  return false;
+  act.nextActionAt = ctx.now + CRAFT_INTERVAL;
 }
 
 // --- Combat math, ported faithfully from the idle game (CANON_LEDGER 1e) -----

@@ -34,8 +34,7 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
   mining: "Mining…",
   fishing: "Fishing…",
   combat: "Fighting…",
-  cooking: "Cooking…",
-  smelting: "Smelting…",
+  crafting: "Crafting…",
 };
 
 type TabId = "inventory" | "skills" | "equipment" | "character" | "settings";

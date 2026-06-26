@@ -18,7 +18,9 @@
 import type {
   Content,
   Intent,
+  ItemId,
   ObjKind,
+  SkillAction,
   TileType,
   Vec2,
   WorldEvent,
@@ -43,6 +45,8 @@ export interface CoreBridge {
   readonly state: WorldState;
   readonly content: Content;
   walkable(x: number, y: number): boolean;
+  /** The recipes a station (fire/furnace/anvil) offers. */
+  stationRecipes(station: ObjKind): SkillAction[];
   send(intent: Intent): WorldEvent[];
   tick(nowMs: number): WorldEvent[];
 }
@@ -254,8 +258,8 @@ export class Game {
         case "OPEN_BANK":
           this.bank.show(this.bridge.state);
           break;
-        case "OPEN_FORGE":
-          this.openForge();
+        case "OPEN_CRAFT":
+          this.openCraft(ev.station, ev.objId);
           break;
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
@@ -287,33 +291,73 @@ export class Game {
     }
   }
 
-  /** The anvil's forge menu: pick a piece of gear to beat out of your bars. */
-  private openForge(): void {
+  /** A station's recipe menu: pick what to make from what you're carrying. */
+  private openCraft(station: ObjKind, objId: string): void {
     const content = this.bridge.content;
     const player = this.bridge.state.player;
     const have = (id: string): number =>
       player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+    const has = (a: SkillAction): boolean => {
+      if (a.requires) {
+        for (const [item, qty] of Object.entries(a.requires)) {
+          if (have(item) < (qty ?? 0)) return false;
+        }
+      }
+      if (a.requiresAny && a.requiresAny.length) {
+        if (!a.requiresAny.some((it) => have(it) > 0)) return false;
+      }
+      return true;
+    };
 
-    const items: MenuItem[] = content.forging.map((r) => {
-      const def = content.items[r.output];
-      const enough = have(r.input) >= r.count;
+    // Show recipes the player has the level for, that produce something — the
+    // ones they can make right now lead the list and are tappable.
+    const recipes = this.bridge
+      .stationRecipes(station)
+      .filter((a) => a.produces && player.skills[a.skill].level >= a.levelReq)
+      .sort((a, b) => Number(has(b)) - Number(has(a)) || a.levelReq - b.levelReq);
+
+    const items: MenuItem[] = recipes.map((a) => {
+      const out = content.items[a.produces!];
+      const ready = has(a);
       return {
-        label: "Forge",
-        target: `${def.name} · ${r.count} bar${r.count > 1 ? "s" : ""}`,
-        tone: enough ? "action" : "normal",
-        onSelect: () => this.dispatch({ type: "FORGE", output: r.output }),
+        label: out.name,
+        target: this.costText(a),
+        tone: ready ? "action" : "normal",
+        onSelect: () => {
+          if (!ready) {
+            this.hud.log(`You don't have the materials for ${out.name}.`);
+            return;
+          }
+          this.dispatch({ type: "CRAFT", actionId: a.id, objId });
+        },
       };
     });
 
-    const x = window.innerWidth / 2;
-    const y = window.innerHeight / 2;
+    if (items.length === 0) {
+      this.hud.log("You've nothing to make here yet.");
+      return;
+    }
+    const title = VERB[station].replace(/ at$/, "");
     this.menu.show(
-      x,
-      y,
-      "Anvil",
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      title,
       items,
-      "Beat Knucklestone bars into gear. You need a bar for the smallest piece.",
+      "Pick a recipe — you'll keep making it until the materials run out.",
     );
+  }
+
+  /** A short "2× Knucklestone, 1× Charcoal" cost line for a recipe. */
+  private costText(a: SkillAction): string {
+    const items = this.bridge.content.items;
+    const parts: string[] = [];
+    if (a.requires) {
+      for (const [item, qty] of Object.entries(a.requires)) {
+        parts.push(`${qty}× ${items[item as ItemId].name}`);
+      }
+    }
+    if (a.requiresAny && a.requiresAny.length) parts.push("any log");
+    return parts.join(", ");
   }
 
   private positionOf(targetId: string): Vec2 | null {

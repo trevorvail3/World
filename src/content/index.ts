@@ -8,11 +8,9 @@
 
 import type { Content } from "../core/types.ts";
 import { actions } from "./actions.ts";
-import { forging } from "./forging.ts";
 import { items } from "./items.ts";
 import { map } from "./map.ts";
 import { monsters } from "./monsters.ts";
-import { recipes } from "./processing.ts";
 import { objects, playerSpawn } from "./spawns.ts";
 import { skills } from "./skills.ts";
 import { xpForLevel } from "./xpCurve.ts";
@@ -22,8 +20,6 @@ export const content: Content = {
   objects,
   items,
   monsters,
-  recipes,
-  forging,
   actions,
   xpForLevel,
   skills,
