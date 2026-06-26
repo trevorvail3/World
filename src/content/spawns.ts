@@ -153,6 +153,93 @@ export const objects: WorldObjectDef[] = [
       "A door of dressed stone set into the mountain — shut, and shut from the inside. The ward-stones around it have not been moved in a very long time.",
     ],
   },
+
+  // === HEARTMOOR =============================================================
+  // Open southern moor: hounds, bog knights and mire serpents; the Cult's edge.
+  {
+    id: "calder",
+    kind: "npc",
+    x: 9,
+    y: 36,
+    name: "Calder",
+    lines: [
+      "Cold road, isn't it. Sit a moment — there's always a fire going at the moor's edge, and food for whoever the road gives out on.",
+      "We're the Heartmoor faithful. No, don't make the face. We feed people. What you do with the rest of it is your business.",
+      "The peat keeps things. Bog-bodies, old swords, older questions. And the warm seams — Hearthite, black and almost living. Rock, the miners say. We say otherwise. Both are true of the same stone.",
+      "Go careful past the pools. The bog knights don't sleep, and the serpents are patient.",
+    ],
+  },
+  { id: "hm_lurker_1", kind: "monster", monster: "marsh_lurker", x: 8, y: 41, name: "Marsh Lurker" },
+  { id: "hm_lurker_2", kind: "monster", monster: "marsh_lurker", x: 20, y: 44, name: "Marsh Lurker" },
+  { id: "hm_hound_1", kind: "monster", monster: "heartmoor_hound", x: 6, y: 48, name: "Heartmoor Hound" },
+  { id: "hm_hound_2", kind: "monster", monster: "heartmoor_hound", x: 22, y: 50, name: "Heartmoor Hound" },
+  { id: "hm_serpent_1", kind: "monster", monster: "mire_serpent", x: 17, y: 39, name: "Mire Serpent" },
+  { id: "hm_knight_1", kind: "monster", monster: "bog_knight", x: 12, y: 53, name: "Bog Knight" },
+  {
+    id: "heartmoor_barrow",
+    kind: "shrine",
+    x: 5,
+    y: 53,
+    name: "The Bog Barrow",
+    lines: [
+      "A grave the moor grew up around — older than the bog, they say, built before the land here settled. Whatever waits inside has waited a very long time.",
+    ],
+  },
+
+  // === THE ASHFEN FLATS =====================================================
+  // Warm geothermal ground south of the Spine: the Embercite workings, kept by
+  // the Cult as a secondary sacred site.
+  {
+    id: "ashfen_tender",
+    kind: "npc",
+    x: 38,
+    y: 38,
+    name: "Cult Tender",
+    lines: [
+      "You feel it through your boots — the ground's warm here, warmer the deeper you cut. The miners work short shifts. We don't mind the heat.",
+      "Embercite comes out of this rock. The smiths swear by it for flux. We keep the seam clean and leave what we owe.",
+      "I won't ask you to help. Only to witness. The discomfort is the point.",
+    ],
+  },
+  { id: "af_rock_1", kind: "rock", x: 32, y: 40, name: "Embercite Working", resource: "mine_embercite" },
+  { id: "af_rock_2", kind: "rock", x: 40, y: 46, name: "Embercite Working", resource: "mine_embercite" },
+  { id: "af_rock_3", kind: "rock", x: 36, y: 52, name: "Embercite Working", resource: "mine_embercite" },
+
+  // === THE MARROW DEEPS =====================================================
+  // Caves beneath the Spine: total dark. Cave crawlers, deep bats, wraiths and
+  // deepstone golems; voidstone in the deepest shafts; the sealed Marrow Vault.
+  { id: "md_crawler_1", kind: "monster", monster: "cave_crawler", x: 51, y: 6, name: "Cave Crawler" },
+  { id: "md_crawler_2", kind: "monster", monster: "cave_crawler", x: 57, y: 11, name: "Cave Crawler" },
+  { id: "md_bat_1", kind: "monster", monster: "deep_bat", x: 55, y: 4, name: "Deep Bat" },
+  { id: "md_bat_2", kind: "monster", monster: "deep_bat", x: 59, y: 17, name: "Deep Bat" },
+  { id: "md_wraith_1", kind: "monster", monster: "marrow_wraith", x: 50, y: 21, name: "Marrow Wraith" },
+  { id: "md_golem_1", kind: "monster", monster: "deep_golem", x: 59, y: 23, name: "Deepstone Golem" },
+  { id: "md_rock_1", kind: "rock", x: 54, y: 16, name: "Voidstone Shaft", resource: "mine_voidstone" },
+  { id: "md_rock_2", kind: "rock", x: 58, y: 22, name: "Voidstone Shaft", resource: "mine_voidstone" },
+  {
+    id: "marrow_vault",
+    kind: "shrine",
+    x: 61,
+    y: 8,
+    name: "The Marrow Vault",
+    lines: [
+      "Walls too smooth to be the dark's work, and a door that was opened from the inside. Whatever stayed down here, stayed because it chose to.",
+    ],
+  },
+
+  // === THE REDRUN & THE EYELESS SEA =========================================
+  // The long red river to the estuary and the open grey. Bloodore on the banks,
+  // fishing from river to sea, brigands, an old Orc, and the Dread Ferryman.
+  { id: "rd_rock_1", kind: "rock", x: 50, y: 32, name: "Bloodore Vein", resource: "mine_bloodore" },
+  { id: "rd_rock_2", kind: "rock", x: 51, y: 40, name: "Bloodore Vein", resource: "mine_bloodore" },
+  { id: "rd_fish_1", kind: "fishing_spot", x: 54, y: 33, name: "Ribvault Shallows", resource: "fish_ribperch" },
+  { id: "rd_fish_2", kind: "fishing_spot", x: 58, y: 41, name: "The Estuary", resource: "fish_redgill" },
+  { id: "rd_fish_3", kind: "fishing_spot", x: 59, y: 48, name: "The Eyeless Sea", resource: "fish_deepscale" },
+  { id: "rd_fish_4", kind: "fishing_spot", x: 61, y: 51, name: "The Eyeless Deep", resource: "fish_eyeless_pike" },
+  { id: "rd_brigand_1", kind: "monster", monster: "redrun_brigand", x: 50, y: 36, name: "Redrun Brigand" },
+  { id: "rd_serpent_1", kind: "monster", monster: "river_serpent", x: 51, y: 44, name: "River Serpent" },
+  { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 51, y: 48, name: "Ancient Orc" },
+  { id: "rd_ferryman", kind: "monster", monster: "dread_ferryman", x: 51, y: 45, name: "The Dread Ferryman" },
 ];
 
 /** Where the player first appears (a path tile, next to Aldric). */

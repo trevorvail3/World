@@ -120,6 +120,11 @@ const EXAMINE_TILE: Record<TileType, string> = {
   moss: "Deep moss of the Greyoak floor, soft and damp underfoot.",
   mountain: "Sheer Spine rock — no way up here. The pass lies around it.",
   snow: "Hard-packed snow of the high Spine. The wind never quite stops.",
+  bog: "Soft Heartmoor ground. The peat keeps whatever it takes whole.",
+  ash: "Warm cracked earth of the Ashfen Flats. The ground is uncomfortable to stand on.",
+  cave: "The dark floor of the Marrow Deeps. Your torchlight finds no far wall.",
+  cave_wall: "Dressed cave rock — too smooth, in places, to be only the dark's work.",
+  deep: "The open grey of the Eyeless Sea. It gives back no landmark.",
 };
 
 /** Examine flavour for the tree species. */

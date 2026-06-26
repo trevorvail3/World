@@ -18,6 +18,11 @@ const MM_TILE: Record<TileType, string> = {
   moss: "#26331f",
   mountain: "#33343c",
   snow: "#9aa6b6",
+  bog: "#2c3729",
+  ash: "#40332d",
+  cave: "#16151c",
+  cave_wall: "#0b0a0f",
+  deep: "#101d30",
 };
 
 const MM_OBJ: Record<ObjKind, string> = {
