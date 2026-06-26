@@ -113,7 +113,7 @@ export const quests: QuestDef[] = [
       "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs and wait to see if he picks it up. Prove your hand: forge me five Ashiron bars and bring them here.",
     ],
     steps: [
-      { type: "reach", skill: "smithing", level: 8, text: "Reach Smithing level 8" },
+      { type: "reach", skill: "smithing", level: 20, text: "Reach Smithing level 20" },
       { type: "deliver", npc: "vorn", item: "ashiron_bar", count: 5, text: "Forge and deliver 5 Ashiron Bars to Vorn" },
       {
         type: "choice",

@@ -45,6 +45,11 @@ import type {
 
 const MOVE_SPEED = 3.5; // tiles per second
 
+// Playable level ceiling. The XP table (content) is built a little past this so
+// look-ups never fall off the end, but a skill never *reads* above the cap.
+// Keep in step with LEVEL_CAP in src/content/xpCurve.ts.
+const LEVEL_CAP = 110;
+
 // Idle wandering for npcs + monsters. They drift one tile at a time within a
 // small box around their spawn, pausing between steps, and hold still when the
 // player is right beside them (so you can talk / engage without them sliding
@@ -298,7 +303,11 @@ function beginGather(
 
 function levelFromXp(xpTable: number[], xp: number): number {
   let level = 1;
-  while (level + 1 < xpTable.length && (xpTable[level + 1] ?? Infinity) <= xp) {
+  while (
+    level < LEVEL_CAP &&
+    level + 1 < xpTable.length &&
+    (xpTable[level + 1] ?? Infinity) <= xp
+  ) {
     level++;
   }
   return level;
@@ -557,26 +566,49 @@ function equipSlot(
   const newItem = data.item;
   const previously = player.equipment[target];
 
-  // Take one of the new item out of the pack…
+  // Everything that this equip will displace back into the pack: the piece in
+  // the target slot, plus any hand-conflict that has to be stowed.
+  const offId = player.equipment.offhand;
+  const mainId = player.equipment.mainhand;
+  const stowOff = target === "mainhand" && !!def.twoHand && !!offId;
+  const stowMain =
+    target === "offhand" && !!mainId && !!content.items[mainId].twoHand;
+  const displaced: ItemId[] = [];
+  if (previously) displaced.push(previously);
+  if (stowOff) displaced.push(offId!);
+  if (stowMain) displaced.push(mainId!);
+
+  // Make sure every displaced item has a home BEFORE touching anything — taking
+  // the new item out frees its slot only if it wasn't a stack. If something
+  // wouldn't fit, abort the whole swap so a worn item can never be destroyed.
+  const sim = player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null));
+  const src = sim[slot]!;
+  src.qty -= 1;
+  if (src.qty <= 0) sim[slot] = null;
+  for (const it of displaced) {
+    const stack = sim.find((s) => s?.item === it);
+    if (stack) { stack.qty += 1; continue; }
+    const empty = sim.findIndex((s) => s === null);
+    if (empty === -1) {
+      events.push({ type: "INVENTORY_FULL" });
+      events.push({ type: "LOG", message: "You've no room to stow your old gear." });
+      return;
+    }
+    sim[empty] = { item: it, qty: 1 };
+  }
+
+  // Feasible — now perform it for real (every addItem below is guaranteed room).
   data.qty -= 1;
   if (data.qty <= 0) player.inventory[slot] = null;
-  // …wear it, and drop whatever was there back into the freed space.
   player.equipment[target] = newItem;
   if (previously) addItem(player, previously, 1, events);
-
-  // A two-handed weapon can't share with a shield: stow the off-hand.
-  if (target === "mainhand" && def.twoHand && player.equipment.offhand) {
-    const off = player.equipment.offhand;
+  if (stowOff) {
     delete player.equipment.offhand;
-    addItem(player, off, 1, events);
+    addItem(player, offId!, 1, events);
   }
-  // Equipping an off-hand while a two-hander is worn stows the two-hander.
-  if (target === "offhand" && player.equipment.mainhand) {
-    const main = player.equipment.mainhand;
-    if (content.items[main].twoHand) {
-      delete player.equipment.mainhand;
-      addItem(player, main, 1, events);
-    }
+  if (stowMain) {
+    delete player.equipment.mainhand;
+    addItem(player, mainId!, 1, events);
   }
   events.push({ type: "LOG", message: `You equip the ${def.name}.` });
 }
@@ -1260,7 +1292,14 @@ function grantQuestReward(
     grantXp(state, content, x.skill, x.amount, events);
   }
   for (const it of def.reward.items ?? []) {
-    addItem(player, it.item, it.qty, events);
+    // A reward must never be lost to a full pack — if it won't fit, bank it.
+    if (canAddItem(player, it.item)) {
+      addItem(player, it.item, it.qty, events);
+    } else {
+      player.bank[it.item] = (player.bank[it.item] ?? 0) + it.qty;
+      events.push({ type: "ITEM_GAINED", item: it.item, qty: it.qty });
+      events.push({ type: "LOG", message: `Your pack was full — ${content.items[it.item].name} was sent to your bank.` });
+    }
   }
   for (const f of def.reward.flags ?? []) {
     if (!player.flags.includes(f)) player.flags.push(f);

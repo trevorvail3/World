@@ -301,6 +301,7 @@ export const objects: WorldObjectDef[] = [
   // fishing from river to sea, brigands, an old Orc, and the Dread Ferryman.
   { id: "rd_rock_1", kind: "rock", x: 50, y: 32, name: "Bloodore Vein", resource: "mine_bloodore" },
   { id: "rd_rock_2", kind: "rock", x: 51, y: 40, name: "Bloodore Vein", resource: "mine_bloodore" },
+  { id: "rd_fish_greyfin", kind: "fishing_spot", x: 54, y: 34, name: "Greyfin Pool", resource: "fish_greyfin" },
   { id: "rd_fish_1", kind: "fishing_spot", x: 54, y: 33, name: "Ribvault Shallows", resource: "fish_ribperch" },
   { id: "rd_fish_2", kind: "fishing_spot", x: 58, y: 41, name: "The Estuary", resource: "fish_redgill" },
   { id: "rd_fish_3", kind: "fishing_spot", x: 59, y: 48, name: "The Eyeless Sea", resource: "fish_deepscale" },

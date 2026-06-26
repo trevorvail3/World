@@ -598,25 +598,30 @@ export class Game {
       if (obj.kind !== "npc") continue;
       let mark: "!" | "?" | null = null;
 
-      // Ready to turn in: an active quest whose current step ends at this NPC.
+      // Ready to act here: any active quest whose current step targets THIS NPC
+      // (the core advances steps at the targeted NPC, not only the giver).
       for (const id of Object.keys(player.quests)) {
         const def = quests.find((q) => q.id === id);
-        if (!def || def.giver !== obj.id) continue;
+        if (!def) continue;
         const step = def.steps[player.quests[id]!.step];
         if (!step) continue;
         if (step.type === "talk" && step.npc === obj.id) mark = "?";
+        else if (step.type === "choice" && step.npc === obj.id) mark = "?";
         else if (step.type === "deliver" && step.npc === obj.id && have(step.item) >= step.count) {
           mark = "?";
         }
       }
-      // Otherwise: a new quest available here.
+      // Otherwise: a new quest available here (mirrors the core's gating so a
+      // flag-locked quest doesn't show a false "!").
       if (!mark) {
         const offer = quests.find(
           (q) =>
             q.giver === obj.id &&
             !player.quests[q.id] &&
             !player.questsDone.includes(q.id) &&
-            (!q.requires || player.questsDone.includes(q.requires)),
+            (!q.requires || player.questsDone.includes(q.requires)) &&
+            (!q.requiresFlags || q.requiresFlags.every((f) => player.flags.includes(f))) &&
+            (!q.blockedByFlags || !q.blockedByFlags.some((f) => player.flags.includes(f))),
         );
         if (offer) mark = "!";
       }

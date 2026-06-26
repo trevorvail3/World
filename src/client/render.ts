@@ -143,7 +143,7 @@ export function drawWorld(
     const p = objectPos(def, obj);
     const px = p.x * TILE - cam.x;
     const py = p.y * TILE - cam.y;
-    if (px < -TILE || py < -TILE || px > w || py > h) continue;
+    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
     drawObject(g, def, obj.available, px, py, now);
     // Name label
     if (def.kind === "npc" || def.kind === "monster") {
