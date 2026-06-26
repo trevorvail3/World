@@ -677,6 +677,7 @@ body {
   display: block;
   border-radius: 4px;
   border: 1px solid rgba(74, 61, 44, 0.6);
+  cursor: pointer;
 }
 
 /* World-map button, tucked in the minimap's corner */
@@ -752,6 +753,14 @@ body {
   border-radius: 5px;
   border: 1px solid rgba(74, 61, 44, 0.6);
   image-rendering: pixelated;
+  cursor: pointer;
+}
+.worldmap-hint {
+  margin-top: 8px;
+  text-align: center;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-dim);
 }
 
 /* --- Collapsed dock: hide the body, keep the tab column --- */

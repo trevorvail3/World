@@ -6,7 +6,7 @@
  * whole continent. Pure presentation — reads the core's state, never changes it.
  */
 
-import type { Content, ObjKind, TileType, WorldState } from "../core/types.ts";
+import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
 import { Camera, TILE } from "./render.ts";
 
@@ -55,8 +55,15 @@ function drawPlayerDot(g: CanvasRenderingContext2D, px: number, py: number): voi
 export class Minimap {
   private g: CanvasRenderingContext2D;
   private size: number;
+  /** Last-draw transform, so a click can be inverted to a world tile. */
+  private view = { originX: 0, originY: 0, cell: 1 };
 
-  constructor(root: HTMLElement, onWorldMap: () => void, size = 132) {
+  constructor(
+    root: HTMLElement,
+    onWorldMap: () => void,
+    onWalk: (tile: Vec2) => void,
+    size = 132,
+  ) {
     this.size = size;
     const panel = document.createElement("div");
     panel.className = "hud-panel hud-minimap";
@@ -65,6 +72,18 @@ export class Minimap {
     canvas.height = size;
     canvas.className = "minimap-canvas";
     panel.appendChild(canvas);
+
+    // Tap the minimap to walk toward that spot.
+    canvas.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      const r = canvas.getBoundingClientRect();
+      const sx = (e.clientX - r.left) * (canvas.width / r.width);
+      const sy = (e.clientY - r.top) * (canvas.height / r.height);
+      onWalk({
+        x: Math.round(this.view.originX + sx / this.view.cell - 0.5),
+        y: Math.round(this.view.originY + sy / this.view.cell - 0.5),
+      });
+    });
 
     // The world-map button, tucked in the minimap's corner.
     const btn = document.createElement("button");
@@ -107,6 +126,7 @@ export class Minimap {
     const centerY = (cam.y + viewH / 2) / TILE;
     const originX = centerX - span / 2; // tile at the minimap's left edge
     const originY = centerY - span / 2;
+    this.view = { originX, originY, cell }; // remember, so clicks can invert
 
     g.fillStyle = "#0c0907";
     g.fillRect(0, 0, size, size);
@@ -157,7 +177,7 @@ export class WorldMapModal {
   private g: CanvasRenderingContext2D;
   private open = false;
 
-  constructor(root: HTMLElement, content: Content) {
+  constructor(root: HTMLElement, content: Content, onWalk: (tile: Vec2) => void) {
     const m = content.map;
     const cell = 9; // px per tile on the big map
     this.backdrop = document.createElement("div");
@@ -169,12 +189,24 @@ export class WorldMapModal {
           <button class="worldmap-close" type="button">✕</button>
         </div>
         <canvas class="worldmap-canvas" width="${m.width * cell}" height="${m.height * cell}"></canvas>
+        <div class="worldmap-hint">Tap anywhere to walk there.</div>
       </div>`;
     const canvas = this.backdrop.querySelector(".worldmap-canvas") as HTMLCanvasElement;
     root.appendChild(this.backdrop);
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D context for the world map.");
     this.g = g;
+
+    // Tap the map to walk there (then close so you can watch the journey).
+    canvas.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      const r = canvas.getBoundingClientRect();
+      onWalk({
+        x: Math.floor(((e.clientX - r.left) / r.width) * m.width),
+        y: Math.floor(((e.clientY - r.top) / r.height) * m.height),
+      });
+      this.close();
+    });
 
     (this.backdrop.querySelector(".worldmap-close") as HTMLElement).addEventListener(
       "pointerdown",

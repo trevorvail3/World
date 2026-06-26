@@ -166,8 +166,12 @@ export class Game {
     if (!g) throw new Error("Could not get a 2D canvas context.");
     this.g = g;
     this.menu = menu;
-    this.worldMap = new WorldMapModal(uiRoot, bridge.content);
-    this.minimap = new Minimap(uiRoot, () => this.worldMap.show());
+    this.worldMap = new WorldMapModal(uiRoot, bridge.content, (tile) => this.walkToWorldTile(tile));
+    this.minimap = new Minimap(
+      uiRoot,
+      () => this.worldMap.show(),
+      (tile) => this.walkToWorldTile(tile),
+    );
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
 
@@ -845,6 +849,41 @@ export class Game {
     if (path.length === 0) return; // already there, or unreachable
     this.setMarker(tile);
     this.dispatch({ type: "MOVE", path });
+  }
+
+  /**
+   * Walk toward a tile picked on the minimap or world map. The exact tile might
+   * be water/wall/off-map, so snap to the nearest walkable tile and path there.
+   */
+  walkToWorldTile(tile: Vec2): void {
+    const target = this.nearestWalkable(tile);
+    if (!target) {
+      this.hud.log("You can't walk there.");
+      return;
+    }
+    const path = findPath(this.bridge.walkable, this.bridge.state.player.pos, target);
+    if (path.length === 0) {
+      this.hud.log("There's no path there from here.");
+      return;
+    }
+    this.setMarker(target);
+    this.dispatch({ type: "MOVE", path });
+  }
+
+  /** The walkable tile nearest a target (spiral search, capped). */
+  private nearestWalkable(tile: Vec2): Vec2 | null {
+    const tx = Math.round(tile.x), ty = Math.round(tile.y);
+    if (this.bridge.walkable(tx, ty)) return { x: tx, y: ty };
+    for (let r = 1; r <= 6; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; // ring only
+          const x = tx + dx, y = ty + dy;
+          if (this.bridge.walkable(x, y)) return { x, y };
+        }
+      }
+    }
+    return null;
   }
 
   private walkBeside(tile: Vec2): void {

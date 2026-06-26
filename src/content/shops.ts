@@ -21,8 +21,8 @@ export const shops: ShopDef[] = [
     npc: "shop_quartermaster",
     name: "Ironvale General Store",
     greeting: "Hespa's counter — tools, seeds and sundries. Sell me your odds and ends, too.",
-    // Canon generalStoreHTML stock + prices, exactly.
     stock: [
+      // Canon generalStoreHTML stock + prices, exactly.
       { item: "plant_fiber", price: 15, qty: 1 },
       { item: "ashwood_shaft", price: 80, qty: 10 },
       { item: "embercite_ore", price: 90, qty: 5 },
@@ -30,23 +30,50 @@ export const shops: ShopDef[] = [
       { item: "seed_thornroot", price: 38, qty: 3 },
       { item: "fertilizer_basic", price: 55, qty: 1 },
       { item: "forage_mushroom", price: 52, qty: 5 },
+      // Starter gathering tools (round(sell × 1.3)).
+      { item: "pickaxe_1", price: 20, qty: 1 },
+      { item: "hatchet_1", price: 20, qty: 1 },
+      { item: "rod_1", price: 65, qty: 1 },
+      { item: "pickaxe_3", price: 104, qty: 1 },
+      { item: "hatchet_3", price: 104, qty: 1 },
     ],
   },
   {
     id: "shop_armoury",
     npc: "shop_armourer",
     name: "Doran's Armoury",
-    greeting: "Ashforge seconds and starter steel. Buy a kit, or sell me your battlefield scrap.",
-    // Tier-1 starter gear, priced at round(sell × 1.3).
+    greeting: "Ashforge seconds and field steel, tiers I through III. The heavy stuff you forge yourself. Sell me your scrap, too.",
+    // A tiered ladder of weapons and armour, priced at round(sell × 1.3). Higher
+    // tiers (VI/IX/X) are left to the forge and to drops.
     stock: [
+      // --- Tier I — Knucklestone (combat 1) ---
       { item: "dagger_1", price: 26, qty: 1 },
+      { item: "sword_1", price: 33, qty: 1 },
       { item: "hammer_1", price: 36, qty: 1 },
+      { item: "spear_1", price: 36, qty: 1 },
       { item: "claymore_1", price: 42, qty: 1 },
       { item: "shield_1", price: 33, qty: 1 },
       { item: "helm_1", price: 26, qty: 1 },
       { item: "armor_1", price: 46, qty: 1 },
       { item: "legs_1", price: 33, qty: 1 },
       { item: "boot_1", price: 16, qty: 1 },
+      // --- Tier III — Ashiron (combat 20) ---
+      { item: "sword_3", price: 169, qty: 1 },
+      { item: "hammer_3", price: 189, qty: 1 },
+      { item: "claymore_3", price: 215, qty: 1 },
+      { item: "shield_3", price: 150, qty: 1 },
+      { item: "helm_3", price: 124, qty: 1 },
+      { item: "armor_3", price: 234, qty: 1 },
+      { item: "legs_3", price: 150, qty: 1 },
+      { item: "boot_3", price: 72, qty: 1 },
+      // --- Tier IV — Ribstone (combat 30) ---
+      { item: "sword_4", price: 325, qty: 1 },
+      { item: "claymore_4", price: 416, qty: 1 },
+      { item: "shield_4", price: 254, qty: 1 },
+      { item: "helm_4", price: 208, qty: 1 },
+      { item: "armor_4", price: 449, qty: 1 },
+      { item: "legs_4", price: 254, qty: 1 },
+      { item: "boot_4", price: 117, qty: 1 },
     ],
   },
   {
@@ -58,6 +85,7 @@ export const shops: ShopDef[] = [
     stock: [
       { item: "crude_shortbow", price: 26, qty: 1 },
       { item: "arrow_knucklestone", price: 390, qty: 25 },
+      { item: "ring_1", price: 46, qty: 1 },
       { item: "plant_fiber", price: 16, qty: 1 },
       { item: "battle_ration", price: 65, qty: 1 },
     ],
