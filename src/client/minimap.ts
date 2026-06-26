@@ -47,6 +47,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   cauldron: "#6f8a6a",
   workbench: "#9a7b4e",
   crafting_table: "#a98a6a",
+  cart: "#b89357",
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */
@@ -188,7 +189,8 @@ export class WorldMapModal {
 
   constructor(root: HTMLElement, content: Content, onWalk: (tile: Vec2) => void) {
     const m = content.map;
-    const cell = 9; // px per tile on the big map
+    // px per tile, sized so the whole continent fits a sensible modal width.
+    const cell = Math.max(4, Math.floor(620 / m.width));
     // Only the overworld is shown; the sealed boss-arena band stays hidden.
     const mapH = OVERWORLD_HEIGHT;
     this.backdrop = document.createElement("div");

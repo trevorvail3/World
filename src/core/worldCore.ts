@@ -159,6 +159,7 @@ const BLOCKING_KINDS = new Set([
   "cauldron",
   "workbench",
   "crafting_table",
+  "cart",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -1068,7 +1069,8 @@ function startInteraction(
     }
 
     case "shrine":
-      // Examine-only landmark: speak its inscription (its first line), if any.
+    case "cart":
+      // Examine-only landmark / city dressing: speak its line, if any.
       events.push({
         type: "LOG",
         message: def.lines?.[0] ?? `You study the ${def.name}.`,

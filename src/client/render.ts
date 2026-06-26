@@ -268,7 +268,35 @@ function drawObject(
     case "crafting_table":
       drawCraftingTable(g, cx, cy);
       break;
+    case "cart":
+      drawCart(g, cx, cy);
+      break;
   }
+}
+
+/** A market stall: a cart with a striped awning and a crate or two. */
+function drawCart(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 10, 13, 4);
+  // Cart bed + wheel.
+  g.fillStyle = "#5a4127";
+  g.fillRect(cx - 11, cy + 2, 22, 6);
+  g.fillStyle = "#3a2c1d";
+  g.beginPath(); g.arc(cx - 7, cy + 9, 3, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(cx + 7, cy + 9, 3, 0, Math.PI * 2); g.fill();
+  // Awning posts.
+  g.strokeStyle = "#6f5436"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx - 10, cy + 2); g.lineTo(cx - 10, cy - 9);
+  g.moveTo(cx + 10, cy + 2); g.lineTo(cx + 10, cy - 9); g.stroke();
+  // Striped awning.
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle = i % 2 === 0 ? "#b5553f" : "#d8cba6";
+    g.fillRect(cx - 11 + i * 5.5, cy - 11, 5.5, 4);
+  }
+  // A crate of goods on the bed.
+  g.fillStyle = "#8a6a40";
+  g.fillRect(cx - 4, cy - 3, 8, 6);
+  g.strokeStyle = "rgba(60,40,20,0.6)"; g.lineWidth = 0.8;
+  g.strokeRect(cx - 4, cy - 3, 8, 6);
 }
 
 /** A Crafting table: a tanning frame with a stretched hide and a jeweller's lamp. */

@@ -714,7 +714,9 @@ export type ObjKind =
   /** A Construction workbench: cut, frame and fit building components. */
   | "workbench"
   /** A Crafting table: tan leather, blow glass, cut gems and make jewellery. */
-  | "crafting_table";
+  | "crafting_table"
+  /** A market stall / street cart — decorative city dressing (examine-only). */
+  | "cart";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it

@@ -107,6 +107,7 @@ const VERB: Record<ObjKind, string> = {
   cauldron: "Brew at",
   workbench: "Build at",
   crafting_table: "Craft at",
+  cart: "Examine",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -128,6 +129,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
   crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
+  cart: "A market stall, its awning faded by weather and woodsmoke.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
