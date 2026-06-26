@@ -640,7 +640,16 @@ export interface InventorySlot {
 // The map (tiles).
 // ---------------------------------------------------------------------------
 
-export type TileType = "grass" | "dirt" | "path" | "stone" | "water" | "moss";
+export type TileType =
+  | "grass"
+  | "dirt"
+  | "path"
+  | "stone"
+  | "water"
+  | "moss"
+  // The Spine: impassable rock peaks and walkable high snow.
+  | "mountain"
+  | "snow";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {
@@ -664,7 +673,9 @@ export type ObjKind =
   | "bank"
   | "fire"
   | "furnace"
-  | "anvil";
+  | "anvil"
+  /** An examine-only landmark (the Wind-Shrine, the sealed Spine Vault). */
+  | "shrine";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it

@@ -95,18 +95,20 @@ const VERB: Record<ObjKind, string> = {
   fire: "Cook at",
   furnace: "Smelt at",
   anvil: "Forge at",
+  shrine: "Examine",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
   tree: "A pale ashwood — common as dirt, and the forester's first tree.",
-  rock: "Soft grey-brown knucklestone, worked easily by any hand.",
+  rock: "A workable seam of stone.",
   fishing_spot: "Dark ripples at the head of the Redrun; ashfin move below.",
-  npc: "Aldric, a Man of the Knuckle Hills, mending a wall.",
+  npc: "Someone met on the road.",
   monster: "A wild thing of the hills.",
   bank: "A sturdy iron-bound chest. Your goods are safe in it.",
   fire: "A steady cooking fire. Raw catch goes in; a meal comes out.",
   furnace: "A small stone furnace, hot enough to render ore to bar.",
   anvil: "A pitted iron anvil. Bring bars and a hammer to beat out gear.",
+  shrine: "A weathered standing stone, older than any road here.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -116,6 +118,8 @@ const EXAMINE_TILE: Record<TileType, string> = {
   stone: "Cold grey stone underfoot.",
   water: "The cold head of the Redrun, where the hill-streams braid.",
   moss: "Deep moss of the Greyoak floor, soft and damp underfoot.",
+  mountain: "Sheer Spine rock — no way up here. The pass lies around it.",
+  snow: "Hard-packed snow of the high Spine. The wind never quite stops.",
 };
 
 /** Examine flavour for the tree species. */
@@ -684,6 +688,7 @@ export class Game {
     if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
       return EXAMINE_TREE[obj.species]!;
     }
+    if (obj.kind === "shrine" && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
     return EXAMINE_OBJECT[obj.kind];
   }
