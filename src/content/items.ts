@@ -2,15 +2,12 @@
  * src/content/items.ts
  * --------------------
  * The full item registry, ported faithfully from the Varath idle game's
- * `ITEMS` table (+ `GOLD_VALUES` for sell prices). 471 items. Names,
- * descriptions, icons, categories and stats are copied verbatim so the two
- * games describe the same objects identically.
+ * `ITEMS` table (+ `GOLD_VALUES` for sell prices). 467 items. Names,
+ * descriptions, icons, categories and stats are copied verbatim.
  *
- * GENERATED from varath_21.html — see docs/CANON_LEDGER.md (Phase 1c). The four
- * `knucklestone_*` forged pieces are transitional (our equipment slice); and
- * `ironbark_shard`/`heartoak_amber` fill two rare-drop refs the idle game left
- * undefined. Fields the spatial game doesn't consume yet (canon `slot`, weapon
- * `acc`, food `buff`s, mount/pet/cape `meta`) are carried losslessly; see ItemDef.
+ * GENERATED from varath_21.html — see docs/CANON_LEDGER.md. `ironbark_shard` /
+ * `heartoak_amber` fill two rare-drop refs the idle game left undefined.
+ * Equippable gear declares a canon `slot` (mainhand/armor/helmet/…); see ItemDef.
  */
 
 import type { ItemDef, ItemId } from "../core/types.ts";
@@ -4794,42 +4791,6 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The Pale Record's mark of authorship. Grants full access to Order archives and identifies the bearer as a trusted chronicler.",
     "icon": "📜",
     "cat": "Quest"
-  },
-  "knucklestone_dagger": {
-    "id": "knucklestone_dagger",
-    "name": "Knucklestone Dagger",
-    "description": "A short, brittle blade beaten from grey bar. It bites harder than a bare fist.",
-    "icon": "🗡️",
-    "cat": "Weapons",
-    "equip": "weapon",
-    "dmg": 2
-  },
-  "knucklestone_helm": {
-    "id": "knucklestone_helm",
-    "name": "Knucklestone Helm",
-    "description": "A rough grey cap of hammered bar. Turns a glancing blow, if you're lucky.",
-    "icon": "⛑️",
-    "cat": "Armour",
-    "equip": "helmet",
-    "def": 2
-  },
-  "knucklestone_shield": {
-    "id": "knucklestone_shield",
-    "name": "Knucklestone Shield",
-    "description": "A heavy slab of grey plate on a strap. Crude, but it stops what it covers.",
-    "icon": "🛡️",
-    "cat": "Armour",
-    "equip": "shield",
-    "def": 3
-  },
-  "knucklestone_mail": {
-    "id": "knucklestone_mail",
-    "name": "Knucklestone Mail",
-    "description": "A weighty shirt of overlapped bar-plates. A smith's proudest early work.",
-    "icon": "🥋",
-    "cat": "Armour",
-    "equip": "body",
-    "def": 4
   },
   "ironbark_shard": {
     "id": "ironbark_shard",

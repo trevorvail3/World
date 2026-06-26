@@ -50,11 +50,19 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
 
 /** The equipment slots the player can fill, in display order. */
 const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
-  { slot: "weapon", name: "Weapon" },
-  { slot: "helmet", name: "Helmet" },
-  { slot: "body", name: "Body" },
-  { slot: "shield", name: "Shield" },
+  { slot: "mainhand", name: "Weapon" },
+  { slot: "offhand", name: "Shield" },
+  { slot: "helmet", name: "Helm" },
+  { slot: "armor", name: "Body" },
+  { slot: "legs", name: "Legs" },
+  { slot: "boots", name: "Boots" },
+  { slot: "ring", name: "Ring" },
+  { slot: "necklace", name: "Amulet" },
+  { slot: "cape", name: "Cape" },
 ];
+
+/** Canon slot strings this UI can wear (matches EquipSlot). */
+const WEARABLE = new Set<string>(EQUIP_SLOTS.map((s) => s.slot));
 
 export class Hud {
   private content: Content;
@@ -310,7 +318,7 @@ export class Hud {
     const def = this.content.items[data.item];
     if (def.heals) {
       this.dispatch({ type: "EAT", slot: index });
-    } else if (def.equip) {
+    } else if (def.slot && WEARABLE.has(def.slot)) {
       this.dispatch({ type: "EQUIP", slot: index });
     } else {
       this.inspectItem(index, screenX, screenY);
@@ -331,7 +339,7 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "EAT", slot: index }),
       });
     }
-    if (def.equip) {
+    if (def.slot && WEARABLE.has(def.slot)) {
       items.push({
         label: "Equip",
         target: def.name,
@@ -485,12 +493,14 @@ export class Hud {
 
     // Equipment: fill worn slots, and total the bonuses underneath.
     this.lastEquipment = player.equipment;
+    let acc = 0;
     let dmg = 0;
     let def = 0;
     this.equipCells.forEach((icon, slot) => {
       const id = player.equipment[slot];
       if (id) {
         const item = this.content.items[id];
+        acc += item.acc ?? 0;
         dmg += item.dmg ?? 0;
         def += item.def ?? 0;
         icon.className = "equip-slot filled";
@@ -503,7 +513,7 @@ export class Hud {
       }
     });
     if (this.equipStats) {
-      this.equipStats.textContent = `Damage +${dmg}   ·   Defence +${def}`;
+      this.equipStats.textContent = `Acc +${acc}  ·  Dmg +${dmg}  ·  Def +${def}`;
     }
   }
 }
@@ -528,13 +538,32 @@ function note(text: string): HTMLElement {
   return el;
 }
 
+/** Friendly slot names for inspect lines. */
+const SLOT_LABEL: Record<string, string> = {
+  mainhand: "Weapon",
+  offhand: "Shield",
+  helmet: "Helm",
+  armor: "Body",
+  legs: "Legs",
+  boots: "Boots",
+  ring: "Ring",
+  necklace: "Amulet",
+  cape: "Cape",
+};
+
 /** A one-line "Weapon · +2 damage" summary for a piece of gear (or ""). */
-function gearLine(def: { equip?: EquipSlot; dmg?: number; def?: number }): string {
-  if (!def.equip) return "";
+function gearLine(def: {
+  slot?: string;
+  acc?: number;
+  dmg?: number;
+  def?: number;
+}): string {
+  if (!def.slot || !(def.slot in SLOT_LABEL)) return "";
   const bits: string[] = [];
+  if (def.acc) bits.push(`+${def.acc} accuracy`);
   if (def.dmg) bits.push(`+${def.dmg} damage`);
   if (def.def) bits.push(`+${def.def} defence`);
-  const where = def.equip[0]!.toUpperCase() + def.equip.slice(1);
+  const where = SLOT_LABEL[def.slot]!;
   return bits.length ? `${where} · ${bits.join(", ")}` : where;
 }
 

@@ -9,8 +9,8 @@
 import type { ForgeRecipe } from "../core/types.ts";
 
 export const forging: ForgeRecipe[] = [
-  { output: "knucklestone_dagger", input: "knucklestone_bar", count: 1, xp: 25 },
-  { output: "knucklestone_helm", input: "knucklestone_bar", count: 2, xp: 45 },
-  { output: "knucklestone_shield", input: "knucklestone_bar", count: 3, xp: 70 },
-  { output: "knucklestone_mail", input: "knucklestone_bar", count: 5, xp: 120 },
+  { output: "dagger_1", input: "knucklestone_bar", count: 1, xp: 25 },
+  { output: "helm_1", input: "knucklestone_bar", count: 2, xp: 45 },
+  { output: "shield_1", input: "knucklestone_bar", count: 3, xp: 70 },
+  { output: "armor_1", input: "knucklestone_bar", count: 5, xp: 120 },
 ];

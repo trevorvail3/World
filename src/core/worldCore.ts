@@ -275,14 +275,14 @@ function countItem(player: Player, item: ItemId): number {
 }
 
 /**
- * Sum a combat stat ("dmg" or "def") across everything the player is wearing.
- * This is how worn gear feeds into the fight without the core knowing item
- * names — it just reads the numbers content gave each piece.
+ * Sum a combat stat ("acc", "dmg" or "def") across everything the player is
+ * wearing. This is how worn gear feeds into the fight without the core knowing
+ * item names — it just reads the numbers content gave each piece.
  */
 function equipStat(
   player: Player,
   content: Content,
-  field: "dmg" | "def",
+  field: "acc" | "dmg" | "def",
 ): number {
   let total = 0;
   for (const id of Object.values(player.equipment)) {
@@ -365,6 +365,32 @@ export function applyIntent(
   return events;
 }
 
+/** The wearable equipment slots (canon `equip` values we support). */
+const EQUIP_SLOTS = new Set<string>([
+  "mainhand",
+  "offhand",
+  "helmet",
+  "armor",
+  "legs",
+  "boots",
+  "ring",
+  "necklace",
+  "cape",
+]);
+
+/** Combat level needed to equip each gear tier (idle game GEAR_TIER_REQS). */
+const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
+
+/** The player's combat level (idle game formula). */
+function combatLevel(player: Player): number {
+  const e = skillLvl(player, "edge");
+  const v = skillLvl(player, "vigour");
+  const w = skillLvl(player, "ward");
+  const d = skillLvl(player, "draw");
+  const vit = skillLvl(player, "vitality");
+  return Math.floor((w + vit) / 4 + Math.max((e + v) / 4, d / 2));
+}
+
 /** Wear the gear in an inventory slot, swapping out anything already worn. */
 function equipSlot(
   player: Player,
@@ -375,19 +401,48 @@ function equipSlot(
   const data = player.inventory[slot];
   if (!data) return;
   const def = content.items[data.item];
-  if (!def.equip) {
+  const eslot = def.slot;
+  if (!eslot || !EQUIP_SLOTS.has(eslot)) {
     events.push({ type: "LOG", message: `You can't wear the ${def.name}.` });
     return;
   }
+  // Honour the gear-tier combat-level requirement.
+  if (def.tier !== undefined) {
+    const req = GEAR_TIER_REQS[def.tier] ?? 0;
+    if (combatLevel(player) < req) {
+      events.push({
+        type: "LOG",
+        message: `You need combat level ${req} to wield the ${def.name}.`,
+      });
+      return;
+    }
+  }
+
+  const target = eslot as EquipSlot;
   const newItem = data.item;
-  const previously = player.equipment[def.equip];
+  const previously = player.equipment[target];
 
   // Take one of the new item out of the pack…
   data.qty -= 1;
   if (data.qty <= 0) player.inventory[slot] = null;
   // …wear it, and drop whatever was there back into the freed space.
-  player.equipment[def.equip] = newItem;
+  player.equipment[target] = newItem;
   if (previously) addItem(player, previously, 1, events);
+
+  // A two-handed weapon can't share with a shield: stow the off-hand.
+  if (target === "mainhand" && def.twoHand && player.equipment.offhand) {
+    const off = player.equipment.offhand;
+    delete player.equipment.offhand;
+    addItem(player, off, 1, events);
+  }
+  // Equipping an off-hand while a two-hander is worn stows the two-hander.
+  if (target === "offhand" && player.equipment.mainhand) {
+    const main = player.equipment.mainhand;
+    if (content.items[main].twoHand) {
+      delete player.equipment.mainhand;
+      addItem(player, main, 1, events);
+    }
+  }
   events.push({ type: "LOG", message: `You equip the ${def.name}.` });
 }
 
@@ -872,28 +927,26 @@ function skillLvl(player: Player, skill: SkillId): number {
   return player.skills[skill]?.level ?? 1;
 }
 
-/** A stat off the equipped weapon (the "weapon" slot), or 0/undefined. */
-function weaponNum(player: Player, content: Content, field: "acc" | "dmg" | "speed"): number {
-  const id = player.equipment.weapon;
-  if (!id) return 0;
-  return content.items[id][field] ?? 0;
-}
-
+/** The attack style of the worn main-hand weapon (slash/stab/crush), if any. */
 function weaponStyle(player: Player, content: Content): string | undefined {
-  const id = player.equipment.weapon;
+  const id = player.equipment.mainhand;
   return id ? content.items[id].attackStyle : undefined;
 }
 
-/** Player accuracy rating: Edge + weapon acc + the Edge-style bonus. */
+/**
+ * Player accuracy rating: Edge + summed gear acc (weapon, ring, amulet) + the
+ * Edge-style bonus. equipStat sums the field across every worn item, and only
+ * weapons/rings/amulets carry `acc`, so this matches the idle game's sum.
+ */
 function playerAccuracy(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "edge" ? COMBAT.styleBonus : 0;
-  return skillLvl(player, "edge") + weaponNum(player, content, "acc") + styleBonus;
+  return skillLvl(player, "edge") + equipStat(player, content, "acc") + styleBonus;
 }
 
-/** Player max hit: Vigour + weapon dmg + the Vigour-style bonus. */
+/** Player max hit: Vigour + summed gear dmg (weapon, amulet) + Vigour bonus. */
 function playerMaxHit(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "vigour" ? COMBAT.styleBonus : 0;
-  return skillLvl(player, "vigour") + weaponNum(player, content, "dmg") + styleBonus;
+  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus;
 }
 
 /** Player defence rating: Ward + summed armour defence. */
@@ -901,9 +954,11 @@ function playerDefence(player: Player, content: Content): number {
   return skillLvl(player, "ward") + equipStat(player, content, "def");
 }
 
-/** The player's swing interval (ms): the weapon's speed, or the melee default. */
+/** The player's swing interval (ms): the main-hand weapon's speed, or default. */
 function playerSpeed(player: Player, content: Content): number {
-  return weaponNum(player, content, "speed") || COMBAT.playerMeleeSpeed;
+  const id = player.equipment.mainhand;
+  const speed = id ? content.items[id].speed : undefined;
+  return speed || COMBAT.playerMeleeSpeed;
 }
 
 /** Keep max HP = base + Vitality level; growing it tops up current HP too. */
