@@ -41,10 +41,6 @@ export const shops: ShopDef[] = [
       { item: "seed_marrowflower", price: 1000, qty: 2 },
       { item: "seed_hearthbloom", price: 1500, qty: 2 },
       { item: "seed_orunroot", price: 2200, qty: 2 },
-      // Stabled mounts — a worn mount speeds overworld travel. (Canon ride costs.)
-      { item: "mount_pony", price: 500, qty: 1 },
-      { item: "mount_horse", price: 2000, qty: 1 },
-      { item: "mount_destrier", price: 8000, qty: 1 },
       { item: "fertilizer_basic", price: 55, qty: 1 },
       { item: "forage_mushroom", price: 52, qty: 5 },
       // Glass for Herblore — tinctures take a small vial, full brews a flask

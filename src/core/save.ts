@@ -50,6 +50,8 @@ export interface SavedProgress {
   reputation: Record<string, number>;
   /** Cumulative achievement tallies. */
   stats: { goldEarned: number; monstersSlain: number };
+  /** Kills since the last Shard of Orun (drives the pity guarantee). */
+  killsSinceShard: number;
   /** Unlocked achievement ids. */
   achievements: string[];
   /** Name + cosmetic colours from the character creator. */
@@ -96,6 +98,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     reputation: { ...player.reputation },
     stats: { ...player.stats },
     achievements: [...player.achievements],
+    killsSinceShard: player.killsSinceShard,
     appearance: { ...player.appearance },
     bounty: {
       marks: player.bounty.marks,
@@ -234,6 +237,8 @@ export function hydratePlayer(
     if (finiteNum(g) && g >= 0) player.stats.goldEarned = Math.floor(g);
     if (finiteNum(k) && k >= 0) player.stats.monstersSlain = Math.floor(k);
   }
+  const savedPity = raw["killsSinceShard"];
+  if (finiteNum(savedPity) && savedPity >= 0) player.killsSinceShard = Math.floor(savedPity);
   const savedAch = raw["achievements"];
   if (Array.isArray(savedAch)) {
     player.achievements = savedAch.filter(

@@ -988,6 +988,12 @@ export interface Player {
   reputation: Record<FactionId, number>;
   /** Cumulative tallies for achievements. */
   stats: { goldEarned: number; monstersSlain: number };
+  /**
+   * Kills since the last Shard of Orun. The shard is a rare drop, but a pity
+   * timer guarantees one once this reaches SHARD_PITY — so the main story is
+   * never hard-walled by RNG. Resets to 0 whenever a shard is obtained.
+   */
+  killsSinceShard: number;
   /** Ids of achievements already unlocked (so they stay unlocked). */
   achievements: string[];
   /** The player's name and cosmetic colours (from the character creator). */

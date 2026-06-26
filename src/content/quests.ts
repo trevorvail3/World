@@ -68,7 +68,7 @@ export const quests: QuestDef[] = [
       "I'm Calder. I carry word for the Heartmoor, and we pay well for warm stone. Bring me one and we'll talk like honest people.",
     ],
     steps: [
-      { type: "gather", item: "shard_of_orun", count: 1, text: "Cut a Shard of Orun from a warm seam in the Knuckle Hills (or take one off the slain)" },
+      { type: "gather", item: "shard_of_orun", count: 1, text: "Take a Shard of Orun from the moor's beasts — they carry one, rarely, and always by the time you've cleared a few hundred" },
       {
         type: "choice",
         npc: "calder",
@@ -255,7 +255,7 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [{ skill: "mining", amount: 150 }],
-      items: [{ item: "order_cipher_key", qty: 1 }],
+      items: [{ item: "order_cipher_key", qty: 1 }, { item: "mount_pony", qty: 1 }],
       flags: ["guild_pale_record_contacted", "met_sera", "knows_underloft", "act1_complete"],
       rep: [{ faction: "pale_record", amount: 10 }],
     },
@@ -309,7 +309,7 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [{ skill: "smithing", amount: 500 }],
-      items: [{ item: "apprentice_mark_blade", qty: 1 }],
+      items: [{ item: "apprentice_mark_blade", qty: 1 }, { item: "mount_ironboar", qty: 1 }],
       flags: ["guild_ashforge_rank_2"],
       rep: [{ faction: "ashforge", amount: 15 }],
     },
@@ -411,7 +411,7 @@ export const quests: QuestDef[] = [
         { skill: "forestry", amount: 300 },
         { skill: "vitality", amount: 200 },
       ],
-      items: [{ item: "warden_longbow", qty: 1 }],
+      items: [{ item: "warden_longbow", qty: 1 }, { item: "mount_silverwolf", qty: 1 }],
       flags: ["guild_lodge_rank_2", "knows_forest_retreat"],
       rep: [{ faction: "lodge", amount: 15 }],
     },
@@ -463,6 +463,7 @@ export const quests: QuestDef[] = [
       items: [
         { item: "chronicler_seal", qty: 1 },
         { item: "order_cipher_key", qty: 1 },
+        { item: "mount_courier", qty: 1 },
       ],
       flags: ["guild_pale_record_rank_1", "knows_rite_partial"],
       rep: [{ faction: "pale_record", amount: 15 }],
@@ -694,6 +695,7 @@ export const quests: QuestDef[] = [
         { skill: "vigour", amount: 1000 },
         { skill: "vitality", amount: 1000 },
       ],
+      items: [{ item: "mount_destrier", qty: 1 }],
       flags: ["varath_main_story_complete"],
     },
   },

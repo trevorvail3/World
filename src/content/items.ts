@@ -3987,7 +3987,7 @@ export const items: Record<ItemId, ItemDef> = {
   "shard_of_orun": {
     "id": "shard_of_orun",
     "name": "Shard of Orun",
-    "description": "A fragment of warm black stone, cut from a seam in the Knuckle Hills or taken off the slain. The name is what the cult calls it — the stone does not confirm anything. Believers say it is a piece of the dead god. Unbelievers have no better explanation.",
+    "description": "A fragment of warm black stone. Found rarely, on the bodies of the slain. The name is what the cult calls it — the stone does not confirm anything. Believers say it is a piece of the dead god. Unbelievers have no better explanation.",
     "icon": "🖤",
     "cat": "Legendary",
     "sell": 0

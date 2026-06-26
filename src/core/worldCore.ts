@@ -63,6 +63,10 @@ const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage 
 // On death you drop a tenth of your coin (a real but gentle setback).
 const DEATH_GOLD_FRACTION = 0.1;
 const DEATH_GOLD_CAP = 250;
+// The Shard of Orun is a rare drop, but this many kills without one guarantees
+// the next — so q_first_shard (and the whole main story) can't be RNG-walled.
+const SHARD_PITY = 250;
+const SHARD_ID = "shard_of_orun" as ItemId;
 
 // Playable level ceiling. The XP table (content) is built a little past this so
 // look-ups never fall off the end, but a skill never *reads* above the cap.
@@ -275,6 +279,7 @@ export function createWorld(
     gold: STARTING_GOLD,
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
+    killsSinceShard: 0,
     achievements: [],
     appearance: { name: "Wanderer", skin: "#e3bd92", hair: "#5a3a1e", tunic: "#6b6157" },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
@@ -2489,7 +2494,15 @@ function playerSwing(
     // Vitality always trains; ranged kills train Draw, melee the chosen style.
     grantXp(state, content, "vitality", Math.floor(stats.xp * 0.33), events);
     grantXp(state, content, ranged ? "draw" : player.combatStyle, Math.floor(stats.xp), events);
-    rollDrops(player, stats, ctx, events);
+    player.killsSinceShard += 1;
+    rollDrops(player, stats, ctx, events); // resets killsSinceShard if the shard drops
+    // Pity guarantee: once the count crosses the threshold without a shard, the
+    // next kill yields one and the count resets — a rare drop that can't wall you.
+    if (player.killsSinceShard >= SHARD_PITY && canAddItem(player, SHARD_ID)) {
+      addItem(player, SHARD_ID, 1, events);
+      player.killsSinceShard = 0;
+      events.push({ type: "LOG", message: `Among the spoils: a warm black Shard of Orun.` });
+    }
     player.stats.monstersSlain += 1;
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
@@ -2592,6 +2605,7 @@ function rollDrops(
     const qty = min + Math.floor(ctx.rng() * (max - min + 1));
     addItem(player, drop.item, qty, events);
     if (drop.item === "shard_of_orun") {
+      player.killsSinceShard = 0; // a natural drop re-arms the pity timer
       events.push({
         type: "LOG",
         message: "A Shard of Orun — warm and black. The hills give one up.",

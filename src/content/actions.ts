@@ -24,16 +24,6 @@ export const actions: SkillAction[] = [
     "produces": "knucklestone_ore"
   },
   {
-    "id": "mine_warm_seam",
-    "skill": "mining",
-    "name": "Warm Seam",
-    "levelReq": 1,
-    "xp": 25,
-    "baseTime": 5000,
-    "produces": "shard_of_orun",
-    "note": "Black stone that holds a heat the sun never gave it. A Shard of Orun — the hills give one up grudgingly."
-  },
-  {
     "id": "mine_silica",
     "skill": "mining",
     "name": "Silica Sand",
