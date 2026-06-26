@@ -132,7 +132,7 @@ export function createWorld(
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},
-    activity: { kind: "idle", targetId: null, nextActionAt: 0 },
+    activity: { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
     alive: true,
     respawnAt: 0,
@@ -212,7 +212,7 @@ function addItem(
 }
 
 function clearActivity(player: Player): void {
-  player.activity = { kind: "idle", targetId: null, nextActionAt: 0 };
+  player.activity = { kind: "idle", targetId: null, nextActionAt: 0, actionInterval: 0 };
 }
 
 /** Does the player hold at least one of this item? */
@@ -362,6 +362,7 @@ function startInteraction(
         kind: "woodcutting",
         targetId: objId,
         nextActionAt: ctx.now + WOODCUTTING.interval,
+        actionInterval: WOODCUTTING.interval,
       };
       events.push({ type: "LOG", message: "You swing your axe at the tree." });
       break;
@@ -375,6 +376,7 @@ function startInteraction(
         kind: "mining",
         targetId: objId,
         nextActionAt: ctx.now + MINING.interval,
+        actionInterval: MINING.interval,
       };
       events.push({ type: "LOG", message: "You swing your pick at the rock." });
       break;
@@ -384,6 +386,7 @@ function startInteraction(
         kind: "fishing",
         targetId: objId,
         nextActionAt: ctx.now + FISHING.interval,
+        actionInterval: FISHING.interval,
       };
       events.push({ type: "LOG", message: "You cast your line into the pond." });
       break;
@@ -411,6 +414,7 @@ function startInteraction(
         kind: "combat",
         targetId: objId,
         nextActionAt: ctx.now + COMBAT.attackInterval,
+        actionInterval: COMBAT.attackInterval,
       };
       events.push({ type: "LOG", message: `You engage the ${def.name}.` });
       break;
@@ -428,6 +432,7 @@ function startInteraction(
         kind: "cooking",
         targetId: objId,
         nextActionAt: ctx.now + COOKING_INTERVAL,
+        actionInterval: COOKING_INTERVAL,
       };
       events.push({ type: "LOG", message: "You set your catch over the fire." });
       break;
@@ -441,6 +446,7 @@ function startInteraction(
         kind: "smelting",
         targetId: objId,
         nextActionAt: ctx.now + SMELTING_INTERVAL,
+        actionInterval: SMELTING_INTERVAL,
       };
       events.push({ type: "LOG", message: "You feed ore into the furnace." });
       break;

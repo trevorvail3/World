@@ -199,6 +199,8 @@ export interface Activity {
   targetId: string | null;
   /** Time (ms) of the next "swing"/roll for this activity. */
   nextActionAt: number;
+  /** How long one swing/roll takes (ms) — lets the client show progress. */
+  actionInterval: number;
 }
 
 export interface Player {

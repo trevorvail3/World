@@ -53,6 +53,7 @@ interface FloatText {
   text: string;
   color: string;
   born: number;
+  size?: number;
 }
 
 interface Marker {
@@ -183,6 +184,7 @@ export class Game {
     drawWorld(this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now);
     this.drawMarker(now);
     this.drawHighlights(now);
+    this.drawActivityFeedback(now);
     this.drawGuideTarget(now);
     this.drawFloats(now);
 
@@ -212,16 +214,29 @@ export class Game {
   }
 
   private handleEvents(events: WorldEvent[], now: number): void {
+    let xpSum = 0;
     for (const ev of events) {
       switch (ev.type) {
         case "LOG":
           this.hud.log(ev.message);
           break;
-        case "LEVEL_UP":
-          this.hud.log(
-            `You reach ${this.bridge.content.skills[ev.skill].name} level ${ev.level}!`,
-          );
+        case "XP_GAINED":
+          xpSum += ev.amount;
           break;
+        case "LEVEL_UP": {
+          const name = this.bridge.content.skills[ev.skill].name;
+          this.hud.log(`You reach ${name} level ${ev.level}!`);
+          const p = this.bridge.state.player.pos;
+          this.floats.push({
+            x: p.x,
+            y: p.y - 0.5,
+            text: `${name} Lv ${ev.level}!`,
+            color: "#f2cf6b",
+            born: now,
+            size: 18,
+          });
+          break;
+        }
         case "INVENTORY_FULL":
           this.hud.log("Your pack is full.");
           break;
@@ -253,6 +268,17 @@ export class Game {
         default:
           break;
       }
+    }
+    // One tidy "+N XP" rising off the player per tick, not one per skill.
+    if (xpSum > 0) {
+      const p = this.bridge.state.player.pos;
+      this.floats.push({
+        x: p.x,
+        y: p.y,
+        text: `+${xpSum} XP`,
+        color: "#e0b54a",
+        born: now,
+      });
     }
   }
 
@@ -344,6 +370,50 @@ export class Game {
     }
   }
 
+  /** Enemy HP bar in combat; a progress ring for timed gathering/processing. */
+  private drawActivityFeedback(now: number): void {
+    const act = this.bridge.state.player.activity;
+    if (act.kind === "idle" || !act.targetId) return;
+    const def = this.bridge.content.objects.find((o) => o.id === act.targetId);
+    if (!def) return;
+    const { x: cx, y: cy } = this.toScreen(def.x, def.y);
+
+    if (act.kind === "combat") {
+      const stats = def.monster ? this.bridge.content.monsters[def.monster] : undefined;
+      const obj = this.bridge.state.objects[def.id];
+      if (stats && obj && obj.hp !== undefined) {
+        const w = TILE * 0.7;
+        const h = 4;
+        const pct = Math.max(0, Math.min(1, obj.hp / stats.hp));
+        const bx = cx - w / 2;
+        const by = cy - TILE * 0.6;
+        this.g.fillStyle = "rgba(0,0,0,0.6)";
+        this.g.fillRect(bx - 1, by - 1, w + 2, h + 2);
+        this.g.fillStyle = "#3a1410";
+        this.g.fillRect(bx, by, w, h);
+        this.g.fillStyle = "#c43a23";
+        this.g.fillRect(bx, by, w * pct, h);
+      }
+      return;
+    }
+
+    // Timed gathering / cooking / smelting: a filling progress ring.
+    if (act.actionInterval > 0) {
+      const remain = Math.max(0, act.nextActionAt - now);
+      const progress = 1 - Math.min(1, remain / act.actionInterval);
+      const r = TILE * 0.42;
+      this.g.lineWidth = 3;
+      this.g.strokeStyle = "rgba(0,0,0,0.4)";
+      this.g.beginPath();
+      this.g.arc(cx, cy, r, 0, Math.PI * 2);
+      this.g.stroke();
+      this.g.strokeStyle = "#e0b54a";
+      this.g.beginPath();
+      this.g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+      this.g.stroke();
+    }
+  }
+
   /** A bobbing gold chevron over whatever the onboarding guide points at. */
   private drawGuideTarget(now: number): void {
     const step = this.guide.currentStep;
@@ -388,7 +458,7 @@ export class Game {
       const px = f.x * TILE + TILE / 2 - this.cam.x;
       const py = f.y * TILE + TILE / 2 - this.cam.y - t * 22;
       this.g.globalAlpha = 1 - t;
-      this.g.font = "bold 16px 'Cinzel', serif";
+      this.g.font = `bold ${f.size ?? 16}px 'Cinzel', serif`;
       this.g.textAlign = "center";
       this.g.fillStyle = "rgba(0,0,0,0.7)";
       this.g.fillText(f.text, px + 1, py + 1);

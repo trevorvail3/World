@@ -45,11 +45,10 @@ export class TitleScreen {
   private enter(onEnter: () => void): void {
     if (this.entered) return;
     this.entered = true;
+    // Fire onEnter NOW (it builds the intro, which sits behind the title at a
+    // lower z-index) so the game is never revealed as the title fades out.
+    onEnter();
     this.el.classList.add("leaving");
-    // Remove from the page after the fade-out so taps reach the canvas.
-    window.setTimeout(() => {
-      this.el.remove();
-      onEnter();
-    }, 650);
+    window.setTimeout(() => this.el.remove(), 650);
   }
 }

@@ -129,7 +129,11 @@ export class Hud {
         for (let i = 0; i < 28; i++) {
           const slot = document.createElement("div");
           slot.className = "inv-slot";
-          this.attachLongPress(slot, (x, y) => this.inspectItem(i, x, y));
+          this.attachLongPress(
+            slot,
+            (x, y) => this.inspectItem(i, x, y),
+            (x, y) => this.tapItem(i, x, y),
+          );
           grid.appendChild(slot);
           this.invSlots.push(slot);
         }
@@ -218,6 +222,17 @@ export class Hud {
       .join("");
   }
 
+  /** A short tap on a slot: eat food, otherwise just inspect it. */
+  private tapItem(index: number, screenX: number, screenY: number): void {
+    const data = this.invData[index];
+    if (!data) return;
+    if (this.content.items[data.item].heals) {
+      this.dispatch({ type: "EAT", slot: index });
+    } else {
+      this.inspectItem(index, screenX, screenY);
+    }
+  }
+
   /** Long-press / right-click an inventory slot to inspect the item. */
   private inspectItem(index: number, screenX: number, screenY: number): void {
     const data = this.invData[index];
@@ -235,15 +250,17 @@ export class Hud {
     this.menu.show(screenX, screenY, def.name, items, def.description);
   }
 
-  /** Fire `onLong` if the pointer is held still on `el` for a moment. */
+  /** Short tap fires `onTap`; a held press fires `onLong`. */
   private attachLongPress(
     el: HTMLElement,
     onLong: (x: number, y: number) => void,
+    onTap?: (x: number, y: number) => void,
   ): void {
     let timer: number | null = null;
     let sx = 0;
     let sy = 0;
     let moved = false;
+    let fired = false;
     const clear = (): void => {
       if (timer !== null) {
         window.clearTimeout(timer);
@@ -255,9 +272,13 @@ export class Hud {
       sx = e.clientX;
       sy = e.clientY;
       moved = false;
+      fired = false;
       clear();
       timer = window.setTimeout(() => {
-        if (!moved) onLong(e.clientX, e.clientY);
+        if (!moved) {
+          fired = true;
+          onLong(e.clientX, e.clientY);
+        }
       }, 330);
     });
     el.addEventListener("pointermove", (e) => {
@@ -266,7 +287,10 @@ export class Hud {
         clear();
       }
     });
-    el.addEventListener("pointerup", clear);
+    el.addEventListener("pointerup", (e) => {
+      clear();
+      if (!fired && !moved && onTap) onTap(e.clientX, e.clientY);
+    });
     el.addEventListener("pointercancel", clear);
     // Right-click inspects immediately (desktop).
     el.addEventListener("contextmenu", (e) => {
