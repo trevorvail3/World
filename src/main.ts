@@ -163,8 +163,8 @@ function boot(newChar: CreatedCharacter | null): void {
   const enter = (): void => {
     hud.log(
       restored
-        ? `Welcome back, ${state.player.appearance.name}. Ironvale is as you left it.`
-        : `You step into Ironvale, ${state.player.appearance.name} of the Knuckle Hills.`,
+        ? `Welcome back, ${state.player.appearance.name}. The hills are as you left them.`
+        : `You set foot on the Knuckle Hills, ${state.player.appearance.name}. An old man waves from the clearing.`,
     );
     if (!restored) guide.start();
   };

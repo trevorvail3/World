@@ -13,7 +13,6 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { CITY_SPAWN } from "./map.ts";
 
 export const objects: WorldObjectDef[] = [
   // === IRONVALE — the central city =========================================
@@ -55,9 +54,9 @@ export const objects: WorldObjectDef[] = [
     ],
   },
 
-  // --- Aldric, by the central crossroads (the opening quest-giver) ---
+  // --- Aldric, out in the Knuckle Hills where you begin (opening quest-giver) ---
   {
-    id: "aldric", kind: "npc", x: 56, y: 54, name: "Aldric",
+    id: "aldric", kind: "npc", x: 23, y: 16, name: "Aldric",
     lines: [
       "You've an honest look about you. Good — there's a thing that's been gnawing at me.",
       "Found this old coin in the dirt by my wall. Old Varath mintage, struck before my grandfather's grandfather drew breath. Worn smooth — and no coin I've ever known.",
@@ -298,6 +297,9 @@ export const objects: WorldObjectDef[] = [
   },
   { id: "lm_knuckle", kind: "shrine", x: 22, y: 12, name: "The Knuckle", lines: ["The bald stone fist the hills are named for. Old scratch-marks are worked into the rock — a mason's tally, or something older. Sera would copy them and still not pretend to know."] },
   { id: "rock_knuckle", kind: "rock", x: 20, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  // A hill kiln by the starting clearing, so the opening quest (mine -> smelt ->
+  // bring Aldric a bar) can be done right where you begin.
+  { id: "furnace_hill", kind: "furnace", x: 21, y: 17, name: "Hill Kiln" },
   { id: "lm_coldvein", kind: "shrine", x: 8, y: 33, name: "The Coldvein Scar", lines: ["A surface cutting worked dry two generations back. A retired miner still walks up for one last look before his knees give out — not after ore, he says. Just the look."] },
   { id: "lm_redrun_head", kind: "shrine", x: 27, y: 32, name: "The Redrun Head", lines: ["Where a dozen hill-streams braid into the head of the Redrun. The whole long river starts as this — thin water over pale stone."] },
   { id: "fish_tarn", kind: "fishing_spot", x: 33, y: 30, name: "The Head-Stream Pool", resource: "fish_ashfin" },
@@ -464,5 +466,6 @@ export const objects: WorldObjectDef[] = [
   { id: "course_scramble_4", kind: "agility_obstacle", x: 15, y: 23, name: "Knuckle Hills Scramble: Stepping Stones", course: "course_scramble", order: 4, exit: { x: 16, y: 23 }, xp: 100, levelReq: 20, obstacle: "stones" },
 ];
 
-/** Where the player first appears — the civic yard at the heart of Ironvale. */
-export const playerSpawn = CITY_SPAWN;
+/** Where the player first appears — a clearing in the Knuckle Hills, by Aldric
+ *  and the knucklestone outcrop, so the opening quest is right at hand. */
+export const playerSpawn = { x: 22, y: 16 };
