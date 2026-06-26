@@ -33,7 +33,7 @@ import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
-import { Minimap } from "./minimap.ts";
+import { Minimap, WorldMapModal } from "./minimap.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { objectPos } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
@@ -145,6 +145,7 @@ export class Game {
 
   private menu: ContextMenu;
   private minimap: Minimap;
+  private worldMap: WorldMapModal;
   private bank: BankUI;
   private shop: ShopUI;
   private press: Press | null = null;
@@ -165,7 +166,8 @@ export class Game {
     if (!g) throw new Error("Could not get a 2D canvas context.");
     this.g = g;
     this.menu = menu;
-    this.minimap = new Minimap(uiRoot);
+    this.worldMap = new WorldMapModal(uiRoot, bridge.content);
+    this.minimap = new Minimap(uiRoot, () => this.worldMap.show());
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
 
@@ -226,6 +228,15 @@ export class Game {
       this.canvas.width,
       this.canvas.height,
     );
+    if (this.worldMap.isOpen()) {
+      this.worldMap.draw(
+        this.bridge.state,
+        this.bridge.content,
+        this.cam,
+        this.canvas.width,
+        this.canvas.height,
+      );
+    }
   }
 
   private followCamera(): void {
@@ -689,7 +700,7 @@ export class Game {
       this.dialogue.advance();
       return;
     }
-    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen()) return;
+    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen() || this.worldMap.isOpen()) return;
 
     const tile = this.tileAtScreen(e.clientX, e.clientY);
     this.press = {

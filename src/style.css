@@ -96,45 +96,54 @@ body {
   margin-bottom: 5px;
 }
 
-.skill-row {
+/* Skills tab — OSRS-style grid of small skill buttons (icon · level · XP bar).
+   Sized so the grid matches the Pack tab's footprint. */
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-auto-rows: 36px;
+  gap: 4px;
+}
+
+.skill-cell {
+  position: relative;
+  background: rgba(40, 32, 24, 0.7);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 15px;
-  line-height: 1.5;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: default;
 }
 
-.skill-name {
-  color: var(--ink);
+.sc-icon {
+  font-size: 14px;
+  line-height: 1;
 }
 
-.skill-icon {
-  display: inline-block;
-  width: 1.3em;
-  margin-right: 2px;
-  text-align: center;
-}
-
-.skill-val {
+.sc-lvl {
   font-family: "Cinzel", serif;
-  color: var(--ember);
+  font-size: 12px;
   font-weight: 600;
+  color: var(--ember);
+  line-height: 1;
 }
 
-/* Per-skill XP progress bar */
-.skill-block {
-  margin-bottom: 7px;
-}
-
-.skill-xpbar {
+.sc-bar {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
   height: 3px;
-  margin-top: 2px;
   background: #2a2118;
   border-radius: 2px;
   overflow: hidden;
 }
 
-.skill-xpfill {
+.sc-fill {
+  display: block;
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #8a6a2a, #e0b54a);
@@ -661,12 +670,88 @@ body {
   top: 10px;
   right: 10px;
   padding: 5px;
+  position: absolute;
 }
 
 .minimap-canvas {
   display: block;
   border-radius: 4px;
   border: 1px solid rgba(74, 61, 44, 0.6);
+}
+
+/* World-map button, tucked in the minimap's corner */
+.minimap-worldbtn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  line-height: 1;
+  background: rgba(12, 9, 7, 0.78);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.minimap-worldbtn:hover {
+  border-color: var(--ember);
+  background: rgba(210, 116, 44, 0.22);
+}
+
+/* --- Full world-map overlay --- */
+.worldmap-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+}
+.worldmap-backdrop.hidden {
+  display: none;
+}
+.worldmap-modal {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+  max-width: 94vw;
+  max-height: 92vh;
+}
+.worldmap-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.worldmap-title {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+.worldmap-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.worldmap-close:hover {
+  color: var(--ember);
+}
+.worldmap-canvas {
+  display: block;
+  max-width: 92vw;
+  height: auto;
+  border-radius: 5px;
+  border: 1px solid rgba(74, 61, 44, 0.6);
+  image-rendering: pixelated;
 }
 
 /* --- Collapsed dock: hide the body, keep the tab column --- */
@@ -1019,10 +1104,13 @@ button.inv-slot {
     grid-template-columns: repeat(4, 28px);
     grid-auto-rows: 28px;
   }
+  .skill-grid {
+    grid-template-columns: repeat(3, 37px);
+    grid-auto-rows: 33px;
+  }
   .status-pill {
     font-size: 13px;
   }
-  .skill-row,
   .dialogue-text {
     font-size: 14px;
   }

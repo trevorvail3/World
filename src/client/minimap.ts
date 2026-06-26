@@ -1,9 +1,9 @@
 /**
  * src/client/minimap.ts
  * ---------------------
- * A small top-right minimap. Pure presentation: it reads the core's state and
- * paints a scaled-down view of the whole zone — tiles, objects, the player,
- * and a rectangle showing what the main camera currently sees.
+ * Top-right minimap + a full world-map overlay. The minimap shows only the
+ * local area currently on screen (centred on the player); a 🗺 button opens the
+ * whole continent. Pure presentation — reads the core's state, never changes it.
  */
 
 import type { Content, ObjKind, TileType, WorldState } from "../core/types.ts";
@@ -40,11 +40,23 @@ const MM_OBJ: Record<ObjKind, string> = {
   shrine: "#b9b0c8",
 };
 
+/** Draw the player as a dark-ringed gold dot at screen px,py. */
+function drawPlayerDot(g: CanvasRenderingContext2D, px: number, py: number): void {
+  g.fillStyle = "#13100d";
+  g.beginPath();
+  g.arc(px, py, 3.2, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#f2cf6b";
+  g.beginPath();
+  g.arc(px, py, 2.1, 0, Math.PI * 2);
+  g.fill();
+}
+
 export class Minimap {
   private g: CanvasRenderingContext2D;
   private size: number;
 
-  constructor(root: HTMLElement, size = 132) {
+  constructor(root: HTMLElement, onWorldMap: () => void, size = 132) {
     this.size = size;
     const panel = document.createElement("div");
     panel.className = "hud-panel hud-minimap";
@@ -53,13 +65,29 @@ export class Minimap {
     canvas.height = size;
     canvas.className = "minimap-canvas";
     panel.appendChild(canvas);
+
+    // The world-map button, tucked in the minimap's corner.
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "minimap-worldbtn";
+    btn.title = "World map";
+    btn.textContent = "🗺";
+    btn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      onWorldMap();
+    });
+    panel.appendChild(btn);
+
     root.appendChild(panel);
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D context for the minimap.");
     this.g = g;
   }
 
-  /** Paint the minimap. viewW/viewH are the main canvas's pixel dimensions. */
+  /**
+   * Paint the local area that's currently on screen, centred on the camera.
+   * viewW/viewH are the main canvas's pixel dimensions.
+   */
   draw(
     state: WorldState,
     content: Content,
@@ -70,22 +98,128 @@ export class Minimap {
     const g = this.g;
     const size = this.size;
     const m = state.map;
-    const cell = size / Math.max(m.width, m.height);
-    const offX = (size - m.width * cell) / 2;
-    const offY = (size - m.height * cell) / 2;
+
+    const visW = viewW / TILE;
+    const visH = viewH / TILE;
+    const span = Math.max(visW, visH); // tiles across the square minimap
+    const cell = size / span;
+    const centerX = (cam.x + viewW / 2) / TILE; // tile at screen centre
+    const centerY = (cam.y + viewH / 2) / TILE;
+    const originX = centerX - span / 2; // tile at the minimap's left edge
+    const originY = centerY - span / 2;
 
     g.fillStyle = "#0c0907";
     g.fillRect(0, 0, size, size);
 
-    // Tiles
-    for (let y = 0; y < m.height; y++) {
-      for (let x = 0; x < m.width; x++) {
+    // Tiles in the visible window (anything off the map stays background).
+    const x0 = Math.floor(originX), x1 = Math.ceil(originX + span);
+    const y0 = Math.floor(originY), y1 = Math.ceil(originY + span);
+    for (let y = y0; y < y1; y++) {
+      if (y < 0 || y >= m.height) continue;
+      for (let x = x0; x < x1; x++) {
+        if (x < 0 || x >= m.width) continue;
         g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
-        g.fillRect(offX + x * cell, offY + y * cell, cell + 0.6, cell + 0.6);
+        g.fillRect((x - originX) * cell, (y - originY) * cell, cell + 0.8, cell + 0.8);
       }
     }
 
-    // Objects (dimmed while depleted / respawning)
+    // Objects in the window (dimmed while depleted / respawning).
+    for (const def of content.objects) {
+      const color = MM_OBJ[def.kind];
+      if (!color) continue;
+      const obj = state.objects[def.id];
+      const p = objectPos(def, obj);
+      if (p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) continue;
+      g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
+      g.beginPath();
+      g.arc((p.x + 0.5 - originX) * cell, (p.y + 0.5 - originY) * cell, Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // A faint frame marking exactly what the main view shows.
+    g.strokeStyle = "rgba(242,207,107,0.4)";
+    g.lineWidth = 1;
+    g.strokeRect(
+      (centerX - visW / 2 - originX) * cell,
+      (centerY - visH / 2 - originY) * cell,
+      visW * cell,
+      visH * cell,
+    );
+
+    const p = state.player.pos;
+    drawPlayerDot(g, (p.x + 0.5 - originX) * cell, (p.y + 0.5 - originY) * cell);
+  }
+}
+
+/** A full-screen overlay showing the whole continent. */
+export class WorldMapModal {
+  private backdrop: HTMLElement;
+  private g: CanvasRenderingContext2D;
+  private open = false;
+
+  constructor(root: HTMLElement, content: Content) {
+    const m = content.map;
+    const cell = 9; // px per tile on the big map
+    this.backdrop = document.createElement("div");
+    this.backdrop.className = "worldmap-backdrop hidden";
+    this.backdrop.innerHTML = `
+      <div class="worldmap-modal">
+        <div class="worldmap-head">
+          <span class="worldmap-title">Varath — World Map</span>
+          <button class="worldmap-close" type="button">✕</button>
+        </div>
+        <canvas class="worldmap-canvas" width="${m.width * cell}" height="${m.height * cell}"></canvas>
+      </div>`;
+    const canvas = this.backdrop.querySelector(".worldmap-canvas") as HTMLCanvasElement;
+    root.appendChild(this.backdrop);
+    const g = canvas.getContext("2d");
+    if (!g) throw new Error("Could not get a 2D context for the world map.");
+    this.g = g;
+
+    (this.backdrop.querySelector(".worldmap-close") as HTMLElement).addEventListener(
+      "pointerdown",
+      (e) => { e.stopPropagation(); this.close(); },
+    );
+    this.backdrop.addEventListener("pointerdown", (e) => {
+      if (e.target === this.backdrop) this.close();
+    });
+  }
+
+  isOpen(): boolean {
+    return this.open;
+  }
+
+  show(): void {
+    this.open = true;
+    this.backdrop.classList.remove("hidden");
+  }
+
+  close(): void {
+    this.open = false;
+    this.backdrop.classList.add("hidden");
+  }
+
+  /** Repaint the whole map; called each frame while open so the player moves. */
+  draw(
+    state: WorldState,
+    content: Content,
+    cam: Camera,
+    viewW: number,
+    viewH: number,
+  ): void {
+    const g = this.g;
+    const m = state.map;
+    const cell = g.canvas.width / m.width;
+
+    g.fillStyle = "#0c0907";
+    g.fillRect(0, 0, g.canvas.width, g.canvas.height);
+
+    for (let y = 0; y < m.height; y++) {
+      for (let x = 0; x < m.width; x++) {
+        g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
+        g.fillRect(x * cell, y * cell, cell + 0.6, cell + 0.6);
+      }
+    }
     for (const def of content.objects) {
       const color = MM_OBJ[def.kind];
       if (!color) continue;
@@ -93,37 +227,15 @@ export class Minimap {
       const p = objectPos(def, obj);
       g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
       g.beginPath();
-      g.arc(
-        offX + (p.x + 0.5) * cell,
-        offY + (p.y + 0.5) * cell,
-        Math.max(1.2, cell * 0.35),
-        0,
-        Math.PI * 2,
-      );
+      g.arc((p.x + 0.5) * cell, (p.y + 0.5) * cell, Math.max(1.6, cell * 0.36), 0, Math.PI * 2);
       g.fill();
     }
+    // What the main view currently shows.
+    g.strokeStyle = "rgba(255,255,255,0.3)";
+    g.lineWidth = 1.5;
+    g.strokeRect((cam.x / TILE) * cell, (cam.y / TILE) * cell, (viewW / TILE) * cell, (viewH / TILE) * cell);
 
-    // Camera viewport rectangle
-    g.strokeStyle = "rgba(255,255,255,0.25)";
-    g.lineWidth = 1;
-    g.strokeRect(
-      offX + (cam.x / TILE) * cell,
-      offY + (cam.y / TILE) * cell,
-      (viewW / TILE) * cell,
-      (viewH / TILE) * cell,
-    );
-
-    // Player marker
     const p = state.player.pos;
-    const px = offX + (p.x + 0.5) * cell;
-    const py = offY + (p.y + 0.5) * cell;
-    g.fillStyle = "#13100d";
-    g.beginPath();
-    g.arc(px, py, 3, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = "#f2cf6b";
-    g.beginPath();
-    g.arc(px, py, 2, 0, Math.PI * 2);
-    g.fill();
+    drawPlayerDot(g, (p.x + 0.5) * cell, (p.y + 0.5) * cell);
   }
 }

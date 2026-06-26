@@ -196,16 +196,24 @@ export class Hud {
         break;
       }
       case "skills": {
+        // OSRS-style: a small button per skill — icon, level, and a thin XP bar
+        // along the bottom. The grid matches the Pack tab's footprint.
+        const grid = document.createElement("div");
+        grid.className = "skill-grid";
         (Object.keys(this.content.skills) as SkillId[]).forEach((sid) => {
-          const block = document.createElement("div");
-          block.className = "skill-block";
-          block.innerHTML = `
-            <div class="skill-row"><span class="skill-name"><span class="skill-icon">${this.content.skills[sid].icon}</span>${this.content.skills[sid].name}</span><span class="skill-val">1</span></div>
-            <div class="skill-xpbar"><div class="skill-xpfill"></div></div>`;
-          this.skillRows.set(sid, block.querySelector(".skill-val") as HTMLElement);
-          this.skillFills.set(sid, block.querySelector(".skill-xpfill") as HTMLElement);
-          p.appendChild(block);
+          const meta = this.content.skills[sid];
+          const cell = document.createElement("div");
+          cell.className = "skill-cell";
+          cell.title = meta.name;
+          cell.innerHTML = `
+            <span class="sc-icon">${meta.icon}</span>
+            <span class="sc-lvl">1</span>
+            <span class="sc-bar"><span class="sc-fill"></span></span>`;
+          this.skillRows.set(sid, cell.querySelector(".sc-lvl") as HTMLElement);
+          this.skillFills.set(sid, cell.querySelector(".sc-fill") as HTMLElement);
+          grid.appendChild(cell);
         });
+        p.appendChild(grid);
         break;
       }
       case "equipment": {
@@ -449,6 +457,14 @@ export class Hud {
         const next = table[s.level + 1];
         const pct = next && next > cur ? (s.xp - cur) / (next - cur) : 1;
         fill.style.width = `${Math.max(0, Math.min(1, pct)) * 100}%`;
+      }
+      // Rich hover on the cell: "Mining · Lv 7 · 1,240 / 1,833 xp".
+      const cell = el?.parentElement;
+      if (cell) {
+        const meta = this.content.skills[id];
+        const next = table[s.level + 1];
+        const xpLine = next ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp` : "max level";
+        cell.title = `${meta.name} · Lv ${s.level} · ${xpLine}`;
       }
     });
 
