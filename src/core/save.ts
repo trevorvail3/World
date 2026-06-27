@@ -45,6 +45,8 @@ export interface SavedProgress {
   quests: Record<string, { step: number; killCount: number }>;
   /** Completed quest ids. */
   questsDone: string[];
+  /** Discovered lore fragment ids (the Archive). */
+  lore: string[];
   /** Story flags. */
   flags: string[];
   /** Coins. */
@@ -98,6 +100,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
+    lore: [...player.lore],
     flags: [...player.flags],
     gold: player.gold,
     reputation: { ...player.reputation },
@@ -231,6 +234,13 @@ export function hydratePlayer(
   const savedFlags = raw["flags"];
   if (Array.isArray(savedFlags)) {
     player.flags = savedFlags.filter((f): f is string => typeof f === "string");
+  }
+  // Discovered lore (only ids this build still defines; drop the rest gracefully).
+  const savedLore = raw["lore"];
+  if (Array.isArray(savedLore)) {
+    player.lore = savedLore.filter(
+      (id): id is string => typeof id === "string" && content.lore.some((l) => l.id === id),
+    );
   }
   const savedGold = raw["gold"];
   if (typeof savedGold === "number" && Number.isFinite(savedGold) && savedGold >= 0) {

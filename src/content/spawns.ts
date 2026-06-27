@@ -464,6 +464,21 @@ export const objects: WorldObjectDef[] = [
   { id: "course_scramble_2", kind: "agility_obstacle", x: 20, y: 27, name: "Knuckle Hills Scramble: Rope Swing", course: "course_scramble", order: 2, exit: { x: 19, y: 27 }, xp: 100, levelReq: 20, obstacle: "rope" },
   { id: "course_scramble_3", kind: "agility_obstacle", x: 16, y: 27, name: "Knuckle Hills Scramble: Wall Scramble", course: "course_scramble", order: 3, exit: { x: 16, y: 26 }, xp: 100, levelReq: 20, obstacle: "wall" },
   { id: "course_scramble_4", kind: "agility_obstacle", x: 15, y: 23, name: "Knuckle Hills Scramble: Stepping Stones", course: "course_scramble", order: 4, exit: { x: 16, y: 23 }, xp: 100, levelReq: 20, obstacle: "stones" },
+
+  // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===
+  // Each sits beside a landmark whose mystery it deepens; tiles chosen by the
+  // placement finder (free, on land, with a reachable adjacent walkable tile).
+  // Reading one the first time records the fragment and pays a finder's reward.
+  { id: "relic_knuckle", kind: "relic", x: 21, y: 11, name: "Scratched Stone", loreId: "lore_two_quarrel" },
+  { id: "relic_windshrine", kind: "relic", x: 53, y: 6, name: "Worn Verse", loreId: "lore_two_moonwatch" },
+  { id: "relic_blackwater", kind: "relic", x: 85, y: 23, name: "Pressed Page", loreId: "lore_two_dreaming" },
+  { id: "relic_coldvein", kind: "relic", x: 7, y: 32, name: "Torn Page", loreId: "lore_underloft_rite" },
+  { id: "relic_ferry", kind: "relic", x: 94, y: 69, name: "Carved Stone", loreId: "lore_underloft_ferry" },
+  { id: "relic_peat", kind: "relic", x: 19, y: 92, name: "Folded Note", loreId: "lore_underloft_bog" },
+  { id: "relic_tendedseam", kind: "relic", x: 65, y: 95, name: "Weighted Page", loreId: "lore_orun_catechism" },
+  { id: "relic_falseseam", kind: "relic", x: 11, y: 83, name: "Half-Burned Page", loreId: "lore_orun_heresy" },
+  { id: "relic_watchtower", kind: "relic", x: 73, y: 42, name: "Nailed Tally", loreId: "lore_varath_muster" },
+  { id: "relic_smoothwalls", kind: "relic", x: 90, y: 18, name: "Wall Rubbing", loreId: "lore_varath_masons" },
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

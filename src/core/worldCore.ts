@@ -199,6 +199,7 @@ const BLOCKING_KINDS = new Set([
   "lamppost",
   "signpost",
   "waystone",
+  "relic",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -294,6 +295,7 @@ export function createWorld(
     agilityLap: null,
     quests: {},
     questsDone: [],
+    lore: [],
     flags: [],
     gold: STARTING_GOLD,
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
@@ -1244,6 +1246,10 @@ function startInteraction(
       events.push({ type: "OPEN_TRAVEL", objId });
       break;
 
+    case "relic":
+      readRelic(state, content, def, events);
+      break;
+
     case "agility_obstacle":
       traverseObstacle(state, content, def, events);
       break;
@@ -1295,6 +1301,38 @@ function startInteraction(
       usePortal(state, def, events);
       break;
   }
+}
+
+/**
+ * Read a relic out in the world. The first time, record the lore fragment in the
+ * Archive and pay a small one-time finder's reward; either way, show the passage.
+ * The relic stays put so it can be re-read — the reward is gated by player.lore.
+ */
+function readRelic(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const entry = def.loreId ? content.lore.find((l) => l.id === def.loreId) : undefined;
+  if (!entry) {
+    events.push({ type: "LOG", message: `You study the ${def.name}, but make nothing of it.` });
+    return;
+  }
+  if (!player.lore.includes(entry.id)) {
+    player.lore.push(entry.id);
+    events.push({ type: "LOG", message: `Archive — you uncover "${entry.title}".` });
+    const r = entry.reward;
+    if (r?.gold) {
+      player.gold += r.gold;
+      player.stats.goldEarned += r.gold;
+      events.push({ type: "LOG", message: `A finder's reward: ${r.gold} gold.` });
+    }
+    if (r?.xp) grantXp(state, content, r.xp.skill, r.xp.amount, events);
+  }
+  // Show the passage in the dialogue box, the relic's title at its head.
+  events.push({ type: "DIALOGUE", npc: entry.title, lines: entry.text });
 }
 
 /** Empty patch → pick a seed; growing → time left; ripe → harvest. */

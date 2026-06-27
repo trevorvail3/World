@@ -737,7 +737,13 @@ export type ObjKind =
   /** A waystone: pay the Courier's toll to fast-travel between them. */
   | "waystone"
   /** An Agility obstacle: one leg of a training circuit (traverse for XP). */
-  | "agility_obstacle";
+  | "agility_obstacle"
+  /**
+   * A discoverable relic: a torn page, a grave-rubbing, an old marker. Reading
+   * it the first time reveals a lore fragment (recorded in the Archive) and
+   * gives a small finder's reward. Its text lives in Content.lore (by loreId).
+   */
+  | "relic";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -782,6 +788,8 @@ export interface WorldObjectDef {
   levelReq?: number;
   /** Visual variant: "log" | "net" | "rope" | "wall" | "stones" | "beam". */
   obstacle?: string;
+  /** Relic only: which LoreDef (in Content.lore) this relic reveals when read. */
+  loreId?: string;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -1012,6 +1020,8 @@ export interface Player {
   quests: Record<string, QuestState>;
   /** Ids of quests already completed. */
   questsDone: string[];
+  /** Ids of lore fragments discovered (the Archive / found-lore collection). */
+  lore: string[];
   /** Story flags set by quests (faction joins, plot beats, choices). */
   flags: string[];
   /** Coins. Spent at shops; earned by selling and (later) quest rewards. */
@@ -1469,6 +1479,23 @@ export interface ShopDef {
   stock: ShopStock[];
 }
 
+/**
+ * One discoverable lore fragment — a torn page, a grave-rubbing, an old marker
+ * found out in the world. Reading it the first time records it in the Archive
+ * and grants a small finder's reward. Pure data; see src/content/lore.ts.
+ */
+export interface LoreDef {
+  id: string;
+  /** The fragment's name, e.g. "A Torn Page" or "The Gravewright's Mark". */
+  title: string;
+  /** Which thread of the world's mystery this belongs to (Archive grouping). */
+  category: string;
+  /** The passage, one entry per paragraph (shown a line at a time when read). */
+  text: string[];
+  /** A one-time finder's reward, granted the first time it is read. */
+  reward?: { gold?: number; xp?: { skill: SkillId; amount: number } };
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -1479,6 +1506,8 @@ export interface Content {
   actions: SkillAction[];
   /** The quest chains (data). */
   quests: QuestDef[];
+  /** Discoverable lore fragments, revealed by reading relics in the world. */
+  lore: LoreDef[];
   /** Shopkeeper wares (data). */
   shops: ShopDef[];
   /** The factions and their display metadata (data). */

@@ -56,6 +56,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   signpost: "#caa05a",
   waystone: "#d2742c",
   agility_obstacle: "#b6d24a",
+  relic: "#e8d49a", // pale parchment — a found-lore marker, to draw the curious
 };
 
 /** Draw the player as a dark-ringed gold dot at screen px,py. */

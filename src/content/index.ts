@@ -12,6 +12,7 @@ import { items } from "./items.ts";
 import { map } from "./map.ts";
 import { monsters } from "./monsters.ts";
 import { quests } from "./quests.ts";
+import { lore } from "./lore.ts";
 import { shops } from "./shops.ts";
 import { factions } from "./factions.ts";
 import { achievements } from "./achievements.ts";
@@ -28,6 +29,7 @@ export const content: Content = {
   monsters,
   actions,
   quests,
+  lore,
   shops,
   factions,
   achievements,

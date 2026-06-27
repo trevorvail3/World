@@ -645,6 +645,9 @@ function drawObject(
     case "agility_obstacle":
       drawObstacle(g, def.obstacle, cx, cy);
       break;
+    case "relic":
+      drawRelic(g, cx, cy, now);
+      break;
   }
 }
 
@@ -1773,6 +1776,58 @@ function drawShrine(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   g.moveTo(cx - 6, cy + 3);
   g.lineTo(cx + 5, cy + 2);
   g.stroke();
+}
+
+/**
+ * A discoverable relic: a little cairn with a pale page pinned to it, and a soft
+ * gold shimmer above to catch a wandering eye (the "something's here" tell).
+ */
+function drawRelic(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+): void {
+  shadow(g, cx, cy + 12, 9, 3.5);
+  // A small stacked-stone cairn.
+  g.fillStyle = "#6f6a5e";
+  g.beginPath();
+  g.ellipse(cx, cy + 8, 8, 4, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#807a6b";
+  g.beginPath();
+  g.ellipse(cx - 1, cy + 3, 6, 3.2, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#8d8676";
+  g.beginPath();
+  g.ellipse(cx, cy - 1, 4, 2.4, 0, 0, Math.PI * 2);
+  g.fill();
+  // A pale page pinned to the cairn, lightly curled.
+  g.fillStyle = "#e8dcb8";
+  g.beginPath();
+  g.moveTo(cx - 4, cy - 11);
+  g.lineTo(cx + 4, cy - 12);
+  g.lineTo(cx + 5, cy - 2);
+  g.lineTo(cx - 4, cy - 1);
+  g.closePath();
+  g.fill();
+  g.strokeStyle = "#b3a878";
+  g.lineWidth = 0.8;
+  g.beginPath();
+  g.moveTo(cx - 2, cy - 9); g.lineTo(cx + 3, cy - 9.5);
+  g.moveTo(cx - 2, cy - 6.5); g.lineTo(cx + 3, cy - 7);
+  g.moveTo(cx - 2, cy - 4); g.lineTo(cx + 1, cy - 4.2);
+  g.stroke();
+  // A breathing gold shimmer above, so it reads as "worth a look".
+  const tw = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(now / 380));
+  g.fillStyle = `rgba(242, 207, 107, ${tw.toFixed(3)})`;
+  g.beginPath();
+  g.arc(cx + 5, cy - 14, 1.6, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = `rgba(242, 207, 107, ${(tw * 0.6).toFixed(3)})`;
+  g.beginPath();
+  g.arc(cx + 5, cy - 14, 3.2, 0, Math.PI * 2);
+  g.fill();
 }
 
 // --- A faint mark where a monster will respawn ---

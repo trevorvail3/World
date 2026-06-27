@@ -46,7 +46,7 @@ const ACTIVITY_VERB: Record<ActivityKind, string> = {
 
 type TabId =
   | "inventory" | "skills" | "equipment" | "character"
-  | "quests" | "factions" | "companions" | "achievements" | "settings";
+  | "quests" | "lore" | "factions" | "companions" | "achievements" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
@@ -54,6 +54,7 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "equipment", icon: "🛡️", title: "Equipment" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
+  { id: "lore", icon: "📖", title: "Archive" },
   { id: "factions", icon: "🤝", title: "Factions" },
   { id: "companions", icon: "🐾", title: "Companions" },
   { id: "achievements", icon: "🏆", title: "Achievements" },
@@ -139,6 +140,7 @@ export class Hud {
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
   private companionGrid?: HTMLElement;
   private achieveList?: HTMLElement;
+  private loreList?: HTMLElement;
   private skillDetail!: SkillDetailModal;
   private lastState: WorldState | null = null;
   private equipCells = new Map<EquipSlot, HTMLElement>();
@@ -388,6 +390,13 @@ export class Hud {
         const list = document.createElement("div");
         list.className = "quest-list";
         this.questList = list;
+        p.appendChild(list);
+        break;
+      }
+      case "lore": {
+        const list = document.createElement("div");
+        list.className = "lore-list";
+        this.loreList = list;
         p.appendChild(list);
         break;
       }
@@ -731,6 +740,7 @@ export class Hud {
 
     if (this.activeTab === "companions") this.renderCompanions(player);
     if (this.activeTab === "achievements") this.renderAchievements(player);
+    if (this.activeTab === "lore") this.renderLore(player);
 
     // Faction standings.
     for (const f of this.content.factions) {
@@ -947,6 +957,48 @@ export class Hud {
       }
     }
     this.achieveList.innerHTML = parts.join("");
+  }
+
+  /**
+   * The Archive: the lore fragments found out in the world, grouped by thread.
+   * Found ones show their title and opening line; undiscovered ones show as a
+   * locked stub with their thread — a breadcrumb that there's more to find.
+   */
+  private renderLore(player: Player): void {
+    if (!this.loreList) return;
+    const all = this.content.lore;
+    const found = new Set(player.lore);
+    const cats: string[] = [];
+    for (const l of all) if (!cats.includes(l.category)) cats.push(l.category);
+    const parts: string[] = [
+      `<div class="lore-summary">${found.size} / ${all.length} fragments recovered</div>`,
+    ];
+    if (found.size === 0) {
+      parts.push(note("Pages, rubbings and old markers lie scattered across Varath. Find one and read it — the shimmer marks the spot.").outerHTML);
+    }
+    for (const cat of cats) {
+      parts.push(`<div class="lore-cat">${escapeHtml(cat)}</div>`);
+      for (const l of all.filter((x) => x.category === cat)) {
+        const have = found.has(l.id);
+        if (have) {
+          const opener = l.text[0] ?? "";
+          parts.push(
+            `<div class="lore-row done">
+              <span class="lore-ic">${iconize("📖")}</span>
+              <span class="lore-info"><span class="lore-name">${escapeHtml(l.title)}</span><span class="lore-snip">${escapeHtml(opener)}</span></span>
+            </div>`,
+          );
+        } else {
+          parts.push(
+            `<div class="lore-row">
+              <span class="lore-ic">${iconize("🔒")}</span>
+              <span class="lore-info"><span class="lore-name">Undiscovered</span><span class="lore-snip">Somewhere in Varath, still waiting to be read.</span></span>
+            </div>`,
+          );
+        }
+      }
+    }
+    this.loreList.innerHTML = parts.join("");
   }
 }
 
