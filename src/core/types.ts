@@ -889,6 +889,36 @@ export interface Vec2 {
   y: number;
 }
 
+/**
+ * The player's cosmetic look. Colours are hex strings; styles are ids chosen
+ * from the lists in src/client/avatar.ts (the renderer falls back to a default
+ * style for any unknown id, so old saves stay safe). `tunic` is the top colour
+ * (kept under its original name so pre-styles saves still load).
+ */
+export interface Appearance {
+  name: string;
+  /** Skin colour. */
+  skin: string;
+  /** Hair colour — also tints facial hair. */
+  hair: string;
+  /** Top (torso) colour. */
+  tunic: string;
+  /** Trouser/skirt colour. */
+  legColor: string;
+  /** Footwear colour. */
+  shoeColor: string;
+  /** Hairstyle id (e.g. "short", "long", "mohawk"). */
+  hairStyle: string;
+  /** Facial-hair id (e.g. "none", "stubble", "beard"). */
+  facial: string;
+  /** Top design id (e.g. "plain", "vneck", "sash"). */
+  top: string;
+  /** Leg design id (e.g. "trousers", "kilt", "shorts"). */
+  legs: string;
+  /** Footwear design id (e.g. "boots", "sandals", "clogs"). */
+  shoes: string;
+}
+
 /** What the player is currently busy doing, if anything. */
 export type ActivityKind =
   | "idle"
@@ -1038,8 +1068,8 @@ export interface Player {
   killsSinceShard: number;
   /** Ids of achievements already unlocked (so they stay unlocked). */
   achievements: string[];
-  /** The player's name and cosmetic colours (from the character creator). */
-  appearance: { name: string; skin: string; hair: string; tunic: string };
+  /** The player's name, cosmetic colours and body styles (character creator). */
+  appearance: Appearance;
   /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
   bounty: BountyState;
   /**

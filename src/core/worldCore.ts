@@ -302,7 +302,11 @@ export function createWorld(
     stats: { goldEarned: 0, monstersSlain: 0 },
     killsSinceShard: 0,
     achievements: [],
-    appearance: { name: "Wanderer", skin: "#e3bd92", hair: "#5a3a1e", tunic: "#6b6157" },
+    appearance: {
+      name: "Wanderer", skin: "#e3bd92", hair: "#4a3320", tunic: "#6b6157",
+      legColor: "#9a5a2a", shoeColor: "#3a2c20",
+      hairStyle: "short", facial: "none", top: "plain", legs: "trousers", shoes: "boots",
+    },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },

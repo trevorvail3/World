@@ -1,25 +1,29 @@
 /**
  * src/client/characterCreator.ts
  * ------------------------------
- * A basic character creator: choose a name and three colours (skin, hair,
- * tunic) with a live preview of the figure. Returns the chosen look to main.ts,
- * which stamps it onto the new player and saves it under the account.
+ * Character creator: a name, body-part styles (hair, facial hair, top, legs,
+ * shoes) and colours, with a live preview of the figure. Returns the chosen
+ * look to main.ts, which stamps it onto the new player and saves it.
+ *
+ * The figure is drawn by the shared drawAvatar (src/client/avatar.ts), so the
+ * preview and the in-world player always match.
  */
 
-export interface CreatedCharacter {
-  name: string;
-  skin: string;
-  hair: string;
-  tunic: string;
-}
+import type { Appearance } from "../core/types.ts";
+import {
+  CLOTH, DEFAULT_APPEARANCE, drawAvatar,
+  FACIAL_STYLES, HAIR_STYLES, HAIRS, LEG_STYLES, SHOE_STYLES, SKINS, TOP_STYLES,
+} from "./avatar.ts";
 
-const SKINS = ["#f0d2a8", "#e3bd92", "#caa176", "#a9794f", "#855b38", "#5f3f26"];
-const HAIRS = ["#2a2320", "#4a3320", "#7a5226", "#b8893c", "#caa24a", "#9a3320", "#3a5a7a", "#d8d8d8"];
-const TUNICS = ["#6b6157", "#3a5a7a", "#4f7a3a", "#7a3a3a", "#6a4a7a", "#caa05a", "#2f6b66", "#9a5a2a"];
+export type CreatedCharacter = Appearance;
+
+/** Colour-field keys (string hex) and style-field keys (string id). */
+type ColorKey = "skin" | "hair" | "tunic" | "legColor" | "shoeColor";
+type StyleKey = "hairStyle" | "facial" | "top" | "legs" | "shoes";
 
 export class CharacterCreator {
   private backdrop: HTMLElement;
-  private draft: CreatedCharacter = { name: "", skin: SKINS[1]!, hair: HAIRS[1]!, tunic: TUNICS[0]! };
+  private draft: Appearance = { ...DEFAULT_APPEARANCE, name: "" };
   private preview!: HTMLCanvasElement;
   private taken: Set<string>;
 
@@ -35,17 +39,12 @@ export class CharacterCreator {
         <div class="creator-title">VARATH</div>
         <div class="creator-sub">Who will you become?</div>
         <div class="creator-main">
-          <canvas class="creator-preview" width="120" height="150"></canvas>
+          <canvas class="creator-preview" width="130" height="180"></canvas>
           <div class="creator-controls">
             <label class="creator-label">Name</label>
             <input class="creator-name" type="text" maxlength="16" placeholder="Your name" />
             <div class="creator-name-hint"></div>
-            <label class="creator-label">Skin</label>
-            <div class="creator-swatches" data-kind="skin"></div>
-            <label class="creator-label">Hair</label>
-            <div class="creator-swatches" data-kind="hair"></div>
-            <label class="creator-label">Tunic</label>
-            <div class="creator-swatches" data-kind="tunic"></div>
+            <div class="creator-rows"></div>
           </div>
         </div>
         <div class="creator-nav">
@@ -67,9 +66,14 @@ export class CharacterCreator {
         this.draft.name.length < 1 || clash;
     });
 
-    this.buildSwatches("skin", SKINS);
-    this.buildSwatches("hair", HAIRS);
-    this.buildSwatches("tunic", TUNICS);
+    const rows = this.backdrop.querySelector(".creator-rows") as HTMLElement;
+    // Each part: a style cycler (where it has styles) and its colour swatches.
+    this.partRow(rows, "Skin", null, null, "skin", SKINS);
+    this.partRow(rows, "Hair", "hairStyle", HAIR_STYLES, "hair", HAIRS);
+    this.partRow(rows, "Beard", "facial", FACIAL_STYLES, null, null);
+    this.partRow(rows, "Top", "top", TOP_STYLES, "tunic", CLOTH);
+    this.partRow(rows, "Legs", "legs", LEG_STYLES, "legColor", CLOTH);
+    this.partRow(rows, "Shoes", "shoes", SHOE_STYLES, "shoeColor", CLOTH);
 
     (this.backdrop.querySelector(".creator-back") as HTMLElement).addEventListener("pointerdown", (e) => {
       e.stopPropagation(); this.close(); this.opts.onBack();
@@ -85,22 +89,72 @@ export class CharacterCreator {
     setTimeout(() => nameEl.focus(), 50);
   }
 
-  private buildSwatches(kind: "skin" | "hair" | "tunic", colors: string[]): void {
-    const wrap = this.backdrop.querySelector(`.creator-swatches[data-kind="${kind}"]`) as HTMLElement;
+  /** A labelled row: optional style cycler + optional colour swatches. */
+  private partRow(
+    parent: HTMLElement,
+    label: string,
+    styleKey: StyleKey | null,
+    styles: { id: string; label: string }[] | null,
+    colorKey: ColorKey | null,
+    colors: string[] | null,
+  ): void {
+    const row = document.createElement("div");
+    row.className = "creator-part";
+    const head = document.createElement("div");
+    head.className = "creator-part-head";
+    head.innerHTML = `<span class="creator-label">${label}</span>`;
+    if (styleKey && styles) head.appendChild(this.cycler(styleKey, styles));
+    row.appendChild(head);
+    if (colorKey && colors) row.appendChild(this.swatches(colorKey, colors));
+    parent.appendChild(row);
+  }
+
+  /** A ◀ name ▶ control cycling a style list. */
+  private cycler(key: StyleKey, list: { id: string; label: string }[]): HTMLElement {
+    const wrap = document.createElement("div");
+    wrap.className = "creator-cycler";
+    const prev = document.createElement("button");
+    prev.type = "button"; prev.className = "creator-cyc-btn"; prev.textContent = "◀";
+    const name = document.createElement("span");
+    name.className = "creator-cyc-name";
+    const next = document.createElement("button");
+    next.type = "button"; next.className = "creator-cyc-btn"; next.textContent = "▶";
+    const sync = () => {
+      const i = Math.max(0, list.findIndex((o) => o.id === this.draft[key]));
+      name.textContent = list[i]?.label ?? list[0]!.label;
+    };
+    const step = (d: number) => {
+      let i = Math.max(0, list.findIndex((o) => o.id === this.draft[key]));
+      i = (i + d + list.length) % list.length;
+      this.draft[key] = list[i]!.id;
+      sync(); this.renderPreview();
+    };
+    prev.addEventListener("pointerdown", (e) => { e.stopPropagation(); step(-1); });
+    next.addEventListener("pointerdown", (e) => { e.stopPropagation(); step(1); });
+    wrap.append(prev, name, next);
+    sync();
+    return wrap;
+  }
+
+  /** A row of colour swatches bound to a colour field. */
+  private swatches(key: ColorKey, colors: string[]): HTMLElement {
+    const wrap = document.createElement("div");
+    wrap.className = "creator-swatches";
     for (const c of colors) {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "creator-swatch" + (this.draft[kind] === c ? " on" : "");
+      b.className = "creator-swatch" + (this.draft[key] === c ? " on" : "");
       b.style.background = c;
       b.addEventListener("pointerdown", (e) => {
         e.stopPropagation();
-        this.draft[kind] = c;
+        this.draft[key] = c;
         for (const sib of Array.from(wrap.children)) sib.classList.remove("on");
         b.classList.add("on");
         this.renderPreview();
       });
       wrap.appendChild(b);
     }
+    return wrap;
   }
 
   private renderPreview(): void {
@@ -108,22 +162,8 @@ export class CharacterCreator {
     if (!g) return;
     const w = this.preview.width, h = this.preview.height;
     g.clearRect(0, 0, w, h);
-    const cx = w / 2, cy = h / 2 + 18, S = 3.4;
-    g.fillStyle = "rgba(0,0,0,0.4)";
-    g.beginPath(); g.ellipse(cx, cy + 13 * S * 0.5, 11 * S * 0.5, 4, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = this.draft.tunic;
-    g.fillRect(cx - 7 * S * 0.5, cy - 8 * S * 0.5, 14 * S * 0.5, 18 * S * 0.5);
-    g.fillStyle = "rgba(0,0,0,0.18)";
-    g.fillRect(cx - 1, cy - 8 * S * 0.5, 2, 18 * S * 0.5);
-    g.fillRect(cx - 7 * S * 0.5, cy + 1 * S * 0.5, 14 * S * 0.5, 3);
-    g.fillStyle = "#d2742c";
-    g.fillRect(cx - 7 * S * 0.5, cy + 6 * S * 0.5, 14 * S * 0.5, 6);
-    g.fillStyle = this.draft.skin;
-    g.beginPath(); g.arc(cx, cy - 12 * S * 0.5, 6 * S * 0.5, 0, Math.PI * 2); g.fill();
-    g.fillStyle = this.draft.hair;
-    g.beginPath();
-    g.arc(cx, cy - 12 * S * 0.5, 6 * S * 0.5, Math.PI * 1.02, Math.PI * 1.98);
-    g.closePath(); g.fill();
+    // Centre the figure (it spans roughly -20..+13 base units tall) and scale up.
+    drawAvatar(g, w / 2, h / 2 + 22, 3.7, this.draft, 0);
   }
 
   private close(): void {

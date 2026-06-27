@@ -8,6 +8,7 @@
  */
 
 import type {
+  Appearance,
   Content,
   TileType,
   Vec2,
@@ -17,6 +18,7 @@ import type {
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
 import { type RoofStyle, cityDoor, cityRoof, tileAt } from "../content/map.ts";
+import { drawAvatar, withDefaults } from "./avatar.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -43,7 +45,6 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
 };
 
 const EMBER = "#d2742c";
-const IRON = "#8a8f99";
 
 /** A cheap, stable pseudo-noise so tiles get a fixed bit of texture. */
 function hash(x: number, y: number): number {
@@ -1862,42 +1863,12 @@ function drawPlayer(
   pos: Vec2,
   cam: Camera,
   now: number,
-  look?: { skin: string; hair: string; tunic: string },
+  look?: Appearance,
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
-  const skin = look?.skin ?? "#d8c39a";
-  const tunic = look?.tunic ?? IRON;
-  const hair = look?.hair ?? "#5a3a1e";
-
-  // shadow
-  g.fillStyle = "rgba(0,0,0,0.35)";
-  g.beginPath();
-  g.ellipse(cx, cy + 12, 10, 4, 0, 0, Math.PI * 2);
-  g.fill();
-
-  // body (tunic colour) with a slight bob while alive
   const bob = Math.sin(now / 180) * 1.2;
-  g.fillStyle = tunic;
-  g.fillRect(cx - 7, cy - 8 + bob, 14, 18);
-  // a shaded panel down the front + a belt for a bit of form
-  g.fillStyle = "rgba(0,0,0,0.18)";
-  g.fillRect(cx - 1, cy - 8 + bob, 2, 18);
-  g.fillRect(cx - 7, cy + 2 + bob, 14, 2);
-  // ember cloak trim at the hem
-  g.fillStyle = EMBER;
-  g.fillRect(cx - 7, cy + 6 + bob, 14, 4);
-  // head
-  g.fillStyle = skin;
-  circle(g, cx, cy - 12 + bob, 6);
-  // hair: a cap over the top of the head
-  g.fillStyle = hair;
-  g.beginPath();
-  g.arc(cx, cy - 12 + bob, 6, Math.PI * 1.05, Math.PI * 1.95);
-  g.lineTo(cx + 5, cy - 13 + bob);
-  g.arc(cx, cy - 13 + bob, 5.5, Math.PI * 1.9, Math.PI * 1.1, true);
-  g.closePath();
-  g.fill();
+  drawAvatar(g, cx, cy, 1, withDefaults(look), bob);
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {

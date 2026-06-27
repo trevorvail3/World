@@ -84,14 +84,9 @@ function boot(newChar: CreatedCharacter | null): void {
 
   // Lay any saved progress back onto the fresh world (ignored if missing).
   const restored = hydratePlayer(state, content, readSave());
-  // A brand-new character stamps its look (and name) onto the fresh player.
+  // A brand-new character stamps its full look (name, colours, styles).
   if (newChar) {
-    state.player.appearance = {
-      name: newChar.name,
-      skin: newChar.skin,
-      hair: newChar.hair,
-      tunic: newChar.tunic,
-    };
+    state.player.appearance = { ...newChar };
   }
 
   const bridge: CoreBridge = {

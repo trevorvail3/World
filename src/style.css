@@ -1872,6 +1872,43 @@ button.inv-slot {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 .creator-swatch.on { border-color: var(--gold); transform: scale(1.12); }
+
+/* --- Per-part rows: a style cycler + its colour swatches --- */
+.creator-rows { display: flex; flex-direction: column; gap: 4px; }
+.creator-part {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 0 7px;
+  border-bottom: 1px solid rgba(74, 61, 44, 0.3);
+}
+.creator-part:last-child { border-bottom: none; }
+.creator-part-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.creator-part-head .creator-label { margin: 0; }
+.creator-cycler { display: flex; align-items: center; gap: 8px; }
+.creator-cyc-btn {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--gold);
+  background: rgba(210, 116, 44, 0.12);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+.creator-cyc-btn:hover { border-color: var(--ember); background: rgba(210, 116, 44, 0.24); }
+.creator-cyc-name {
+  min-width: 88px;
+  text-align: center;
+  font-family: "EB Garamond", serif;
+  font-size: 13px;
+  color: var(--ink);
+}
 .creator-nav { display: flex; gap: 10px; }
 .creator-back { flex: 0 0 auto; color: var(--ink-dim); border-color: var(--panel-edge); background: transparent; }
 .creator-go { flex: 1; }

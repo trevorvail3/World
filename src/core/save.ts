@@ -13,6 +13,7 @@
  */
 
 import type {
+  Appearance,
   Content,
   EquipSlot,
   ItemId,
@@ -59,8 +60,8 @@ export interface SavedProgress {
   killsSinceShard: number;
   /** Unlocked achievement ids. */
   achievements: string[];
-  /** Name + cosmetic colours from the character creator. */
-  appearance: { name: string; skin: string; hair: string; tunic: string };
+  /** Name, cosmetic colours and body styles from the character creator. */
+  appearance: Appearance;
   /** Bounty progression: Hunt Marks, chosen guide, the active task (if any). */
   bounty: {
     marks: number;
@@ -272,9 +273,16 @@ export function hydratePlayer(
   if (isRecord(savedApp)) {
     const a = player.appearance;
     if (typeof savedApp["name"] === "string" && savedApp["name"].trim()) a.name = savedApp["name"].slice(0, 16);
-    for (const k of ["skin", "hair", "tunic"] as const) {
+    // Colours: only accept valid hex; otherwise keep the default already set.
+    for (const k of ["skin", "hair", "tunic", "legColor", "shoeColor"] as const) {
       const v = savedApp[k];
       if (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v)) a[k] = v;
+    }
+    // Styles: any non-empty string; the renderer falls back for unknown ids, so
+    // a save from a future build with an unrecognised style still draws safely.
+    for (const k of ["hairStyle", "facial", "top", "legs", "shoes"] as const) {
+      const v = savedApp[k];
+      if (typeof v === "string" && v.length > 0 && v.length < 24) a[k] = v;
     }
   }
   // Bounty: restore marks, the chosen guide, and any active task — all guarded so
