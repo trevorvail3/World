@@ -266,6 +266,10 @@ function actionArmAngle(frac: number, kind: string): number {
   if (kind === "fishing" || kind === "crafting" || kind === "trapping") {
     return -0.55 + Math.sin(t * Math.PI * 2) * 0.24;
   }
+  // Ranged: bow held out front, with a quick draw-and-loose pulse on the beat.
+  if (kind === "ranged") {
+    return 0.95 - (t < 0.7 ? t / 0.7 : (1 - t) / 0.3) * 0.35;
+  }
   // Overhead strike: wind up, slam down, brief follow-through (mining, chopping,
   // melee combat). Resets cleanly to the wind-up as the next swing begins.
   if (t < 0.5) return -0.12 - (t / 0.5) * 2.1;        // rest → overhead
@@ -299,6 +303,32 @@ function drawTool(g: Ctx, s: number, tool: string): void {
       g.beginPath(); g.moveTo(0, 6 * s); g.lineTo(0, 19 * s); g.stroke();
       g.strokeStyle = "rgba(220,224,235,0.55)"; g.lineWidth = 0.5 * s;
       g.beginPath(); g.moveTo(0, 19 * s); g.lineTo(2.5 * s, 23 * s); g.stroke();
+      break;
+    case "sword":
+      g.fillStyle = "#3a2c1e"; g.fillRect(-0.8 * s, 5 * s, 1.6 * s, 2 * s); // grip
+      g.fillStyle = iron; g.fillRect(-2.5 * s, 6.6 * s, 5 * s, 1.2 * s); // crossguard
+      g.fillStyle = steel; g.fillRect(-0.9 * s, 7.6 * s, 1.8 * s, 8 * s); // blade
+      break;
+    case "dagger":
+      g.fillStyle = iron; g.fillRect(-1.8 * s, 6.4 * s, 3.6 * s, 1 * s);
+      g.fillStyle = steel; g.fillRect(-0.8 * s, 7.2 * s, 1.6 * s, 4.5 * s);
+      break;
+    case "spear":
+      g.fillStyle = handle; g.fillRect(-0.5 * s, 5 * s, 1 * s, 12 * s);
+      g.fillStyle = steel; g.beginPath();
+      g.moveTo(0, 19.5 * s); g.lineTo(-1.5 * s, 16 * s); g.lineTo(1.5 * s, 16 * s); g.closePath(); g.fill();
+      break;
+    case "claymore":
+      g.fillStyle = "#3a2c1e"; g.fillRect(-0.8 * s, 5 * s, 1.6 * s, 2.5 * s);
+      g.fillStyle = iron; g.fillRect(-3 * s, 7 * s, 6 * s, 1.2 * s);
+      g.fillStyle = steel; g.fillRect(-1.1 * s, 8 * s, 2.2 * s, 11 * s);
+      break;
+    case "bow":
+      g.strokeStyle = "#7a5a36"; g.lineWidth = 1.3 * s; g.lineCap = "round";
+      g.beginPath(); g.arc(0, 9 * s, 5 * s, -Math.PI * 0.55, Math.PI * 0.55); g.stroke();
+      g.lineCap = "butt";
+      g.strokeStyle = "rgba(230,230,236,0.6)"; g.lineWidth = 0.5 * s;
+      g.beginPath(); g.moveTo(0, 4.4 * s); g.lineTo(0, 13.6 * s); g.stroke(); // string
       break;
     default:
       break;

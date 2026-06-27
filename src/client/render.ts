@@ -1932,16 +1932,24 @@ function drawPlayer(
  */
 function playerAction(
   player: WorldState["player"],
-  _content: Content,
+  content: Content,
   now: number,
 ): AvatarAnim["action"] | undefined {
   const act = player.activity;
+  if (act.kind === "idle") return undefined;
+  const interval = act.actionInterval || 600;
+  const frac = Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
+  // Combat: swing the worn weapon (or draw a bow when fighting at range).
+  if (act.kind === "combat") {
+    if (player.equipment.ranged) return { kind: "ranged", tool: "bow", frac };
+    const wep = player.equipment.mainhand;
+    const type = (wep && content.items[wep]?.wepType) || "sword";
+    return { kind: "combat", tool: type, frac };
+  }
   const TOOL: Record<string, string> = {
     mining: "pickaxe", woodcutting: "axe", fishing: "rod", crafting: "", trapping: "",
   };
   if (!(act.kind in TOOL)) return undefined;
-  const interval = act.actionInterval || 600;
-  const frac = Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
   return { kind: act.kind, tool: TOOL[act.kind]!, frac };
 }
 
