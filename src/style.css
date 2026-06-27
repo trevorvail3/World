@@ -201,47 +201,6 @@ body {
   transition: width 0.3s ease;
 }
 
-/* --- Status pill ("what am I doing" + Stop), top-centre --- */
-.status-pill {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 26;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  pointer-events: auto;
-  font-family: "EB Garamond", serif;
-  font-size: 14px;
-  color: var(--ink);
-  background: rgba(20, 16, 12, 0.9);
-  border: 1px solid var(--panel-edge);
-  border-radius: 8px;
-  padding: 6px 8px 6px 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-}
-
-.status-pill.hidden {
-  display: none;
-}
-
-.status-stop {
-  font-family: "Cinzel", serif;
-  font-size: 12px;
-  color: #e0a07a;
-  background: rgba(90, 30, 22, 0.4);
-  border: 1px solid #7d3a2a;
-  border-radius: 5px;
-  padding: 3px 9px;
-  cursor: pointer;
-}
-
-.status-stop:hover {
-  color: #f0c187;
-  border-color: #c44a3a;
-}
-
 /* --- Low-HP warning --- */
 .hud-vitals.low {
   border-color: #c44a3a;
@@ -327,8 +286,16 @@ body {
 
 .dock-body {
   padding: 8px 10px;
-  min-width: 152px;
+  box-sizing: border-box;
+  /* Fixed footprint: the dock no longer resizes from tab to tab — content
+     that doesn't fit scrolls instead. */
+  width: 214px;
+  height: 332px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+.dock-body::-webkit-scrollbar { width: 6px; }
+.dock-body::-webkit-scrollbar-thumb { background: rgba(120,100,70,0.5); border-radius: 3px; }
 
 .tab-panel {
   display: none;
@@ -343,6 +310,17 @@ body {
   color: var(--ink-dim);
   line-height: 1.4;
   margin-top: 6px;
+}
+
+/* Section divider within a tab (Worn, Companions, Achievements, Archive). */
+.tab-subhead {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  margin: 12px 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(120, 100, 70, 0.3);
 }
 
 /* Equipment */
@@ -563,10 +541,13 @@ body {
   line-height: 1.45;
   color: var(--ink);
   opacity: 0.9;
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
-.log-line + .log-line {
-  border-top: 1px dashed rgba(74, 61, 44, 0.35);
+/* Alternate a faint tint so consecutive messages are easy to tell apart. */
+.log-line:nth-child(even) {
+  background: rgba(120, 100, 70, 0.10);
 }
 
 /* --- Dialogue box (bottom-centre) --- */
@@ -1272,7 +1253,8 @@ button.inv-slot {
     max-height: 124px;
   }
   .dock-body {
-    min-width: 132px;
+    width: 190px;
+    height: 280px;
   }
   .dock-tab {
     width: 30px;
@@ -1286,9 +1268,6 @@ button.inv-slot {
   .skill-grid {
     grid-template-columns: repeat(3, 37px);
     grid-auto-rows: 33px;
-  }
-  .status-pill {
-    font-size: 13px;
   }
   .dialogue-text {
     font-size: 14px;
@@ -2068,8 +2047,9 @@ button.inv-slot {
 /* ── Run/walk toggle + energy bar (under the minimap, top-right) ───────────── */
 .run-control {
   position: absolute;
-  top: 156px;
+  top: 162px; /* clear of the minimap (top 10 + ~152 tall) */
   right: 10px;
+  z-index: 6; /* always above the minimap, never covered by it */
   display: flex;
   align-items: center;
   gap: 7px;
@@ -2121,6 +2101,6 @@ button.inv-slot {
 /* On phones the vitals readout moves to the log box; nudge the run control up
    to sit just under the (smaller) minimap. */
 @media (max-width: 520px) {
-  .run-control { top: 132px; padding: 4px 6px; }
+  .run-control { top: 162px; padding: 4px 6px; }
   .run-energy { width: 52px; }
 }

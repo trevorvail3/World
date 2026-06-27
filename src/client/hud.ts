@@ -12,7 +12,6 @@
  */
 
 import type {
-  ActivityKind,
   CombatStyle,
   Content,
   EquipSlot,
@@ -33,31 +32,17 @@ import { SkillDetailModal } from "./skillDetail.ts";
 // The panel itself shows ~7 at a time; older lines stay available above.
 const MAX_LOG_LINES = 100;
 
-/** What the status pill says for each kind of activity ("" = hidden). */
-const ACTIVITY_VERB: Record<ActivityKind, string> = {
-  idle: "",
-  woodcutting: "Chopping…",
-  mining: "Mining…",
-  fishing: "Fishing…",
-  trapping: "Trapping…",
-  combat: "Fighting…",
-  crafting: "Crafting…",
-};
-
 type TabId =
-  | "inventory" | "skills" | "equipment" | "character"
-  | "quests" | "lore" | "factions" | "companions" | "achievements" | "settings";
+  | "inventory" | "skills" | "character"
+  | "quests" | "factions" | "records" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
   { id: "skills", icon: "📜", title: "Skills" },
-  { id: "equipment", icon: "🛡️", title: "Equipment" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
-  { id: "lore", icon: "📖", title: "Archive" },
   { id: "factions", icon: "🤝", title: "Factions" },
-  { id: "companions", icon: "🐾", title: "Companions" },
-  { id: "achievements", icon: "🏆", title: "Achievements" },
+  { id: "records", icon: "🏆", title: "Records" },
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
 
@@ -117,8 +102,6 @@ export class Hud {
   private runControl!: HTMLElement;
   private runEnergyFill!: HTMLElement;
   private runEnergyText!: HTMLElement;
-  private statusPill!: HTMLElement;
-  private statusText!: HTMLElement;
   private buffStrip!: HTMLElement;
   private questTracker!: HTMLElement;
   private pinnedQuestId: string | null = null;
@@ -209,17 +192,6 @@ export class Hud {
     topLeft.appendChild(this.buffStrip);
     topLeft.appendChild(this.questTracker);
     root.appendChild(topLeft);
-
-    // --- "What am I doing" status pill + Stop (top-centre) ---
-    this.statusPill = document.createElement("div");
-    this.statusPill.className = "status-pill hidden";
-    this.statusPill.innerHTML = `<span class="status-text"></span><button class="status-stop" type="button">Stop</button>`;
-    this.statusText = this.statusPill.querySelector(".status-text") as HTMLElement;
-    (this.statusPill.querySelector(".status-stop") as HTMLElement).addEventListener(
-      "click",
-      () => this.dispatch({ type: "CANCEL" }),
-    );
-    root.appendChild(this.statusPill);
 
     // --- Game log (bottom-left) ---
     const logPanel = panel("hud-panel hud-log");
@@ -323,29 +295,6 @@ export class Hud {
         p.appendChild(grid);
         break;
       }
-      case "equipment": {
-        const grid = document.createElement("div");
-        grid.className = "equip-grid";
-        for (const { slot, name } of EQUIP_SLOTS) {
-          const cell = document.createElement("div");
-          cell.className = "equip-cell";
-          cell.innerHTML = `<div class="equip-slot"></div><span class="equip-name">${name}</span>`;
-          const icon = cell.querySelector(".equip-slot") as HTMLElement;
-          this.attachLongPress(
-            icon,
-            (x, y) => this.inspectEquip(slot, x, y),
-            () => this.dispatch({ type: "UNEQUIP", equipSlot: slot }),
-          );
-          this.equipCells.set(slot, icon);
-          grid.appendChild(cell);
-        }
-        p.appendChild(grid);
-        this.equipStats = document.createElement("div");
-        this.equipStats.className = "equip-stats";
-        p.appendChild(this.equipStats);
-        p.appendChild(note("Tap a worn piece to take it off. Forge gear at the anvil."));
-        break;
-      }
       case "character": {
         const sheet = document.createElement("div");
         sheet.className = "char-sheet";
@@ -383,20 +332,35 @@ export class Hud {
         }
         styleWrap.appendChild(row);
         p.appendChild(styleWrap);
-        p.appendChild(note("Name and background arrive with sign-in."));
+
+        // --- Worn equipment (folded into the Character sheet) ---
+        p.appendChild(subhead("Worn"));
+        const grid = document.createElement("div");
+        grid.className = "equip-grid";
+        for (const { slot, name } of EQUIP_SLOTS) {
+          const cell = document.createElement("div");
+          cell.className = "equip-cell";
+          cell.innerHTML = `<div class="equip-slot"></div><span class="equip-name">${name}</span>`;
+          const icon = cell.querySelector(".equip-slot") as HTMLElement;
+          this.attachLongPress(
+            icon,
+            (x, y) => this.inspectEquip(slot, x, y),
+            () => this.dispatch({ type: "UNEQUIP", equipSlot: slot }),
+          );
+          this.equipCells.set(slot, icon);
+          grid.appendChild(cell);
+        }
+        p.appendChild(grid);
+        this.equipStats = document.createElement("div");
+        this.equipStats.className = "equip-stats";
+        p.appendChild(this.equipStats);
+        p.appendChild(note("Tap a worn piece to take it off. Forge gear at the anvil."));
         break;
       }
       case "quests": {
         const list = document.createElement("div");
         list.className = "quest-list";
         this.questList = list;
-        p.appendChild(list);
-        break;
-      }
-      case "lore": {
-        const list = document.createElement("div");
-        list.className = "lore-list";
-        this.loreList = list;
         p.appendChild(list);
         break;
       }
@@ -423,19 +387,26 @@ export class Hud {
         p.appendChild(note("Standing rises and falls with your deeds and your choices."));
         break;
       }
-      case "companions": {
-        const grid = document.createElement("div");
-        grid.className = "companion-grid";
-        this.companionGrid = grid;
-        p.appendChild(grid);
+      case "records": {
+        // Companions, achievements and the lore Archive — all collections, one tab.
+        p.appendChild(subhead("Companions"));
+        const cgrid = document.createElement("div");
+        cgrid.className = "companion-grid";
+        this.companionGrid = cgrid;
+        p.appendChild(cgrid);
         p.appendChild(note("Companions turn up while you train their skill. Tap one to summon it."));
-        break;
-      }
-      case "achievements": {
-        const list = document.createElement("div");
-        list.className = "achieve-list";
-        this.achieveList = list;
-        p.appendChild(list);
+
+        p.appendChild(subhead("Achievements"));
+        const alist = document.createElement("div");
+        alist.className = "achieve-list";
+        this.achieveList = alist;
+        p.appendChild(alist);
+
+        p.appendChild(subhead("Archive"));
+        const llist = document.createElement("div");
+        llist.className = "lore-list";
+        this.loreList = llist;
+        p.appendChild(llist);
         break;
       }
       case "settings": {
@@ -738,9 +709,11 @@ export class Hud {
       }
     });
 
-    if (this.activeTab === "companions") this.renderCompanions(player);
-    if (this.activeTab === "achievements") this.renderAchievements(player);
-    if (this.activeTab === "lore") this.renderLore(player);
+    if (this.activeTab === "records") {
+      this.renderCompanions(player);
+      this.renderAchievements(player);
+      this.renderLore(player);
+    }
 
     // Faction standings.
     for (const f of this.content.factions) {
@@ -770,15 +743,6 @@ export class Hud {
     this.runControl.classList.toggle("on", player.running && player.energy > 0);
     this.runControl.classList.toggle("spent", player.running && player.energy <= 0);
     this.runEnergyFill.classList.toggle("lowenergy", energy <= 25);
-
-    // "What am I doing" status pill.
-    const verb = ACTIVITY_VERB[player.activity.kind];
-    if (verb) {
-      this.statusText.textContent = verb;
-      this.statusPill.classList.remove("hidden");
-    } else {
-      this.statusPill.classList.add("hidden");
-    }
 
     // Character sheet
     const ids = Object.keys(this.content.skills) as SkillId[];
@@ -1018,6 +982,14 @@ function heading(text: string): HTMLElement {
 function note(text: string): HTMLElement {
   const el = document.createElement("div");
   el.className = "tab-note";
+  el.textContent = text;
+  return el;
+}
+
+/** A small section divider within a tab (e.g. "Worn", "Companions"). */
+function subhead(text: string): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "tab-subhead";
   el.textContent = text;
   return el;
 }
