@@ -527,6 +527,88 @@ export const objects: WorldObjectDef[] = [
   { id: "out_brigands_roost_2", kind: "monster", monster: "cutthroat", x: 35, y: 41, name: "Cutthroat" },
   { id: "out_brigands_roost_3", kind: "monster", monster: "marauder", x: 33, y: 42, name: "Marauder" },
   { id: "out_brigands_roost_4", kind: "monster", monster: "bandit", x: 35, y: 42, name: "Bandit" },
+
+  // === OUTLYING SETTLEMENTS — small hamlets in the open country ==============
+  // Three clusters of roofed cottages (see BUILDINGS / step 4d in map.ts), each
+  // with its own folk, hearth and dressing. Ground laid for player housing
+  // later. Tiles validated walkable + reachable by the placement finder.
+
+  // --- REDMOUTH: a fisherfolk hamlet on the Redrun's east bank. Mourne the
+  //     Deep Watcher keeps his bounty board here, at the river's grim last mile. ---
+  {
+    id: "mourne", kind: "npc", x: 90, y: 60, name: "Mourne, the Deep Watcher",
+    lines: [
+      "You're loud. The river hears you coming. So does what's in it.",
+      "Mourne. I watch the deep places — the Marrow's dark, and the Redrun's last mile down to the grey. When a thing climbs out that shouldn't, I write its name on the board, and I pay the one who unwrites it.",
+      "I don't send children to the deep. Come back when the Hills and the Spine have nothing left to teach you, and I'll have work for you.",
+    ],
+  },
+  {
+    id: "redmouth_warin", kind: "npc", x: 82, y: 60, name: "Warin, an Old Fisher",
+    lines: [
+      "Redmouth, this. Three roofs and a smokehouse, and we've buried better men for less.",
+      "I've rowed the Redrun forty years. The water's wrong this season — runs red past the time of year for it, and the greyfin come up thin and few. My girl's wed downstream, near the estuary. Even she's stopped telling me it's nothing.",
+    ],
+  },
+  {
+    id: "redmouth_neila", kind: "npc", x: 86, y: 62, name: "Neila, a Net-Mender",
+    lines: [
+      "Mind the nets drying on the rail — a season's work, that, and a careless boot undoes a week of mending.",
+      "My sister hawks our catch up in the Ironvale market — the fishwife by the square, you'll have heard her. She tells the city the red water's just the season. Out here we don't trouble to lie to ourselves about it.",
+    ],
+  },
+  { id: "bounty_board_redmouth", kind: "bounty_board", x: 88, y: 61, name: "The Watcher's Board" },
+  { id: "fire_redmouth", kind: "fire", x: 86, y: 59, name: "Smokehouse Fire" },
+  { id: "cart_redmouth", kind: "cart", x: 87, y: 61, name: "Fish Cart", lines: ["A handcart of greyfin and river-perch, salted down for the smoke."] },
+  { id: "lamp_redmouth_1", kind: "lamppost", x: 82, y: 57, name: "Bank Lamp" },
+  { id: "lamp_redmouth_2", kind: "lamppost", x: 90, y: 58, name: "Bank Lamp" },
+  { id: "sign_redmouth", kind: "signpost", x: 84, y: 57, name: "Fingerpost", lines: ["REDMOUTH — the fisherfolk of the Redrun. Smoked fish, and a board for those who'd hunt the deep."] },
+
+  // --- THE DROVER'S REST: a waystation on the south road, victualling the
+  //     herds up from the Ashfen — and shaken since the Drover's Loss. ---
+  {
+    id: "drover_tamsin", kind: "npc", x: 69, y: 75, name: "Tamsin, the Reeve",
+    lines: [
+      "Sit, traveller. The Rest's still standing — which is more than the last drove through here can say.",
+      "We victual the herds coming up from the Ashfen and the moor. Did, anyway. A whole drive went down in the hollow south of here, one night — beasts, drovers and all. Now we keep the lamps lit late and the gate barred, and we charge for a bed and don't apologise for the price.",
+    ],
+  },
+  {
+    id: "drover_hodd", kind: "npc", x: 71, y: 77, name: "Hodd, a Drover",
+    lines: [
+      "Twelve mile a day, rain or the moor's mood — that's a drove. You learn to sleep walking.",
+      "I'll not take the herd through the Drover's Loss after dark. The reeve says I've gone soft. The reeve didn't hear what I heard, the night the moor took the others.",
+    ],
+  },
+  { id: "fire_drover", kind: "fire", x: 67, y: 75, name: "The Rest's Hearth" },
+  { id: "cart_drover", kind: "cart", x: 69, y: 78, name: "Drover's Wagon", lines: ["A high-sided wagon, axle-deep in dried mud from the moor road."] },
+  { id: "lamp_drover_1", kind: "lamppost", x: 64, y: 74, name: "Gate Lamp" },
+  { id: "lamp_drover_2", kind: "lamppost", x: 72, y: 78, name: "Yard Lamp" },
+  { id: "sign_drover", kind: "signpost", x: 63, y: 73, name: "Fingerpost", lines: ["THE DROVER'S REST — bed, board and a barred gate. ▲ IRONVALE. ▼ THE ASHFEN FLATS."] },
+
+  // --- THE FOLD: an upland shepherds' croft in the northern Knuckle Hills,
+  //     plagued by Rook's wolf-that-is-no-wolf. ---
+  {
+    id: "fold_brannog", kind: "npc", x: 63, y: 16, name: "Brannog, the Shepherd",
+    lines: [
+      "Up here it's sheep, stone and weather, and little else. Suits me. Suits the flock well enough.",
+      "Old Rook, down the hills, keeps on about a wolf that's no wolf — clever, lame, takes a lamb clean and leaves no track. I've lost three this spring. I've stopped calling it a wolf. I just count the flock twice over now, and sleep the less for it.",
+    ],
+  },
+  {
+    id: "fold_wyn", kind: "npc", x: 64, y: 17, name: "Wyn, a Shepherd's Daughter",
+    lines: [
+      "You came up the Fold lane? Then it's the croft you'll be wanting, not me. I only mind the lambs.",
+      "Da says I'm not to go past the lambing shed after dark. I don't argue it. Something's been at the flock, and it's not shy of the lamplight.",
+    ],
+  },
+  { id: "fire_fold", kind: "fire", x: 61, y: 16, name: "Croft Hearth" },
+  { id: "cart_fold", kind: "cart", x: 65, y: 17, name: "Wool Cart", lines: ["Sacks of greasy fleece, bound for the Ironvale cloth stalls."] },
+  { id: "lamp_fold_1", kind: "lamppost", x: 59, y: 14, name: "Croft Lamp" },
+  { id: "lamp_fold_2", kind: "lamppost", x: 66, y: 18, name: "Fold Lamp" },
+  { id: "sign_fold", kind: "signpost", x: 58, y: 19, name: "Fingerpost", lines: ["THE FOLD — an upland croft. Mind the flock, and mind what minds the flock."] },
+  { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 66, y: 16, name: "A Hill Sheep" },
+  { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 59, y: 18, name: "A Hill Sheep" },
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

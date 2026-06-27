@@ -174,6 +174,23 @@ export const BUILDINGS: Building[] = [
   { x0: 62, y0: 64, x1: 66, y1: 66, roof: "thatch", door: { x: 64, y: 64 } }, // Skritt's Exchange
   { x0: 68, y0: 64, x1: 73, y1: 66, roof: "tile", door: { x: 70, y: 64 } },   // The Wayfarers' Lodge
   { x0: 75, y0: 64, x1: 78, y1: 66, roof: "thatch", door: { x: 76, y: 64 } },
+
+  // === OUTLYING SETTLEMENTS — small hamlets in the open country between =====
+  // regions. Each is a cluster of roofed cottages on carved ground (see step 4d
+  // in decode), home to a few folk. Ground for player-built housing later.
+
+  // --- Redmouth: a fisherfolk hamlet on the Redrun's east bank ---
+  { x0: 83, y0: 58, x1: 85, y1: 59, roof: "thatch", door: { x: 84, y: 59 } },  // a fisher's cottage
+  { x0: 87, y0: 58, x1: 89, y1: 59, roof: "thatch", door: { x: 88, y: 59 } },  // the net-loft
+  { x0: 83, y0: 61, x1: 85, y1: 62, roof: "thatch", door: { x: 84, y: 61 } },  // the smokehouse
+  // --- The Drover's Rest: a waystation on the south road to the Ashfen ---
+  { x0: 65, y0: 73, x1: 68, y1: 74, roof: "tile", door: { x: 66, y: 74 } },    // the longhouse inn
+  { x0: 70, y0: 73, x1: 72, y1: 74, roof: "thatch", door: { x: 71, y: 74 } },  // a drover's cottage
+  { x0: 65, y0: 77, x1: 67, y1: 78, roof: "thatch", door: { x: 66, y: 77 } },  // the byre
+  // --- The Fold: an upland shepherds' croft in the Knuckle Hills, north ---
+  { x0: 60, y0: 14, x1: 62, y1: 15, roof: "thatch", door: { x: 61, y: 15 } },  // the croft house
+  { x0: 64, y0: 14, x1: 66, y1: 15, roof: "thatch", door: { x: 64, y: 15 } },  // the wool-shed
+  { x0: 60, y0: 17, x1: 62, y1: 18, roof: "thatch", door: { x: 61, y: 17 } },  // the lambing shed
 ];
 
 /** Roof style at a tile (so the renderer knows which walls are buildings). */
@@ -234,6 +251,12 @@ function decode(): WorldMap {
   carve(GATES.south.x - 1, CITY.y1, GATES.south.x + 1, CITY.y1, "path");
   carve(CITY.x0, GATES.west.y - 1, CITY.x0, GATES.west.y + 1, "path");
   carve(CITY.x1, GATES.east.y - 1, CITY.x1, GATES.east.y + 1, "path");
+  //    Outlying hamlets get a packed-dirt yard carved first, so the cottages
+  //    that follow sit on cleared ground rather than open field (step 4d names
+  //    them). Done before the BUILDINGS loop so the footprints stamp over it.
+  carve(81, 57, 90, 63, "dirt");  // Redmouth, on the Redrun's east bank
+  carve(63, 72, 73, 79, "dirt");  // The Drover's Rest, on the south road
+  carve(58, 13, 67, 19, "dirt");  // The Fold, in the upland Knuckle Hills
   //    The buildings: each footprint becomes blocking masonry (the renderer
   //    lays a roof over it). The streets and frontages stay clear between them.
   for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");
@@ -287,6 +310,11 @@ function decode(): WorldMap {
   //    North-east spur → the Marrow Deeps cave mouth.
   carve(86, 34, 88, 51, "stone");                   // up the outcrop
   carve(86, 34, 90, 36, "cave");                    // into the cave mouth
+
+  // 5b) Short lanes joining the outlying hamlets to the road network.
+  carve(84, 54, 85, 57, "path");                    // Redmouth lane up to the east road
+  carve(61, 75, 64, 76, "path");                    // The Drover's Rest, off the south road
+  carve(58, 19, 60, 24, "path");                    // The Fold, down to the grove
 
   // 6) Carve the four sealed boss arenas in the band below the overworld.
   for (const a of ARENAS) {
