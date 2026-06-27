@@ -352,7 +352,7 @@ export class Game {
     // 1) Advance the world and react to what happened.
     const events = this.bridge.tick(now);
     this.handleEvents(events, now);
-    this.guide.onEvents(events);
+    this.guide.update(this.bridge.state);
 
     // 2) Camera follows the player.
     this.followCamera();

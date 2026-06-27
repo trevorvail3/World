@@ -144,6 +144,7 @@ export class Hud {
     menu: ContextMenu | null = null,
     dispatch: (intent: Intent) => void = () => {},
     private zoom: { get(): number; set(z: number): void } = { get: () => 1, set: () => {} },
+    private onHelp: () => void = () => {},
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -438,6 +439,13 @@ export class Hud {
         this.zoomSlider = zoomSlider;
         this.zoomReadout = zoomReadout;
         p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
+        const help = document.createElement("button");
+        help.type = "button";
+        help.className = "settings-help";
+        help.textContent = "How to play";
+        help.title = "Show the controls primer again";
+        help.addEventListener("click", () => this.onHelp());
+        p.appendChild(help);
         const reset = document.createElement("button");
         reset.type = "button";
         reset.className = "settings-reset";

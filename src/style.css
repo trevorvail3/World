@@ -1097,6 +1097,140 @@ body {
   display: none;
 }
 
+/* --- Controls primer (one-time "How to Play" card, after the intro) --- */
+.primer-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  pointer-events: auto;
+  background: radial-gradient(120% 90% at 50% 45%, rgba(20, 15, 11, 0.86) 0%, rgba(8, 6, 4, 0.92) 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.primer-screen.show { opacity: 1; }
+.primer-screen.leaving { opacity: 0; }
+/* Re-opened from Settings: appear instantly rather than fading the world out. */
+.primer-screen.reopen { transition: opacity 0.2s ease; }
+
+.primer-card {
+  width: min(440px, 94vw);
+  max-height: 90vh;
+  max-height: min(90vh, 90dvh);
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(30, 24, 16, 0.97), rgba(20, 15, 10, 0.97));
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  padding: 22px 22px 20px;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.6), inset 0 0 26px rgba(201, 162, 74, 0.08);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.4s cubic-bezier(0.18, 1.3, 0.4, 1);
+}
+.primer-screen.show .primer-card { transform: translateY(0) scale(1); }
+
+.primer-eyebrow {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  opacity: 0.85;
+}
+.primer-title {
+  font-family: "Cinzel", serif;
+  font-size: clamp(22px, 6vw, 28px);
+  letter-spacing: 0.06em;
+  color: #f0c187;
+  text-align: center;
+  margin: 4px 0 16px;
+  text-shadow: 0 0 18px rgba(210, 116, 44, 0.3);
+}
+
+.primer-rows { display: flex; flex-direction: column; gap: 12px; }
+.primer-row { display: flex; align-items: flex-start; gap: 13px; }
+.primer-ic {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  background: radial-gradient(circle at 50% 40%, rgba(201, 162, 74, 0.18), rgba(20, 15, 10, 0.4));
+  border: 1px solid var(--panel-edge);
+  border-radius: 9px;
+}
+.primer-ic .g-ico { width: 22px; height: 22px; }
+.primer-rowtext { flex: 1; }
+.primer-rowtitle {
+  font-family: "Cinzel", serif;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+.primer-rowbody {
+  font-family: "EB Garamond", serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.primer-foot {
+  margin-top: 16px;
+  text-align: center;
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.primer-go {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 20px;
+  font-family: "Cinzel", serif;
+  font-variant: small-caps;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  color: #f0c187;
+  cursor: pointer;
+  border: 1px solid #c8853a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #9a6328 0%, #623f17 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 213, 150, 0.25);
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+.primer-go:hover { filter: brightness(1.12); }
+.primer-go:active { transform: translateY(1px); }
+
+/* "How to play" button in the Settings tab (mirrors the reset button chrome). */
+.settings-help {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 10px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #e8d4a8;
+  background: rgba(40, 30, 22, 0.5);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.settings-help:hover,
+.settings-help:active {
+  color: #f0c187;
+  border-color: var(--ember);
+  background: rgba(210, 116, 44, 0.16);
+}
+
 /* --- Bank chest window --- */
 .bank-backdrop {
   position: absolute;

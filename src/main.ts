@@ -28,6 +28,7 @@ import { ContextMenu } from "./client/contextMenu.ts";
 import { Dialogue } from "./client/dialogue.ts";
 import { Guide } from "./client/guide.ts";
 import { Intro } from "./client/intro.ts";
+import { Primer } from "./client/primer.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
 import {
@@ -129,7 +130,7 @@ function boot(newChar: CreatedCharacter | null): void {
   const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
     get: () => game?.getZoom() ?? 1,
     set: (z) => game?.setZoom(z),
-  });
+  }, () => new Primer(app!, () => {}, true));
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 
@@ -169,9 +170,10 @@ function boot(newChar: CreatedCharacter | null): void {
     );
     if (!restored) guide.start();
   };
-  // New characters get the atmosphere intro; returning players drop straight in.
+  // New characters get the atmosphere intro, then the controls primer, then the
+  // world (where the contextual guide takes over). Returning players drop in.
   if (restored) enter();
-  else new Intro(app!, INTRO_LINES, enter);
+  else new Intro(app!, INTRO_LINES, () => new Primer(app!, enter));
 }
 
 start();
