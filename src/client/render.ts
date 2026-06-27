@@ -1408,6 +1408,25 @@ function drawMonster(
       return drawHumanoid(g, cx, cy, now, "#4d5a3e", "#5f6e4c"); // green-grey orc
     case "dread_ferryman":
       return drawHumanoid(g, cx, cy, now, "#1f2630", "#2c3540"); // black-hooded
+    // --- Road outlaws (humanoids), each with its own drab palette ---
+    case "footpad":
+      return drawHumanoid(g, cx, cy, now, "#4a4238", "#5d5446"); // grey rags
+    case "cutpurse":
+      return drawHumanoid(g, cx, cy, now, "#43432f", "#56563d"); // dun cloth
+    case "bandit":
+      return drawHumanoid(g, cx, cy, now, "#52402e", "#67503a"); // brown leather
+    case "poacher":
+      return drawHumanoid(g, cx, cy, now, "#3c4a30", "#4d5e3f"); // forest green
+    case "highwayman":
+      return drawHumanoid(g, cx, cy, now, "#33323a", "#454552"); // dark masked
+    case "outlaw_archer":
+      return drawHumanoid(g, cx, cy, now, "#454e34", "#586444"); // olive
+    case "cutthroat":
+      return drawHumanoid(g, cx, cy, now, "#4a2e2a", "#5e3b35"); // blood-rust
+    case "marauder":
+      return drawHumanoid(g, cx, cy, now, "#3a3a40", "#4c4c54"); // heavy iron
+    case "outlaw_captain":
+      return drawHumanoid(g, cx, cy, now, "#5a2630", "#763440"); // maroon captain
     default:
       return drawRat(g, cx, cy, now);
   }

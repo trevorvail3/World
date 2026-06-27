@@ -1111,5 +1111,141 @@ export const monsters: Record<string, MonsterStats> = {
         "tier": "legendary"
       }
     ]
+  },
+
+  // === ROAD OUTLAWS — the lawless humanoids of the roads ====================
+  // New low-to-mid humanoid foes that infest the roads between Ironvale and the
+  // regions. OSRS-style loot, drawn entirely from existing items: coins (worn
+  // coins), stolen low-tier weapons, arrows, food, herbs, leather and gems.
+  "footpad": {
+    id: "footpad", name: "Footpad", icon: "🗡️", level: 4, hp: 12,
+    acc: 4, def: 3, maxHit: 2, speed: 2800, xp: 16, attackStyle: "stab",
+    weakness: ["slash"],
+    desc: "A nervy cutpurse working the hill roads — quick with a knife, quicker to run.",
+    drops: [
+      { item: "worn_coin", chance: 0.85, min: 1, max: 3, tier: "always" },
+      { item: "dagger_1", chance: 0.06, tier: "uncommon" },
+      { item: "ashfin_cooked", chance: 0.15, tier: "common" },
+      { item: "plant_fiber", chance: 0.2, min: 1, max: 2, tier: "common" },
+    ],
+  },
+  "cutpurse": {
+    id: "cutpurse", name: "Cutpurse", icon: "🗡️", level: 7, hp: 18,
+    acc: 7, def: 5, maxHit: 3, speed: 2700, xp: 26, attackStyle: "stab",
+    weakness: ["slash"],
+    desc: "A pickpocket turned to the blade when purses got scarce. Light fingers, lighter conscience.",
+    drops: [
+      { item: "worn_coin", chance: 0.9, min: 1, max: 5, tier: "always" },
+      { item: "glass_vial", chance: 0.1, tier: "common" },
+      { item: "herb_ashweed", chance: 0.1, tier: "common" },
+      { item: "seed_ashweed", chance: 0.08, tier: "common" },
+      { item: "rat_meat_cooked", chance: 0.12, tier: "common" },
+    ],
+  },
+  "bandit": {
+    id: "bandit", name: "Bandit", icon: "🗡️", level: 12, hp: 30,
+    acc: 12, def: 9, maxHit: 5, speed: 2600, xp: 48, attackStyle: "slash",
+    weakness: ["stab"],
+    desc: "A road bandit, armed with whatever the last traveller was carrying. They work in numbers.",
+    drops: [
+      { item: "worn_coin", chance: 0.95, min: 2, max: 7, tier: "always" },
+      { item: "sword_1", chance: 0.08, tier: "uncommon" },
+      { item: "dagger_1", chance: 0.06, tier: "uncommon" },
+      { item: "arrow_knucklestone", chance: 0.3, min: 5, max: 12, tier: "common" },
+      { item: "hill_stew", chance: 0.12, tier: "common" },
+      { item: "tanned_leather", chance: 0.1, tier: "common" },
+    ],
+  },
+  "poacher": {
+    id: "poacher", name: "Poacher", icon: "🏹", level: 16, hp: 38,
+    acc: 16, def: 11, maxHit: 6, speed: 2500, xp: 74, attackStyle: "stab",
+    weakness: ["crush"],
+    desc: "A wood-thief who hunts the Lodge's game and the Lodge's purse alike. Deadly with a bow.",
+    drops: [
+      { item: "worn_coin", chance: 0.7, min: 1, max: 5, tier: "always" },
+      { item: "crude_shortbow", chance: 0.08, tier: "uncommon" },
+      { item: "arrow_knucklestone", chance: 0.4, min: 8, max: 18, tier: "common" },
+      { item: "boar_hide", chance: 0.2, tier: "common" },
+      { item: "wolf_pelt", chance: 0.15, tier: "common" },
+      { item: "venison", chance: 0.12, tier: "common" },
+      { item: "hatchet_1", chance: 0.05, tier: "uncommon" },
+    ],
+  },
+  "highwayman": {
+    id: "highwayman", name: "Highwayman", icon: "🗡️", level: 22, hp: 52,
+    acc: 22, def: 16, maxHit: 8, speed: 2500, xp: 120, attackStyle: "slash",
+    weakness: ["stab"],
+    desc: "A mounted robber fallen on hard times and harder methods. Stands his ground for a fat purse.",
+    drops: [
+      { item: "worn_coin", chance: 0.95, min: 3, max: 9, tier: "always" },
+      { item: "sword_3", chance: 0.06, tier: "uncommon" },
+      { item: "spear_1", chance: 0.06, tier: "uncommon" },
+      { item: "arrow_ashiron", chance: 0.25, min: 5, max: 14, tier: "common" },
+      { item: "forest_roast", chance: 0.12, tier: "common" },
+      { item: "ring_1", chance: 0.03, tier: "rare" },
+      { item: "rough_gem", chance: 0.05, tier: "uncommon" },
+    ],
+  },
+  "outlaw_archer": {
+    id: "outlaw_archer", name: "Outlaw Archer", icon: "🏹", level: 26, hp: 56,
+    acc: 27, def: 18, maxHit: 9, speed: 2300, xp: 150, attackStyle: "stab",
+    weakness: ["crush"],
+    desc: "A marksman gone over to the road gangs. Picks off the careless from cover.",
+    drops: [
+      { item: "worn_coin", chance: 0.9, min: 2, max: 8, tier: "always" },
+      { item: "shortbow", chance: 0.06, tier: "uncommon" },
+      { item: "arrow_ashiron", chance: 0.5, min: 10, max: 22, tier: "common" },
+      { item: "arrow_knucklestone", chance: 0.3, min: 10, max: 25, tier: "common" },
+      { item: "tanned_leather", chance: 0.15, tier: "common" },
+      { item: "cured_leather", chance: 0.05, tier: "uncommon" },
+    ],
+  },
+  "cutthroat": {
+    id: "cutthroat", name: "Cutthroat", icon: "🗡️", level: 32, hp: 72,
+    acc: 33, def: 24, maxHit: 11, speed: 2400, xp: 210, attackStyle: "slash",
+    weakness: ["stab"],
+    desc: "A killer the other outlaws step around. Past robbery now — does it for the doing.",
+    drops: [
+      { item: "worn_coin", chance: 0.95, min: 4, max: 12, tier: "always" },
+      { item: "sword_4", chance: 0.05, tier: "rare" },
+      { item: "dagger_3", chance: 0.06, tier: "uncommon" },
+      { item: "hammer_3", chance: 0.05, tier: "uncommon" },
+      { item: "ashiron_ore", chance: 0.2, min: 1, max: 2, tier: "common" },
+      { item: "arrow_ashiron", chance: 0.3, min: 8, max: 18, tier: "common" },
+      { item: "bone_broth", chance: 0.1, tier: "common" },
+      { item: "rough_gem", chance: 0.06, tier: "uncommon" },
+    ],
+  },
+  "marauder": {
+    id: "marauder", name: "Marauder", icon: "🪓", level: 40, hp: 96,
+    acc: 41, def: 30, maxHit: 14, speed: 2500, xp: 320, attackStyle: "crush",
+    weakness: ["stab"],
+    desc: "A raider who rides the lawless edges of the map, taking whole carts and the drovers with them.",
+    drops: [
+      { item: "worn_coin", chance: 0.95, min: 5, max: 16, tier: "always" },
+      { item: "claymore_3", chance: 0.04, tier: "rare" },
+      { item: "hammer_4", chance: 0.04, tier: "rare" },
+      { item: "ashiron_bar", chance: 0.1, tier: "uncommon" },
+      { item: "ribstone_ore", chance: 0.12, min: 1, max: 2, tier: "common" },
+      { item: "cured_leather", chance: 0.1, tier: "common" },
+      { item: "rough_gem", chance: 0.08, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.02, tier: "rare" },
+    ],
+  },
+  "outlaw_captain": {
+    id: "outlaw_captain", name: "Outlaw Captain", icon: "🗡️", level: 48, hp: 140,
+    acc: 49, def: 38, maxHit: 18, speed: 2300, xp: 520, attackStyle: "slash",
+    weakness: ["stab"],
+    desc: "The one the camp answers to. Better armed, better fed, and worth the trouble — if you can take him.",
+    drops: [
+      { item: "worn_coin", chance: 1, min: 10, max: 28, tier: "always" },
+      { item: "sword_6", chance: 0.03, tier: "rare" },
+      { item: "claymore_4", chance: 0.03, tier: "rare" },
+      { item: "ring_3", chance: 0.04, tier: "rare" },
+      { item: "arrow_ashiron", chance: 0.5, min: 15, max: 30, tier: "common" },
+      { item: "ribstone_bar", chance: 0.06, tier: "uncommon" },
+      { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.04, tier: "rare" },
+    ],
   }
 };

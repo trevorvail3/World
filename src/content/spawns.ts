@@ -479,6 +479,54 @@ export const objects: WorldObjectDef[] = [
   { id: "relic_falseseam", kind: "relic", x: 11, y: 83, name: "Half-Burned Page", loreId: "lore_orun_heresy" },
   { id: "relic_watchtower", kind: "relic", x: 73, y: 42, name: "Nailed Tally", loreId: "lore_varath_muster" },
   { id: "relic_smoothwalls", kind: "relic", x: 90, y: 18, name: "Wall Rubbing", loreId: "lore_varath_masons" },
+
+  // === ROAD OUTLAWS — lawless camps along the roads (named locations) ========
+  // New humanoid threat: bandit camps and waylays in the gaps between regions,
+  // each a landmark with a cluster of escalating outlaws (footpad -> captain).
+  // Tiles chosen by the placement finder (landmarks reachable-adjacent; every
+  // outlaw on a reachable walkable tile, no overlaps).
+  { id: "lm_gallows_oak", kind: "shrine", x: 28, y: 19, name: "The Gallows Oak", lines: ["A lightning-split oak the Ironvale watch uses for its rough justice. The rope is always there; usually, so is something on it."] },
+  { id: "lm_cutpurse_steps", kind: "shrine", x: 60, y: 72, name: "The Cutpurse Steps", lines: ["Worn steps where the south road bottlenecks — and where light fingers work the crowd. Keep a hand on your purse, and an eye on the man who tells you to."] },
+  { id: "lm_waylayers_bend", kind: "shrine", x: 38, y: 55, name: "Waylayer's Bend", lines: ["Where the Lodge road kinks blind around a stand of pine. Good cover for an honest forester. Better cover for the men who wait for one."] },
+  { id: "lm_poachers_blind", kind: "shrine", x: 32, y: 51, name: "The Poacher's Blind", lines: ["A hunter's hide, well used and not by the Lodge. Snares set for game, and for the warden who comes to cut them."] },
+  { id: "lm_toll_stones", kind: "shrine", x: 52, y: 37, name: "The Toll Stones", lines: ["Two standing stones with a chain hung between, and a board that reads TOLL in fresh paint. Nobody collecting it has any right to. Everybody pays."] },
+  { id: "lm_burnt_waystation", kind: "shrine", x: 82, y: 55, name: "The Burnt Waystation", lines: ["A Courier post burned to its sills. The riders don't stop here now. Something else does."] },
+  { id: "lm_cutthroat_hollow", kind: "shrine", x: 33, y: 79, name: "Cutthroat Hollow", lines: ["A dell the road can't avoid and the watch won't enter. The men who hole up here are past robbery. Go around, if you can find the way."] },
+  { id: "lm_drovers_loss", kind: "shrine", x: 58, y: 80, name: "The Drover's Loss", lines: ["Where a whole cattle-drive went missing in a night — beasts, drovers and all. The grass grew back greener over whatever was left."] },
+  { id: "lm_smugglers_landing", kind: "shrine", x: 94, y: 72, name: "Smuggler's Landing", lines: ["A shingle beach where boats come in without papers and leave without witnesses. The Redrun keeps their secrets; the men keep their knives."] },
+  { id: "lm_brigands_roost", kind: "shrine", x: 34, y: 42, name: "The Brigand's Roost", lines: ["The camp the road-gangs answer to — a ring of stolen canvas and a captain who's never been taken. Bring friends, or bring nothing they can use."] },
+
+  // --- Outlaw spawns (each cluster guards its landmark) ---
+  { id: "out_gallows_oak_0", kind: "monster", monster: "footpad", x: 27, y: 18, name: "Footpad" },
+  { id: "out_gallows_oak_1", kind: "monster", monster: "footpad", x: 28, y: 18, name: "Footpad" },
+  { id: "out_gallows_oak_2", kind: "monster", monster: "cutpurse", x: 29, y: 18, name: "Cutpurse" },
+  { id: "out_cutpurse_steps_0", kind: "monster", monster: "cutpurse", x: 59, y: 71, name: "Cutpurse" },
+  { id: "out_cutpurse_steps_1", kind: "monster", monster: "cutpurse", x: 60, y: 71, name: "Cutpurse" },
+  { id: "out_cutpurse_steps_2", kind: "monster", monster: "footpad", x: 61, y: 71, name: "Footpad" },
+  { id: "out_waylayers_bend_0", kind: "monster", monster: "bandit", x: 37, y: 54, name: "Bandit" },
+  { id: "out_waylayers_bend_1", kind: "monster", monster: "bandit", x: 38, y: 54, name: "Bandit" },
+  { id: "out_waylayers_bend_2", kind: "monster", monster: "footpad", x: 39, y: 54, name: "Footpad" },
+  { id: "out_poachers_blind_0", kind: "monster", monster: "poacher", x: 31, y: 50, name: "Poacher" },
+  { id: "out_poachers_blind_1", kind: "monster", monster: "poacher", x: 32, y: 50, name: "Poacher" },
+  { id: "out_poachers_blind_2", kind: "monster", monster: "bandit", x: 33, y: 50, name: "Bandit" },
+  { id: "out_toll_stones_0", kind: "monster", monster: "bandit", x: 51, y: 36, name: "Bandit" },
+  { id: "out_toll_stones_1", kind: "monster", monster: "highwayman", x: 52, y: 36, name: "Highwayman" },
+  { id: "out_burnt_waystation_0", kind: "monster", monster: "highwayman", x: 81, y: 54, name: "Highwayman" },
+  { id: "out_burnt_waystation_1", kind: "monster", monster: "highwayman", x: 82, y: 54, name: "Highwayman" },
+  { id: "out_burnt_waystation_2", kind: "monster", monster: "outlaw_archer", x: 83, y: 54, name: "Outlaw Archer" },
+  { id: "out_cutthroat_hollow_0", kind: "monster", monster: "cutthroat", x: 32, y: 78, name: "Cutthroat" },
+  { id: "out_cutthroat_hollow_1", kind: "monster", monster: "cutthroat", x: 33, y: 78, name: "Cutthroat" },
+  { id: "out_cutthroat_hollow_2", kind: "monster", monster: "outlaw_archer", x: 34, y: 78, name: "Outlaw Archer" },
+  { id: "out_drovers_loss_0", kind: "monster", monster: "cutthroat", x: 57, y: 79, name: "Cutthroat" },
+  { id: "out_drovers_loss_1", kind: "monster", monster: "marauder", x: 58, y: 79, name: "Marauder" },
+  { id: "out_smugglers_landing_0", kind: "monster", monster: "outlaw_archer", x: 93, y: 71, name: "Outlaw Archer" },
+  { id: "out_smugglers_landing_1", kind: "monster", monster: "outlaw_archer", x: 94, y: 71, name: "Outlaw Archer" },
+  { id: "out_smugglers_landing_2", kind: "monster", monster: "marauder", x: 94, y: 70, name: "Marauder" },
+  { id: "out_brigands_roost_0", kind: "monster", monster: "outlaw_captain", x: 33, y: 41, name: "Outlaw Captain" },
+  { id: "out_brigands_roost_1", kind: "monster", monster: "cutthroat", x: 34, y: 41, name: "Cutthroat" },
+  { id: "out_brigands_roost_2", kind: "monster", monster: "cutthroat", x: 35, y: 41, name: "Cutthroat" },
+  { id: "out_brigands_roost_3", kind: "monster", monster: "marauder", x: 33, y: 42, name: "Marauder" },
+  { id: "out_brigands_roost_4", kind: "monster", monster: "bandit", x: 35, y: 42, name: "Bandit" },
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric
