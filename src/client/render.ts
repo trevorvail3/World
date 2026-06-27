@@ -419,7 +419,7 @@ export function drawWorld(
     if (def.kind === "plant_patch" || def.kind === "tree_patch") {
       drawPatch(g, obj.crop, obj.plantedAt, content, px, py);
     } else {
-      drawObject(g, def, obj.available, px, py, now);
+      drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget);
     }
     if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
       lights.push([px + TILE / 2, py + TILE / 2]);
@@ -569,6 +569,7 @@ function drawObject(
   px: number,
   py: number,
   now: number,
+  moving = false,
 ): void {
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
@@ -583,10 +584,10 @@ function drawObject(
       drawFishingSpot(g, cx, cy, now);
       break;
     case "npc":
-      drawNpc(g, cx, cy, now);
+      drawNpc(g, cx, cy, now, moving);
       break;
     case "monster":
-      drawMonster(g, def.monster, available, cx, cy, now);
+      drawMonster(g, def.monster, available, cx, cy, now, moving);
       break;
 
     case "shrine":
@@ -1345,24 +1346,61 @@ function drawFishingSpot(g: CanvasRenderingContext2D, cx: number, cy: number, no
 }
 
 // --- Aldric: a man in an earthy tunic ---
-function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
-  const bob = Math.sin(now / 600) * 0.8;
+function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: number, moving = false): void {
+  const a = walkAnim(now, moving);
+  const tunic = "#5a5238", skin = "#caa472";
   shadow(g, cx, cy + 12, 8, 3);
-  g.fillStyle = "#3a2f23"; // legs
-  g.fillRect(cx - 5, cy + 6 + bob, 4, 7);
-  g.fillRect(cx + 1, cy + 6 + bob, 4, 7);
-  g.fillStyle = "#5a5238"; // tunic
-  g.fillRect(cx - 6, cy - 6 + bob, 12, 14);
+  // legs (feet lift while walking)
+  g.fillStyle = "#3a2f23";
+  g.fillRect(cx - 5, cy + 6 - a.liftL, 4, 7);
+  g.fillRect(cx + 1, cy + 6 - a.liftR, 4, 7);
+  // far arm (behind the body)
+  limbArm(g, cx + 5.5, cy - 4 + a.bob, 0.12 - a.swing, tunic, skin);
+  // tunic + collar + belt (bob)
+  g.fillStyle = tunic;
+  g.fillRect(cx - 6, cy - 6 + a.bob, 12, 14);
   g.fillStyle = "#6b6344";
-  g.fillRect(cx - 6, cy - 6 + bob, 12, 3);
+  g.fillRect(cx - 6, cy - 6 + a.bob, 12, 3);
   g.fillStyle = "#3a2f23"; // belt
-  g.fillRect(cx - 6, cy + 4 + bob, 12, 2);
-  g.fillStyle = "#caa472"; // head
-  circle(g, cx, cy - 11 + bob, 5);
-  g.fillStyle = "#5b4a33"; // hair
+  g.fillRect(cx - 6, cy + 4 + a.bob, 12, 2);
+  // near arm (in front)
+  limbArm(g, cx - 5.5, cy - 4 + a.bob, -0.12 + a.swing, tunic, skin);
+  // head + hair
+  g.fillStyle = skin;
+  circle(g, cx, cy - 11 + a.bob, 5);
+  g.fillStyle = "#5b4a33";
   g.beginPath();
-  g.arc(cx, cy - 12 + bob, 5, Math.PI, 0);
+  g.arc(cx, cy - 12 + a.bob, 5, Math.PI, 0);
   g.fill();
+}
+
+/** Walk-cycle values (in base px): body bounce, limb swing, per-foot lift. */
+function walkAnim(now: number, moving: boolean): { bob: number; swing: number; liftL: number; liftR: number } {
+  const step = now / 110;
+  return {
+    bob: moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(now / 520) * 0.7,
+    swing: moving ? Math.sin(step) * 0.5 : 0,
+    liftL: moving ? Math.max(0, Math.sin(step)) * 1.7 : 0,
+    liftR: moving ? Math.max(0, -Math.sin(step)) * 1.7 : 0,
+  };
+}
+
+/** One arm hanging from a shoulder (px,py), rotated by `angle`: sleeve + hand. */
+function limbArm(
+  g: CanvasRenderingContext2D,
+  px: number, py: number, angle: number, sleeve: string, skin: string,
+): void {
+  g.save();
+  g.translate(px, py);
+  g.rotate(angle);
+  g.fillStyle = sleeve;
+  g.fillRect(-1.2, 0, 2.4, 4);
+  g.fillStyle = skin;
+  g.fillRect(-1, 3.6, 2, 3.2);
+  g.beginPath();
+  g.arc(0, 7, 1.4, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
 }
 
 /** Route a monster to its sprite (reusing shapes across similar creatures). */
@@ -1373,8 +1411,11 @@ function drawMonster(
   cx: number,
   cy: number,
   now: number,
+  moving = false,
 ): void {
   if (!available) return drawRespawning(g, cx, cy);
+  // Human-type foes share the animated humanoid figure (arms + walk cycle).
+  const H = (body: string, trim: string) => drawHumanoid(g, cx, cy, now, body, trim, moving);
   switch (monster) {
     case "hill_wolf":
     case "ridge_wolf":
@@ -1402,32 +1443,32 @@ function drawMonster(
     case "deep_bat":
       return drawBat(g, cx, cy, now);
     case "bog_knight":
-      return drawHumanoid(g, cx, cy, now, "#5b6470", "#7a8492"); // grey armour
+      return H("#5b6470", "#7a8492"); // grey armour
     case "redrun_brigand":
-      return drawHumanoid(g, cx, cy, now, "#5a4636", "#6e5742"); // leathers
+      return H("#5a4636", "#6e5742"); // leathers
     case "ancient_orc":
-      return drawHumanoid(g, cx, cy, now, "#4d5a3e", "#5f6e4c"); // green-grey orc
+      return H("#4d5a3e", "#5f6e4c"); // green-grey orc
     case "dread_ferryman":
-      return drawHumanoid(g, cx, cy, now, "#1f2630", "#2c3540"); // black-hooded
+      return H("#1f2630", "#2c3540"); // black-hooded
     // --- Road outlaws (humanoids), each with its own drab palette ---
     case "footpad":
-      return drawHumanoid(g, cx, cy, now, "#4a4238", "#5d5446"); // grey rags
+      return H("#4a4238", "#5d5446"); // grey rags
     case "cutpurse":
-      return drawHumanoid(g, cx, cy, now, "#43432f", "#56563d"); // dun cloth
+      return H("#43432f", "#56563d"); // dun cloth
     case "bandit":
-      return drawHumanoid(g, cx, cy, now, "#52402e", "#67503a"); // brown leather
+      return H("#52402e", "#67503a"); // brown leather
     case "poacher":
-      return drawHumanoid(g, cx, cy, now, "#3c4a30", "#4d5e3f"); // forest green
+      return H("#3c4a30", "#4d5e3f"); // forest green
     case "highwayman":
-      return drawHumanoid(g, cx, cy, now, "#33323a", "#454552"); // dark masked
+      return H("#33323a", "#454552"); // dark masked
     case "outlaw_archer":
-      return drawHumanoid(g, cx, cy, now, "#454e34", "#586444"); // olive
+      return H("#454e34", "#586444"); // olive
     case "cutthroat":
-      return drawHumanoid(g, cx, cy, now, "#4a2e2a", "#5e3b35"); // blood-rust
+      return H("#4a2e2a", "#5e3b35"); // blood-rust
     case "marauder":
-      return drawHumanoid(g, cx, cy, now, "#3a3a40", "#4c4c54"); // heavy iron
+      return H("#3a3a40", "#4c4c54"); // heavy iron
     case "outlaw_captain":
-      return drawHumanoid(g, cx, cy, now, "#5a2630", "#763440"); // maroon captain
+      return H("#5a2630", "#763440"); // maroon captain
     default:
       return drawRat(g, cx, cy, now);
   }
@@ -1504,12 +1545,18 @@ function drawHumanoid(
   now: number,
   body: string,
   trim: string,
+  moving = false,
 ): void {
-  const bob = Math.sin(now / 500) * 0.8;
+  const a = walkAnim(now, moving);
+  const bob = a.bob;
+  const skin = "#caa472";
   shadow(g, cx, cy + 12, 8, 3);
-  g.fillStyle = "#2b2620"; // legs
-  g.fillRect(cx - 5, cy + 6 + bob, 4, 8);
-  g.fillRect(cx + 1, cy + 6 + bob, 4, 8);
+  // legs (feet lift while walking)
+  g.fillStyle = "#2b2620";
+  g.fillRect(cx - 5, cy + 6 - a.liftL, 4, 8);
+  g.fillRect(cx + 1, cy + 6 - a.liftR, 4, 8);
+  // far arm (behind the torso), sleeved in the body colour
+  limbArm(g, cx + 6, cy - 4 + bob, 0.12 - a.swing, body, skin);
   g.fillStyle = body; // torso / cloak
   g.beginPath();
   g.moveTo(cx - 7, cy + 8 + bob);
@@ -1520,7 +1567,9 @@ function drawHumanoid(
   g.fill();
   g.fillStyle = trim; // shoulder trim
   g.fillRect(cx - 7, cy - 6 + bob, 14, 3);
-  g.fillStyle = "#caa472"; // head / hood-shadow
+  // near arm (in front of the torso)
+  limbArm(g, cx - 6, cy - 4 + bob, -0.12 + a.swing, body, skin);
+  g.fillStyle = skin; // head / hood-shadow
   circle(g, cx, cy - 11 + bob, 4.5);
   g.fillStyle = body; // hood / helm over the head
   g.beginPath();
