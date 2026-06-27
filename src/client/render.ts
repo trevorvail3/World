@@ -378,9 +378,13 @@ export function drawWorld(
   content: Content,
   cam: Camera,
   now: number,
+  viewW = canvas.width,
+  viewH = canvas.height,
 ): void {
-  const w = canvas.width;
-  const h = canvas.height;
+  // Visible span in world pixels. Under a zoom transform this is the device size
+  // over the zoom, so tile culling and the night veil cover exactly the view.
+  const w = viewW;
+  const h = viewH;
 
   g.fillStyle = "#13100d";
   g.fillRect(0, 0, w, h);

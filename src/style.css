@@ -841,6 +841,69 @@ body {
   display: none;
 }
 
+/* --- Zoom slider inside the Settings tab --- */
+.settings-zoom {
+  margin-bottom: 10px;
+}
+
+.settings-label {
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #e8d4a8;
+  margin-bottom: 6px;
+}
+
+.settings-zoom-value {
+  color: #c9a86a;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-slider {
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(40, 30, 22, 0.7);
+  border: 1px solid #5a4326;
+}
+
+.settings-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(40, 30, 22, 0.7);
+  border: 1px solid #5a4326;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #d9b066;
+  border: 1px solid #3a2a18;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #d9b066;
+  border: 1px solid #3a2a18;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 /* --- Reset button inside the Settings tab --- */
 .settings-reset {
   display: block;

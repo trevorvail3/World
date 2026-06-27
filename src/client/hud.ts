@@ -149,6 +149,8 @@ export class Hud {
   private menu: ContextMenu | null;
   private dispatch: (intent: Intent) => void;
   private invData: (InventorySlot | null)[] = [];
+  private zoomSlider: HTMLInputElement | null = null;
+  private zoomReadout: HTMLElement | null = null;
 
   constructor(
     root: HTMLElement,
@@ -156,6 +158,7 @@ export class Hud {
     onReset: () => void = () => {},
     menu: ContextMenu | null = null,
     dispatch: (intent: Intent) => void = () => {},
+    private zoom: { get(): number; set(z: number): void } = { get: () => 1, set: () => {} },
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -427,7 +430,34 @@ export class Hud {
         break;
       }
       case "settings": {
-        p.appendChild(note("More settings coming soon — audio, display and more."));
+        // --- Zoom: drag the slider, scroll the wheel, or pinch on a touchscreen. ---
+        const zoomRow = document.createElement("div");
+        zoomRow.className = "settings-zoom";
+        const zoomLabel = document.createElement("div");
+        zoomLabel.className = "settings-label";
+        const zoomReadout = document.createElement("span");
+        zoomReadout.className = "settings-zoom-value";
+        zoomLabel.append("Zoom ", zoomReadout);
+        const zoomSlider = document.createElement("input");
+        zoomSlider.type = "range";
+        zoomSlider.className = "settings-slider";
+        zoomSlider.min = "0.6";
+        zoomSlider.max = "2.4";
+        zoomSlider.step = "0.05";
+        zoomSlider.value = String(this.zoom.get());
+        const syncReadout = (): void => {
+          zoomReadout.textContent = `${Math.round(Number(zoomSlider.value) * 100)}%`;
+        };
+        syncReadout();
+        zoomSlider.addEventListener("input", () => {
+          this.zoom.set(Number(zoomSlider.value));
+          syncReadout();
+        });
+        zoomRow.append(zoomLabel, zoomSlider);
+        p.appendChild(zoomRow);
+        this.zoomSlider = zoomSlider;
+        this.zoomReadout = zoomReadout;
+        p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
         const reset = document.createElement("button");
         reset.type = "button";
         reset.className = "settings-reset";
@@ -665,6 +695,16 @@ export class Hud {
 
     this.renderBuffs(player);
     this.renderQuestTracker(player);
+
+    // Keep the zoom slider in step with wheel/pinch changes (unless the player
+    // is actively dragging it, in which case it's already the source of truth).
+    if (this.zoomSlider && document.activeElement !== this.zoomSlider) {
+      const z = this.zoom.get();
+      if (Number(this.zoomSlider.value) !== z) {
+        this.zoomSlider.value = String(z);
+        if (this.zoomReadout) this.zoomReadout.textContent = `${Math.round(z * 100)}%`;
+      }
+    }
 
     // Skills: level + progress-to-next-level bar.
     const table = this.content.xpForLevel;

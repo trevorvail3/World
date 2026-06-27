@@ -128,7 +128,12 @@ function boot(newChar: CreatedCharacter | null): void {
   const guide = new Guide(app!);
   let game: Game;
   const dispatch = (intent: Intent): void => game.dispatch(intent);
-  const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch);
+  // `game` is assigned just below; the slider may read zoom during Hud build,
+  // so guard until the loop exists (the HUD re-syncs the slider each frame).
+  const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
+    get: () => game?.getZoom() ?? 1,
+    set: (z) => game?.setZoom(z),
+  });
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 

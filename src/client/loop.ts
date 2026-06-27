@@ -111,6 +111,14 @@ const LONG_PRESS_MS = 330;
 const MOVE_CANCEL_PX = 12;
 const MARKER_LIFE = 600;
 const FLASH_LIFE = 450;
+const ZOOM_MIN = 0.6;
+const ZOOM_MAX = 2.4;
+const ZOOM_KEY = "varath-zoom"; // a client display preference, kept in localStorage
+const clampZoom = (z: number): number => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+function readZoom(): number {
+  const raw = Number(localStorage.getItem(ZOOM_KEY));
+  return Number.isFinite(raw) && raw > 0 ? clampZoom(raw) : 1;
+}
 
 /** The verb shown for interacting with each kind of object. */
 const VERB: Record<ObjKind, string> = {
@@ -198,6 +206,10 @@ const EXAMINE_TREE: Record<string, string> = {
 export class Game {
   private g: CanvasRenderingContext2D;
   private cam: Camera = { x: 0, y: 0 };
+  private zoom = readZoom();
+  /** Active touch points, for pinch-to-zoom. */
+  private pointers = new Map<number, { x: number; y: number }>();
+  private pinchDist = 0;
   private floats: FloatText[] = [];
   private sparks: Spark[] = [];
   private levelUp: LevelUp;
@@ -244,6 +256,12 @@ export class Game {
     canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     window.addEventListener("pointermove", (e) => this.onPointerMove(e));
     window.addEventListener("pointerup", (e) => this.onPointerUp(e));
+    window.addEventListener("pointercancel", (e) => this.pointers.delete(e.pointerId));
+    // Mouse-wheel zoom.
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      this.setZoom(this.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+    }, { passive: false });
     // Suppress the browser's own right-click menu; we provide our own.
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   }
@@ -277,8 +295,13 @@ export class Game {
     // 2) Camera follows the player.
     this.followCamera();
 
-    // 3) Paint the world, then the input overlays on top.
-    drawWorld(this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now);
+    // 3) Paint the world (and its world-space overlays) under the zoom transform.
+    const z = this.zoom;
+    this.g.setTransform(z, 0, 0, z, 0, 0);
+    drawWorld(
+      this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
+      this.canvas.width / z, this.canvas.height / z,
+    );
     this.drawMarker(now);
     this.drawHighlights(now);
     this.drawActivityFeedback(now);
@@ -286,6 +309,7 @@ export class Game {
     this.drawQuestMarkers(now);
     this.drawSparks(now);
     this.drawFloats(now);
+    this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
 
     // 4) Refresh the HUD readouts and the minimap.
     this.hud.update(this.bridge.state);
@@ -309,8 +333,8 @@ export class Game {
 
   private followCamera(): void {
     const p = this.bridge.state.player.pos;
-    const targetX = p.x * TILE + TILE / 2 - this.canvas.width / 2;
-    const targetY = p.y * TILE + TILE / 2 - this.canvas.height / 2;
+    const targetX = p.x * TILE + TILE / 2 - this.canvas.width / this.zoom / 2;
+    const targetY = p.y * TILE + TILE / 2 - this.canvas.height / this.zoom / 2;
     if (!this.camInitialised) {
       this.cam.x = targetX;
       this.cam.y = targetY;
@@ -319,6 +343,17 @@ export class Game {
       this.cam.x += (targetX - this.cam.x) * 0.12;
       this.cam.y += (targetY - this.cam.y) * 0.12;
     }
+  }
+
+  /** Current view zoom (1 = default). */
+  getZoom(): number {
+    return this.zoom;
+  }
+
+  /** Set the view zoom (clamped) and remember it across sessions. */
+  setZoom(z: number): void {
+    this.zoom = clampZoom(z);
+    try { localStorage.setItem(ZOOM_KEY, String(this.zoom)); } catch { /* ignore */ }
   }
 
   private handleEvents(events: WorldEvent[], now: number): void {
@@ -758,7 +793,8 @@ export class Game {
     if (!t) return;
     const sx = t.x * TILE + TILE / 2 - this.cam.x;
     const sy = t.y * TILE + TILE / 2 - this.cam.y;
-    const W = this.canvas.width, H = this.canvas.height;
+    // This draws under the zoom transform, so work in logical (world) view px.
+    const W = this.canvas.width / this.zoom, H = this.canvas.height / this.zoom;
     const m = 48; // edge inset
     const flash = 0.5 + 0.5 * Math.sin(now / 180); // the "flashing"
     const onScreen = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
@@ -977,13 +1013,23 @@ export class Game {
     const sx = clientX - rect.left;
     const sy = clientY - rect.top;
     return {
-      x: Math.floor((sx + this.cam.x) / TILE),
-      y: Math.floor((sy + this.cam.y) / TILE),
+      x: Math.floor((sx / this.zoom + this.cam.x) / TILE),
+      y: Math.floor((sy / this.zoom + this.cam.y) / TILE),
     };
   }
 
   private onPointerDown(e: PointerEvent): void {
     e.preventDefault();
+
+    // Track touch points for pinch-to-zoom. A second finger cancels any pending
+    // tap and starts a pinch instead.
+    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pointers.size >= 2) {
+      this.press = null;
+      this.clearLongTimer();
+      this.pinchDist = this.currentPinchDist();
+      return;
+    }
 
     // A tap closes / advances dialogue first; no menu while talking.
     if (this.dialogue.isOpen()) {
@@ -1016,6 +1062,14 @@ export class Game {
   }
 
   private onPointerMove(e: PointerEvent): void {
+    // Pinch-to-zoom: with two fingers down, the change in their spacing scales.
+    if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pointers.size >= 2) {
+      const d = this.currentPinchDist();
+      if (this.pinchDist > 0 && d > 0) this.setZoom(this.zoom * (d / this.pinchDist));
+      this.pinchDist = d;
+      return;
+    }
     if (!this.press) return;
     const dx = e.clientX - this.press.startX;
     const dy = e.clientY - this.press.startY;
@@ -1025,12 +1079,23 @@ export class Game {
     }
   }
 
-  private onPointerUp(_e: PointerEvent): void {
+  private onPointerUp(e: PointerEvent): void {
+    this.pointers.delete(e.pointerId);
+    if (this.pointers.size < 2) this.pinchDist = 0;
+    // Lifting one finger mid-pinch shouldn't fire a tap.
+    if (this.pointers.size >= 1 && !this.press) return;
     this.clearLongTimer();
     const press = this.press;
     this.press = null;
     if (!press || press.longFired || press.moved) return;
     this.defaultAction(press.tile);
+  }
+
+  /** Distance between the first two active touch points (0 if fewer than two). */
+  private currentPinchDist(): number {
+    const pts = [...this.pointers.values()];
+    if (pts.length < 2) return 0;
+    return Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y);
   }
 
   private clearLongTimer(): void {
