@@ -18,7 +18,7 @@ import type {
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
 import { type RoofStyle, cityDoor, cityRoof, tileAt } from "../content/map.ts";
-import { drawAvatar, withDefaults } from "./avatar.ts";
+import { type AvatarAnim, drawAvatar, withDefaults } from "./avatar.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -434,7 +434,10 @@ export function drawWorld(
 
   // --- Player ---
   if (state.player.alive) {
-    drawPlayer(g, state.player.pos, cam, now, state.player.appearance, state.player.path.length > 0);
+    drawPlayer(
+      g, state.player.pos, cam, now, state.player.appearance,
+      state.player.path.length > 0, playerAction(state.player, content, now),
+    );
   }
 
   // --- Time of day: a slow tint cycle, with firelight glowing through at night.
@@ -1914,10 +1917,32 @@ function drawPlayer(
   now: number,
   look?: Appearance,
   moving = false,
+  action?: AvatarAnim["action"],
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
-  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving });
+  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) });
+}
+
+/**
+ * Map the player's current activity to an avatar action — the tool in hand and
+ * how far through the swing we are — so the arm animates in time with the work.
+ * `frac` counts down 1 → 0 to the next action beat (when ore breaks, a log
+ * falls, a recipe completes). Returns undefined when idle/walking.
+ */
+function playerAction(
+  player: WorldState["player"],
+  _content: Content,
+  now: number,
+): AvatarAnim["action"] | undefined {
+  const act = player.activity;
+  const TOOL: Record<string, string> = {
+    mining: "pickaxe", woodcutting: "axe", fishing: "rod", crafting: "", trapping: "",
+  };
+  if (!(act.kind in TOOL)) return undefined;
+  const interval = act.actionInterval || 600;
+  const frac = Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
+  return { kind: act.kind, tool: TOOL[act.kind]!, frac };
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {

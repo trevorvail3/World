@@ -80,10 +80,17 @@ export function withDefaults(a?: Partial<Appearance>): Appearance {
   return { ...DEFAULT_APPEARANCE, ...(a ?? {}) };
 }
 
-/** How the figure is animated: a clock and whether it's walking. */
+/** How the figure is animated: a clock, whether it's walking, and any action. */
 export interface AvatarAnim {
   now?: number;
   moving?: boolean;
+  /**
+   * An in-progress tool/combat action that swings the near arm and puts a tool
+   * in the hand. `kind` selects the motion (gather chop vs. fishing cast vs.
+   * combat), `tool` the shape to draw, and `frac` is how much of the current
+   * swing remains (1 just after a strike → 0 at the next strike).
+   */
+  action?: { kind: string; tool: string; frac: number };
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -112,13 +119,20 @@ export function drawAvatar(
   anim: AvatarAnim = {},
 ): void {
   const t = anim.now ?? 0;
-  const moving = anim.moving ?? false;
-  // Walk cycle vs. a gentle idle breath.
+  const action = anim.action;
+  const acting = !!action;
+  // While acting the figure is planted; otherwise it walks or idles.
+  const moving = (anim.moving ?? false) && !acting;
   const step = t / 110;
-  const bob = moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
-  const swing = moving ? Math.sin(step) * 0.5 : Math.sin(t / 340) * 0.05;
+  const bob = acting ? Math.sin(t / 280) * 0.5
+    : moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
+  const swing = moving ? Math.sin(step) * 0.5 : (!acting ? Math.sin(t / 340) * 0.05 : 0);
   const liftL = moving ? Math.max(0, Math.sin(step)) * 1.8 : 0;
   const liftR = moving ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
+  // The near arm either swings the action, or follows the walk/idle.
+  const nearAngle = acting ? actionArmAngle(action!.frac, action!.kind) : -0.12 + swing;
+  const farAngle = acting ? 0.22 : 0.12 - swing;
+  const nearTool = acting ? action!.tool : "";
 
   const R = (dx: number, dy: number, w: number, h: number) =>
     g.fillRect(cx + dx * s, cy + dy * s, w * s, h * s);
@@ -174,7 +188,7 @@ export function drawAvatar(
   foot(1, liftR);
 
   // --- The far arm (drawn before the torso so it reads as "behind") ---
-  drawArm(g, cx, cy, s, bob, look, 6.4, 0.12 - swing);
+  drawArm(g, cx, cy, s, bob, look, 6.4, farAngle);
 
   // --- Torso / top (bobs) ---
   g.fillStyle = look.tunic;
@@ -203,8 +217,8 @@ export function drawAvatar(
     Rb(-0.6, -7, 1.2, 10); // plain front seam
   }
 
-  // --- The near arm (in front of the torso) ---
-  drawArm(g, cx, cy, s, bob, look, -6.4, -0.12 + swing);
+  // --- The near arm (in front of the torso), holding any tool ---
+  drawArm(g, cx, cy, s, bob, look, -6.4, nearAngle, nearTool);
 
   // --- Head (bobs) ---
   g.fillStyle = look.skin;
@@ -223,13 +237,14 @@ export function drawAvatar(
  */
 function drawArm(
   g: Ctx, cx: number, cy: number, s: number, bob: number, look: Appearance,
-  shoulderDX: number, angle: number,
+  shoulderDX: number, angle: number, tool = "",
 ): void {
   const px = cx + shoulderDX * s;
   const py = cy - 5 * s + bob;
   g.save();
   g.translate(px, py);
   g.rotate(angle);
+  if (tool) drawTool(g, s, tool); // behind the hand, swings with the arm
   g.fillStyle = look.tunic; // sleeve (upper arm)
   g.fillRect(-1.3 * s, 0, 2.6 * s, 4.2 * s);
   g.fillStyle = look.skin; // forearm
@@ -238,6 +253,56 @@ function drawArm(
   g.arc(0, 7.7 * s, 1.6 * s, 0, Math.PI * 2);
   g.fill();
   g.restore();
+}
+
+/**
+ * The near arm's angle (radians; 0 = straight down) over a swing. `frac` runs
+ * 1 → 0 across the action interval; the strike lands as it nears 0. Negative
+ * raises the hand up-and-forward (over the head); positive brings it down.
+ */
+function actionArmAngle(frac: number, kind: string): number {
+  const t = 1 - Math.max(0, Math.min(1, frac)); // 0 just after a strike → 1 at the next
+  // Held, swaying motions (a cast, a stir, setting a snare) rather than a chop.
+  if (kind === "fishing" || kind === "crafting" || kind === "trapping") {
+    return -0.55 + Math.sin(t * Math.PI * 2) * 0.24;
+  }
+  // Overhead strike: wind up, slam down, brief follow-through (mining, chopping,
+  // melee combat). Resets cleanly to the wind-up as the next swing begins.
+  if (t < 0.5) return -0.12 - (t / 0.5) * 2.1;        // rest → overhead
+  if (t < 0.8) return -2.22 + ((t - 0.5) / 0.3) * 2.9; // strike down fast
+  return 0.68;                                          // follow-through
+}
+
+/** A tool/weapon in the hand, drawn in the arm's local frame (points "down"). */
+function drawTool(g: Ctx, s: number, tool: string): void {
+  const handle = "#6a4a2e", steel = "#bcc2cc", iron = "#8c93a0";
+  const haft = (len: number) => { g.fillStyle = handle; g.fillRect(-0.7 * s, 5 * s, 1.4 * s, len * s); };
+  switch (tool) {
+    case "pickaxe":
+      haft(9);
+      g.strokeStyle = steel; g.lineWidth = 1.7 * s; g.lineCap = "round";
+      g.beginPath(); g.moveTo(-4.5 * s, 12.5 * s); g.quadraticCurveTo(0, 10.5 * s, 4.5 * s, 12.5 * s); g.stroke();
+      g.lineCap = "butt";
+      break;
+    case "axe":
+      haft(9);
+      g.fillStyle = steel; g.beginPath();
+      g.moveTo(0.4 * s, 10.5 * s); g.lineTo(4.6 * s, 11.2 * s); g.lineTo(4 * s, 14.6 * s); g.lineTo(0.4 * s, 13.8 * s);
+      g.closePath(); g.fill();
+      break;
+    case "hammer":
+      haft(8);
+      g.fillStyle = iron; g.fillRect(-3.2 * s, 12 * s, 6.4 * s, 3 * s);
+      break;
+    case "rod":
+      g.strokeStyle = "#7a5a36"; g.lineWidth = 1 * s;
+      g.beginPath(); g.moveTo(0, 6 * s); g.lineTo(0, 19 * s); g.stroke();
+      g.strokeStyle = "rgba(220,224,235,0.55)"; g.lineWidth = 0.5 * s;
+      g.beginPath(); g.moveTo(0, 19 * s); g.lineTo(2.5 * s, 23 * s); g.stroke();
+      break;
+    default:
+      break;
+  }
 }
 
 function drawFacial(g: Ctx, cx: number, cy: number, s: number, bob: number, look: Appearance): void {
