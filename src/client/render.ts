@@ -434,8 +434,10 @@ export function drawWorld(
       lights.push([px + TILE / 2, py + TILE / 2]);
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
-    } else if (def.kind === "build_hotspot" && obj.furniture && content.furniture[obj.furniture]?.category === "kitchen") {
-      lights.push([px + TILE / 2, py + TILE / 2]); // a built cooking hearth warms the home
+    } else if (def.kind === "build_hotspot" && obj.furniture) {
+      const lf = content.furniture[obj.furniture];
+      // A built cooking hearth or any lighting piece warms/lights the home.
+      if (lf && (lf.category === "kitchen" || lf.light)) lights.push([px + TILE / 2, py + TILE / 2]);
     }
     // Name label — monsters show their combat level (OSRS-style).
     if (def.kind === "npc" || def.kind === "monster") {
@@ -718,14 +720,16 @@ function drawHotspot(
     for (const [dx, dy] of [[-8, -6], [8, -6], [-8, 6], [8, 6]] as const) g.fillRect(cx + dx - 1, cy + dy - 1, 2, 2);
     return;
   }
-  // Tier shades the timber/stone: 0 plain, 1 better, 2 the showpiece.
-  const tier = f.levelReq >= 60 ? 2 : f.levelReq >= 25 ? 1 : 0;
+  // Tier (0..3) shades and adorns each piece: higher tiers look richer.
+  const tier = f.levelReq >= 70 ? 3 : f.levelReq >= 45 ? 2 : f.levelReq >= 20 ? 1 : 0;
+  const gold = "#d8b24a", gem = "#7fd0e0";
   shadow(g, cx, cy + 8, 9, 3);
   switch (f.category) {
     case "kitchen": {
-      g.fillStyle = tier ? "#5b5f68" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // hearth/range body
+      g.fillStyle = tier >= 2 ? "#4f535b" : tier ? "#5b5f68" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // body
       g.fillStyle = "#4b4f56"; g.fillRect(cx - 9, cy - 4, 18, 2.5); // mantel/flue
       if (tier) { g.fillStyle = "#2b2e34"; g.fillRect(cx + 3, cy - 4, 5, 2.5); } // a range chimney stub
+      if (tier >= 2) { g.fillStyle = "#2b2e34"; g.fillRect(cx - 8, cy - 4, 5, 2.5); } // second hearth on the grand range
       g.fillStyle = "#241d18"; g.fillRect(cx - 5, cy + 1, 10, 7); // firebox
       const fl = 0.5 + 0.5 * Math.sin(now / 110);
       g.fillStyle = `rgba(240,150,40,${0.65 + 0.3 * fl})`;
@@ -733,57 +737,126 @@ function drawHotspot(
       g.fillStyle = "#ffd86a"; g.beginPath(); g.moveTo(cx, cy + 3 - 2 * fl); g.lineTo(cx - 1.6, cy + 7); g.lineTo(cx + 1.6, cy + 7); g.closePath(); g.fill();
       break;
     }
+    case "forge": {
+      // a small anvil on a stone/timber base, with a glowing piece on the face
+      g.fillStyle = tier ? "#5a4632" : "#6e5436"; g.fillRect(cx - 7, cy + 1, 14, 7); // base
+      g.fillStyle = tier ? "#3b3e45" : "#55585f"; // the anvil
+      g.fillRect(cx - 7, cy - 3, 14, 3); g.fillRect(cx - 2, cy, 4, 2); g.fillRect(cx - 8, cy - 4, 6, 2); // horn + waist
+      const gl = 0.5 + 0.5 * Math.sin(now / 90);
+      g.fillStyle = `rgba(255,140,40,${0.6 + 0.35 * gl})`; g.fillRect(cx + 1, cy - 4, 3, 2); // hot billet
+      if (tier) { g.fillStyle = "#caa05a"; g.fillRect(cx + 4, cy - 6, 1.5, 3); } // a hung hammer
+      break;
+    }
+    case "alchemy": {
+      g.fillStyle = tier ? "#7a4a52" : "#4a3f3a"; g.fillRect(cx - 6, cy + 2, 12, 4); // trivet/coals base
+      g.fillStyle = tier ? "#5b6a72" : "#3a3a40"; // cauldron belly
+      g.beginPath(); g.arc(cx, cy + 1, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = tier >= 1 ? "#7fb89a" : "#6a8a6a"; // bubbling brew
+      g.beginPath(); g.ellipse(cx, cy - 3, 5, 1.8, 0, 0, Math.PI * 2); g.fill();
+      const b = Math.sin(now / 160) > 0.6 ? 1 : 0;
+      if (b) { g.fillStyle = "#bfe6cf"; g.fillRect(cx - 1, cy - 6, 1.5, 1.5); }
+      if (tier) { g.strokeStyle = gem; g.lineWidth = 1; g.beginPath(); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 8, cy + 2); g.stroke(); } // a glass coil
+      break;
+    }
     case "storage": {
-      const wood = tier ? "#4f3826" : "#7a5532";
+      const wood = tier >= 2 ? "#43403c" : tier ? "#4f3826" : "#7a5532";
       g.fillStyle = wood; g.fillRect(cx - 9, cy - 2, 18, 10); // chest body
-      g.fillStyle = tier ? "#3c2a1c" : "#63421f"; g.fillRect(cx - 9, cy - 5, 18, 4); // domed lid
-      g.fillStyle = tier ? "#8a3f33" : "#8a8278"; // straps (bloodore on the strongbox)
+      g.fillStyle = tier >= 2 ? "#34312e" : tier ? "#3c2a1c" : "#63421f"; g.fillRect(cx - 9, cy - 5, 18, 4); // lid
+      g.fillStyle = tier >= 2 ? "#6b6f78" : tier ? "#8a3f33" : "#8a8278"; // straps (bloodore / voidsteel)
       g.fillRect(cx - 7, cy - 5, 2, 13); g.fillRect(cx + 5, cy - 5, 2, 13);
-      g.fillStyle = "#d9b36a"; g.fillRect(cx - 1, cy - 1, 2, 3); // lock plate
+      g.fillStyle = tier >= 2 ? gem : gold; g.fillRect(cx - 1, cy - 1, 2, 3); // lock plate / gem-lock
       break;
     }
     case "workshop": {
       const wood = tier ? "#5a4632" : "#7a5532";
       g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
       g.fillStyle = wood; g.fillRect(cx - 10, cy - 1, 20, 4); // bench top
-      if (tier) { g.fillStyle = "#6b6f78"; g.fillRect(cx - 10, cy - 2, 20, 1.6); } // stone-topped for the upgrade
+      if (tier) { g.fillStyle = "#6b6f78"; g.fillRect(cx - 10, cy - 2, 20, 1.6); } // stone-topped upgrade
       g.fillStyle = "#8a8278"; g.fillRect(cx - 6, cy - 5, 3, 4); // a vice
-      g.strokeStyle = "#c9b070"; g.lineWidth = 1; // a saw hung on the front
-      g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 7, cy + 6); g.stroke();
+      if (tier >= 2) { g.fillStyle = "#8a8278"; g.fillRect(cx + 3, cy - 5, 3, 4); } // a second vice on the master bench
+      g.strokeStyle = "#c9b070"; g.lineWidth = 1; g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 7, cy + 6); g.stroke(); // saw
       break;
     }
     case "bed": {
-      const frame = tier === 2 ? "#5a2f33" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      const frame = tier >= 3 ? "#5a2f33" : tier === 2 ? "#5e3a2a" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      if (tier >= 3) { g.fillStyle = frame; g.fillRect(cx - 11, cy - 9, 3, 17); g.fillRect(cx + 8, cy - 9, 3, 4); g.fillRect(cx - 11, cy - 9, 22, 2); } // canopy posts
       g.fillStyle = frame; g.fillRect(cx - 11, cy - 6, 3, 14); // headboard
       g.fillStyle = frame; g.fillRect(cx - 9, cy - 5, 19, 12); // bed base
       g.fillStyle = "#e7ddc4"; g.fillRect(cx - 8, cy - 4, 8, 10); // sheet
-      g.fillStyle = tier === 2 ? "#84505a" : tier === 1 ? "#8f7048" : "#b3a06e"; g.fillRect(cx - 1, cy - 4, 10, 10); // blanket
+      g.fillStyle = tier >= 3 ? "#7a3f6a" : tier === 2 ? "#6f6256" : tier === 1 ? "#8f7048" : "#b3a06e"; g.fillRect(cx - 1, cy - 4, 10, 10); // blanket
       g.fillStyle = "#f3ecd9"; g.fillRect(cx - 8, cy - 4, 7, 4); // pillow
+      if (tier >= 3) { g.fillStyle = gold; g.fillRect(cx - 1, cy - 4, 10, 1.2); } // gold trim
       break;
     }
     case "table": {
-      const wood = tier === 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      const wood = tier >= 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
       g.fillStyle = "#5a4026"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
       g.fillStyle = wood; g.fillRect(cx - 10, cy - 2, 20, 5); // top
-      g.fillStyle = "rgba(255,255,255,0.08)"; g.fillRect(cx - 10, cy - 2, 20, 1.5); // sheen
+      g.fillStyle = tier >= 2 ? gold : "rgba(255,255,255,0.08)"; g.fillRect(cx - 10, cy - 2, 20, 1.5); // sheen / gold inlay
       g.fillStyle = "#6e5436"; g.fillRect(cx - 12, cy + 3, 3, 3); g.fillRect(cx + 9, cy + 3, 3, 3); // two stools
       break;
     }
+    case "seating": {
+      const wood = tier >= 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      if (tier === 0) { // a pair of stools
+        g.fillStyle = wood; g.fillRect(cx - 8, cy - 1, 6, 3); g.fillRect(cx + 2, cy - 1, 6, 3);
+        g.fillStyle = "#5a4026"; g.fillRect(cx - 7, cy + 2, 1.5, 5); g.fillRect(cx - 3, cy + 2, 1.5, 5); g.fillRect(cx + 3, cy + 2, 1.5, 5); g.fillRect(cx + 7, cy + 2, 1.5, 5);
+      } else { // a settle / armchair with a cushion (and a pelt on tier 2)
+        g.fillStyle = wood; g.fillRect(cx - 8, cy - 6, 16, 14); // back + seat block
+        g.fillStyle = tier >= 2 ? "#7a5038" : "#8f7048"; g.fillRect(cx - 6, cy - 1, 12, 6); // cushion
+        if (tier >= 2) { g.fillStyle = "#9a8466"; g.fillRect(cx - 7, cy + 4, 14, 3); } // a draped pelt
+        g.fillStyle = wood; g.fillRect(cx - 9, cy - 2, 2, 9); g.fillRect(cx + 7, cy - 2, 2, 9); // arms
+      }
+      break;
+    }
     case "hall": {
-      const wall = tier === 2 ? "#8b8478" : tier === 1 ? "#7d756a" : "#9a7b4e";
+      const wall = tier >= 3 ? "#8b8478" : tier === 1 ? "#7d756a" : tier === 2 ? "#83796b" : "#9a7b4e";
       g.fillStyle = wall; g.fillRect(cx - 10, cy - 9, 20, 16);
       g.strokeStyle = "#46402f"; g.lineWidth = 1; g.strokeRect(cx - 10, cy - 9, 20, 16);
       if (tier === 0) { // a timber-framed wall: cross-braces
-        g.strokeStyle = "#6e5436"; g.lineWidth = 2;
-        g.strokeRect(cx - 10, cy - 9, 20, 16);
+        g.strokeStyle = "#6e5436"; g.lineWidth = 2; g.strokeRect(cx - 10, cy - 9, 20, 16);
         g.beginPath(); g.moveTo(cx - 10, cy - 9); g.lineTo(cx + 10, cy + 7); g.moveTo(cx + 10, cy - 9); g.lineTo(cx - 10, cy + 7); g.stroke();
-      } else if (tier === 1) { // a stone mantel under a beam
-        g.fillStyle = "#6e4a2c"; g.fillRect(cx - 10, cy - 4, 20, 4); // mantel beam
-        g.fillStyle = "#6b6f78"; g.fillRect(cx - 7, cy, 14, 7); // stone breast
+      } else if (tier === 2) { // a stone mantel under a beam
+        g.fillStyle = "#6e4a2c"; g.fillRect(cx - 10, cy - 4, 20, 4);
+        g.fillStyle = "#6b6f78"; g.fillRect(cx - 7, cy, 14, 7);
       } else { // a vaulted gallery: a dressed-stone arch
         g.strokeStyle = "#5a554c"; g.lineWidth = 2;
         g.beginPath(); g.arc(cx, cy + 1, 7, Math.PI, 0); g.stroke();
         g.fillStyle = "#6f6a60"; g.fillRect(cx - 8, cy + 1, 16, 6);
+      }
+      break;
+    }
+    case "lighting": {
+      const fl = 0.55 + 0.45 * Math.sin(now / 130);
+      if (tier >= 2) { // a chandelier: a gold ring of flames
+        g.strokeStyle = gold; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cx, cy - 11); g.lineTo(cx, cy - 6); g.stroke();
+        g.strokeStyle = gold; g.beginPath(); g.ellipse(cx, cy - 3, 9, 3, 0, 0, Math.PI * 2); g.stroke();
+        for (const dx of [-8, -3, 3, 8]) { g.fillStyle = `rgba(255,210,90,${fl})`; g.beginPath(); g.arc(cx + dx, cy - 4, 1.8, 0, Math.PI * 2); g.fill(); }
+      } else if (tier === 1) { // a wall sconce
+        g.fillStyle = "#3b3e45"; g.fillRect(cx - 2, cy - 2, 4, 9); // iron bracket
+        g.fillStyle = `rgba(255,200,90,${0.5 + 0.4 * fl})`; g.beginPath(); g.arc(cx, cy - 4, 4, 0, Math.PI * 2); g.fill(); // glass glow
+      } else { // a candle stand
+        g.fillStyle = "#6e5436"; g.fillRect(cx - 1.5, cy - 2, 3, 9); g.fillRect(cx - 4, cy + 6, 8, 2); // stand
+        g.fillStyle = "#efe7d2"; g.fillRect(cx - 3, cy - 5, 1.5, 3); g.fillRect(cx + 1.5, cy - 5, 1.5, 3); // candles
+        g.fillStyle = `rgba(255,210,90,${fl})`; g.beginPath(); g.arc(cx - 2.2, cy - 6, 1.4, 0, Math.PI * 2); g.arc(cx + 2.2, cy - 6, 1.4, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "display": {
+      if (tier === 0) { // a curio shelf
+        g.fillStyle = "#6e5436"; g.fillRect(cx - 9, cy - 7, 18, 14);
+        g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy - 3, 16, 1.5); g.fillRect(cx - 8, cy + 2, 16, 1.5); // shelves
+        g.fillStyle = gem; for (const dx of [-6, 0, 6]) g.fillRect(cx + dx - 1, cy - 6, 2, 2); // curios
+      } else if (tier === 1) { // a trophy mount: a board with a skull + pelt
+        g.fillStyle = "#5a4632"; g.fillRect(cx - 9, cy - 8, 18, 16);
+        g.fillStyle = "#9a8466"; g.fillRect(cx - 6, cy - 1, 12, 7); // draped pelt
+        g.fillStyle = "#e7ddc4"; g.beginPath(); g.arc(cx, cy - 4, 3.5, 0, Math.PI * 2); g.fill(); // skull
+        g.fillStyle = "#cfc4ad"; g.fillRect(cx - 6, cy - 7, 2, 4); g.fillRect(cx + 4, cy - 7, 2, 4); // horns
+      } else { // a lit display case
+        g.fillStyle = gold; g.fillRect(cx - 8, cy - 9, 16, 17); // gold frame
+        g.fillStyle = "rgba(150,220,235,0.35)"; g.fillRect(cx - 6, cy - 7, 12, 13); // glass
+        g.fillStyle = `rgba(190,230,240,${0.5 + 0.3 * Math.sin(now / 200)})`; g.fillRect(cx - 5, cy - 6, 10, 2); // inner light
+        g.fillStyle = gem; g.fillRect(cx - 1.5, cy - 2, 3, 4); // the treasure within
       }
       break;
     }

@@ -568,9 +568,12 @@ export class Game {
     // bank / build at home) — the everyday action — then offer to re-furnish.
     const built = current ? content.furniture[current] : undefined;
     if (built?.station) {
-      const verb = built.station === "bank" ? "Open" : built.station === "workbench" ? "Build at" : "Cook at";
+      const verbs: Record<string, string> = {
+        bank: "Open", workbench: "Build at", anvil: "Forge at",
+        cauldron: "Brew at", furnace: "Smelt at", fire: "Cook at",
+      };
       items.push({
-        label: `${verb} the ${built.name}`,
+        label: `${verbs[built.station] ?? "Use"} the ${built.name}`,
         tone: "action",
         onSelect: () => this.dispatch({ type: "USE_FURNITURE", hotspotId }),
       });
@@ -583,8 +586,8 @@ export class Game {
       const cost = Object.entries(f.materials)
         .map(([item, qty]) => `${qty}× ${content.items[item as ItemId].name}`).join(", ");
       return {
-        label: isBuilt ? `${f.name} ✓` : f.name,
-        target: isBuilt ? "built here" : leveled ? cost : `Construction ${f.levelReq}`,
+        label: isBuilt ? `${f.name} ✓` : `${f.name}  ·  Con ${f.levelReq}`,
+        target: isBuilt ? "built here" : leveled ? cost : `needs Construction ${f.levelReq}`,
         tone: ready && !isBuilt ? "action" : "normal",
         onSelect: () => {
           if (isBuilt) { this.hud.log(`The ${f.name} is already built here.`); return; }

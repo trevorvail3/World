@@ -1608,6 +1608,8 @@ export interface FurnitureDef {
   blurb: string;
   /** A bed piece sets the player's respawn to its homestead when built. */
   bed?: boolean;
+  /** A lighting piece glows warmly at night (lights the home interior). */
+  light?: boolean;
   /**
    * A functional piece doubles as a station: "bank" opens your storage, or a
    * crafting-station ObjKind ("fire" to cook, "workbench" to build, "anvil",

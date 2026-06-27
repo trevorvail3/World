@@ -51,13 +51,13 @@ export const ARENAS: { dungeon: string; x: number; floor: TileType }[] = [
  * just inside its door (where you land coming in, and stand to leave). The door
  * objects + the build hotspots that furnish each room live in spawns.ts.
  */
-export const INTERIOR_W = 11;
-export const INTERIOR_H = 9;
+export const INTERIOR_W = 13;
+export const INTERIOR_H = 11;
 export const INTERIOR_TOP = OVERWORLD_HEIGHT + ARENA_BAND; // first row of the band
 export const INTERIORS: { plot: string; x0: number; entry: { x: number; y: number } }[] = [
-  { plot: "home_redmouth", x0: 2, entry: { x: 7, y: INTERIOR_TOP + INTERIOR_H - 2 } },
-  { plot: "home_drover", x0: 16, entry: { x: 21, y: INTERIOR_TOP + INTERIOR_H - 2 } },
-  { plot: "home_fold", x0: 30, entry: { x: 35, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+  { plot: "home_redmouth", x0: 2, entry: { x: 8, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+  { plot: "home_drover", x0: 18, entry: { x: 24, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+  { plot: "home_fold", x0: 34, entry: { x: 40, y: INTERIOR_TOP + INTERIOR_H - 2 } },
 ];
 
 /** A cheap, stable pseudo-noise so terrain is fixed (not random). */
