@@ -31,7 +31,7 @@ export class CharacterCreator {
 
   constructor(
     root: HTMLElement,
-    private opts: { onCreate: (c: CreatedCharacter) => void; onBack: () => void; takenNames: string[] },
+    private opts: { onCreate: (c: CreatedCharacter) => void; onBack?: () => void; takenNames: string[] },
   ) {
     this.taken = new Set(opts.takenNames.map((n) => n.toLowerCase()));
     this.backdrop = document.createElement("div");
@@ -77,9 +77,14 @@ export class CharacterCreator {
     this.partRow(rows, "Legs", "legs", LEG_STYLES, "legColor", CLOTH);
     this.partRow(rows, "Shoes", "shoes", SHOE_STYLES, "shoeColor", CLOTH);
 
-    (this.backdrop.querySelector(".creator-back") as HTMLElement).addEventListener("pointerdown", (e) => {
-      e.stopPropagation(); this.close(); this.opts.onBack();
-    });
+    const backBtn = this.backdrop.querySelector(".creator-back") as HTMLElement;
+    if (this.opts.onBack) {
+      backBtn.addEventListener("pointerdown", (e) => {
+        e.stopPropagation(); this.close(); this.opts.onBack!();
+      });
+    } else {
+      backBtn.remove(); // nothing to go back to — this is the entry screen
+    }
     (this.backdrop.querySelector(".creator-go") as HTMLButtonElement).addEventListener("pointerdown", (e) => {
       e.stopPropagation();
       if (this.draft.name.length < 1 || this.taken.has(this.draft.name.toLowerCase())) return;

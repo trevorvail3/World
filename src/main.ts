@@ -37,7 +37,6 @@ import {
   setCurrentAccount,
   writeSave,
 } from "./client/storage.ts";
-import { LoginScreen } from "./client/login.ts";
 import { CharacterCreator, type CreatedCharacter } from "./client/characterCreator.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
@@ -62,17 +61,19 @@ if (!canvas || !hudRoot || !app) {
   throw new Error("Missing #game / #hud / #app elements in index.html");
 }
 
-// --- Log in: pick an existing character or make a new one, then boot. ---
-function showLogin(): void {
-  new LoginScreen(app!, listAccounts(), {
-    onLogin: (name) => { setCurrentAccount(name); boot(null); },
-    onNew: () => {
-      new CharacterCreator(app!, {
-        takenNames: listAccounts(),
-        onBack: () => showLogin(),
-        onCreate: (c) => { setCurrentAccount(c.name); boot(c); },
-      });
-    },
+// --- One character per account (OSRS-style): no selection screen. Load the
+//     single existing save if there is one; otherwise go straight to the
+//     character creator. ---
+function start(): void {
+  const accounts = listAccounts();
+  if (accounts.length > 0) {
+    setCurrentAccount(accounts[0]!); // the one and only character
+    boot(null);
+    return;
+  }
+  new CharacterCreator(app!, {
+    takenNames: [],
+    onCreate: (c) => { setCurrentAccount(c.name); boot(c); },
   });
 }
 
@@ -173,4 +174,4 @@ function boot(newChar: CreatedCharacter | null): void {
   else new Intro(app!, INTRO_LINES, enter);
 }
 
-showLogin();
+start();
