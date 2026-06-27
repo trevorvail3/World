@@ -839,4 +839,361 @@ export const quests: QuestDef[] = [
       items: [{ item: "battle_ration", qty: 2 }],
     },
   },
+
+  // ===========================================================================
+  // THE HEARTMOOR — a faction line for the one power with no rank quests.
+  // Opens once you've met Calder (the main story's first shard). Choices set
+  // the hm_* flags + Heartmoor reputation; rejecting the faith ends the line.
+  // ===========================================================================
+
+  {
+    id: "q_hm_welcome",
+    name: "The Warmth's Welcome",
+    giver: "calder",
+    requiresFlags: ["met_calder"],
+    intro: [
+      "You keep turning up at the moor's edge. The road notices that. I notice that.",
+      "If you want to understand the warm stone instead of just selling it, come and feel where it comes from. Cut some embercite from the Ashfen seam — work it with your own hands — and bring it back to my fire.",
+    ],
+    steps: [
+      { type: "gather", item: "embercite_ore", count: 5, text: "Cut 5 Embercite from the warm Ashfen seam" },
+      {
+        type: "choice",
+        npc: "calder",
+        text: "Tell Calder what the warmth is to you",
+        prompt: "You've felt the heat that isn't the sun's. What is the Heartmoor to you?",
+        options: [
+          {
+            label: "Swear to the warmth. I'll keep its fires.",
+            flags: ["hm_joined", "hm_committed", "hm_welcome_done"],
+            rep: [{ faction: "heartmoor_cult", amount: 20 }],
+            reply: "Calder presses a warm black stone into your palm. 'Then you're one of us, in the way that matters. Welcome to the fire.'",
+          },
+          {
+            label: "I'll witness, but swear to nothing.",
+            flags: ["hm_joined", "hm_welcome_done"],
+            rep: [{ faction: "heartmoor_cult", amount: 8 }],
+            reply: "Calder nods slowly. 'Witness is enough. The faith was never about the swearing. Stay near the fire as long as you like.'",
+          },
+          {
+            label: "It's warm rock. Nothing more.",
+            flags: ["hm_rejected", "hm_welcome_done"],
+            rep: [{ faction: "heartmoor_cult", amount: -4 }],
+            reply: "Calder doesn't argue. 'Maybe so. The meal's still here when the road gives out on you. It always is.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "Go careful past the pools. The moor keeps what it takes — and it's begun to keep more than it used to.",
+    ],
+    reward: {
+      xp: [{ skill: "mining", amount: 220 }],
+      gold: 200,
+    },
+  },
+
+  {
+    id: "q_hm_seam",
+    name: "Tend the Seam",
+    giver: "ashfen_tender",
+    requiresFlags: ["hm_joined"],
+    intro: [
+      "Calder sent word you'd come. Good — the warm seam needs hands it can trust, and the moor has turned mean.",
+      "The lurkers have crept up from the pools to the warm ground, and they foul the cuttings. Put them down, then bring up embercite to bank the fire. Witness the heat while you work. The discomfort is the point.",
+    ],
+    steps: [
+      { type: "kill", monster: "marsh_lurker", count: 4, text: "Drive the lurkers off the warm ground (0/4)" },
+      { type: "gather", item: "embercite_ore", count: 6, text: "Bank the fire with 6 Embercite" },
+      {
+        type: "choice",
+        npc: "ashfen_tender",
+        text: "Settle the matter of the doubting acolyte",
+        prompt: "A young acolyte wants to leave the seam — the heat frightens her. What do you counsel?",
+        options: [
+          {
+            label: "Let her go. Faith forced isn't faith.",
+            flags: ["hm_seam_done", "hm_mercy"],
+            rep: [{ faction: "heartmoor_cult", amount: 10 }],
+            reply: "The Tender watches her walk back toward the road. 'You'd have made a poor zealot and a fine priest. The warmth keeps who it keeps.'",
+          },
+          {
+            label: "Persuade her to stay and witness.",
+            flags: ["hm_seam_done", "hm_zealous"],
+            rep: [{ faction: "heartmoor_cult", amount: 15 }],
+            reply: "She stays, white-knuckled, by the seam. The Tender is pleased. 'One more pair of eyes on the heat. That is how a faith outlasts a winter.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The seam runs clean again, and the fire's banked deep. Take this — the Heartmoor looks after its own.",
+    ],
+    reward: {
+      xp: [{ skill: "mining", amount: 280 }, { skill: "vitality", amount: 150 }],
+      items: [{ item: "cult_offering", qty: 1 }],
+      flags: ["hm_rank_tender"],
+      rep: [{ faction: "heartmoor_cult", amount: 12 }],
+      gold: 350,
+    },
+  },
+
+  {
+    id: "q_hm_devotion",
+    name: "What the Warmth Asks",
+    giver: "calder",
+    requiresFlags: ["hm_seam_done"],
+    intro: [
+      "You've tended the seam and you're still here. The Heartmoor's ready to ask something harder of you.",
+      "A bog knight stands its old watch at the Barrow, and it will not let the faithful pass to the warm deep below. Put it down — prove the warmth is worth a hard thing — then come back, and we'll talk about what the Heartmoor becomes next.",
+    ],
+    steps: [
+      { type: "kill", monster: "bog_knight", count: 1, text: "Break the Bog Barrow's old watch (0/1)" },
+      {
+        type: "choice",
+        npc: "calder",
+        text: "Counsel the Heartmoor's path",
+        prompt: "The faith could carry its fires up the road, into the towns. Should it?",
+        options: [
+          {
+            label: "Carry the warmth to the road. Let it grow.",
+            flags: ["hm_devotion_done", "hm_expansionist"],
+            rep: [{ faction: "heartmoor_cult", amount: 18 }],
+            reply: "Calder's eyes catch the firelight. 'Then we go where the cold is worst. The road will be warmer for it — or it will fear us. Both are a kind of faith.'",
+          },
+          {
+            label: "Keep to the moor. A quiet fire lasts longest.",
+            flags: ["hm_devotion_done", "hm_quietist"],
+            rep: [{ faction: "heartmoor_cult", amount: 18 }],
+            reply: "Calder nods, something easing in him. 'A quiet fire it is. Let Ironvale keep its walls. We'll keep the meal and the warmth, and that will be enough.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "Whatever the Heartmoor becomes, you helped decide it. That's not a small thing — most never get the choosing.",
+      "You're faithful now, in the way that matters. The fire's yours as much as mine.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 400 }, { skill: "ward", amount: 200 }],
+      items: [{ item: "ring_3", qty: 1 }],
+      flags: ["hm_faithful", "hm_devotion_done"],
+      rep: [{ faction: "heartmoor_cult", amount: 20 }],
+      gold: 600,
+    },
+  },
+
+  // ===========================================================================
+  // SIDE QUESTS — Skyrim-style: a hook, a journey, and a choice that sticks.
+  // Given by the folk of Ironvale and the road, on the sq_* flags.
+  // ===========================================================================
+
+  {
+    id: "q_sq_roost",
+    name: "The Crown of the Roost",
+    giver: "town_guard",
+    intro: [
+      "Off the record, since the watch won't march that far: there's a camp out west the road-gangs answer to. The Brigand's Roost. A captain holds it, and he's never been taken.",
+      "Thin out his cutthroats, then take the captain himself. Do that and Ironvale sleeps a little easier — and I'll see you're paid out of the watch's own purse.",
+    ],
+    steps: [
+      { type: "kill", monster: "cutthroat", count: 3, text: "Thin the Roost's cutthroats (0/3)" },
+      { type: "kill", monster: "outlaw_captain", count: 1, text: "Take the Outlaw Captain (0/1)" },
+      {
+        type: "choice",
+        npc: "town_guard",
+        text: "Report how the Roost fell",
+        prompt: "The captain's strongbox is yours to account for. What do you tell the watch?",
+        options: [
+          {
+            label: "Turn it all in. Let the watch ledger it.",
+            flags: ["sq_roost_done", "sq_roost_lawful"],
+            gold: 800,
+            reply: "The guard counts it twice and pays you the bounty straight. 'Honest hands. Ironvale could use more of you.'",
+          },
+          {
+            label: "Keep the captain's gear. Report the rest.",
+            flags: ["sq_roost_done", "sq_roost_loot"],
+            gold: 250,
+            reply: "He eyes the blade on your hip and says nothing about it. 'Spoils of a hard job. We'll call the bounty light, then.'",
+          },
+          {
+            label: "Say you found the camp already empty.",
+            flags: ["sq_roost_done", "sq_roost_mercy"],
+            gold: 100,
+            reply: "He frowns. 'Empty. Right.' The survivors you waved off the back of the camp are someone else's problem now — or someone else's mercy.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The Roost's quiet for the first time in years. Won't last — these things never do — but a quiet season is worth something. You earned the thanks of a city, whether it ever learns your name.",
+    ],
+    reward: {
+      xp: [{ skill: "vigour", amount: 300 }, { skill: "vitality", amount: 150 }],
+      items: [{ item: "sword_4", qty: 1 }],
+    },
+  },
+
+  {
+    id: "q_sq_courier",
+    name: "The Overdue Rider",
+    giver: "town_courier",
+    intro: [
+      "One of ours didn't come in. Young rider, the Greyoak run — the road's been thick with footpads and worse this season.",
+      "I can't leave the dispatch desk to go looking. You can. Put down the bandits working that stretch, and if you turn up the satchel… well. Bring me word, at least.",
+    ],
+    steps: [
+      { type: "kill", monster: "bandit", count: 4, text: "Clear the bandits off the Greyoak road (0/4)" },
+      {
+        type: "choice",
+        npc: "town_courier",
+        text: "Tell the Courier what you found",
+        prompt: "You found the rider's satchel in the brush — and the rider, long past help. What do you carry back?",
+        options: [
+          {
+            label: "Bring back the satchel and the truth.",
+            flags: ["sq_courier_done", "sq_courier_truth"],
+            gold: 400,
+            reply: "The Courier closes their eyes a moment. 'I'll write the family. Thank you for not making me wonder.' They press the bounty into your hand.",
+          },
+          {
+            label: "Say the rider may yet turn up. Spare them.",
+            flags: ["sq_courier_done", "sq_courier_kind"],
+            gold: 250,
+            reply: "'Maybe,' the Courier says, wanting to believe it. 'Maybe they're holed up somewhere.' You let them keep the maybe. It's a kind of mercy, and a kind of lie.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The road's a little safer for the next rider. That's the whole job, in the end — making the road safe for the next one. Ride easy.",
+    ],
+    reward: {
+      xp: [{ skill: "edge", amount: 220 }, { skill: "vigour", amount: 120 }],
+      items: [{ item: "arrow_ashiron", qty: 30 }],
+      gold: 150,
+    },
+  },
+
+  {
+    id: "q_sq_redriver",
+    name: "The River Runs Red",
+    giver: "town_fishwife",
+    intro: [
+      "You'll think me a fool, but hear it: the Redrun's running redder than it ought, and my man won't say it's nothing anymore. He just doesn't smile.",
+      "Go down to the river. Whatever's in the water — the serpents, or something fouler upstream — see it with your own eyes, and come tell me straight. I'd rather a hard truth than a soft lie.",
+    ],
+    steps: [
+      { type: "kill", monster: "river_serpent", count: 2, text: "Face whatever moves in the Redrun (0/2)" },
+      {
+        type: "choice",
+        npc: "town_fishwife",
+        text: "Tell the Fishwife what reddens the river",
+        prompt: "It's bloodore — the red metal washing down from the cut hills, not blood at all. What do you tell her?",
+        options: [
+          {
+            label: "The truth: it's only ore in the water.",
+            flags: ["sq_redriver_done", "sq_redriver_truth"],
+            gold: 300,
+            reply: "She lets out a breath she's held for weeks. 'Ore. Just ore.' She'll sleep tonight, and her man will smile again. 'Bless you for the plainness of it.'",
+          },
+          {
+            label: "Tell her it's the serpents. Let the rest lie.",
+            flags: ["sq_redriver_done", "sq_redriver_lie"],
+            gold: 300,
+            reply: "'The serpents,' she repeats, comforted by a danger with a shape. You leave the deeper strangeness of the red water unsaid. Some comforts are worth more than the truth.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "Whatever you told me, you went and looked, and that's more than the watch would. Take some of the catch — fresh enough, I swear it.",
+    ],
+    reward: {
+      xp: [{ skill: "fishing", amount: 200 }],
+      items: [{ item: "redrun_chowder", qty: 2 }],
+    },
+  },
+
+  {
+    id: "q_sq_drunk",
+    name: "A Secret for a Coin",
+    giver: "town_drunk",
+    intro: [
+      "Friend! You've an honest face and — let me see — an honest purse. I'll trade you a secret for it. A real one.",
+      "Two of those old worn coins the rats dig up, that's all. Buy a man a drink and a man remembers things. Useful things. Where things are buried, say.",
+    ],
+    steps: [
+      { type: "deliver", npc: "town_drunk", item: "worn_coin", count: 2, text: "Bring the drunk 2 worn coins for his drink" },
+      {
+        type: "choice",
+        npc: "town_drunk",
+        text: "Hear the drunk's secret",
+        prompt: "He leans in: 'A cache, under the old Gallows Oak. I marked it. Do you believe a drunk?'",
+        options: [
+          {
+            label: "I believe you. (Take the tip.)",
+            flags: ["sq_drunk_done", "sq_drunk_believed"],
+            reply: "He grins, gap-toothed. 'Knew it. Honest face. It's there — I'd swear it on the moon, and she's watching, so I'd better mean it.' He sketches you the spot.",
+          },
+          {
+            label: "Humour him and pocket the wisdom anyway.",
+            flags: ["sq_drunk_done"],
+            reply: "'Suit yourself,' he says, happy with his drink money. 'But check under the Oak. For me. For science.' He taps his nose and topples off the bench.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "There really was something under the Oak — the drunk earned his drink. The moon watches, he said. You find you can't quite laugh it off.",
+    ],
+    reward: {
+      xp: [{ skill: "agility", amount: 120 }],
+      items: [{ item: "cut_gem", qty: 1 }],
+      gold: 500,
+    },
+  },
+
+  {
+    id: "q_sq_greyoak",
+    name: "The Treeline's Retreat",
+    giver: "lenne",
+    intro: [
+      "Stand still a moment. There — the old growth's pulled back another pace since last season. We mark it, and we don't ask what walks in the cleared ground.",
+      "The bears have come down into the new gap, bolder than they should be. Thin them, and bring me greyoak from the old treeline so I can read the rings. Then help me decide what the Lodge does with what we learn.",
+    ],
+    steps: [
+      { type: "kill", monster: "forest_bear", count: 2, text: "Thin the bears in the cleared ground (0/2)" },
+      { type: "gather", item: "greyoak_log", count: 3, text: "Cut 3 Greyoak from the old treeline" },
+      {
+        type: "choice",
+        npc: "lenne",
+        text: "Decide what the Lodge is told",
+        prompt: "The wood is retreating faster than the records admit. What do we do with that?",
+        options: [
+          {
+            label: "Report it. The Lodge must know the truth.",
+            flags: ["sq_greyoak_done", "sq_greyoak_reported"],
+            rep: [{ faction: "lodge", amount: 12 }],
+            reply: "Lenne marks the rings and seals the count. 'Maret won't thank us for the worry. But a warden who hides the treeline isn't a warden. Well done.'",
+          },
+          {
+            label: "Keep watching with Lenne. Don't raise alarm yet.",
+            flags: ["sq_greyoak_done", "sq_greyoak_watch"],
+            rep: [{ faction: "lodge", amount: 6 }],
+            reply: "Lenne nods, quiet. 'We watch, then. Just us, and the treeline, and whatever's pulling it back. Tell no one until we're sure. Some truths spook worse than they help.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The wood gives a little more each year, and we mark it, and we keep the road behind us safe. That's the work. You've a tracker's patience — the Lodge could use you.",
+    ],
+    reward: {
+      xp: [{ skill: "forestry", amount: 250 }, { skill: "woodcraft", amount: 150 }],
+      items: [{ item: "greyoak_log", qty: 5 }],
+      gold: 250,
+    },
+  },
 ];
