@@ -17,9 +17,14 @@ const TRAIN_NOTE: Partial<Record<SkillId, string>> = {
   ward: "Trained on the Ward style: melee defence.",
   draw: "Trained by ranged attacks.",
   agility: "Trained by running — the more ground you sprint, the longer your wind lasts and the faster it returns.",
-  farming: "Sowing and harvesting crops — arriving in a later update.",
-  bounty: "Completing bounties — arriving in a later update.",
+  farming: "Sow seeds in tilled patches; higher Farming unlocks better plants and trees.",
+  bounty: "Completing slay-tasks from the Bounty board for Hunt Marks.",
 };
+
+/** Pretty-print a SkillAction group key ("arrows" -> "Arrows"). */
+function groupLabel(key: string): string {
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export class SkillDetailModal {
   private backdrop: HTMLElement;
@@ -76,34 +81,49 @@ export class SkillDetailModal {
       <div class="sd-level">Level <b>${s.level}</b> · ${xpLine}</div>
       <div class="sd-xpbar"><div class="sd-xpfill" style="width:${Math.max(0, Math.min(1, pct)) * 100}%"></div></div>`;
 
-    // The ladder: group this skill's actions by the level they unlock at.
-    const byLevel = new Map<number, string[]>();
+    // The ladder: group this skill's actions BY ACTIVITY (the action's `group`),
+    // then by the level each unlock needs — a separate level ladder per activity.
+    const activities = new Map<string, Map<number, string[]>>();
     for (const a of this.content.actions) {
       if (a.skill !== skill) continue;
+      // Activity = the action's own group if it has one, else the category of
+      // what it produces (Bars, Weapons, Armour…), so a skill's ladder splits
+      // into sensible sections instead of one long list.
+      const cat = a.produces ? this.content.items[a.produces]?.cat : undefined;
+      const act = a.group ? groupLabel(a.group) : cat || "Recipes";
+      const byLevel = activities.get(act) ?? new Map<number, string[]>();
       const list = byLevel.get(a.levelReq) ?? [];
       if (!list.includes(a.name)) list.push(a.name);
       byLevel.set(a.levelReq, list);
+      activities.set(act, byLevel);
     }
-    const rungs = [...byLevel.entries()].sort((a, b) => a[0] - b[0]);
 
-    if (rungs.length === 0) {
+    if (activities.size === 0) {
       html += `<div class="sd-note">${TRAIN_NOTE[skill] ?? "Trained through play."}</div>`;
     } else {
-      html += `<div class="sd-laddertitle">Unlocks</div><div class="sd-ladder">`;
-      let nextMarked = false;
-      for (const [lvl, names] of rungs) {
-        const unlocked = s.level >= lvl;
-        let cls = unlocked ? "done" : "locked";
-        if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
-        const mark = unlocked ? "✓" : cls === "next" ? "▶" : iconize("🔒");
-        html += `
-          <div class="sd-rung ${cls}">
-            <span class="sd-rung-lvl">Lv ${lvl}</span>
-            <span class="sd-rung-mark">${mark}</span>
-            <span class="sd-rung-names">${names.join(", ")}</span>
-          </div>`;
+      // Order activities by the lowest level they start at.
+      const minLvl = (m: Map<number, string[]>) => Math.min(...m.keys());
+      const groups = [...activities.entries()].sort((a, b) => minLvl(a[1]) - minLvl(b[1]));
+      const single = groups.length === 1;
+      html += `<div class="sd-laddertitle">Unlocks</div>`;
+      for (const [name, byLevel] of groups) {
+        if (!single) html += `<div class="sd-actgroup">${name}</div>`;
+        html += `<div class="sd-ladder">`;
+        let nextMarked = false;
+        for (const [lvl, names] of [...byLevel.entries()].sort((a, b) => a[0] - b[0])) {
+          const unlocked = s.level >= lvl;
+          let cls = unlocked ? "done" : "locked";
+          if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
+          const mark = unlocked ? "✓" : cls === "next" ? "▶" : iconize("🔒");
+          html += `
+            <div class="sd-rung ${cls}">
+              <span class="sd-rung-lvl">Lv ${lvl}</span>
+              <span class="sd-rung-mark">${mark}</span>
+              <span class="sd-rung-names">${names.join(", ")}</span>
+            </div>`;
+        }
+        html += `</div>`;
       }
-      html += `</div>`;
     }
 
     this.body.innerHTML = html;

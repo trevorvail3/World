@@ -427,9 +427,11 @@ export function drawWorld(
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
     }
-    // Name label
+    // Name label — monsters show their combat level (OSRS-style).
     if (def.kind === "npc" || def.kind === "monster") {
-      label(g, def.name, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
+      const lvl = def.kind === "monster" && def.monster ? content.monsters[def.monster]?.level : undefined;
+      const text = lvl !== undefined ? `${def.name} (lvl ${lvl})` : def.name;
+      label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
     }
   }
 

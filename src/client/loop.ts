@@ -1175,7 +1175,7 @@ export class Game {
   private examineObject(obj: WorldObjectDef): string {
     if (obj.kind === "monster" && obj.monster) {
       const stats = this.bridge.content.monsters[obj.monster];
-      if (stats) return `${stats.desc} ${this.weaknessNote(stats)}`;
+      if (stats) return `${stats.desc} Combat level ${stats.level}. ${this.weaknessNote(stats)}`;
     }
     if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
       return EXAMINE_TREE[obj.species]!;

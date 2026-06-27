@@ -1599,7 +1599,13 @@ button.inv-slot {
   border-bottom: 1px solid rgba(74, 61, 44, 0.4);
   padding-bottom: 3px;
 }
-.sd-ladder { display: flex; flex-direction: column; gap: 2px; }
+.sd-actgroup {
+  margin: 10px 0 3px;
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  color: var(--gold);
+}
+.sd-ladder { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .sd-rung {
   display: flex;
   align-items: baseline;
