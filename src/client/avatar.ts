@@ -260,7 +260,7 @@ function drawArm(
  * 1 → 0 across the action interval; the strike lands as it nears 0. Negative
  * raises the hand up-and-forward (over the head); positive brings it down.
  */
-function actionArmAngle(frac: number, kind: string): number {
+export function actionArmAngle(frac: number, kind: string): number {
   const t = 1 - Math.max(0, Math.min(1, frac)); // 0 just after a strike → 1 at the next
   // Held, swaying motions (a cast, a stir, setting a snare) rather than a chop.
   if (kind === "fishing" || kind === "crafting" || kind === "trapping") {
@@ -278,7 +278,7 @@ function actionArmAngle(frac: number, kind: string): number {
 }
 
 /** A tool/weapon in the hand, drawn in the arm's local frame (points "down"). */
-function drawTool(g: Ctx, s: number, tool: string): void {
+export function drawTool(g: Ctx, s: number, tool: string): void {
   const handle = "#6a4a2e", steel = "#bcc2cc", iron = "#8c93a0";
   const haft = (len: number) => { g.fillStyle = handle; g.fillRect(-0.7 * s, 5 * s, 1.4 * s, len * s); };
   switch (tool) {

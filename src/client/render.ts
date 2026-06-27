@@ -14,11 +14,12 @@ import type {
   Vec2,
   WorldMap,
   WorldObjectDef,
+  WorldObjectState,
   WorldState,
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
 import { type RoofStyle, cityDoor, cityRoof, tileAt } from "../content/map.ts";
-import { type AvatarAnim, drawAvatar, withDefaults } from "./avatar.ts";
+import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -419,7 +420,7 @@ export function drawWorld(
     if (def.kind === "plant_patch" || def.kind === "tree_patch") {
       drawPatch(g, obj.crop, obj.plantedAt, content, px, py);
     } else {
-      drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget);
+      drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget, monsterAttack(def, obj, state, content, now));
     }
     if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
       lights.push([px + TILE / 2, py + TILE / 2]);
@@ -573,6 +574,7 @@ function drawObject(
   py: number,
   now: number,
   moving = false,
+  action?: AvatarAnim["action"],
 ): void {
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
@@ -590,7 +592,7 @@ function drawObject(
       drawNpc(g, cx, cy, now, moving);
       break;
     case "monster":
-      drawMonster(g, def.monster, available, cx, cy, now, moving);
+      drawMonster(g, def.monster, available, cx, cy, now, moving, action);
       break;
 
     case "shrine":
@@ -1388,14 +1390,15 @@ function walkAnim(now: number, moving: boolean): { bob: number; swing: number; l
   };
 }
 
-/** One arm hanging from a shoulder (px,py), rotated by `angle`: sleeve + hand. */
+/** One arm from a shoulder (px,py), rotated by `angle`: optional tool + sleeve + hand. */
 function limbArm(
   g: CanvasRenderingContext2D,
-  px: number, py: number, angle: number, sleeve: string, skin: string,
+  px: number, py: number, angle: number, sleeve: string, skin: string, tool = "",
 ): void {
   g.save();
   g.translate(px, py);
   g.rotate(angle);
+  if (tool) drawTool(g, 1, tool); // behind the hand, swings with the arm
   g.fillStyle = sleeve;
   g.fillRect(-1.2, 0, 2.4, 4);
   g.fillStyle = skin;
@@ -1415,10 +1418,11 @@ function drawMonster(
   cy: number,
   now: number,
   moving = false,
+  action?: AvatarAnim["action"],
 ): void {
   if (!available) return drawRespawning(g, cx, cy);
-  // Human-type foes share the animated humanoid figure (arms + walk cycle).
-  const H = (body: string, trim: string) => drawHumanoid(g, cx, cy, now, body, trim, moving);
+  // Human-type foes share the animated humanoid figure (arms, walk, attack swing).
+  const H = (body: string, trim: string) => drawHumanoid(g, cx, cy, now, body, trim, moving, action);
   switch (monster) {
     case "hill_wolf":
     case "ridge_wolf":
@@ -1549,17 +1553,23 @@ function drawHumanoid(
   body: string,
   trim: string,
   moving = false,
+  action?: AvatarAnim["action"],
 ): void {
-  const a = walkAnim(now, moving);
-  const bob = a.bob;
+  const acting = !!action;
+  const a = walkAnim(now, moving && !acting);
+  // While attacking the figure is planted with a gentle bob; else it walks/idles.
+  const bob = acting ? Math.sin(now / 280) * 0.5 : a.bob;
   const skin = "#caa472";
+  const nearAngle = acting ? actionArmAngle(action!.frac, action!.kind) : -0.12 + a.swing;
+  const farAngle = acting ? 0.22 : 0.12 - a.swing;
+  const nearTool = acting ? action!.tool : "";
   shadow(g, cx, cy + 12, 8, 3);
   // legs (feet lift while walking)
   g.fillStyle = "#2b2620";
   g.fillRect(cx - 5, cy + 6 - a.liftL, 4, 8);
   g.fillRect(cx + 1, cy + 6 - a.liftR, 4, 8);
   // far arm (behind the torso), sleeved in the body colour
-  limbArm(g, cx + 6, cy - 4 + bob, 0.12 - a.swing, body, skin);
+  limbArm(g, cx + 6, cy - 4 + bob, farAngle, body, skin);
   g.fillStyle = body; // torso / cloak
   g.beginPath();
   g.moveTo(cx - 7, cy + 8 + bob);
@@ -1570,8 +1580,8 @@ function drawHumanoid(
   g.fill();
   g.fillStyle = trim; // shoulder trim
   g.fillRect(cx - 7, cy - 6 + bob, 14, 3);
-  // near arm (in front of the torso)
-  limbArm(g, cx - 6, cy - 4 + bob, -0.12 + a.swing, body, skin);
+  // near arm (in front of the torso), holding any weapon while attacking
+  limbArm(g, cx - 6, cy - 4 + bob, nearAngle, body, skin, nearTool);
   g.fillStyle = skin; // head / hood-shadow
   circle(g, cx, cy - 11 + bob, 4.5);
   g.fillStyle = body; // hood / helm over the head
@@ -1951,6 +1961,32 @@ function playerAction(
   };
   if (!(act.kind in TOOL)) return undefined;
   return { kind: act.kind, tool: TOOL[act.kind]!, frac };
+}
+
+/**
+ * A humanoid enemy's attack swing, while the player is fighting it. The monster
+ * swings on its own clock (obj.nextAttackAt every stats.speed); we map that to a
+ * weapon by its attack style (archers loose a bow). Undefined when not fighting
+ * it — animal monsters never produce a weapon, so they're unaffected.
+ */
+function monsterAttack(
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  state: WorldState,
+  content: Content,
+  now: number,
+): AvatarAnim["action"] | undefined {
+  if (def.kind !== "monster" || !def.monster) return undefined;
+  const act = state.player.activity;
+  if (act.kind !== "combat" || act.targetId !== def.id || !obj.nextAttackAt) return undefined;
+  const stats = content.monsters[def.monster];
+  if (!stats) return undefined;
+  const interval = stats.speed || 2400;
+  const frac = Math.max(0, Math.min(1, (obj.nextAttackAt - now) / interval));
+  if (def.monster === "poacher" || def.monster === "outlaw_archer") return { kind: "ranged", tool: "bow", frac };
+  const style = stats.attackStyle;
+  const tool = style === "crush" ? "hammer" : style === "stab" ? "spear" : "sword";
+  return { kind: "combat", tool, frac };
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {
