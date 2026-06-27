@@ -2674,8 +2674,27 @@ function checkGatherQuests(
       advanceQuest(state, content, def, st, events);
     } else if (obj.type === "reach" && skillLvl(player, obj.skill) >= obj.level) {
       advanceQuest(state, content, def, st, events);
+    } else if (obj.type === "claim" && ownsAnyPlot(state)) {
+      advanceQuest(state, content, def, st, events);
+    } else if (obj.type === "build" && hasBuilt(state, content, obj.category)) {
+      advanceQuest(state, content, def, st, events);
     }
   }
+}
+
+/** True once the player has claimed any homestead plot. */
+function ownsAnyPlot(state: WorldState): boolean {
+  return Object.values(state.objects).some((o) => o.owned);
+}
+
+/** True once a piece (optionally of `category`) is built at any home footing. */
+function hasBuilt(state: WorldState, content: Content, category?: string): boolean {
+  for (const o of Object.values(state.objects)) {
+    if (!o.furniture) continue;
+    if (!category) return true;
+    if (content.furniture[o.furniture]?.category === category) return true;
+  }
+  return false;
 }
 
 // --- Combat math, ported faithfully from the idle game (CANON_LEDGER 1e) -----

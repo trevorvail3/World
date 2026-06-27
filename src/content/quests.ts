@@ -1345,4 +1345,41 @@ export const quests: QuestDef[] = [
       gold: 400,
     },
   },
+
+  // ===========================================================================
+  // HEARTH & HOME — the introduction to player-owned housing
+  // ===========================================================================
+  {
+    id: "q_roof_of_your_own",
+    name: "A Roof of Your Own",
+    giver: "drover_tamsin",
+    intro: [
+      "You've the look of someone tired of sleeping under hedgerows. Sit. As reeve here I keep the rolls — and the lot east of the yard has stood empty a year.",
+      "It's yours, if you'll have it. Find the plot marker on it and claim it; the cottage comes with the ground, and its door opens onto your own four walls to do with as you please.",
+      "A bed comes first of all. Fell an ashwood and mill the logs to planks at any builder's bench — there's one in Ironvale's artisans' yard — then build the bed inside. After that, a home is only as bare as you leave it.",
+    ],
+    steps: [
+      { type: "claim", text: "Claim the empty homestead lot east of the Rest" },
+      { type: "build", category: "bed", text: "Mill Ashwood Planks at a bench, then build a bed inside your home" },
+      { type: "talk", npc: "drover_tamsin", text: "Tell Tamsin you've settled in" },
+    ],
+    outro: [
+      "Settled, then. There's no sound in the world like your own door shutting behind you — you'll learn it.",
+      "Here — a housewarming. Timber, stone and fittings enough to make a kitchen of the hearth-space, a strongbox of the corner, a workbench against the wall. Cook, bank and build under your own roof now, not the town's.",
+      "Raise it however suits you. And mind — sleep in your own bed, and the road will always carry you home to it.",
+    ],
+    reward: {
+      xp: [{ skill: "construction", amount: 250 }],
+      items: [
+        { item: "plank_greyoak", qty: 6 },
+        { item: "plank_stonewood", qty: 6 },
+        { item: "timber_frame", qty: 4 },
+        { item: "mortar_basic", qty: 4 },
+        { item: "stone_block", qty: 6 },
+        { item: "ashiron_rivet", qty: 4 },
+      ],
+      gold: 120,
+      flags: ["q_roof_of_your_own_complete", "homesteader"],
+    },
+  },
 ];

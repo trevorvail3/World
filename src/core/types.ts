@@ -1474,7 +1474,11 @@ export type QuestObjective =
   | { type: "gather"; item: ItemId; count: number; text: string }
   | { type: "deliver"; npc: string; item: ItemId; count: number; text: string }
   | { type: "reach"; skill: SkillId; level: number; text: string }
-  | { type: "choice"; npc: string; text: string; prompt: string; options: QuestChoice[] };
+  | { type: "choice"; npc: string; text: string; prompt: string; options: QuestChoice[] }
+  /** Claim any homestead plot (introduces player housing). */
+  | { type: "claim"; text: string }
+  /** Build a furniture piece (optionally of a given category) at a home. */
+  | { type: "build"; category?: string; text: string };
 
 /** What a quest grants on completion. */
 export interface QuestReward {
