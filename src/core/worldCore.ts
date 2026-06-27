@@ -313,6 +313,7 @@ export function createWorld(
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
+    pendingInteractMode: null,
     station: null,
     alive: true,
     respawnAt: 0,
@@ -672,6 +673,7 @@ export function applyIntent(
     case "MOVE": {
       player.path = intent.path.map((p) => ({ x: p.x, y: p.y }));
       player.pendingInteractId = null;
+      player.pendingInteractMode = null;
       player.station = null; // walking away leaves the counter
       clearActivity(player);
       break;
@@ -679,6 +681,7 @@ export function applyIntent(
     case "INTERACT": {
       player.path = intent.path.map((p) => ({ x: p.x, y: p.y }));
       player.pendingInteractId = intent.objId;
+      player.pendingInteractMode = intent.mode ?? null;
       player.station = null; // a fresh interaction; startInteraction re-sets it
       clearActivity(player);
       // If we're already standing next to it, act immediately.
@@ -1166,7 +1169,9 @@ function startInteraction(
   const obj = state.objects[objId];
   if (!obj) return;
   const { player } = state;
+  const mode = player.pendingInteractMode;
   player.pendingInteractId = null;
+  player.pendingInteractMode = null;
 
   switch (def.kind) {
     case "tree": {
@@ -1220,10 +1225,12 @@ function startInteraction(
     }
 
     case "npc": {
-      // A shopkeeper opens their trade window — unless a quest step needs them
-      // right now (so a quest can still send you to a shopkeeper NPC).
+      // A shopkeeper can be talked to OR traded with. "shop" forces the trade
+      // window; "talk" forces dialogue (and any quest); with no explicit mode,
+      // the shop opens unless a quest step needs them right now.
       const shop = content.shops.find((s) => s.npc === def.id);
-      if (shop && !questStepTargets(state.player, content, def.id)) {
+      const wantsShop = mode === "shop" || (mode !== "talk" && !questStepTargets(state.player, content, def.id));
+      if (shop && wantsShop) {
         player.station = { kind: "shop", id: shop.id };
         events.push({ type: "OPEN_SHOP", shop: shop.id });
         break;

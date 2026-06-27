@@ -372,6 +372,7 @@ export function hydratePlayer(
   if (player.hp <= 0) player.hp = player.maxHp;
   player.path = [];
   player.pendingInteractId = null;
+  player.pendingInteractMode = null;
   player.station = null;
   player.activity = { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 };
   player.respawnAt = 0;

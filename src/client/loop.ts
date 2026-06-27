@@ -1095,7 +1095,7 @@ export class Game {
     const press = this.press;
     this.press = null;
     if (!press || press.longFired || press.moved) return;
-    this.defaultAction(press.tile);
+    this.defaultAction(press.tile, press.startX, press.startY);
   }
 
   /** Distance between the first two active touch points (0 if fewer than two). */
@@ -1113,9 +1113,14 @@ export class Game {
   }
 
   /** A plain tap: do the obvious thing for whatever was under the finger. */
-  private defaultAction(tile: Vec2): void {
+  private defaultAction(tile: Vec2, sx: number, sy: number): void {
     const obj = this.objectAt(tile);
     if (obj) {
+      // A shopkeeper offers a choice — Talk or Shop — rather than one or the other.
+      if (obj.kind === "npc" && this.isShopkeeper(obj.id)) {
+        this.shopkeeperMenu(obj, sx, sy);
+        return;
+      }
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
@@ -1131,14 +1136,24 @@ export class Game {
     if (obj) {
       title = obj.name;
       description = this.examineObject(obj); // shown as the inspect line
-      const isShopkeeper =
-        obj.kind === "npc" && this.bridge.content.shops.some((s) => s.npc === obj.id);
-      items.push({
-        label: isShopkeeper ? "Trade with" : VERB[obj.kind],
-        target: obj.name,
-        tone: "action",
-        onSelect: () => this.interactObject(obj.id, this.liveTile(obj)),
-      });
+      if (obj.kind === "npc" && this.isShopkeeper(obj.id)) {
+        // Shopkeepers list both Talk and Shop.
+        items.push({
+          label: "Talk to", target: obj.name, tone: "action",
+          onSelect: () => this.interactObject(obj.id, this.liveTile(obj), "talk"),
+        });
+        items.push({
+          label: "Shop with", target: obj.name,
+          onSelect: () => this.interactObject(obj.id, this.liveTile(obj), "shop"),
+        });
+      } else {
+        items.push({
+          label: VERB[obj.kind],
+          target: obj.name,
+          tone: "action",
+          onSelect: () => this.interactObject(obj.id, this.liveTile(obj)),
+        });
+      }
       items.push({
         label: "Walk here",
         onSelect: () => this.walkBeside(this.liveTile(obj)),
@@ -1267,7 +1282,7 @@ export class Game {
     this.dispatch({ type: "MOVE", path });
   }
 
-  private interactObject(objId: string, tile: Vec2): void {
+  private interactObject(objId: string, tile: Vec2, mode?: "talk" | "shop"): void {
     const player = this.bridge.state.player;
     const { path, reachable } = pathToAdjacent(
       this.bridge.walkable,
@@ -1280,6 +1295,21 @@ export class Game {
     }
     this.setMarker(tile);
     this.tapFlash = { objId, born: performance.now() };
-    this.dispatch({ type: "INTERACT", objId, path });
+    this.dispatch({ type: "INTERACT", objId, path, ...(mode ? { mode } : {}) });
+  }
+
+  /** Is this NPC a shopkeeper (so a tap offers Talk vs Shop)? */
+  private isShopkeeper(id: string): boolean {
+    return this.bridge.content.shops.some((s) => s.npc === id);
+  }
+
+  /** The Talk / Shop / Walk menu for a shopkeeper, at screen (sx, sy). */
+  private shopkeeperMenu(obj: WorldObjectDef, sx: number, sy: number): void {
+    const tile = this.liveTile(obj);
+    this.menu.show(sx, sy, obj.name, [
+      { label: "Talk to", target: obj.name, tone: "action", onSelect: () => this.interactObject(obj.id, tile, "talk") },
+      { label: "Shop with", target: obj.name, onSelect: () => this.interactObject(obj.id, tile, "shop") },
+      { label: "Walk here", onSelect: () => this.walkBeside(tile) },
+    ], this.examineObject(obj));
   }
 }

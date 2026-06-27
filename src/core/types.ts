@@ -1085,6 +1085,8 @@ export interface Player {
    * player is just walking to a spot.
    */
   pendingInteractId: string | null;
+  /** Talk/shop mode queued alongside pendingInteractId (shopkeepers). Transient. */
+  pendingInteractMode: "talk" | "shop" | null;
   /**
    * The shop/bank/board the player currently stands at (set on interaction,
    * cleared when they walk away). Trade/bank/bounty intents are only honoured
@@ -1135,6 +1137,12 @@ export interface InteractIntent {
   type: "INTERACT";
   objId: string;
   path: Vec2[];
+  /**
+   * Shopkeepers only: "talk" forces dialogue (and quests), "shop" forces the
+   * trade window. Omitted = the default (a shopkeeper opens their shop unless a
+   * quest step needs them right now).
+   */
+  mode?: "talk" | "shop";
 }
 
 /** "Stop whatever I'm doing" (cancels movement and current activity). */
