@@ -610,31 +610,45 @@ export const objects: WorldObjectDef[] = [
   { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 66, y: 16, name: "A Hill Sheep" },
   { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 59, y: 18, name: "A Hill Sheep" },
 
-  // === PLAYER HOUSING — a claimable homestead lot at each hamlet =============
-  // Claim the plot, then build furniture at its four footings (hearth / bed /
-  // table / hall) from Construction materials. A bed makes it your respawn.
-  // `target` on each plot is the recall/respawn tile at the lot's centre.
+  // === PLAYER HOUSING — claim a lot, then build INSIDE its private interior ==
+  // Each homestead lot has a plot marker (claim it) and a door into the home's
+  // own instanced interior (a plank room in the hidden band, see INTERIORS in
+  // map.ts). The build footings live INSIDE, ringing the room: bed / kitchen /
+  // storage / workshop (functional stations) and table / hall (decor). A plot's
+  // `target` is the interior entry tile — also where a built bed respawns you.
 
-  // --- Redmouth homestead lot (south of the river bank) ---
-  { id: "home_redmouth", kind: "housing_plot", x: 81, y: 64, name: "the Redmouth Homestead", target: { x: 84, y: 66 } },
-  { id: "hs_redmouth_hearth", kind: "build_hotspot", x: 83, y: 65, name: "Hearth Footing", category: "hearth", plot: "home_redmouth" },
-  { id: "hs_redmouth_bed", kind: "build_hotspot", x: 85, y: 65, name: "Bed Footing", category: "bed", plot: "home_redmouth" },
-  { id: "hs_redmouth_table", kind: "build_hotspot", x: 83, y: 66, name: "Table Footing", category: "table", plot: "home_redmouth" },
-  { id: "hs_redmouth_hall", kind: "build_hotspot", x: 85, y: 66, name: "Hall Footing", category: "hall", plot: "home_redmouth" },
+  // --- Redmouth homestead (lot south of the river bank; interior at x0=2) ---
+  { id: "home_redmouth", kind: "housing_plot", x: 81, y: 64, name: "the Redmouth Homestead", target: { x: 7, y: 131 } },
+  { id: "door_redmouth", kind: "house_door", x: 84, y: 65, name: "the Redmouth Home", plot: "home_redmouth", target: { x: 7, y: 131 }, lines: ["You step inside your home."] },
+  { id: "exit_redmouth", kind: "house_door", x: 7, y: 132, name: "the Door Out", target: { x: 84, y: 66 }, lines: ["You step back out onto the lot."] },
+  { id: "hs_redmouth_bed", kind: "build_hotspot", x: 4, y: 126, name: "Bed Space", category: "bed", plot: "home_redmouth" },
+  { id: "hs_redmouth_hall", kind: "build_hotspot", x: 7, y: 126, name: "Hall Wall", category: "hall", plot: "home_redmouth" },
+  { id: "hs_redmouth_storage", kind: "build_hotspot", x: 10, y: 126, name: "Storage Space", category: "storage", plot: "home_redmouth" },
+  { id: "hs_redmouth_kitchen", kind: "build_hotspot", x: 4, y: 129, name: "Kitchen Space", category: "kitchen", plot: "home_redmouth" },
+  { id: "hs_redmouth_table", kind: "build_hotspot", x: 7, y: 129, name: "Table Space", category: "table", plot: "home_redmouth" },
+  { id: "hs_redmouth_workshop", kind: "build_hotspot", x: 10, y: 129, name: "Workshop Space", category: "workshop", plot: "home_redmouth" },
 
-  // --- The Drover's Rest homestead lot (east of the yard) ---
-  { id: "home_drover", kind: "housing_plot", x: 74, y: 73, name: "the Drover's Rest Homestead", target: { x: 77, y: 75 } },
-  { id: "hs_drover_hearth", kind: "build_hotspot", x: 76, y: 74, name: "Hearth Footing", category: "hearth", plot: "home_drover" },
-  { id: "hs_drover_bed", kind: "build_hotspot", x: 78, y: 74, name: "Bed Footing", category: "bed", plot: "home_drover" },
-  { id: "hs_drover_table", kind: "build_hotspot", x: 76, y: 75, name: "Table Footing", category: "table", plot: "home_drover" },
-  { id: "hs_drover_hall", kind: "build_hotspot", x: 78, y: 75, name: "Hall Footing", category: "hall", plot: "home_drover" },
+  // --- The Drover's Rest homestead (lot east of the yard; interior at x0=16) ---
+  { id: "home_drover", kind: "housing_plot", x: 74, y: 73, name: "the Drover's Rest Homestead", target: { x: 21, y: 131 } },
+  { id: "door_drover", kind: "house_door", x: 77, y: 74, name: "the Drover's Rest Home", plot: "home_drover", target: { x: 21, y: 131 }, lines: ["You step inside your home."] },
+  { id: "exit_drover", kind: "house_door", x: 21, y: 132, name: "the Door Out", target: { x: 77, y: 75 }, lines: ["You step back out onto the lot."] },
+  { id: "hs_drover_bed", kind: "build_hotspot", x: 18, y: 126, name: "Bed Space", category: "bed", plot: "home_drover" },
+  { id: "hs_drover_hall", kind: "build_hotspot", x: 21, y: 126, name: "Hall Wall", category: "hall", plot: "home_drover" },
+  { id: "hs_drover_storage", kind: "build_hotspot", x: 24, y: 126, name: "Storage Space", category: "storage", plot: "home_drover" },
+  { id: "hs_drover_kitchen", kind: "build_hotspot", x: 18, y: 129, name: "Kitchen Space", category: "kitchen", plot: "home_drover" },
+  { id: "hs_drover_table", kind: "build_hotspot", x: 21, y: 129, name: "Table Space", category: "table", plot: "home_drover" },
+  { id: "hs_drover_workshop", kind: "build_hotspot", x: 24, y: 129, name: "Workshop Space", category: "workshop", plot: "home_drover" },
 
-  // --- The Fold homestead lot (north of the croft) ---
-  { id: "home_fold", kind: "housing_plot", x: 59, y: 8, name: "the Fold Homestead", target: { x: 62, y: 10 } },
-  { id: "hs_fold_hearth", kind: "build_hotspot", x: 61, y: 9, name: "Hearth Footing", category: "hearth", plot: "home_fold" },
-  { id: "hs_fold_bed", kind: "build_hotspot", x: 63, y: 9, name: "Bed Footing", category: "bed", plot: "home_fold" },
-  { id: "hs_fold_table", kind: "build_hotspot", x: 61, y: 10, name: "Table Footing", category: "table", plot: "home_fold" },
-  { id: "hs_fold_hall", kind: "build_hotspot", x: 63, y: 10, name: "Hall Footing", category: "hall", plot: "home_fold" },
+  // --- The Fold homestead (lot north of the croft; interior at x0=30) ---
+  { id: "home_fold", kind: "housing_plot", x: 59, y: 8, name: "the Fold Homestead", target: { x: 35, y: 131 } },
+  { id: "door_fold", kind: "house_door", x: 62, y: 9, name: "the Fold Home", plot: "home_fold", target: { x: 35, y: 131 }, lines: ["You step inside your home."] },
+  { id: "exit_fold", kind: "house_door", x: 35, y: 132, name: "the Door Out", target: { x: 62, y: 10 }, lines: ["You step back out onto the lot."] },
+  { id: "hs_fold_bed", kind: "build_hotspot", x: 32, y: 126, name: "Bed Space", category: "bed", plot: "home_fold" },
+  { id: "hs_fold_hall", kind: "build_hotspot", x: 35, y: 126, name: "Hall Wall", category: "hall", plot: "home_fold" },
+  { id: "hs_fold_storage", kind: "build_hotspot", x: 38, y: 126, name: "Storage Space", category: "storage", plot: "home_fold" },
+  { id: "hs_fold_kitchen", kind: "build_hotspot", x: 32, y: 129, name: "Kitchen Space", category: "kitchen", plot: "home_fold" },
+  { id: "hs_fold_table", kind: "build_hotspot", x: 35, y: 129, name: "Table Space", category: "table", plot: "home_fold" },
+  { id: "hs_fold_workshop", kind: "build_hotspot", x: 38, y: 129, name: "Workshop Space", category: "workshop", plot: "home_fold" },
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

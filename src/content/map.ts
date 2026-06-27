@@ -20,10 +20,13 @@
 import type { TileType, WorldMap } from "../core/types.ts";
 
 const WIDTH = 112;
-/** The overworld is rows 0–107; below it is a sealed band of boss arenas. */
+/** The overworld is rows 0–107; below it are sealed bands of boss arenas and,
+ *  below those, the private interiors of player homes (both reached only by a
+ *  teleport, so they never touch the walkable overworld). */
 export const OVERWORLD_HEIGHT = 108;
 const ARENA_BAND = 16;
-const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND;
+const INTERIOR_BAND = 14;
+const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND;
 
 export { WIDTH as MAP_WIDTH };
 
@@ -40,6 +43,21 @@ export const ARENAS: { dungeon: string; x: number; floor: TileType }[] = [
   { dungeon: "bog_barrow", x: 18, floor: "bog" },
   { dungeon: "spine_vault", x: 34, floor: "stone" },
   { dungeon: "marrow_vault", x: 50, floor: "cave" },
+];
+
+/**
+ * Player-home interiors: one private plank-floored room per homestead, in the
+ * band below the arenas. Each is a walled rectangle; `entry` is the floor tile
+ * just inside its door (where you land coming in, and stand to leave). The door
+ * objects + the build hotspots that furnish each room live in spawns.ts.
+ */
+export const INTERIOR_W = 11;
+export const INTERIOR_H = 9;
+export const INTERIOR_TOP = OVERWORLD_HEIGHT + ARENA_BAND; // first row of the band
+export const INTERIORS: { plot: string; x0: number; entry: { x: number; y: number } }[] = [
+  { plot: "home_redmouth", x0: 2, entry: { x: 7, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+  { plot: "home_drover", x0: 16, entry: { x: 21, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+  { plot: "home_fold", x0: 30, entry: { x: 35, y: INTERIOR_TOP + INTERIOR_H - 2 } },
 ];
 
 /** A cheap, stable pseudo-noise so terrain is fixed (not random). */
@@ -329,6 +347,18 @@ function decode(): WorldMap {
         set(x, y, edge ? "wall" : a.floor);
       }
     }
+  }
+
+  // 7) Carve each player-home interior in the band below the arenas: a walled,
+  //    plank-floored room, with a one-tile doorway opening in the bottom wall.
+  for (const r of INTERIORS) {
+    for (let y = INTERIOR_TOP; y < INTERIOR_TOP + INTERIOR_H; y++) {
+      for (let x = r.x0; x < r.x0 + INTERIOR_W; x++) {
+        const edge = x === r.x0 || x === r.x0 + INTERIOR_W - 1 || y === INTERIOR_TOP || y === INTERIOR_TOP + INTERIOR_H - 1;
+        set(x, y, edge ? "wall" : "plank");
+      }
+    }
+    set(r.entry.x, INTERIOR_TOP + INTERIOR_H - 1, "plank"); // the doorway opening
   }
 
   return { name: "Varath", width: WIDTH, height: HEIGHT, tiles };

@@ -1,43 +1,33 @@
 /**
  * src/content/furniture.ts
  * ------------------------
- * Buildable housing furniture (pure DATA). Each piece is built at a homestead
- * `build_hotspot` whose `category` matches, consuming the Construction skill's
- * own outputs (planks, frames, beams, mortar, dressed stone) and paying
- * Construction XP. This is the long-missing *sink* for Construction: the planks
- * and beams you mill now have a home to go into.
+ * Buildable housing furniture (pure DATA). Built at a home's interior
+ * `build_hotspot` whose `category` matches; consumes the Construction skill's
+ * own outputs (planks, frames, beams, mortar, dressed stone) and pays
+ * Construction XP. This is the long-missing *sink* for Construction.
  *
- * Four categories, one hotspot each per plot:
- *   hearth — the home's fire        bed   — a place to rest (sets your respawn)
- *   table  — board to sit and eat   hall  — the showpiece wall feature
+ * Six interior categories, one footing each per home:
+ *   bed     — a place to rest (a built bed sets your respawn to this home)
+ *   kitchen — a cooking station (use it to cook, at home)
+ *   storage — your bank, at home
+ *   workshop— a Construction bench, at home
+ *   table   — board to sit at (decor)
+ *   hall    — the showpiece wall feature (decor)
  *
- * `comfort` is a cosmetic "home value" tallied across a homestead. A `bed`
- * piece additionally moves the player's respawn point to that homestead.
+ * `station` makes a piece functional: "bank" opens storage; a crafting-station
+ * ObjKind ("fire" to cook, "workbench" to build) opens that station's recipes.
+ * `comfort` is a cosmetic "home value" tallied across a home.
  */
 
 import type { FurnitureDef } from "../core/types.ts";
 
 export const furniture: Record<string, FurnitureDef> = {
-  // --- Hearth: the home fire -------------------------------------------------
-  fur_hearth_cobble: {
-    id: "fur_hearth_cobble", name: "Cobble Hearth", category: "hearth",
-    levelReq: 1, xp: 40, comfort: 4,
-    materials: { stone_block: 3, mortar_basic: 2 },
-    blurb: "A rough ring of mortared stone. Smoke-stained within a week, and all the homelier for it.",
-  },
-  fur_hearth_ribstone: {
-    id: "fur_hearth_ribstone", name: "Ribstone Hearth", category: "hearth",
-    levelReq: 40, xp: 180, comfort: 12,
-    materials: { cut_coldvein: 4, mortar_refined: 3 },
-    blurb: "A deep coldvein firebox that throws heat to the rafters. The mark of a settled house.",
-  },
-
-  // --- Bed: sets your respawn to this homestead ------------------------------
+  // --- Bed: sets your respawn to this home -----------------------------------
   fur_bed_pallet: {
     id: "fur_bed_pallet", name: "Straw Pallet", category: "bed",
     levelReq: 1, xp: 30, comfort: 3, bed: true,
     materials: { plank_ashwood: 3 },
-    blurb: "Boards and a straw tick. Not much — but sleep here and the road will carry you back to it.",
+    blurb: "Boards and a straw tick. Sleep here and the road will carry you home to it.",
   },
   fur_bed_cot: {
     id: "fur_bed_cot", name: "Carved Cot", category: "bed",
@@ -52,7 +42,49 @@ export const furniture: Record<string, FurnitureDef> = {
     blurb: "Heartoak, joined without a nail, dark as old wine. The bed of someone who has arrived.",
   },
 
-  // --- Table: a board to sit at ----------------------------------------------
+  // --- Kitchen: a cooking station at home -------------------------------------
+  fur_kitchen_hearth: {
+    id: "fur_kitchen_hearth", name: "Cooking Hearth", category: "kitchen",
+    levelReq: 1, xp: 45, comfort: 5, station: "fire",
+    materials: { stone_block: 3, mortar_basic: 2 },
+    blurb: "A mortared firebox with a pot-hook. Use it to cook your catch without trudging to town.",
+  },
+  fur_kitchen_range: {
+    id: "fur_kitchen_range", name: "Kitchen Range", category: "kitchen",
+    levelReq: 35, xp: 190, comfort: 15, station: "fire",
+    materials: { cut_coldvein: 4, ashiron_bar: 2 },
+    blurb: "An iron range with a proper flue — the heart of a real kitchen. Cooks anything the fire would.",
+  },
+
+  // --- Storage: your bank at home --------------------------------------------
+  fur_store_chest: {
+    id: "fur_store_chest", name: "Oak Chest", category: "storage",
+    levelReq: 10, xp: 70, comfort: 6, station: "bank",
+    materials: { plank_greyoak: 4, ashiron_rivet: 2 },
+    blurb: "A banded greyoak chest. Opens onto the same stores as the Ironvale vault — your goods, at home.",
+  },
+  fur_store_strongbox: {
+    id: "fur_store_strongbox", name: "Ironbound Strongbox", category: "storage",
+    levelReq: 45, xp: 240, comfort: 17, station: "bank",
+    materials: { plank_heartoak: 3, bloodore_bar: 2 },
+    blurb: "Heartoak bound in bloodore straps. A strongbox that would shrug off a siege — and your bank besides.",
+  },
+
+  // --- Workshop: a Construction bench at home --------------------------------
+  fur_shop_bench: {
+    id: "fur_shop_bench", name: "Joiner's Bench", category: "workshop",
+    levelReq: 15, xp: 90, comfort: 7, station: "workbench",
+    materials: { plank_stonewood: 4, timber_frame: 1 },
+    blurb: "A racked bench of saws and chisels. Build your Construction work right here at home.",
+  },
+  fur_shop_stoneworks: {
+    id: "fur_shop_stoneworks", name: "Stoneworks Bench", category: "workshop",
+    levelReq: 50, xp: 260, comfort: 18, station: "workbench",
+    materials: { stonewood_beam: 2, mortar_spinite: 2 },
+    blurb: "A mason's heavy bench, stone-topped and true. A master's station, under your own roof.",
+  },
+
+  // --- Table: a board to sit at (decor) --------------------------------------
   fur_table_trestle: {
     id: "fur_table_trestle", name: "Trestle Table", category: "table",
     levelReq: 5, xp: 50, comfort: 5,
@@ -66,7 +98,7 @@ export const furniture: Record<string, FurnitureDef> = {
     blurb: "A riveted greyoak board, thick enough to dance on. It will outlast the house around it.",
   },
 
-  // --- Hall: the showpiece wall feature --------------------------------------
+  // --- Hall: the showpiece wall feature (decor) ------------------------------
   fur_hall_timber: {
     id: "fur_hall_timber", name: "Timber Frame Wall", category: "hall",
     levelReq: 10, xp: 75, comfort: 8,
@@ -83,7 +115,7 @@ export const furniture: Record<string, FurnitureDef> = {
     id: "fur_hall_gallery", name: "Vaulted Gallery", category: "hall",
     levelReq: 75, xp: 600, comfort: 30,
     materials: { vault_stone: 2, heartoak_beam: 1 },
-    blurb: "Dressed vault stone over a heartoak span. Fortress-grade work, in a shepherd's croft. Why not.",
+    blurb: "Dressed vault stone over a heartoak span. Fortress-grade work, in a shepherd's home. Why not.",
   },
 };
 

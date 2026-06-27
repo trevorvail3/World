@@ -30,6 +30,7 @@ import type {
   ItemDef,
   ItemId,
   MonsterStats,
+  ObjKind,
   Player,
   QuestDef,
   QuestState,
@@ -203,6 +204,7 @@ const BLOCKING_KINDS = new Set([
   "waystone",
   "relic",
   "build_hotspot",
+  "house_door",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -798,6 +800,10 @@ export function applyIntent(
       removeFurniture(state, content, intent.hotspotId, events);
       break;
     }
+    case "USE_FURNITURE": {
+      useFurniture(state, content, intent.hotspotId, events);
+      break;
+    }
   }
   return events;
 }
@@ -1336,6 +1342,17 @@ function startInteraction(
       interactHotspot(state, def, obj, events);
       break;
 
+    case "house_door": {
+      // The outdoor door is gated on owning the plot; the interior door (no
+      // plot) always lets you back out. Either way it just teleports you.
+      if (def.plot && !state.objects[def.plot]?.owned) {
+        events.push({ type: "LOG", message: "You'd need to claim this homestead before you could go in." });
+        break;
+      }
+      usePortal(state, def, events);
+      break;
+    }
+
     case "portal":
       usePortal(state, def, events);
       break;
@@ -1455,6 +1472,28 @@ function buildFurniture(
     }
   }
   events.push({ type: "LOG", message: `You build the ${f.name}.` });
+}
+
+/** Use a built functional piece as a station — bank / cook / build, at home. */
+function useFurniture(
+  state: WorldState,
+  content: Content,
+  hotspotId: string,
+  events: WorldEvent[],
+): void {
+  const obj = state.objects[hotspotId];
+  const f = obj?.furniture ? content.furniture[obj.furniture] : undefined;
+  if (!obj || !f || !f.station) {
+    events.push({ type: "LOG", message: "There's nothing here to use." });
+    return;
+  }
+  if (f.station === "bank") {
+    state.player.station = { kind: "bank" };
+    events.push({ type: "OPEN_BANK" });
+    return;
+  }
+  // Any other station value is a crafting-station ObjKind (fire/workbench/etc).
+  events.push({ type: "OPEN_CRAFT", station: f.station as ObjKind, objId: hotspotId });
 }
 
 /** Clear a hotspot's furniture (no refund — you scrap the piece). */

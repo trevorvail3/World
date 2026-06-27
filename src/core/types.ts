@@ -680,7 +680,9 @@ export type TileType =
   // The Eyeless Sea: deep open water (impassable, like water).
   | "deep"
   // Ironvale: dressed-stone city walls and buildings (impassable).
-  | "wall";
+  | "wall"
+  // Player housing interiors: a warm timber plank floor (walkable).
+  | "plank";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {
@@ -720,6 +722,8 @@ export type ObjKind =
   | "housing_plot"
   /** A furniture footing inside a claimed plot: build/replace a piece here. */
   | "build_hotspot"
+  /** A door between a homestead lot and its private interior instance. */
+  | "house_door"
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
@@ -1289,6 +1293,12 @@ export interface RemoveFurnitureIntent {
   hotspotId: string;
 }
 
+/** "Use the functional furniture at this hotspot" (a home station: bank/cook/etc). */
+export interface UseFurnitureIntent {
+  type: "USE_FURNITURE";
+  hotspotId: string;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1312,7 +1322,8 @@ export type Intent =
   | ChooseIntent
   | ClaimPlotIntent
   | BuildFurnitureIntent
-  | RemoveFurnitureIntent;
+  | RemoveFurnitureIntent
+  | UseFurnitureIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -1593,6 +1604,12 @@ export interface FurnitureDef {
   blurb: string;
   /** A bed piece sets the player's respawn to its homestead when built. */
   bed?: boolean;
+  /**
+   * A functional piece doubles as a station: "bank" opens your storage, or a
+   * crafting-station ObjKind ("fire" to cook, "workbench" to build, "anvil",
+   * "furnace", "crafting_table") opens that station's recipes — at home.
+   */
+  station?: string;
 }
 
 export interface Content {

@@ -44,6 +44,8 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   deep: ["#14233a", "#1a2c46"],
   // Ironvale's dressed-stone walls and buildings — warm masonry, lit.
   wall: ["#6b6157", "#7c7165"],
+  // Player-home interiors — a warm timber plank floor.
+  plank: ["#6a4e30", "#79593a"],
 };
 
 const EMBER = "#d2742c";
@@ -432,8 +434,8 @@ export function drawWorld(
       lights.push([px + TILE / 2, py + TILE / 2]);
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
-    } else if (def.kind === "build_hotspot" && obj.furniture && content.furniture[obj.furniture]?.category === "hearth") {
-      lights.push([px + TILE / 2, py + TILE / 2]); // a built hearth warms the home
+    } else if (def.kind === "build_hotspot" && obj.furniture && content.furniture[obj.furniture]?.category === "kitchen") {
+      lights.push([px + TILE / 2, py + TILE / 2]); // a built cooking hearth warms the home
     }
     // Name label — monsters show their combat level (OSRS-style).
     if (def.kind === "npc" || def.kind === "monster") {
@@ -665,7 +667,20 @@ function drawObject(
     case "relic":
       drawRelic(g, cx, cy, now);
       break;
+    case "house_door":
+      drawHouseDoor(g, cx, cy);
+      break;
   }
+}
+
+/** A timber house door — a planked doorway in a frame, with a ring handle. */
+function drawHouseDoor(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 8, 3);
+  g.fillStyle = "#3f3526"; g.fillRect(cx - 8, cy - 12, 16, 24); // the frame
+  g.fillStyle = "#6e4a2c"; g.fillRect(cx - 6, cy - 10, 12, 22); // the door leaf
+  g.strokeStyle = "#4f351f"; g.lineWidth = 1; // plank seams
+  for (let i = 1; i < 3; i++) { g.beginPath(); g.moveTo(cx - 6 + i * 4, cy - 10); g.lineTo(cx - 6 + i * 4, cy + 12); g.stroke(); }
+  g.fillStyle = "#caa05a"; g.beginPath(); g.arc(cx + 3.5, cy + 1, 1.6, 0, Math.PI * 2); g.fill(); // ring handle
 }
 
 /** A homestead plot marker: a corner stake with a board (gold once claimed). */
@@ -707,14 +722,34 @@ function drawHotspot(
   const tier = f.levelReq >= 60 ? 2 : f.levelReq >= 25 ? 1 : 0;
   shadow(g, cx, cy + 8, 9, 3);
   switch (f.category) {
-    case "hearth": {
-      g.fillStyle = tier ? "#6b6f78" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // hearth body
-      g.fillStyle = "#4b4f56"; g.fillRect(cx - 9, cy - 4, 18, 2.5); // mantel
+    case "kitchen": {
+      g.fillStyle = tier ? "#5b5f68" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // hearth/range body
+      g.fillStyle = "#4b4f56"; g.fillRect(cx - 9, cy - 4, 18, 2.5); // mantel/flue
+      if (tier) { g.fillStyle = "#2b2e34"; g.fillRect(cx + 3, cy - 4, 5, 2.5); } // a range chimney stub
       g.fillStyle = "#241d18"; g.fillRect(cx - 5, cy + 1, 10, 7); // firebox
       const fl = 0.5 + 0.5 * Math.sin(now / 110);
       g.fillStyle = `rgba(240,150,40,${0.65 + 0.3 * fl})`;
       g.beginPath(); g.moveTo(cx, cy + 2 - 4 - 2 * fl); g.lineTo(cx - 3.5, cy + 7); g.lineTo(cx + 3.5, cy + 7); g.closePath(); g.fill();
       g.fillStyle = "#ffd86a"; g.beginPath(); g.moveTo(cx, cy + 3 - 2 * fl); g.lineTo(cx - 1.6, cy + 7); g.lineTo(cx + 1.6, cy + 7); g.closePath(); g.fill();
+      break;
+    }
+    case "storage": {
+      const wood = tier ? "#4f3826" : "#7a5532";
+      g.fillStyle = wood; g.fillRect(cx - 9, cy - 2, 18, 10); // chest body
+      g.fillStyle = tier ? "#3c2a1c" : "#63421f"; g.fillRect(cx - 9, cy - 5, 18, 4); // domed lid
+      g.fillStyle = tier ? "#8a3f33" : "#8a8278"; // straps (bloodore on the strongbox)
+      g.fillRect(cx - 7, cy - 5, 2, 13); g.fillRect(cx + 5, cy - 5, 2, 13);
+      g.fillStyle = "#d9b36a"; g.fillRect(cx - 1, cy - 1, 2, 3); // lock plate
+      break;
+    }
+    case "workshop": {
+      const wood = tier ? "#5a4632" : "#7a5532";
+      g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
+      g.fillStyle = wood; g.fillRect(cx - 10, cy - 1, 20, 4); // bench top
+      if (tier) { g.fillStyle = "#6b6f78"; g.fillRect(cx - 10, cy - 2, 20, 1.6); } // stone-topped for the upgrade
+      g.fillStyle = "#8a8278"; g.fillRect(cx - 6, cy - 5, 3, 4); // a vice
+      g.strokeStyle = "#c9b070"; g.lineWidth = 1; // a saw hung on the front
+      g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 7, cy + 6); g.stroke();
       break;
     }
     case "bed": {

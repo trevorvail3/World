@@ -140,6 +140,7 @@ const VERB: Record<ObjKind, string> = {
   bounty_board: "Read",
   housing_plot: "Claim",
   build_hotspot: "Build at",
+  house_door: "Enter",
   cauldron: "Brew at",
   workbench: "Build at",
   crafting_table: "Craft at",
@@ -170,8 +171,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   portal: "A dark archway. Something waits on the other side.",
   trap: "A snare set among the runs and burrows. Patience catches game.",
   bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
-  housing_plot: "A vacant homestead yard. Claim it, and the footings are yours to build a home on.",
-  build_hotspot: "A footing for furniture — build a piece here from your Construction materials.",
+  housing_plot: "A vacant homestead yard. Claim it, and its house is yours to furnish.",
+  build_hotspot: "A space for furniture — build a piece here from your Construction materials.",
+  house_door: "The door to a home. Step through to its own quiet interior.",
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
   crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
@@ -201,6 +203,7 @@ const EXAMINE_TILE: Record<TileType, string> = {
   cave_wall: "Dressed cave rock — too smooth, in places, to be only the dark's work.",
   deep: "The open grey of the Eyeless Sea. It gives back no landmark.",
   wall: "Ironvale's dressed-stone rampart. Old work, and still sound.",
+  plank: "A swept timber floor, warm underfoot. The boards of a home.",
 };
 
 /** Examine flavour for the tree species. */
@@ -559,24 +562,38 @@ export class Game {
       .filter((f) => f.category === category)
       .sort((a, b) => a.levelReq - b.levelReq);
 
-    const items: MenuItem[] = pieces.map((f) => {
-      const built = current === f.id;
+    const items: MenuItem[] = [];
+
+    // If a functional piece is already built here, lead with using it (cook /
+    // bank / build at home) — the everyday action — then offer to re-furnish.
+    const built = current ? content.furniture[current] : undefined;
+    if (built?.station) {
+      const verb = built.station === "bank" ? "Open" : built.station === "workbench" ? "Build at" : "Cook at";
+      items.push({
+        label: `${verb} the ${built.name}`,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "USE_FURNITURE", hotspotId }),
+      });
+    }
+
+    items.push(...pieces.map((f): MenuItem => {
+      const isBuilt = current === f.id;
       const leveled = conLvl >= f.levelReq;
       const ready = leveled && hasMats(f);
       const cost = Object.entries(f.materials)
         .map(([item, qty]) => `${qty}× ${content.items[item as ItemId].name}`).join(", ");
       return {
-        label: built ? `${f.name} ✓` : f.name,
-        target: built ? "built here" : leveled ? cost : `Construction ${f.levelReq}`,
-        tone: ready && !built ? "action" : "normal",
+        label: isBuilt ? `${f.name} ✓` : f.name,
+        target: isBuilt ? "built here" : leveled ? cost : `Construction ${f.levelReq}`,
+        tone: ready && !isBuilt ? "action" : "normal",
         onSelect: () => {
-          if (built) { this.hud.log(`The ${f.name} is already built here.`); return; }
+          if (isBuilt) { this.hud.log(`The ${f.name} is already built here.`); return; }
           if (!leveled) { this.hud.log(`You need Construction level ${f.levelReq} to build the ${f.name}.`); return; }
           if (!hasMats(f)) { this.hud.log(`You're short of materials for the ${f.name}.`); return; }
           this.dispatch({ type: "BUILD_FURNITURE", hotspotId, furnitureId: f.id });
         },
       };
-    });
+    }));
 
     if (current) {
       items.push({

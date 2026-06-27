@@ -27,6 +27,7 @@ const MM_TILE: Record<TileType, string> = {
   cave_wall: "#0b0a0f",
   deep: "#101d30",
   wall: "#736857",
+  plank: "#5e4326",
 };
 
 const MM_OBJ: Record<ObjKind, string> = {
@@ -47,6 +48,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   bounty_board: "#c8a24a",
   housing_plot: "#d8b066", // a warm hearth-gold marker for a homestead
   build_hotspot: "", // build footings aren't marked on the minimap
+  house_door: "#b07a3a", // a home's door
   cauldron: "#6f8a6a",
   workbench: "#9a7b4e",
   crafting_table: "#a98a6a",
