@@ -432,6 +432,30 @@ function decode(): WorldMap {
 
 export const map: WorldMap = decode();
 
+/** A bounded "instance" rectangle (inclusive tile bounds) for view isolation. */
+export interface InstanceRect { x0: number; y0: number; x1: number; y1: number }
+
+/**
+ * The instance the given tile belongs to — a player home or a boss arena — or
+ * null for the open overworld. The renderer uses this to show ONLY the current
+ * instance (a sealed room), so you never see the neighbouring rooms or the
+ * arena band around it.
+ */
+export function instanceRectAt(x: number, y: number): InstanceRect | null {
+  if (y < OVERWORLD_HEIGHT) return null; // the overworld is never masked
+  for (const h of HOMES) {
+    if (x >= h.ox && x <= h.ox + HOUSE_W - 1 && y >= INTERIOR_TOP && y <= INTERIOR_TOP + 10) {
+      return { x0: h.ox, y0: INTERIOR_TOP, x1: h.ox + HOUSE_W - 1, y1: INTERIOR_TOP + 10 };
+    }
+  }
+  for (const a of ARENAS) {
+    if (x >= a.x && x <= a.x + ARENA_W - 1 && y >= ARENA_TOP && y <= ARENA_TOP + ARENA_H - 1) {
+      return { x0: a.x, y0: ARENA_TOP, x1: a.x + ARENA_W - 1, y1: ARENA_TOP + ARENA_H - 1 };
+    }
+  }
+  return null;
+}
+
 /** Convenience: read the tile type at a coordinate (grass if out of bounds). */
 export function tileAt(m: WorldMap, x: number, y: number): TileType {
   if (x < 0 || y < 0 || x >= m.width || y >= m.height) return "grass";

@@ -39,4 +39,9 @@ export const achievements: AchievementDef[] = [
   { id: "ach_sworn", name: "Sworn", desc: "Reach Allied standing with any faction.", icon: "🤝", category: "Standing", cond: { type: "anyRepAtLeast", amount: 50 } },
   { id: "ach_a_friend", name: "A Friend on the Road", desc: "Befriend your first companion.", icon: "🐾", category: "Companions", cond: { type: "companions", count: 1 } },
   { id: "ach_menagerie", name: "Menagerie", desc: "Gather five companions.", icon: "🦜", category: "Companions", cond: { type: "companions", count: 5 } },
+
+  // --- Home ---
+  { id: "ach_homesteader", name: "Homesteader", desc: "Claim a homestead of your own.", icon: "🏡", category: "Home", cond: { type: "flag", flag: "homesteader" } },
+  { id: "ach_house_proud", name: "House Proud", desc: "Furnish a home into a Manor.", icon: "🏠", category: "Home", cond: { type: "flag", flag: "home_manor" } },
+  { id: "ach_palatial", name: "Palatial", desc: "Furnish a home into a Palace.", icon: "🏰", category: "Home", cond: { type: "flag", flag: "home_palace" } },
 ];

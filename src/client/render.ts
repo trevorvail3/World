@@ -11,6 +11,8 @@ import type {
   Appearance,
   Content,
   FurnitureDef,
+  ItemDef,
+  ItemId,
   TileType,
   Vec2,
   WorldMap,
@@ -19,7 +21,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
-import { type RoofStyle, cityDoor, cityRoof, tileAt } from "../content/map.ts";
+import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 
 export const TILE = 40; // pixels per tile
@@ -408,7 +410,15 @@ export function drawWorld(
   const w = viewW;
   const h = viewH;
 
-  g.fillStyle = "#13100d";
+  // When the player is inside a sealed instance (a home or a boss arena), the
+  // view is masked to that one region — everything outside it is void, so you
+  // never see the neighbouring rooms or the arena band around it.
+  const ppos = state.player.pos;
+  const region = instanceRectAt(Math.round(ppos.x), Math.round(ppos.y));
+  const inRegion = (x: number, y: number) =>
+    !region || (x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1);
+
+  g.fillStyle = region ? "#07070a" : "#13100d";
   g.fillRect(0, 0, w, h);
 
   const { map } = state;
@@ -420,6 +430,7 @@ export function drawWorld(
   // --- Tiles ---
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
+      if (!inRegion(x, y)) continue; // mask everything outside the current instance
       const tile = map.tiles[y * map.width + x]!;
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
@@ -429,11 +440,13 @@ export function drawWorld(
 
   // --- Objects ---
   const lights: Array<[number, number]> = []; // warm light sources, for night
+  const trophy = trophyGlyph(state, content); // the player's rarest item, for display cases
   for (const def of content.objects) {
     const obj = state.objects[def.id];
     if (!obj) continue;
     // Creatures render at their live (wandering) position; fixed objects at def.
     const p = objectPos(def, obj);
+    if (!inRegion(Math.round(p.x), Math.round(p.y))) continue; // mask other instances
     const px = p.x * TILE - cam.x;
     const py = p.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
@@ -444,7 +457,7 @@ export function drawWorld(
     } else if (def.kind === "build_hotspot") {
       const f = obj.furniture ? content.furniture[obj.furniture] : undefined;
       const { idx, last } = furnitureRank(content, f);
-      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, idx, last, now);
+      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, idx, last, now, trophy);
     } else if (def.kind === "room_seal") {
       if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
     } else {
@@ -467,6 +480,10 @@ export function drawWorld(
     }
   }
 
+  // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
+  // whichever home the player is standing in (so a bare house still feels lived-in).
+  if (region && region.y0 === INTERIOR_TOP) drawHomeDressing(g, region.x0, cam, now, lights);
+
   // --- Player ---
   if (state.player.alive) {
     drawPlayer(
@@ -475,8 +492,61 @@ export function drawWorld(
     );
   }
 
-  // --- Time of day: a slow tint cycle, with firelight glowing through at night.
-  drawDaylight(g, w, h, lights);
+  // --- Time of day: a slow tint cycle (skipped indoors — a home has its own
+  //     warm, even light, lit by its sconces and lamps rather than the sky).
+  drawDaylight(g, w, h, lights, !!region);
+}
+
+/** The player's "trophy" — their rarest/most-valuable item — for display cases. */
+function trophyGlyph(state: WorldState, content: Content): string | undefined {
+  const p = state.player;
+  const owned = new Set<string>();
+  for (const s of p.inventory) if (s) owned.add(s.item);
+  for (const k of Object.keys(p.bank)) owned.add(k);
+  for (const id of Object.values(p.equipment)) if (id) owned.add(id);
+  let best: ItemDef | undefined; let score = -1;
+  for (const id of owned) {
+    const d = content.items[id as ItemId];
+    if (!d) continue;
+    // Companions and high-tier gear rank as the proudest trophies; else by value.
+    const s = (d.slot === "companion" ? 1e9 : 0) + (d.tier ?? 0) * 200 + (d.sell ?? 0);
+    if (s > score) { score = s; best = d; }
+  }
+  return best?.icon;
+}
+
+/** Windows + glowing wall sconces baked into a home's rooms (decorative). */
+function drawHomeDressing(
+  g: CanvasRenderingContext2D,
+  ox: number,
+  cam: Camera,
+  now: number,
+  lights: Array<[number, number]>,
+): void {
+  const sx = (tx: number) => tx * TILE - cam.x;
+  const sy = (ty: number) => ty * TILE - cam.y;
+  const fl = 0.6 + 0.4 * Math.sin(now / 240);
+  // Windows on the top outer wall of the bedroom and workshop.
+  for (const wx of [ox + 3, ox + 11]) {
+    const x = sx(wx), y = sy(INTERIOR_TOP);
+    g.fillStyle = "#3a2c1c"; g.fillRect(x + 4, y + 4, TILE - 8, TILE - 9); // frame
+    g.fillStyle = "rgba(150,180,210,0.5)"; g.fillRect(x + 6, y + 6, TILE - 12, TILE - 13); // pane
+    g.strokeStyle = "#3a2c1c"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(x + TILE / 2, y + 6); g.lineTo(x + TILE / 2, y + TILE - 7); g.moveTo(x + 6, y + TILE / 2 - 1); g.lineTo(x + TILE - 6, y + TILE / 2 - 1); g.stroke();
+  }
+  // Wall sconces: one on an inner wall of each room, casting a warm pool.
+  const sconces = [
+    { x: ox + 7, y: INTERIOR_TOP + 3 },  // bedroom/kitchen party wall
+    { x: ox + 7, y: INTERIOR_TOP + 8 },  // kitchen/living party wall
+    { x: ox + 14, y: INTERIOR_TOP + 8 }, // living outer wall
+    { x: ox, y: INTERIOR_TOP + 3 },      // bedroom outer wall
+  ];
+  for (const s of sconces) {
+    const x = sx(s.x) + TILE / 2, y = sy(s.y) + TILE / 2;
+    g.fillStyle = "#3b3e45"; g.fillRect(x - 1.5, y - 1, 3, 6); // iron bracket
+    g.fillStyle = `rgba(255,200,110,${0.55 + 0.4 * fl})`; g.beginPath(); g.arc(x, y - 3, 3, 0, Math.PI * 2); g.fill();
+    lights.push([x, y - 2]);
+  }
 }
 
 /** One full day in real milliseconds (dawn → noon → dusk → night → dawn). */
@@ -492,7 +562,24 @@ function drawDaylight(
   w: number,
   h: number,
   lights: Array<[number, number]>,
+  indoor = false,
 ): void {
+  // Indoors a home has its own steady, gentle gloom lit by sconces and lamps —
+  // it doesn't follow the sky, so the room is cosy at any hour.
+  if (indoor) {
+    g.fillStyle = "rgba(20,16,28,0.34)";
+    g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = "lighter";
+    for (const [lx, ly] of lights) {
+      const r = 64;
+      const grd = g.createRadialGradient(lx, ly, 4, lx, ly, r);
+      grd.addColorStop(0, "rgba(235,165,85,0.34)");
+      grd.addColorStop(1, "rgba(235,165,85,0)");
+      g.fillStyle = grd; g.beginPath(); g.arc(lx, ly, r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalCompositeOperation = "source-over";
+    return;
+  }
   const phase = (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS;
   const sun = Math.sin(phase * Math.PI * 2 - Math.PI / 2); // -1 midnight … +1 noon
   const night = Math.max(0, -sun) * 0.46;
@@ -758,6 +845,13 @@ function sparkle(g: CanvasRenderingContext2D, x: number, y: number, now: number)
   g.fillRect(x - 0.6, y - 2.5, 1.2, 5); g.fillRect(x - 2.5, y - 0.6, 5, 1.2);
   g.globalAlpha = 1;
 }
+/** Draw a real item's icon glyph (a trophy on a display) centred at cx,cy. */
+function drawTrophy(g: CanvasRenderingContext2D, cx: number, cy: number, glyph: string): void {
+  g.save();
+  g.font = "9px serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(glyph, cx, cy);
+  g.restore();
+}
 
 /** A floor carpet (drawn flat at floor level — you walk over it, so no shadow). */
 function drawRug(g: CanvasRenderingContext2D, cx: number, cy: number, idx: number): void {
@@ -785,6 +879,7 @@ function drawHotspot(
   idx: number,
   last: number,
   now: number,
+  trophy?: string,
 ): void {
   if (!f) {
     g.strokeStyle = "rgba(150,128,92,0.7)"; g.lineWidth = 1.4;
@@ -924,15 +1019,16 @@ function drawHotspot(
         g.fillStyle = "#5a4632"; rrect(g, cx - 9, cy - 8, 18, 16, 2); g.fill();
         g.fillStyle = "#9a8466"; g.fillRect(cx - 6, cy - 1, 12, 7); g.fillStyle = "#ece2c8"; g.beginPath(); g.arc(cx, cy - 4, 3.5, 0, Math.PI * 2); g.fill();
         g.fillStyle = "#cfc4ad"; g.fillRect(cx - 6, cy - 7, 2, 4); g.fillRect(cx + 4, cy - 7, 2, 4);
-      } else if (idx === 2) { // glass cabinet
+      } else if (idx === 2) { // glass cabinet — shows your real trophy item
         g.fillStyle = "#5a4026"; g.fillRect(cx - 9, cy - 9, 18, 18); g.fillStyle = "rgba(150,210,225,0.30)"; g.fillRect(cx - 7, cy - 7, 14, 15);
         g.strokeStyle = "#3a2e1f"; g.lineWidth = 1; g.strokeRect(cx - 7, cy - 7, 14, 15); g.beginPath(); g.moveTo(cx, cy - 7); g.lineTo(cx, cy + 8); g.moveTo(cx - 7, cy); g.lineTo(cx + 7, cy); g.stroke();
-        g.fillStyle = GEM; g.fillRect(cx - 4, cy - 4, 2, 2); g.fillRect(cx + 2, cy + 2, 2, 3);
-      } else { // gold display case
+        if (trophy) drawTrophy(g, cx, cy, trophy); else { g.fillStyle = GEM; g.fillRect(cx - 4, cy - 4, 2, 2); g.fillRect(cx + 2, cy + 2, 2, 3); }
+      } else { // gold display case — your rarest possession, lit and on a pedestal
         g.fillStyle = GOLD; g.fillRect(cx - 8, cy - 9, 16, 18); g.fillStyle = GOLDLT; g.fillRect(cx - 8, cy - 9, 16, 1.5);
         g.fillStyle = "rgba(150,220,235,0.35)"; g.fillRect(cx - 6, cy - 7, 12, 14);
         g.fillStyle = `rgba(190,230,240,${0.5 + 0.3 * Math.sin(now / 200)})`; g.fillRect(cx - 5, cy - 6, 10, 2);
-        g.fillStyle = GEM; g.fillRect(cx - 1.5, cy - 2, 3, 5); sparkle(g, cx + 6, cy - 8, now);
+        if (trophy) drawTrophy(g, cx, cy - 0.5, trophy); else { g.fillStyle = GEM; g.fillRect(cx - 1.5, cy - 2, 3, 5); }
+        sparkle(g, cx + 6, cy - 8, now);
       }
       break;
     }

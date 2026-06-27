@@ -1399,7 +1399,8 @@ function interactPlot(
 ): void {
   if (!obj.owned) {
     obj.owned = true;
-    events.push({ type: "LOG", message: `You claim ${def.name}. The footings around the yard are yours to build on.` });
+    if (!state.player.flags.includes("homesteader")) state.player.flags.push("homesteader");
+    events.push({ type: "LOG", message: `You claim ${def.name}. Step inside and build to make it your own.` });
     return;
   }
   const comfort = homeComfort(state, content, def.id);
@@ -1419,6 +1420,15 @@ function comfortTitle(comfort: number): string {
   if (comfort >= 60) return "a Fine Home";
   if (comfort >= 25) return "a Cottage";
   return "a Hovel";
+}
+
+/** Set comfort-tier story flags for a home (drive the housing achievements). */
+function markHomeStanding(player: Player, content: Content, state: WorldState, plotId: string): void {
+  const c = homeComfort(state, content, plotId);
+  const set = (f: string) => { if (!player.flags.includes(f)) player.flags.push(f); };
+  if (c >= 25) set("home_cottage");
+  if (c >= 120) set("home_manor");
+  if (c >= 280) set("home_palace");
 }
 
 /** Sum the comfort of every built piece across one plot's hotspots. */
@@ -1498,6 +1508,7 @@ function buildFurniture(
   }
   obj.furniture = furnitureId;
   grantXp(state, content, "construction", f.xp, events);
+  if (def.plot) markHomeStanding(player, content, state, def.plot); // comfort-tier flags → achievements
   // A bed makes the homestead your home: you respawn here from now on.
   if (f.bed && def.plot) {
     const plotDef = findObjectDef(content, def.plot);

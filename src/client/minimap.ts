@@ -8,7 +8,7 @@
 
 import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
-import { OVERWORLD_HEIGHT } from "../content/map.ts";
+import { OVERWORLD_HEIGHT, instanceRectAt } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
 import { iconize } from "./glyph.ts";
 
@@ -155,13 +155,20 @@ export class Minimap {
     g.fillStyle = "#0c0907";
     g.fillRect(0, 0, size, size);
 
+    // Inside a sealed instance (a home / arena) the minimap shows only that room,
+    // never the neighbouring rooms or the band around it.
+    const pp = state.player.pos;
+    const region = instanceRectAt(Math.round(pp.x), Math.round(pp.y));
+    const inRegion = (x: number, y: number) =>
+      !region || (x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1);
+
     // Tiles in the visible window (anything off the map stays background).
     const x0 = Math.floor(originX), x1 = Math.ceil(originX + span);
     const y0 = Math.floor(originY), y1 = Math.ceil(originY + span);
     for (let y = y0; y < y1; y++) {
       if (y < 0 || y >= m.height) continue;
       for (let x = x0; x < x1; x++) {
-        if (x < 0 || x >= m.width) continue;
+        if (x < 0 || x >= m.width || !inRegion(x, y)) continue;
         g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
         g.fillRect((x - originX) * cell, (y - originY) * cell, cell + 0.8, cell + 0.8);
       }
@@ -174,6 +181,7 @@ export class Minimap {
       const obj = state.objects[def.id];
       const p = objectPos(def, obj);
       if (p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) continue;
+      if (!inRegion(Math.round(p.x), Math.round(p.y))) continue;
       g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
       g.beginPath();
       g.arc((p.x + 0.5 - originX) * cell, (p.y + 0.5 - originY) * cell, Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
