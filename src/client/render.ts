@@ -574,7 +574,7 @@ function drawObject(
   py: number,
   now: number,
   moving = false,
-  action?: AvatarAnim["action"],
+  attack?: MonsterAttack,
 ): void {
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
@@ -592,7 +592,7 @@ function drawObject(
       drawNpc(g, cx, cy, now, moving);
       break;
     case "monster":
-      drawMonster(g, def.monster, available, cx, cy, now, moving, action);
+      drawMonster(g, def.monster, available, cx, cy, now, moving, attack);
       break;
 
     case "shrine":
@@ -1410,6 +1410,17 @@ function limbArm(
 }
 
 /** Route a monster to its sprite (reusing shapes across similar creatures). */
+/** A monster's live attack, while the player is fighting it. */
+interface MonsterAttack {
+  /** Time to its next swing, 1 → 0 across its attack interval. */
+  frac: number;
+  /** Unit direction from the creature toward the player (for an animal's lunge). */
+  dx: number;
+  dy: number;
+  /** Set for human-type foes: the weapon swing to play (animals lunge instead). */
+  action?: AvatarAnim["action"];
+}
+
 function drawMonster(
   g: CanvasRenderingContext2D,
   monster: string | undefined,
@@ -1418,9 +1429,38 @@ function drawMonster(
   cy: number,
   now: number,
   moving = false,
-  action?: AvatarAnim["action"],
+  attack?: MonsterAttack,
 ): void {
   if (!available) return drawRespawning(g, cx, cy);
+  // Animals (no weapon action) lunge toward the player on the strike; humanoids
+  // swing a weapon instead, so they don't lunge.
+  const lunge = attack && !attack.action ? attack : null;
+  if (lunge) {
+    // A pounce on the strike: lunge toward the player and swell a little, easing
+    // back out. Concentrated in the back half of the swing so it reads as a snap.
+    const t = 1 - lunge.frac;
+    const hit = t > 0.5 ? (t - 0.5) / 0.5 : 0;
+    const push = hit * 7;
+    const k = 1 + hit * 0.14;
+    g.save();
+    g.translate(lunge.dx * push, lunge.dy * push);
+    g.translate(cx, cy); g.scale(k, k); g.translate(-cx, -cy);
+    drawMonsterBody(g, monster, cx, cy, now, moving, undefined);
+    g.restore();
+    return;
+  }
+  drawMonsterBody(g, monster, cx, cy, now, moving, attack?.action);
+}
+
+function drawMonsterBody(
+  g: CanvasRenderingContext2D,
+  monster: string | undefined,
+  cx: number,
+  cy: number,
+  now: number,
+  moving = false,
+  action?: AvatarAnim["action"],
+): void {
   // Human-type foes share the animated humanoid figure (arms, walk, attack swing).
   const H = (body: string, trim: string) => drawHumanoid(g, cx, cy, now, body, trim, moving, action);
   switch (monster) {
@@ -1947,27 +1987,37 @@ function playerAction(
 ): AvatarAnim["action"] | undefined {
   const act = player.activity;
   if (act.kind === "idle") return undefined;
-  const interval = act.actionInterval || 600;
-  const frac = Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
-  // Combat: swing the worn weapon (or draw a bow when fighting at range).
+  const swingFrac = (interval: number) => Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
+  // Combat: swing the worn weapon (or draw a bow at range). The swing interval is
+  // taken from the *current* weapon's speed, so the cadence always matches the
+  // weapon actually in hand — a dagger (1600ms) visibly faster than a hammer.
   if (act.kind === "combat") {
-    if (player.equipment.ranged) return { kind: "ranged", tool: "bow", frac };
-    const wep = player.equipment.mainhand;
-    const type = (wep && content.items[wep]?.wepType) || "sword";
-    return { kind: "combat", tool: type, frac };
+    const wepId = player.equipment.ranged ?? player.equipment.mainhand;
+    const interval = (wepId && content.items[wepId]?.speed) || 2400; // COMBAT.playerMeleeSpeed
+    if (player.equipment.ranged) return { kind: "ranged", tool: "bow", frac: swingFrac(interval) };
+    const type = (player.equipment.mainhand && content.items[player.equipment.mainhand]?.wepType) || "sword";
+    return { kind: "combat", tool: type, frac: swingFrac(interval) };
   }
+  // Gathering / crafting: the action interval the engine is repeating on.
   const TOOL: Record<string, string> = {
     mining: "pickaxe", woodcutting: "axe", fishing: "rod", crafting: "", trapping: "",
   };
   if (!(act.kind in TOOL)) return undefined;
-  return { kind: act.kind, tool: TOOL[act.kind]!, frac };
+  return { kind: act.kind, tool: TOOL[act.kind]!, frac: swingFrac(act.actionInterval || 600) };
 }
 
+/** The human-type monsters that swing a weapon; the rest are animals that lunge. */
+const HUMANOID_MONSTERS = new Set([
+  "bog_knight", "redrun_brigand", "ancient_orc", "dread_ferryman",
+  "footpad", "cutpurse", "bandit", "poacher", "highwayman",
+  "outlaw_archer", "cutthroat", "marauder", "outlaw_captain",
+]);
+
 /**
- * A humanoid enemy's attack swing, while the player is fighting it. The monster
- * swings on its own clock (obj.nextAttackAt every stats.speed); we map that to a
- * weapon by its attack style (archers loose a bow). Undefined when not fighting
- * it — animal monsters never produce a weapon, so they're unaffected.
+ * A monster's attack while the player is fighting it. It swings on its own clock
+ * (obj.nextAttackAt every stats.speed) so the animation matches its real attack
+ * speed. Human-type foes get a weapon swing (by attack style; archers a bow);
+ * animals get a lunge toward the player instead. Undefined when not engaged.
  */
 function monsterAttack(
   def: WorldObjectDef,
@@ -1975,18 +2025,29 @@ function monsterAttack(
   state: WorldState,
   content: Content,
   now: number,
-): AvatarAnim["action"] | undefined {
+): MonsterAttack | undefined {
   if (def.kind !== "monster" || !def.monster) return undefined;
   const act = state.player.activity;
   if (act.kind !== "combat" || act.targetId !== def.id || !obj.nextAttackAt) return undefined;
   const stats = content.monsters[def.monster];
   if (!stats) return undefined;
-  const interval = stats.speed || 2400;
+  const interval = stats.speed || 3000; // COMBAT.monsterSpeed
   const frac = Math.max(0, Math.min(1, (obj.nextAttackAt - now) / interval));
-  if (def.monster === "poacher" || def.monster === "outlaw_archer") return { kind: "ranged", tool: "bow", frac };
-  const style = stats.attackStyle;
-  const tool = style === "crush" ? "hammer" : style === "stab" ? "spear" : "sword";
-  return { kind: "combat", tool, frac };
+  // Direction from the creature toward the player, for an animal's lunge.
+  const mp = objectPos(def, obj);
+  const pp = state.player.pos;
+  let dx = pp.x - mp.x, dy = pp.y - mp.y;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len; dy /= len;
+  if (HUMANOID_MONSTERS.has(def.monster)) {
+    if (def.monster === "poacher" || def.monster === "outlaw_archer") {
+      return { frac, dx, dy, action: { kind: "ranged", tool: "bow", frac } };
+    }
+    const style = stats.attackStyle;
+    const tool = style === "crush" ? "hammer" : style === "stab" ? "spear" : "sword";
+    return { frac, dx, dy, action: { kind: "combat", tool, frac } };
+  }
+  return { frac, dx, dy }; // animal: lunge only
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {
