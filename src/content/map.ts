@@ -257,6 +257,11 @@ function decode(): WorldMap {
   carve(81, 57, 90, 63, "dirt");  // Redmouth, on the Redrun's east bank
   carve(63, 72, 73, 79, "dirt");  // The Drover's Rest, on the south road
   carve(58, 13, 67, 19, "dirt");  // The Fold, in the upland Knuckle Hills
+  //    A vacant homestead lot beside each hamlet — cleared ground a player can
+  //    claim and build a home on (the build hotspots sit in these).
+  carve(81, 64, 86, 67, "dirt");  // Redmouth homestead lot, south of the bank
+  carve(74, 73, 79, 76, "dirt");  // Drover's Rest homestead lot, east of the yard
+  carve(59, 8, 64, 11, "dirt");   // The Fold homestead lot, north of the croft
   //    The buildings: each footprint becomes blocking masonry (the renderer
   //    lays a roof over it). The streets and frontages stay clear between them.
   for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");

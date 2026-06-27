@@ -609,6 +609,32 @@ export const objects: WorldObjectDef[] = [
   { id: "sign_fold", kind: "signpost", x: 58, y: 19, name: "Fingerpost", lines: ["THE FOLD — an upland croft. Mind the flock, and mind what minds the flock."] },
   { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 66, y: 16, name: "A Hill Sheep" },
   { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 59, y: 18, name: "A Hill Sheep" },
+
+  // === PLAYER HOUSING — a claimable homestead lot at each hamlet =============
+  // Claim the plot, then build furniture at its four footings (hearth / bed /
+  // table / hall) from Construction materials. A bed makes it your respawn.
+  // `target` on each plot is the recall/respawn tile at the lot's centre.
+
+  // --- Redmouth homestead lot (south of the river bank) ---
+  { id: "home_redmouth", kind: "housing_plot", x: 81, y: 64, name: "the Redmouth Homestead", target: { x: 84, y: 66 } },
+  { id: "hs_redmouth_hearth", kind: "build_hotspot", x: 83, y: 65, name: "Hearth Footing", category: "hearth", plot: "home_redmouth" },
+  { id: "hs_redmouth_bed", kind: "build_hotspot", x: 85, y: 65, name: "Bed Footing", category: "bed", plot: "home_redmouth" },
+  { id: "hs_redmouth_table", kind: "build_hotspot", x: 83, y: 66, name: "Table Footing", category: "table", plot: "home_redmouth" },
+  { id: "hs_redmouth_hall", kind: "build_hotspot", x: 85, y: 66, name: "Hall Footing", category: "hall", plot: "home_redmouth" },
+
+  // --- The Drover's Rest homestead lot (east of the yard) ---
+  { id: "home_drover", kind: "housing_plot", x: 74, y: 73, name: "the Drover's Rest Homestead", target: { x: 77, y: 75 } },
+  { id: "hs_drover_hearth", kind: "build_hotspot", x: 76, y: 74, name: "Hearth Footing", category: "hearth", plot: "home_drover" },
+  { id: "hs_drover_bed", kind: "build_hotspot", x: 78, y: 74, name: "Bed Footing", category: "bed", plot: "home_drover" },
+  { id: "hs_drover_table", kind: "build_hotspot", x: 76, y: 75, name: "Table Footing", category: "table", plot: "home_drover" },
+  { id: "hs_drover_hall", kind: "build_hotspot", x: 78, y: 75, name: "Hall Footing", category: "hall", plot: "home_drover" },
+
+  // --- The Fold homestead lot (north of the croft) ---
+  { id: "home_fold", kind: "housing_plot", x: 59, y: 8, name: "the Fold Homestead", target: { x: 62, y: 10 } },
+  { id: "hs_fold_hearth", kind: "build_hotspot", x: 61, y: 9, name: "Hearth Footing", category: "hearth", plot: "home_fold" },
+  { id: "hs_fold_bed", kind: "build_hotspot", x: 63, y: 9, name: "Bed Footing", category: "bed", plot: "home_fold" },
+  { id: "hs_fold_table", kind: "build_hotspot", x: 61, y: 10, name: "Table Footing", category: "table", plot: "home_fold" },
+  { id: "hs_fold_hall", kind: "build_hotspot", x: 63, y: 10, name: "Hall Footing", category: "hall", plot: "home_fold" },
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

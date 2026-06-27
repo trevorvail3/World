@@ -17,6 +17,7 @@ import { shops } from "./shops.ts";
 import { factions } from "./factions.ts";
 import { achievements } from "./achievements.ts";
 import { crops } from "./crops.ts";
+import { furniture } from "./furniture.ts";
 import { bountyGuides, bountyShop, bountyTasks } from "./bounty.ts";
 import { objects, playerSpawn } from "./spawns.ts";
 import { skills } from "./skills.ts";
@@ -34,6 +35,7 @@ export const content: Content = {
   factions,
   achievements,
   crops,
+  furniture,
   bountyGuides,
   bountyTasks,
   bountyShop,

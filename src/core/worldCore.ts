@@ -202,6 +202,7 @@ const BLOCKING_KINDS = new Set([
   "signpost",
   "waystone",
   "relic",
+  "build_hotspot",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -780,6 +781,23 @@ export function applyIntent(
       player.running = !player.running;
       break;
     }
+    case "CLAIM_PLOT": {
+      const obj = state.objects[intent.plotId];
+      const def = findObjectDef(content, intent.plotId);
+      if (obj && def && def.kind === "housing_plot" && !obj.owned) {
+        obj.owned = true;
+        events.push({ type: "LOG", message: `You claim ${def.name}.` });
+      }
+      break;
+    }
+    case "BUILD_FURNITURE": {
+      buildFurniture(state, content, intent.hotspotId, intent.furnitureId, events);
+      break;
+    }
+    case "REMOVE_FURNITURE": {
+      removeFurniture(state, content, intent.hotspotId, events);
+      break;
+    }
   }
   return events;
 }
@@ -1310,10 +1328,152 @@ function startInteraction(
       interactPatch(state, content, def, obj, ctx, events);
       break;
 
+    case "housing_plot":
+      interactPlot(state, content, def, obj, events);
+      break;
+
+    case "build_hotspot":
+      interactHotspot(state, def, obj, events);
+      break;
+
     case "portal":
       usePortal(state, def, events);
       break;
   }
+}
+
+/**
+ * A homestead plot. Unclaimed → claim it (free; you're a frontier homesteader).
+ * Claimed → report its standing (its tally of comfort across built furniture),
+ * a gentle nudge toward the build hotspots that ring it.
+ */
+function interactPlot(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  events: WorldEvent[],
+): void {
+  if (!obj.owned) {
+    obj.owned = true;
+    events.push({ type: "LOG", message: `You claim ${def.name}. The footings around the yard are yours to build on.` });
+    return;
+  }
+  const comfort = homeComfort(state, content, def.id);
+  events.push({
+    type: "LOG",
+    message: comfort > 0
+      ? `${def.name} — your homestead. Home comfort ${comfort}. Build at the footings to make it your own.`
+      : `${def.name} — your homestead, bare as yet. Build at the footings around the yard.`,
+  });
+}
+
+/** Sum the comfort of every built piece across one plot's hotspots. */
+function homeComfort(state: WorldState, content: Content, plotId: string): number {
+  let total = 0;
+  for (const d of content.objects) {
+    if (d.kind !== "build_hotspot" || d.plot !== plotId) continue;
+    const fid = state.objects[d.id]?.furniture;
+    const f = fid ? content.furniture[fid] : undefined;
+    if (f) total += f.comfort;
+  }
+  return total;
+}
+
+/**
+ * A build hotspot. Only usable once its plot is claimed; then it opens the
+ * furniture build/replace menu for its category (the client lists the pieces).
+ */
+function interactHotspot(
+  state: WorldState,
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  events: WorldEvent[],
+): void {
+  const plot = def.plot ? state.objects[def.plot] : undefined;
+  if (!plot?.owned) {
+    events.push({ type: "LOG", message: "You'd need to claim this homestead before building on it." });
+    return;
+  }
+  events.push({
+    type: "OPEN_BUILD",
+    hotspotId: def.id,
+    category: def.category ?? "hall",
+    current: obj.furniture ?? null,
+  });
+}
+
+/** Build (or replace) a furniture piece at a hotspot — the Construction sink. */
+function buildFurniture(
+  state: WorldState,
+  content: Content,
+  hotspotId: string,
+  furnitureId: string,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const obj = state.objects[hotspotId];
+  const def = findObjectDef(content, hotspotId);
+  const f = content.furniture[furnitureId];
+  if (!obj || !def || !f) return;
+  const plot = def.plot ? state.objects[def.plot] : undefined;
+  if (!plot?.owned) {
+    events.push({ type: "LOG", message: "You don't own this homestead." });
+    return;
+  }
+  if (f.category !== def.category) {
+    events.push({ type: "LOG", message: `A ${f.name} doesn't belong at this footing.` });
+    return;
+  }
+  if (obj.furniture === furnitureId) {
+    events.push({ type: "LOG", message: `A ${f.name} already stands here.` });
+    return;
+  }
+  if (skillLvl(player, "construction") < f.levelReq) {
+    events.push({ type: "LOG", message: `You need Construction level ${f.levelReq} to build the ${f.name}.` });
+    return;
+  }
+  // Check, then consume, every required material.
+  for (const [item, qty] of Object.entries(f.materials)) {
+    if (countItem(player, item as ItemId) < (qty ?? 0)) {
+      events.push({ type: "LOG", message: `You're short of materials for the ${f.name}.` });
+      return;
+    }
+  }
+  for (const [item, qty] of Object.entries(f.materials)) {
+    for (let i = 0; i < (qty ?? 0); i++) removeOneItem(player, item as ItemId);
+  }
+  obj.furniture = furnitureId;
+  grantXp(state, content, "construction", f.xp, events);
+  // A bed makes the homestead your home: you respawn here from now on.
+  if (f.bed && def.plot) {
+    const plotDef = findObjectDef(content, def.plot);
+    if (plotDef?.target) {
+      player.spawn = { x: plotDef.target.x, y: plotDef.target.y };
+      events.push({ type: "LOG", message: `You build the ${f.name}. This is your home now — you'll wake here.` });
+      return;
+    }
+  }
+  events.push({ type: "LOG", message: `You build the ${f.name}.` });
+}
+
+/** Clear a hotspot's furniture (no refund — you scrap the piece). */
+function removeFurniture(
+  state: WorldState,
+  content: Content,
+  hotspotId: string,
+  events: WorldEvent[],
+): void {
+  const obj = state.objects[hotspotId];
+  const def = findObjectDef(content, hotspotId);
+  if (!obj || !def) return;
+  if (!obj.furniture) {
+    events.push({ type: "LOG", message: "There's nothing built here to clear." });
+    return;
+  }
+  const f = content.furniture[obj.furniture];
+  delete obj.furniture;
+  events.push({ type: "LOG", message: `You clear away the ${f?.name ?? "furniture"}.` });
 }
 
 /**

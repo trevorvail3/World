@@ -45,6 +45,8 @@ const MM_OBJ: Record<ObjKind, string> = {
   portal: "#b0593a",
   trap: "#9c7b46",
   bounty_board: "#c8a24a",
+  housing_plot: "#d8b066", // a warm hearth-gold marker for a homestead
+  build_hotspot: "", // build footings aren't marked on the minimap
   cauldron: "#6f8a6a",
   workbench: "#9a7b4e",
   crafting_table: "#a98a6a",

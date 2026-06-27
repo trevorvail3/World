@@ -10,6 +10,7 @@
 import type {
   Appearance,
   Content,
+  FurnitureDef,
   TileType,
   Vec2,
   WorldMap,
@@ -419,6 +420,11 @@ export function drawWorld(
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
     if (def.kind === "plant_patch" || def.kind === "tree_patch") {
       drawPatch(g, obj.crop, obj.plantedAt, content, px, py);
+    } else if (def.kind === "housing_plot") {
+      drawHousingPlot(g, px + TILE / 2, py + TILE / 2, !!obj.owned);
+    } else if (def.kind === "build_hotspot") {
+      const f = obj.furniture ? content.furniture[obj.furniture] : undefined;
+      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, now);
     } else {
       drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget, monsterAttack(def, obj, state, content, now));
     }
@@ -426,6 +432,8 @@ export function drawWorld(
       lights.push([px + TILE / 2, py + TILE / 2]);
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
+    } else if (def.kind === "build_hotspot" && obj.furniture && content.furniture[obj.furniture]?.category === "hearth") {
+      lights.push([px + TILE / 2, py + TILE / 2]); // a built hearth warms the home
     }
     // Name label — monsters show their combat level (OSRS-style).
     if (def.kind === "npc" || def.kind === "monster") {
@@ -657,6 +665,93 @@ function drawObject(
     case "relic":
       drawRelic(g, cx, cy, now);
       break;
+  }
+}
+
+/** A homestead plot marker: a corner stake with a board (gold once claimed). */
+function drawHousingPlot(g: CanvasRenderingContext2D, cx: number, cy: number, owned: boolean): void {
+  shadow(g, cx, cy + 9, 7, 2.5);
+  g.fillStyle = "#6e5436"; g.fillRect(cx - 1.5, cy - 9, 3, 18); // the post
+  g.fillStyle = owned ? "#caa05a" : "#9a8f7d"; // claimed board reads warm gold
+  g.fillRect(cx - 8, cy - 9, 16, 8);
+  g.strokeStyle = "#3f3526"; g.lineWidth = 1; g.strokeRect(cx - 8, cy - 9, 16, 8);
+  if (owned) {
+    // a little dark home glyph: a roof over a doorway
+    g.fillStyle = "#3f3526";
+    g.beginPath(); g.moveTo(cx, cy - 8); g.lineTo(cx - 5, cy - 4.5); g.lineTo(cx + 5, cy - 4.5); g.closePath(); g.fill();
+    g.fillRect(cx - 3.5, cy - 4.5, 7, 3.5);
+    g.fillStyle = "#caa05a"; g.fillRect(cx - 1, cy - 3, 2, 2); // the doorway
+  } else {
+    g.fillStyle = "#6b6256"; g.fillRect(cx - 5, cy - 6.5, 10, 1.5); // a plain "vacant" rule
+    g.fillRect(cx - 5, cy - 4, 7, 1.5);
+  }
+}
+
+/** A build footing: an empty peg-marked square, or the furniture built on it. */
+function drawHotspot(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  f: FurnitureDef | undefined,
+  now: number,
+): void {
+  if (!f) {
+    // an empty footing — a faint dashed square with corner pegs
+    g.strokeStyle = "rgba(150,128,92,0.7)"; g.lineWidth = 1.4;
+    g.setLineDash([3, 3]); g.strokeRect(cx - 8, cy - 6, 16, 12); g.setLineDash([]);
+    g.fillStyle = "#6e5436";
+    for (const [dx, dy] of [[-8, -6], [8, -6], [-8, 6], [8, 6]] as const) g.fillRect(cx + dx - 1, cy + dy - 1, 2, 2);
+    return;
+  }
+  // Tier shades the timber/stone: 0 plain, 1 better, 2 the showpiece.
+  const tier = f.levelReq >= 60 ? 2 : f.levelReq >= 25 ? 1 : 0;
+  shadow(g, cx, cy + 8, 9, 3);
+  switch (f.category) {
+    case "hearth": {
+      g.fillStyle = tier ? "#6b6f78" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // hearth body
+      g.fillStyle = "#4b4f56"; g.fillRect(cx - 9, cy - 4, 18, 2.5); // mantel
+      g.fillStyle = "#241d18"; g.fillRect(cx - 5, cy + 1, 10, 7); // firebox
+      const fl = 0.5 + 0.5 * Math.sin(now / 110);
+      g.fillStyle = `rgba(240,150,40,${0.65 + 0.3 * fl})`;
+      g.beginPath(); g.moveTo(cx, cy + 2 - 4 - 2 * fl); g.lineTo(cx - 3.5, cy + 7); g.lineTo(cx + 3.5, cy + 7); g.closePath(); g.fill();
+      g.fillStyle = "#ffd86a"; g.beginPath(); g.moveTo(cx, cy + 3 - 2 * fl); g.lineTo(cx - 1.6, cy + 7); g.lineTo(cx + 1.6, cy + 7); g.closePath(); g.fill();
+      break;
+    }
+    case "bed": {
+      const frame = tier === 2 ? "#5a2f33" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      g.fillStyle = frame; g.fillRect(cx - 11, cy - 6, 3, 14); // headboard
+      g.fillStyle = frame; g.fillRect(cx - 9, cy - 5, 19, 12); // bed base
+      g.fillStyle = "#e7ddc4"; g.fillRect(cx - 8, cy - 4, 8, 10); // sheet
+      g.fillStyle = tier === 2 ? "#84505a" : tier === 1 ? "#8f7048" : "#b3a06e"; g.fillRect(cx - 1, cy - 4, 10, 10); // blanket
+      g.fillStyle = "#f3ecd9"; g.fillRect(cx - 8, cy - 4, 7, 4); // pillow
+      break;
+    }
+    case "table": {
+      const wood = tier === 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
+      g.fillStyle = "#5a4026"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
+      g.fillStyle = wood; g.fillRect(cx - 10, cy - 2, 20, 5); // top
+      g.fillStyle = "rgba(255,255,255,0.08)"; g.fillRect(cx - 10, cy - 2, 20, 1.5); // sheen
+      g.fillStyle = "#6e5436"; g.fillRect(cx - 12, cy + 3, 3, 3); g.fillRect(cx + 9, cy + 3, 3, 3); // two stools
+      break;
+    }
+    case "hall": {
+      const wall = tier === 2 ? "#8b8478" : tier === 1 ? "#7d756a" : "#9a7b4e";
+      g.fillStyle = wall; g.fillRect(cx - 10, cy - 9, 20, 16);
+      g.strokeStyle = "#46402f"; g.lineWidth = 1; g.strokeRect(cx - 10, cy - 9, 20, 16);
+      if (tier === 0) { // a timber-framed wall: cross-braces
+        g.strokeStyle = "#6e5436"; g.lineWidth = 2;
+        g.strokeRect(cx - 10, cy - 9, 20, 16);
+        g.beginPath(); g.moveTo(cx - 10, cy - 9); g.lineTo(cx + 10, cy + 7); g.moveTo(cx + 10, cy - 9); g.lineTo(cx - 10, cy + 7); g.stroke();
+      } else if (tier === 1) { // a stone mantel under a beam
+        g.fillStyle = "#6e4a2c"; g.fillRect(cx - 10, cy - 4, 20, 4); // mantel beam
+        g.fillStyle = "#6b6f78"; g.fillRect(cx - 7, cy, 14, 7); // stone breast
+      } else { // a vaulted gallery: a dressed-stone arch
+        g.strokeStyle = "#5a554c"; g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, cy + 1, 7, Math.PI, 0); g.stroke();
+        g.fillStyle = "#6f6a60"; g.fillRect(cx - 8, cy + 1, 16, 6);
+      }
+      break;
+    }
   }
 }
 

@@ -716,6 +716,10 @@ export type ObjKind =
   | "trap"
   /** A Bounty board: take a slay-task, claim it for Hunt Marks + Bounty XP. */
   | "bounty_board"
+  /** A claimable homestead yard at a hamlet — the anchor of player housing. */
+  | "housing_plot"
+  /** A furniture footing inside a claimed plot: build/replace a piece here. */
+  | "build_hotspot"
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
@@ -790,6 +794,10 @@ export interface WorldObjectDef {
   obstacle?: string;
   /** Relic only: which LoreDef (in Content.lore) this relic reveals when read. */
   loreId?: string;
+  /** build_hotspot only: the furniture category this footing accepts. */
+  category?: string;
+  /** build_hotspot only: the id of the housing_plot this footing belongs to. */
+  plot?: string;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -878,6 +886,10 @@ export interface WorldObjectState {
   /** Boss combat: whether the one-shot enrage / self-heal have fired. */
   enraged?: boolean;
   healed?: boolean;
+  /** housing_plot only: set once the player has claimed this homestead. */
+  owned?: boolean;
+  /** build_hotspot only: the FurnitureDef id currently built here (else empty). */
+  furniture?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -1258,6 +1270,25 @@ export interface BountyBuyIntent {
   item: ItemId;
 }
 
+/** "Claim this empty homestead plot as mine." */
+export interface ClaimPlotIntent {
+  type: "CLAIM_PLOT";
+  plotId: string;
+}
+
+/** "Build (or replace) a furniture piece at this hotspot." */
+export interface BuildFurnitureIntent {
+  type: "BUILD_FURNITURE";
+  hotspotId: string;
+  furnitureId: string;
+}
+
+/** "Clear the furniture from this hotspot." */
+export interface RemoveFurnitureIntent {
+  type: "REMOVE_FURNITURE";
+  hotspotId: string;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1278,7 +1309,10 @@ export type Intent =
   | CraftIntent
   | SetStyleIntent
   | ToggleRunIntent
-  | ChooseIntent;
+  | ChooseIntent
+  | ClaimPlotIntent
+  | BuildFurnitureIntent
+  | RemoveFurnitureIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -1311,6 +1345,8 @@ export type WorldEvent =
   | { type: "OPEN_TRAVEL"; objId: string }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
+  /** Open the furniture build/replace menu for a housing hotspot. */
+  | { type: "OPEN_BUILD"; hotspotId: string; category: string; current: string | null }
   | { type: "QUEST_STARTED"; quest: string }
   | { type: "QUEST_ADVANCED"; quest: string }
   | { type: "QUEST_COMPLETED"; quest: string }
@@ -1534,6 +1570,31 @@ export interface LoreDef {
   reward?: { gold?: number; xp?: { skill: SkillId; amount: number } };
 }
 
+/**
+ * One buildable furniture piece for player housing. Built at a `build_hotspot`
+ * whose `category` matches; consumes `materials` (existing Construction outputs)
+ * and grants Construction XP. `comfort` is a cosmetic "home value" score; `bed`
+ * pieces additionally move the player's respawn to that homestead.
+ */
+export interface FurnitureDef {
+  id: string;
+  name: string;
+  /** Which hotspot category accepts this piece (hearth/bed/table/hall). */
+  category: string;
+  /** Construction level required to build it. */
+  levelReq: number;
+  /** Construction XP granted on building. */
+  xp: number;
+  /** Materials consumed to build it (item id -> quantity). */
+  materials: Partial<Record<ItemId, number>>;
+  /** A "home value" score, summed across a homestead's built pieces. */
+  comfort: number;
+  /** A short examine/flavour line shown in the build menu. */
+  blurb: string;
+  /** A bed piece sets the player's respawn to its homestead when built. */
+  bed?: boolean;
+}
+
 export interface Content {
   map: WorldMap;
   objects: WorldObjectDef[];
@@ -1554,6 +1615,8 @@ export interface Content {
   achievements: AchievementDef[];
   /** Farmable crops, keyed by crop id. */
   crops: Record<string, CropDef>;
+  /** Buildable housing furniture, keyed by furniture id. */
+  furniture: Record<string, FurnitureDef>;
   /** Bounty task-givers (data). */
   bountyGuides: BountyGuide[];
   /** Bounty task templates, keyed by zone (data). */

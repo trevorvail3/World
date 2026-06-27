@@ -70,7 +70,11 @@ export interface SavedProgress {
   };
   /** Farming patches: patch id -> what's planted and when (epoch ms). */
   farms: Record<string, { crop: string; plantedAt: number }>;
+  /** Player housing: claimed plot ids + built furniture (hotspot id -> piece id). */
+  housing: { plots: string[]; furniture: Record<string, string> };
   hp: number;
+  /** Where the player respawns (moved to a homestead once a bed is built). */
+  spawn: { x: number; y: number };
   pos: { x: number; y: number };
 }
 
@@ -82,14 +86,19 @@ export function serializePlayer(state: WorldState): SavedProgress {
     skills[id] = player.skills[id].xp;
   });
   const farms: SavedProgress["farms"] = {};
+  const housing: SavedProgress["housing"] = { plots: [], furniture: {} };
   for (const id of Object.keys(state.objects)) {
     const o = state.objects[id]!;
     if (o.crop && typeof o.plantedAt === "number") {
       farms[id] = { crop: o.crop, plantedAt: o.plantedAt };
     }
+    if (o.owned) housing.plots.push(id);
+    if (o.furniture) housing.furniture[id] = o.furniture;
   }
   return {
     farms,
+    housing,
+    spawn: { x: Math.round(player.spawn.x), y: Math.round(player.spawn.y) },
     version: SAVE_VERSION,
     skills,
     inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
@@ -329,6 +338,30 @@ export function hydratePlayer(
       }
     }
   }
+  // Player housing: re-claim owned plots and re-place built furniture, dropping
+  // any id this build no longer defines (gracefully, like everything else here).
+  const savedHousing = raw["housing"];
+  if (isRecord(savedHousing)) {
+    const plots = savedHousing["plots"];
+    if (Array.isArray(plots)) {
+      for (const id of plots) {
+        const obj = typeof id === "string" ? state.objects[id] : undefined;
+        const def = content.objects.find((o) => o.id === id);
+        if (obj && def && def.kind === "housing_plot") obj.owned = true;
+      }
+    }
+    const furn = savedHousing["furniture"];
+    if (isRecord(furn)) {
+      for (const id of Object.keys(furn)) {
+        const obj = state.objects[id];
+        const def = content.objects.find((o) => o.id === id);
+        const fid = furn[id];
+        if (obj && def && def.kind === "build_hotspot" && typeof fid === "string" && fid in content.furniture) {
+          obj.furniture = fid;
+        }
+      }
+    }
+  }
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {
     const quests: Player["quests"] = {};
@@ -364,6 +397,17 @@ export function hydratePlayer(
     const inBounds = x >= 0 && y >= 0 && x < m.width && y < m.height;
     if (inBounds && m.tiles[y * m.width + x] !== "water") {
       player.pos = { x, y };
+    }
+  }
+
+  // Respawn point (set to a homestead once a bed is built). Validate like pos.
+  const sp = raw["spawn"];
+  if (isRecord(sp) && typeof sp["x"] === "number" && typeof sp["y"] === "number") {
+    const x = Math.round(sp["x"]);
+    const y = Math.round(sp["y"]);
+    const m = state.map;
+    if (x >= 0 && y >= 0 && x < m.width && y < m.height && m.tiles[y * m.width + x] !== "water") {
+      player.spawn = { x, y };
     }
   }
 

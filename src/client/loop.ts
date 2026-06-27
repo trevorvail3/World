@@ -138,6 +138,8 @@ const VERB: Record<ObjKind, string> = {
   portal: "Enter",
   trap: "Set snare",
   bounty_board: "Read",
+  housing_plot: "Claim",
+  build_hotspot: "Build at",
   cauldron: "Brew at",
   workbench: "Build at",
   crafting_table: "Craft at",
@@ -168,6 +170,8 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   portal: "A dark archway. Something waits on the other side.",
   trap: "A snare set among the runs and burrows. Patience catches game.",
   bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
+  housing_plot: "A vacant homestead yard. Claim it, and the footings are yours to build a home on.",
+  build_hotspot: "A footing for furniture — build a piece here from your Construction materials.",
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
   crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
@@ -409,6 +413,9 @@ export class Game {
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
+        case "OPEN_BUILD":
+          this.openBuild(ev.hotspotId, ev.category, ev.current);
+          break;
         case "OPEN_TRAVEL":
           this.openTravel(ev.objId);
           break;
@@ -535,6 +542,57 @@ export class Game {
       title,
       items,
       "Pick a recipe — you'll keep making it until the materials run out.",
+    );
+  }
+
+  /** A homestead footing: pick a furniture piece to build (or clear it). */
+  private openBuild(hotspotId: string, category: string, current: string | null): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const conLvl = player.skills.construction.level;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+    const hasMats = (f: { materials: Record<string, number | undefined> }): boolean =>
+      Object.entries(f.materials).every(([item, qty]) => have(item) >= (qty ?? 0));
+
+    const pieces = Object.values(content.furniture)
+      .filter((f) => f.category === category)
+      .sort((a, b) => a.levelReq - b.levelReq);
+
+    const items: MenuItem[] = pieces.map((f) => {
+      const built = current === f.id;
+      const leveled = conLvl >= f.levelReq;
+      const ready = leveled && hasMats(f);
+      const cost = Object.entries(f.materials)
+        .map(([item, qty]) => `${qty}× ${content.items[item as ItemId].name}`).join(", ");
+      return {
+        label: built ? `${f.name} ✓` : f.name,
+        target: built ? "built here" : leveled ? cost : `Construction ${f.levelReq}`,
+        tone: ready && !built ? "action" : "normal",
+        onSelect: () => {
+          if (built) { this.hud.log(`The ${f.name} is already built here.`); return; }
+          if (!leveled) { this.hud.log(`You need Construction level ${f.levelReq} to build the ${f.name}.`); return; }
+          if (!hasMats(f)) { this.hud.log(`You're short of materials for the ${f.name}.`); return; }
+          this.dispatch({ type: "BUILD_FURNITURE", hotspotId, furnitureId: f.id });
+        },
+      };
+    });
+
+    if (current) {
+      items.push({
+        label: "Clear this footing",
+        tone: "normal",
+        onSelect: () => this.dispatch({ type: "REMOVE_FURNITURE", hotspotId }),
+      });
+    }
+
+    const label = category[0]!.toUpperCase() + category.slice(1);
+    this.menu.show(
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      `Build — ${label}`,
+      items,
+      "Build from your Construction materials. Replace a piece any time to redecorate.",
     );
   }
 
