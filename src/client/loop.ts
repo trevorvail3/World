@@ -19,6 +19,7 @@ import type {
   Content,
   Intent,
   ItemId,
+  MonsterStats,
   ObjKind,
   SkillAction,
   TileType,
@@ -444,18 +445,22 @@ export class Game {
         case "DAMAGE": {
           const pos = this.positionOf(ev.targetId);
           if (pos) {
+            // A weakness-exploiting hit reads in bright gold ("super effective"),
+            // a normal hit in red, a miss in grey — so the triangle is legible.
+            const hit = ev.amount > 0;
+            const color = !hit ? "#9aa0a6" : ev.weak ? "#ffcf4a" : "#e2483a";
             this.floats.push({
               x: pos.x,
               y: pos.y,
-              text: ev.amount > 0 ? String(ev.amount) : "miss",
-              color: ev.amount > 0 ? "#e2483a" : "#9aa0a6",
+              text: hit ? (ev.weak ? `${ev.amount}!` : String(ev.amount)) : "miss",
+              color,
               born: now,
+              ...(ev.weak && hit ? { size: 16 } : {}),
             });
-            // A red spark when a blow lands; a small grey puff on a miss.
             this.sparks.push({
               x: pos.x, y: pos.y, born: now,
-              color: ev.amount > 0 ? "#e2483a" : "#7a808a",
-              n: ev.amount > 0 ? 6 : 3,
+              color: !hit ? "#7a808a" : ev.weak ? "#ffcf4a" : "#e2483a",
+              n: !hit ? 3 : ev.weak ? 9 : 6,
             });
           }
           break;
@@ -1170,7 +1175,7 @@ export class Game {
   private examineObject(obj: WorldObjectDef): string {
     if (obj.kind === "monster" && obj.monster) {
       const stats = this.bridge.content.monsters[obj.monster];
-      if (stats) return stats.desc;
+      if (stats) return `${stats.desc} ${this.weaknessNote(stats)}`;
     }
     if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
       return EXAMINE_TREE[obj.species]!;
@@ -1178,6 +1183,17 @@ export class Game {
     if (obj.kind === "shrine" && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
     return EXAMINE_OBJECT[obj.kind];
+  }
+
+  /** A plain-English line telling the player what a monster is weak to. */
+  private weaknessNote(stats: MonsterStats): string {
+    const labels: Record<string, string> = {
+      slash: "slashing", stab: "stabbing", crush: "crushing", ranged: "ranged",
+    };
+    const w = (stats.weakness ?? []).map((s) => labels[s] ?? s);
+    if (w.length === 0) return "It has no obvious weakness.";
+    const list = w.length === 1 ? w[0] : `${w.slice(0, -1).join(", ")} and ${w[w.length - 1]}`;
+    return `Weak to ${list} attacks.`;
   }
 
   private tileType(tile: Vec2): TileType {

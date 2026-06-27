@@ -2620,8 +2620,11 @@ function playerSwing(
     if (player.quiver <= 0) delete player.equipment.ammo;
   }
 
-  // Melee can exploit a monster's style weakness; ranged doesn't (no melee style).
-  const wStyle = ranged ? undefined : weaponStyle(player, content);
+  // The player's attack "style" is the worn weapon's (slash/stab/crush), or
+  // "ranged" when fighting with a bow. Matching one of the monster's weaknesses
+  // multiplies accuracy and damage — the heart of the combat triangle, and what
+  // gives ranged a job: many fliers, wraiths and brutes are weak to it alone.
+  const wStyle = ranged ? "ranged" : weaponStyle(player, content);
   const exploits = wStyle !== undefined && (stats.weakness ?? []).includes(wStyle);
   const baseAcc = ranged ? rangedAccuracy(player, content) : playerAccuracy(player, content);
   const acc = exploits ? Math.round(baseAcc * COMBAT.weaknessAcc) : baseAcc;
@@ -2631,7 +2634,7 @@ function playerSwing(
     const base = randInt(ctx, 1, Math.max(1, maxHit));
     const dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
     obj.hp -= dmg;
-    events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg });
+    events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });
   } else {
     events.push({ type: "DAMAGE", targetId: obj.id, amount: 0 });
   }

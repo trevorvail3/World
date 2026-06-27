@@ -1256,7 +1256,7 @@ export type WorldEvent =
   | { type: "ITEM_GAINED"; item: ItemId; qty: number }
   | { type: "INVENTORY_FULL" }
   | { type: "DIALOGUE"; npc: string; lines: string[] }
-  | { type: "DAMAGE"; targetId: string; amount: number }
+  | { type: "DAMAGE"; targetId: string; amount: number; weak?: boolean }
   | { type: "OBJECT_DEPLETED"; objId: string }
   | { type: "OBJECT_RESPAWNED"; objId: string }
   | { type: "MONSTER_KILLED"; objId: string }

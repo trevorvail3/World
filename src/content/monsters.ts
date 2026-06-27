@@ -223,7 +223,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 55,
     "attackStyle": "slash",
     "weakness": [
-      "stab"
+      "stab",
+      "ranged"
     ],
     "desc": "A mountain wolf, larger and meaner than its forest cousins.",
     "drops": [
@@ -301,7 +302,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 130,
     "attackStyle": "crush",
     "weakness": [
-      "stab"
+      "stab",
+      "ranged"
     ],
     "desc": "Slow. Extremely strong. Does not like being poked.",
     "drops": [
@@ -335,7 +337,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 155,
     "attackStyle": "slash",
     "weakness": [
-      "slash"
+      "slash",
+      "ranged"
     ],
     "desc": "A fast, barely-visible thing that moves between rocks. Believed to be a remnant of something older.",
     "drops": [
@@ -359,7 +362,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 165,
     "attackStyle": "stab",
     "weakness": [
-      "crush"
+      "crush",
+      "ranged"
     ],
     "desc": "A bog reptile that waits beneath the surface. The first sign is often the last.",
     "drops": [
@@ -471,7 +475,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 310,
     "attackStyle": "stab",
     "weakness": [
-      "slash"
+      "slash",
+      "ranged"
     ],
     "desc": "An enormous reptile that makes its home in the Heartmoor fens. Venomous.",
     "drops": [
@@ -529,7 +534,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 290,
     "attackStyle": "slash",
     "weakness": [
-      "slash"
+      "slash",
+      "ranged"
     ],
     "desc": "Enormous bats that hunt in the Marrow Deeps. Incredibly fast, somewhat fragile.",
     "drops": [
@@ -558,7 +564,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 425,
     "attackStyle": "slash",
     "weakness": [
-      "crush"
+      "crush",
+      "ranged"
     ],
     "desc": "A remnant that has absorbed the minerals of the deep. Bone without flesh.",
     "drops": [
@@ -625,7 +632,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 580,
     "attackStyle": "crush",
     "weakness": [
-      "crush"
+      "crush",
+      "ranged"
     ],
     "desc": "An animated construct of compressed deeprock. Slow, almost unkillable, hits like a falling wall.",
     "drops": [
@@ -654,7 +662,8 @@ export const monsters: Record<string, MonsterStats> = {
     "xp": 640,
     "attackStyle": "stab",
     "weakness": [
-      "slash"
+      "slash",
+      "ranged"
     ],
     "desc": "An ancient serpent from the Redrun tributaries. The river looks different than it used to.",
     "drops": [
@@ -1120,7 +1129,7 @@ export const monsters: Record<string, MonsterStats> = {
   "footpad": {
     id: "footpad", name: "Footpad", icon: "🗡️", level: 4, hp: 12,
     acc: 4, def: 3, maxHit: 2, speed: 2800, xp: 16, attackStyle: "stab",
-    weakness: ["slash"],
+    weakness: ["slash", "ranged"],
     desc: "A nervy cutpurse working the hill roads — quick with a knife, quicker to run.",
     drops: [
       { item: "worn_coin", chance: 0.85, min: 1, max: 3, tier: "always" },
@@ -1174,7 +1183,7 @@ export const monsters: Record<string, MonsterStats> = {
   "highwayman": {
     id: "highwayman", name: "Highwayman", icon: "🗡️", level: 22, hp: 52,
     acc: 22, def: 16, maxHit: 8, speed: 2500, xp: 120, attackStyle: "slash",
-    weakness: ["stab"],
+    weakness: ["stab", "ranged"],
     desc: "A mounted robber fallen on hard times and harder methods. Stands his ground for a fat purse.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 3, max: 9, tier: "always" },
@@ -1219,7 +1228,7 @@ export const monsters: Record<string, MonsterStats> = {
   "marauder": {
     id: "marauder", name: "Marauder", icon: "🪓", level: 40, hp: 96,
     acc: 41, def: 30, maxHit: 14, speed: 2500, xp: 320, attackStyle: "crush",
-    weakness: ["stab"],
+    weakness: ["stab", "ranged"],
     desc: "A raider who rides the lawless edges of the map, taking whole carts and the drovers with them.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 5, max: 16, tier: "always" },
@@ -1235,7 +1244,7 @@ export const monsters: Record<string, MonsterStats> = {
   "outlaw_captain": {
     id: "outlaw_captain", name: "Outlaw Captain", icon: "🗡️", level: 48, hp: 140,
     acc: 49, def: 38, maxHit: 18, speed: 2300, xp: 520, attackStyle: "slash",
-    weakness: ["stab"],
+    weakness: ["stab", "ranged"],
     desc: "The one the camp answers to. Better armed, better fed, and worth the trouble — if you can take him.",
     drops: [
       { item: "worn_coin", chance: 1, min: 10, max: 28, tier: "always" },
