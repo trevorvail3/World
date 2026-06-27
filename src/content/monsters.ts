@@ -861,6 +861,16 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "The same boar that walked away from three Lodge hunting parties. Scarred, iron-grey, and considerably more patient than you.",
     "drops": [
       {
+        "item": "greymane_pelt",
+        "chance": 0.7,
+        "tier": "common"
+      },
+      {
+        "item": "greymane_tusk",
+        "chance": 0.25,
+        "tier": "uncommon"
+      },
+      {
         "item": "shard_of_orun",
         "chance": 0.002,
         "tier": "legendary"

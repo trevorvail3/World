@@ -511,7 +511,7 @@ export const objects: WorldObjectDef[] = [
   { id: "relic_tendedseam", kind: "relic", x: 65, y: 95, name: "Weighted Page", loreId: "lore_orun_catechism" },
   { id: "relic_falseseam", kind: "relic", x: 11, y: 83, name: "Half-Burned Page", loreId: "lore_orun_heresy" },
   { id: "relic_watchtower", kind: "relic", x: 73, y: 42, name: "Nailed Tally", loreId: "lore_varath_muster" },
-  { id: "relic_smoothwalls", kind: "relic", x: 90, y: 18, name: "Wall Rubbing", loreId: "lore_varath_masons" },
+  { id: "relic_smoothwalls", kind: "relic", x: 91, y: 19, name: "Wall Rubbing", loreId: "lore_varath_masons" },
 
   // === ROAD OUTLAWS — lawless camps along the roads (named locations) ========
   // New humanoid threat: bandit camps and waylays in the gaps between regions,
@@ -553,7 +553,7 @@ export const objects: WorldObjectDef[] = [
   { id: "out_drovers_loss_0", kind: "monster", monster: "cutthroat", x: 57, y: 79, name: "Cutthroat" },
   { id: "out_drovers_loss_1", kind: "monster", monster: "marauder", x: 58, y: 79, name: "Marauder" },
   { id: "out_smugglers_landing_0", kind: "monster", monster: "outlaw_archer", x: 93, y: 71, name: "Outlaw Archer" },
-  { id: "out_smugglers_landing_1", kind: "monster", monster: "outlaw_archer", x: 94, y: 71, name: "Outlaw Archer" },
+  { id: "out_smugglers_landing_1", kind: "monster", monster: "outlaw_archer", x: 92, y: 71, name: "Outlaw Archer" },
   { id: "out_smugglers_landing_2", kind: "monster", monster: "marauder", x: 94, y: 70, name: "Marauder" },
   { id: "out_brigands_roost_0", kind: "monster", monster: "outlaw_captain", x: 33, y: 41, name: "Outlaw Captain" },
   { id: "out_brigands_roost_1", kind: "monster", monster: "cutthroat", x: 34, y: 41, name: "Cutthroat" },

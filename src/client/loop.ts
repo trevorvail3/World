@@ -1153,7 +1153,7 @@ export class Game {
       this.dialogue.advance();
       return;
     }
-    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen() || this.worldMap.isOpen()) return;
+    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen() || this.bounty.isOpen() || this.worldMap.isOpen()) return;
 
     const tile = this.tileAtScreen(e.clientX, e.clientY);
     this.press = {
