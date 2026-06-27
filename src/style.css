@@ -2110,3 +2110,64 @@ button.inv-slot {
   .run-control { top: 162px; padding: 4px 6px; }
   .run-energy { width: 52px; }
 }
+
+/* ── Short / landscape viewports (a phone turned sideways) ──────────────────
+   The default chrome assumes a tall window: the bottom-right dock alone wants
+   ~340px of height, so on a landscape phone (wide but only ~360–430px tall) the
+   minimap, run control and dock all pile up on the right edge and overlap. This
+   layer is keyed on HEIGHT, not width, so it kicks in exactly when vertical room
+   runs out — independent of the portrait (max-width) phone layer above. Panels
+   shrink and the dock is capped to the live viewport so nothing ever collides or
+   spills off-screen, in either orientation, before or after a rotation.
+
+   `100dvh` (the *dynamic* viewport height) tracks the mobile URL bar as it hides
+   and shows; a `100vh` line precedes it as a fallback for older engines. */
+@media (max-height: 540px) {
+  /* Smaller minimap so it, the run bar and the dock can stack in the height. */
+  .hud-minimap { padding: 4px; }
+  .minimap-canvas { width: 104px; height: 104px; }
+  .minimap-worldbtn { width: 22px; height: 22px; font-size: 12px; bottom: 6px; right: 6px; }
+
+  /* Run control sits just under the now-smaller minimap. */
+  .run-control { top: 124px; padding: 4px 6px; }
+  .run-energy { width: 52px; }
+
+  /* The dock can never be taller than the space between the run bar and the
+     bottom margin — its body scrolls when the catalogue doesn't fit. */
+  .hud-dock { bottom: 8px; right: 8px; }
+  .dock-body {
+    height: 332px;
+    height: min(332px, calc(100vh - 168px));
+    height: min(332px, calc(100dvh - 168px));
+    width: 200px;
+  }
+  .dock-tab { width: 30px; height: 30px; font-size: 15px; }
+  .dock-tab .g-ico { width: 19px; height: 19px; }
+
+  /* Keep the bottom-left log clear of the buffs/quest column above it. */
+  .hud-log { width: min(260px, 40vw); }
+  .log-lines {
+    max-height: 96px;
+    max-height: min(96px, calc(100dvh - 250px));
+  }
+
+  /* Buffs + quest tracker: keep the column narrow so it doesn't reach the log. */
+  .hud-topleft { top: 76px; max-width: 200px; }
+  .hud-quest { max-width: 200px; padding: 6px 9px; }
+
+  /* The continent map must fit the short height too. */
+  .worldmap-modal { padding: 9px 11px; }
+  .worldmap-canvas { max-height: 62vh; width: auto; }
+}
+
+/* A genuinely tiny window (very small phones in landscape): trim further so the
+   dock and minimap still both fit without overlapping. */
+@media (max-height: 430px) {
+  .minimap-canvas { width: 88px; height: 88px; }
+  .run-control { top: 108px; }
+  .dock-body {
+    height: min(300px, calc(100vh - 150px));
+    height: min(300px, calc(100dvh - 150px));
+  }
+  .log-lines { max-height: min(72px, calc(100dvh - 200px)); }
+}

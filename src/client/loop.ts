@@ -219,6 +219,10 @@ export class Game {
   private g: CanvasRenderingContext2D;
   private cam: Camera = { x: 0, y: 0 };
   private zoom = readZoom();
+  /** Device-pixel ratio baked into the backing store for crisp rendering. */
+  private dpr = 1;
+  /** Pending deferred re-measure (mobile rotation reports stale sizes). */
+  private resizeTimer = 0;
   /** Active touch points, for pinch-to-zoom. */
   private pointers = new Map<number, { x: number; y: number }>();
   private pinchDist = 0;
@@ -264,6 +268,13 @@ export class Game {
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
+    // Mobile rotation is the awkward case: the `resize`/`orientationchange`
+    // events fire before the browser has settled the new viewport size, so a
+    // single measurement reads stale dimensions and the canvas ends up the wrong
+    // shape. Re-measure a few times after the event, and lean on visualViewport
+    // (which fires once the URL bar / safe-area has actually resized).
+    window.addEventListener("orientationchange", () => this.scheduleResize());
+    window.visualViewport?.addEventListener("resize", () => this.resize());
 
     canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     window.addEventListener("pointermove", (e) => this.onPointerMove(e));
@@ -293,9 +304,48 @@ export class Game {
     this.handleEvents(events, performance.now());
   }
 
+  /**
+   * Size the backing store to the element's CSS box × the device-pixel ratio,
+   * so the world is rendered crisply on high-density (phone/retina) screens
+   * instead of being upscaled from a low-res buffer. The DPR is folded into the
+   * draw transform (see `update`), and every screen↔world conversion divides it
+   * back out, so input mapping is unaffected.
+   */
   private resize(): void {
-    this.canvas.width = this.canvas.clientWidth;
-    this.canvas.height = this.canvas.clientHeight;
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+    // Prefer visualViewport: on mobile it reports the *settled* visible size
+    // (excluding the URL bar) and updates correctly through a rotation.
+    const cssW = Math.round(this.canvas.clientWidth || window.innerWidth);
+    const cssH = Math.round(this.canvas.clientHeight || window.innerHeight);
+    const w = Math.max(1, Math.round(cssW * dpr));
+    const h = Math.max(1, Math.round(cssH * dpr));
+    if (w === this.canvas.width && h === this.canvas.height && dpr === this.dpr) {
+      return; // nothing changed — avoid clearing the canvas needlessly
+    }
+    this.dpr = dpr;
+    this.canvas.width = w;
+    this.canvas.height = h;
+  }
+
+  /**
+   * Re-measure now and again shortly after — orientation changes don't settle
+   * the viewport synchronously, so one measurement isn't enough on mobile.
+   */
+  private scheduleResize(): void {
+    this.resize();
+    requestAnimationFrame(() => this.resize());
+    window.clearTimeout(this.resizeTimer);
+    this.resizeTimer = window.setTimeout(() => this.resize(), 300);
+  }
+
+  /** Visible view width in world pixels (DPR- and zoom-independent). */
+  private get viewW(): number {
+    return this.canvas.width / (this.zoom * this.dpr);
+  }
+
+  /** Visible view height in world pixels (DPR- and zoom-independent). */
+  private get viewH(): number {
+    return this.canvas.height / (this.zoom * this.dpr);
   }
 
   private update(now: number): void {
@@ -308,11 +358,13 @@ export class Game {
     this.followCamera();
 
     // 3) Paint the world (and its world-space overlays) under the zoom transform.
-    const z = this.zoom;
-    this.g.setTransform(z, 0, 0, z, 0, 0);
+    //    The DPR is folded in here so one world pixel covers `zoom` CSS pixels at
+    //    full device resolution; everything below works in world pixels.
+    const s = this.zoom * this.dpr;
+    this.g.setTransform(s, 0, 0, s, 0, 0);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
-      this.canvas.width / z, this.canvas.height / z,
+      this.viewW, this.viewH,
     );
     this.drawMarker(now);
     this.drawHighlights(now);
@@ -329,24 +381,24 @@ export class Game {
       this.bridge.state,
       this.bridge.content,
       this.cam,
-      this.canvas.width,
-      this.canvas.height,
+      this.viewW,
+      this.viewH,
     );
     if (this.worldMap.isOpen()) {
       this.worldMap.draw(
         this.bridge.state,
         this.bridge.content,
         this.cam,
-        this.canvas.width,
-        this.canvas.height,
+        this.viewW,
+        this.viewH,
       );
     }
   }
 
   private followCamera(): void {
     const p = this.bridge.state.player.pos;
-    const targetX = p.x * TILE + TILE / 2 - this.canvas.width / this.zoom / 2;
-    const targetY = p.y * TILE + TILE / 2 - this.canvas.height / this.zoom / 2;
+    const targetX = p.x * TILE + TILE / 2 - this.viewW / 2;
+    const targetY = p.y * TILE + TILE / 2 - this.viewH / 2;
     if (!this.camInitialised) {
       this.cam.x = targetX;
       this.cam.y = targetY;
@@ -911,7 +963,7 @@ export class Game {
     const sx = t.x * TILE + TILE / 2 - this.cam.x;
     const sy = t.y * TILE + TILE / 2 - this.cam.y;
     // This draws under the zoom transform, so work in logical (world) view px.
-    const W = this.canvas.width / this.zoom, H = this.canvas.height / this.zoom;
+    const W = this.viewW, H = this.viewH;
     const m = 48; // edge inset
     const flash = 0.5 + 0.5 * Math.sin(now / 180); // the "flashing"
     const onScreen = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
