@@ -49,6 +49,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   housing_plot: "#d8b066", // a warm hearth-gold marker for a homestead
   build_hotspot: "", // build footings aren't marked on the minimap
   house_door: "#b07a3a", // a home's door
+  room_seal: "", // interior wing seals aren't marked on the minimap
   cauldron: "#6f8a6a",
   workbench: "#9a7b4e",
   crafting_table: "#a98a6a",

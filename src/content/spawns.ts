@@ -13,6 +13,39 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
+import { HOMES, homeLayout } from "./map.ts";
+
+/**
+ * Every player home's objects, generated from the shared floorplan in map.ts:
+ * the lot's claim marker + entry door, the interior exit door, the sealed
+ * workshop-wing doorway, and one build footing per room slot. Keeping this in
+ * code (not hand-listed) guarantees the objects sit exactly on the carved tiles.
+ */
+const HOME_NAMES: Record<string, string> = {
+  home_redmouth: "the Redmouth", home_drover: "the Drover's Rest", home_fold: "the Fold",
+};
+function cap(s: string): string { return s[0]!.toUpperCase() + s.slice(1); }
+function buildHousing(): WorldObjectDef[] {
+  const out: WorldObjectDef[] = [];
+  for (const h of HOMES) {
+    const plan = homeLayout(h.ox);
+    const suffix = h.plot.replace("home_", "");
+    const name = HOME_NAMES[h.plot] ?? "your";
+    out.push(
+      { id: h.plot, kind: "housing_plot", x: h.lot.marker.x, y: h.lot.marker.y, name: `${name} Homestead`, target: plan.entry },
+      { id: `door_${suffix}`, kind: "house_door", x: h.lot.door.x, y: h.lot.door.y, name: `${name} Home`, plot: h.plot, target: plan.entry, lines: ["You step inside your home."] },
+      { id: `exit_${suffix}`, kind: "house_door", x: plan.exitDoor.x, y: plan.exitDoor.y, name: "the Door Out", target: h.lot.exit, lines: ["You step back out onto the lot."] },
+      { id: `seal_${suffix}`, kind: "room_seal", x: plan.sealDoor.x, y: plan.sealDoor.y, name: "Unfinished Wall (Workshop)", plot: h.plot },
+    );
+    for (const f of plan.footings) {
+      out.push({
+        id: `hs_${suffix}_${f.category}_${f.room}`, kind: "build_hotspot",
+        x: f.x, y: f.y, name: `${cap(f.category)} Space`, category: f.category, plot: h.plot,
+      });
+    }
+  }
+  return out;
+}
 
 export const objects: WorldObjectDef[] = [
   // === IRONVALE — the central city =========================================
@@ -610,61 +643,12 @@ export const objects: WorldObjectDef[] = [
   { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 66, y: 16, name: "A Hill Sheep" },
   { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 59, y: 18, name: "A Hill Sheep" },
 
-  // === PLAYER HOUSING — claim a lot, then build INSIDE its private interior ==
-  // Each homestead lot has a plot marker (claim it) and a door into the home's
-  // own instanced interior (a 13x11 plank room in the hidden band, see INTERIORS
-  // in map.ts). Eleven build footings ring each room — bed, kitchen, forge,
-  // alchemy, storage (functional) and workshop, table, seating, hall, lighting,
-  // display — each a tier ladder gated by Construction. A plot's `target` is the
-  // interior entry tile, also where a built bed respawns you.
-
-  // --- Redmouth homestead (lot south of the river bank; interior at x0=2) ---
-  { id: "home_redmouth", kind: "housing_plot", x: 81, y: 64, name: "the Redmouth Homestead", target: { x: 8, y: 133 } },
-  { id: "door_redmouth", kind: "house_door", x: 84, y: 65, name: "the Redmouth Home", plot: "home_redmouth", target: { x: 8, y: 133 }, lines: ["You step inside your home."] },
-  { id: "exit_redmouth", kind: "house_door", x: 8, y: 134, name: "the Door Out", target: { x: 84, y: 66 }, lines: ["You step back out onto the lot."] },
-  { id: "hs_redmouth_bed", kind: "build_hotspot", x: 4, y: 125, name: "Bed Space", category: "bed", plot: "home_redmouth" },
-  { id: "hs_redmouth_kitchen", kind: "build_hotspot", x: 6, y: 125, name: "Kitchen Space", category: "kitchen", plot: "home_redmouth" },
-  { id: "hs_redmouth_forge", kind: "build_hotspot", x: 8, y: 125, name: "Forge Space", category: "forge", plot: "home_redmouth" },
-  { id: "hs_redmouth_alchemy", kind: "build_hotspot", x: 10, y: 125, name: "Alchemy Space", category: "alchemy", plot: "home_redmouth" },
-  { id: "hs_redmouth_storage", kind: "build_hotspot", x: 12, y: 125, name: "Storage Space", category: "storage", plot: "home_redmouth" },
-  { id: "hs_redmouth_workshop", kind: "build_hotspot", x: 3, y: 127, name: "Workshop Space", category: "workshop", plot: "home_redmouth" },
-  { id: "hs_redmouth_table", kind: "build_hotspot", x: 3, y: 129, name: "Table Space", category: "table", plot: "home_redmouth" },
-  { id: "hs_redmouth_seating", kind: "build_hotspot", x: 3, y: 131, name: "Seating Space", category: "seating", plot: "home_redmouth" },
-  { id: "hs_redmouth_hall", kind: "build_hotspot", x: 13, y: 127, name: "Hall Wall", category: "hall", plot: "home_redmouth" },
-  { id: "hs_redmouth_lighting", kind: "build_hotspot", x: 13, y: 129, name: "Lighting Space", category: "lighting", plot: "home_redmouth" },
-  { id: "hs_redmouth_display", kind: "build_hotspot", x: 13, y: 131, name: "Display Space", category: "display", plot: "home_redmouth" },
-
-  // --- The Drover's Rest homestead (lot east of the yard; interior at x0=18) ---
-  { id: "home_drover", kind: "housing_plot", x: 74, y: 73, name: "the Drover's Rest Homestead", target: { x: 24, y: 133 } },
-  { id: "door_drover", kind: "house_door", x: 77, y: 74, name: "the Drover's Rest Home", plot: "home_drover", target: { x: 24, y: 133 }, lines: ["You step inside your home."] },
-  { id: "exit_drover", kind: "house_door", x: 24, y: 134, name: "the Door Out", target: { x: 77, y: 75 }, lines: ["You step back out onto the lot."] },
-  { id: "hs_drover_bed", kind: "build_hotspot", x: 20, y: 125, name: "Bed Space", category: "bed", plot: "home_drover" },
-  { id: "hs_drover_kitchen", kind: "build_hotspot", x: 22, y: 125, name: "Kitchen Space", category: "kitchen", plot: "home_drover" },
-  { id: "hs_drover_forge", kind: "build_hotspot", x: 24, y: 125, name: "Forge Space", category: "forge", plot: "home_drover" },
-  { id: "hs_drover_alchemy", kind: "build_hotspot", x: 26, y: 125, name: "Alchemy Space", category: "alchemy", plot: "home_drover" },
-  { id: "hs_drover_storage", kind: "build_hotspot", x: 28, y: 125, name: "Storage Space", category: "storage", plot: "home_drover" },
-  { id: "hs_drover_workshop", kind: "build_hotspot", x: 19, y: 127, name: "Workshop Space", category: "workshop", plot: "home_drover" },
-  { id: "hs_drover_table", kind: "build_hotspot", x: 19, y: 129, name: "Table Space", category: "table", plot: "home_drover" },
-  { id: "hs_drover_seating", kind: "build_hotspot", x: 19, y: 131, name: "Seating Space", category: "seating", plot: "home_drover" },
-  { id: "hs_drover_hall", kind: "build_hotspot", x: 29, y: 127, name: "Hall Wall", category: "hall", plot: "home_drover" },
-  { id: "hs_drover_lighting", kind: "build_hotspot", x: 29, y: 129, name: "Lighting Space", category: "lighting", plot: "home_drover" },
-  { id: "hs_drover_display", kind: "build_hotspot", x: 29, y: 131, name: "Display Space", category: "display", plot: "home_drover" },
-
-  // --- The Fold homestead (lot north of the croft; interior at x0=34) ---
-  { id: "home_fold", kind: "housing_plot", x: 59, y: 8, name: "the Fold Homestead", target: { x: 40, y: 133 } },
-  { id: "door_fold", kind: "house_door", x: 62, y: 9, name: "the Fold Home", plot: "home_fold", target: { x: 40, y: 133 }, lines: ["You step inside your home."] },
-  { id: "exit_fold", kind: "house_door", x: 40, y: 134, name: "the Door Out", target: { x: 62, y: 10 }, lines: ["You step back out onto the lot."] },
-  { id: "hs_fold_bed", kind: "build_hotspot", x: 36, y: 125, name: "Bed Space", category: "bed", plot: "home_fold" },
-  { id: "hs_fold_kitchen", kind: "build_hotspot", x: 38, y: 125, name: "Kitchen Space", category: "kitchen", plot: "home_fold" },
-  { id: "hs_fold_forge", kind: "build_hotspot", x: 40, y: 125, name: "Forge Space", category: "forge", plot: "home_fold" },
-  { id: "hs_fold_alchemy", kind: "build_hotspot", x: 42, y: 125, name: "Alchemy Space", category: "alchemy", plot: "home_fold" },
-  { id: "hs_fold_storage", kind: "build_hotspot", x: 44, y: 125, name: "Storage Space", category: "storage", plot: "home_fold" },
-  { id: "hs_fold_workshop", kind: "build_hotspot", x: 35, y: 127, name: "Workshop Space", category: "workshop", plot: "home_fold" },
-  { id: "hs_fold_table", kind: "build_hotspot", x: 35, y: 129, name: "Table Space", category: "table", plot: "home_fold" },
-  { id: "hs_fold_seating", kind: "build_hotspot", x: 35, y: 131, name: "Seating Space", category: "seating", plot: "home_fold" },
-  { id: "hs_fold_hall", kind: "build_hotspot", x: 45, y: 127, name: "Hall Wall", category: "hall", plot: "home_fold" },
-  { id: "hs_fold_lighting", kind: "build_hotspot", x: 45, y: 129, name: "Lighting Space", category: "lighting", plot: "home_fold" },
-  { id: "hs_fold_display", kind: "build_hotspot", x: 45, y: 131, name: "Display Space", category: "display", plot: "home_fold" },
+  // === PLAYER HOUSING — claim a lot, then furnish its lived-in interior =======
+  // Each home is a four-room house in the hidden band (see homeLayout in map.ts):
+  // you enter the LIVING room; the KITCHEN and BEDROOM open off it; the WORKSHOP
+  // is a wing you add on (build the extension to open its sealed doorway). The
+  // build footings + doors are generated from the shared floorplan below.
+  ...buildHousing(),
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

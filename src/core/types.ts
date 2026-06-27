@@ -724,6 +724,8 @@ export type ObjKind =
   | "build_hotspot"
   /** A door between a homestead lot and its private interior instance. */
   | "house_door"
+  /** A sealed doorway to an add-on room (a wing) — build the extension to open it. */
+  | "room_seal"
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
@@ -1299,6 +1301,12 @@ export interface UseFurnitureIntent {
   hotspotId: string;
 }
 
+/** "Build the add-on room sealed behind this doorway" (opens a wing). */
+export interface BuildRoomIntent {
+  type: "BUILD_ROOM";
+  sealId: string;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1323,7 +1331,8 @@ export type Intent =
   | ClaimPlotIntent
   | BuildFurnitureIntent
   | RemoveFurnitureIntent
-  | UseFurnitureIntent;
+  | UseFurnitureIntent
+  | BuildRoomIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -1358,6 +1367,8 @@ export type WorldEvent =
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   /** Open the furniture build/replace menu for a housing hotspot. */
   | { type: "OPEN_BUILD"; hotspotId: string; category: string; current: string | null }
+  /** Offer to build an add-on room: its name, Construction req, and material cost. */
+  | { type: "OPEN_EXTENSION"; sealId: string; name: string; levelReq: number; materials: Record<string, number> }
   | { type: "QUEST_STARTED"; quest: string }
   | { type: "QUEST_ADVANCED"; quest: string }
   | { type: "QUEST_COMPLETED"; quest: string }

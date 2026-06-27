@@ -347,7 +347,8 @@ export function hydratePlayer(
       for (const id of plots) {
         const obj = typeof id === "string" ? state.objects[id] : undefined;
         const def = content.objects.find((o) => o.id === id);
-        if (obj && def && def.kind === "housing_plot") obj.owned = true;
+        // Claimed plots, and built add-on wings (room seals) — both stored as `owned`.
+        if (obj && def && (def.kind === "housing_plot" || def.kind === "room_seal")) obj.owned = true;
       }
     }
     const furn = savedHousing["furniture"];

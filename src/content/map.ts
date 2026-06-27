@@ -46,19 +46,79 @@ export const ARENAS: { dungeon: string; x: number; floor: TileType }[] = [
 ];
 
 /**
- * Player-home interiors: one private plank-floored room per homestead, in the
- * band below the arenas. Each is a walled rectangle; `entry` is the floor tile
- * just inside its door (where you land coming in, and stand to leave). The door
- * objects + the build hotspots that furnish each room live in spawns.ts.
+ * Player-home interiors: each home is a small, lived-in HOUSE in the hidden band
+ * below the arenas — four rooms sharing walls, joined by doorways (OSRS/Skyrim
+ * style). You enter the LIVING room; the KITCHEN and BEDROOM open off it through
+ * doorways; the WORKSHOP is a wing you add on (its doorway is sealed until you
+ * build the extension). `homeLayout(ox)` is the single source of truth for the
+ * floorplan — both decode() (carving) and spawns.ts (objects) read it.
  */
-export const INTERIOR_W = 13;
-export const INTERIOR_H = 11;
 export const INTERIOR_TOP = OVERWORLD_HEIGHT + ARENA_BAND; // first row of the band
-export const INTERIORS: { plot: string; x0: number; entry: { x: number; y: number } }[] = [
-  { plot: "home_redmouth", x0: 2, entry: { x: 8, y: INTERIOR_TOP + INTERIOR_H - 2 } },
-  { plot: "home_drover", x0: 18, entry: { x: 24, y: INTERIOR_TOP + INTERIOR_H - 2 } },
-  { plot: "home_fold", x0: 34, entry: { x: 40, y: INTERIOR_TOP + INTERIOR_H - 2 } },
+const HOUSE_W = 15; // each house footprint is 15 wide × 11 tall
+
+interface V { x: number; y: number }
+export interface HomeLayout {
+  rooms: { name: string; x0: number; y0: number; x1: number; y1: number }[];
+  /** Plank openings punched through the walls (doorways + the entrance). */
+  doorways: V[];
+  /** Where you land entering (just inside the entrance, in the living room). */
+  entry: V;
+  /** The interior exit-door tile (the entrance doorway). */
+  exitDoor: V;
+  /** The sealed workshop-wing doorway (a room_seal stands here until built). */
+  sealDoor: V;
+  /** Every furniture footing, with its category and room. */
+  footings: { category: string; room: string; x: number; y: number }[];
+}
+
+/** The floorplan for the home whose interior origin is column `ox`. */
+export function homeLayout(ox: number): HomeLayout {
+  const oy = INTERIOR_TOP;
+  return {
+    rooms: [
+      { name: "bedroom", x0: ox, y0: oy, x1: ox + 7, y1: oy + 5 },
+      { name: "workshop", x0: ox + 7, y0: oy, x1: ox + 14, y1: oy + 5 },
+      { name: "kitchen", x0: ox, y0: oy + 5, x1: ox + 7, y1: oy + 10 },
+      { name: "living", x0: ox + 7, y0: oy + 5, x1: ox + 14, y1: oy + 10 },
+    ],
+    doorways: [
+      { x: ox + 7, y: oy + 7 },   // living ↔ kitchen
+      { x: ox + 3, y: oy + 5 },   // kitchen ↔ bedroom
+      { x: ox + 11, y: oy + 5 },  // living ↔ workshop (sealed until built)
+      { x: ox + 11, y: oy + 10 }, // entrance (living ↔ lot)
+    ],
+    entry: { x: ox + 11, y: oy + 9 },
+    exitDoor: { x: ox + 11, y: oy + 10 },
+    sealDoor: { x: ox + 11, y: oy + 5 },
+    footings: [
+      { category: "bed", room: "bedroom", x: ox + 2, y: oy + 2 },
+      { category: "display", room: "bedroom", x: ox + 5, y: oy + 1 },
+      { category: "lighting", room: "bedroom", x: ox + 5, y: oy + 3 },
+      { category: "workshop", room: "workshop", x: ox + 9, y: oy + 2 },
+      { category: "forge", room: "workshop", x: ox + 12, y: oy + 1 },
+      { category: "alchemy", room: "workshop", x: ox + 12, y: oy + 3 },
+      { category: "kitchen", room: "kitchen", x: ox + 2, y: oy + 6 },
+      { category: "storage", room: "kitchen", x: ox + 5, y: oy + 6 },
+      { category: "lighting", room: "kitchen", x: ox + 2, y: oy + 8 },
+      { category: "hall", room: "living", x: ox + 13, y: oy + 6 },
+      { category: "lighting", room: "living", x: ox + 9, y: oy + 6 },
+      { category: "display", room: "living", x: ox + 13, y: oy + 8 },
+      { category: "table", room: "living", x: ox + 10, y: oy + 8 },
+      { category: "seating", room: "living", x: ox + 8, y: oy + 9 },
+    ],
+  };
+}
+
+/** Each home: its interior origin column + its overworld lot tiles. */
+export const HOMES: {
+  plot: string; ox: number;
+  lot: { marker: V; door: V; exit: V };
+}[] = [
+  { plot: "home_redmouth", ox: 2, lot: { marker: { x: 81, y: 64 }, door: { x: 84, y: 65 }, exit: { x: 84, y: 66 } } },
+  { plot: "home_drover", ox: 20, lot: { marker: { x: 74, y: 73 }, door: { x: 77, y: 74 }, exit: { x: 77, y: 75 } } },
+  { plot: "home_fold", ox: 38, lot: { marker: { x: 59, y: 8 }, door: { x: 62, y: 9 }, exit: { x: 62, y: 10 } } },
 ];
+export { HOUSE_W as HOME_WIDTH };
 
 /** A cheap, stable pseudo-noise so terrain is fixed (not random). */
 function noise(x: number, y: number): number {
@@ -349,16 +409,19 @@ function decode(): WorldMap {
     }
   }
 
-  // 7) Carve each player-home interior in the band below the arenas: a walled,
-  //    plank-floored room, with a one-tile doorway opening in the bottom wall.
-  for (const r of INTERIORS) {
-    for (let y = INTERIOR_TOP; y < INTERIOR_TOP + INTERIOR_H; y++) {
-      for (let x = r.x0; x < r.x0 + INTERIOR_W; x++) {
-        const edge = x === r.x0 || x === r.x0 + INTERIOR_W - 1 || y === INTERIOR_TOP || y === INTERIOR_TOP + INTERIOR_H - 1;
-        set(x, y, edge ? "wall" : "plank");
+  // 7) Carve each player-home interior in the band below the arenas: a four-room
+  //    house (walls shared) with plank floors, then punch the doorways through.
+  for (const h of HOMES) {
+    const plan = homeLayout(h.ox);
+    for (const rm of plan.rooms) {
+      for (let y = rm.y0; y <= rm.y1; y++) {
+        for (let x = rm.x0; x <= rm.x1; x++) {
+          const edge = x === rm.x0 || x === rm.x1 || y === rm.y0 || y === rm.y1;
+          set(x, y, edge ? "wall" : "plank");
+        }
       }
     }
-    set(r.entry.x, INTERIOR_TOP + INTERIOR_H - 1, "plank"); // the doorway opening
+    for (const d of plan.doorways) set(d.x, d.y, "plank"); // openings (incl. the sealed wing doorway)
   }
 
   return { name: "Varath", width: WIDTH, height: HEIGHT, tiles };

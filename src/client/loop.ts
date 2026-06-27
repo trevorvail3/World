@@ -141,6 +141,7 @@ const VERB: Record<ObjKind, string> = {
   housing_plot: "Claim",
   build_hotspot: "Build at",
   house_door: "Enter",
+  room_seal: "Build wing",
   cauldron: "Brew at",
   workbench: "Build at",
   crafting_table: "Craft at",
@@ -174,6 +175,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   housing_plot: "A vacant homestead yard. Claim it, and its house is yours to furnish.",
   build_hotspot: "A space for furniture — build a piece here from your Construction materials.",
   house_door: "The door to a home. Step through to its own quiet interior.",
+  room_seal: "A walled-off doorway. Build the extension to add the room beyond it onto your house.",
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
   crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
@@ -419,6 +421,9 @@ export class Game {
         case "OPEN_BUILD":
           this.openBuild(ev.hotspotId, ev.category, ev.current);
           break;
+        case "OPEN_EXTENSION":
+          this.openExtension(ev.sealId, ev.name, ev.levelReq, ev.materials);
+          break;
         case "OPEN_TRAVEL":
           this.openTravel(ev.objId);
           break;
@@ -613,6 +618,33 @@ export class Game {
       `Build — ${label}`,
       items,
       "Build from your Construction materials. Replace a piece any time to redecorate.",
+    );
+  }
+
+  /** Offer to build an add-on room (a wing): show the cost, confirm to build. */
+  private openExtension(sealId: string, name: string, levelReq: number, materials: Record<string, number>): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+    const leveled = player.skills.construction.level >= levelReq;
+    const hasMats = Object.entries(materials).every(([item, qty]) => have(item) >= qty);
+    const cost = Object.entries(materials)
+      .map(([item, qty]) => `${qty}× ${content.items[item as ItemId].name}`).join(", ");
+    const items: MenuItem[] = [{
+      label: `Build the ${name} wing  ·  Con ${levelReq}`,
+      target: leveled ? cost : `needs Construction ${levelReq}`,
+      tone: leveled && hasMats ? "action" : "normal",
+      onSelect: () => {
+        if (!leveled) { this.hud.log(`Building the ${name} wing needs Construction level ${levelReq}.`); return; }
+        if (!hasMats) { this.hud.log(`You're short of materials for the ${name} wing.`); return; }
+        this.dispatch({ type: "BUILD_ROOM", sealId });
+      },
+    }];
+    this.menu.show(
+      window.innerWidth / 2, window.innerHeight / 2,
+      `Add a room — ${name}`, items,
+      "Raise the extension to add this room onto your house. The doorway opens once it's built.",
     );
   }
 

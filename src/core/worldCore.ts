@@ -227,8 +227,12 @@ export function buildWalkability(
   state: WorldState,
 ): (x: number, y: number) => boolean {
   const blocked = new Set<string>();
+  // Sealed add-on doorways block until their extension is built — keyed live, so
+  // the wing opens for pathfinding the moment you build it (no rebuild needed).
+  const seals = new Map<string, string>();
   for (const obj of content.objects) {
     if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
+    else if (obj.kind === "room_seal") seals.set(`${obj.x},${obj.y}`, obj.id);
   }
   const { map } = content;
   return (x: number, y: number): boolean => {
@@ -237,8 +241,11 @@ export function buildWalkability(
     if (tile === "water" || tile === "mountain" || tile === "cave_wall" || tile === "deep" || tile === "wall") {
       return false;
     }
-    if (blocked.has(`${x},${y}`)) return false;
-    if (state.creatureTiles.has(`${x},${y}`)) return false;
+    const key = `${x},${y}`;
+    if (blocked.has(key)) return false;
+    const seal = seals.get(key);
+    if (seal && !state.objects[seal]?.owned) return false; // wing not built yet
+    if (state.creatureTiles.has(key)) return false;
     return true;
   };
 }
@@ -804,6 +811,10 @@ export function applyIntent(
       useFurniture(state, content, intent.hotspotId, events);
       break;
     }
+    case "BUILD_ROOM": {
+      buildRoom(state, content, intent.sealId, events);
+      break;
+    }
   }
   return events;
 }
@@ -1353,6 +1364,19 @@ function startInteraction(
       break;
     }
 
+    case "room_seal": {
+      if (obj.owned) { // already built — the doorway stands open
+        events.push({ type: "LOG", message: "The doorway to your workshop wing stands open." });
+        break;
+      }
+      events.push({
+        type: "OPEN_EXTENSION", sealId: def.id,
+        name: WORKSHOP_EXTENSION.name, levelReq: WORKSHOP_EXTENSION.levelReq,
+        materials: WORKSHOP_EXTENSION.materials,
+      });
+      break;
+    }
+
     case "portal":
       usePortal(state, def, events);
       break;
@@ -1472,6 +1496,48 @@ function buildFurniture(
     }
   }
   events.push({ type: "LOG", message: `You build the ${f.name}.` });
+}
+
+/** The one add-on wing you can build onto a home: the Workshop (forge/alch/bench). */
+const WORKSHOP_EXTENSION = {
+  name: "Workshop",
+  levelReq: 15,
+  materials: { plank_stonewood: 6, timber_frame: 4, mortar_basic: 4, stone_block: 4 } as Record<string, number>,
+};
+
+/** Build an add-on room: consume the materials, open the sealed doorway. */
+function buildRoom(
+  state: WorldState,
+  content: Content,
+  sealId: string,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const obj = state.objects[sealId];
+  const def = findObjectDef(content, sealId);
+  if (!obj || !def || def.kind !== "room_seal") return;
+  if (obj.owned) { events.push({ type: "LOG", message: "That wing is already built." }); return; }
+  if (def.plot && !state.objects[def.plot]?.owned) {
+    events.push({ type: "LOG", message: "You don't own this homestead." });
+    return;
+  }
+  const ext = WORKSHOP_EXTENSION;
+  if (skillLvl(player, "construction") < ext.levelReq) {
+    events.push({ type: "LOG", message: `Building the ${ext.name} wing needs Construction level ${ext.levelReq}.` });
+    return;
+  }
+  for (const [item, qty] of Object.entries(ext.materials)) {
+    if (countItem(player, item as ItemId) < qty) {
+      events.push({ type: "LOG", message: `You're short of materials to raise the ${ext.name} wing.` });
+      return;
+    }
+  }
+  for (const [item, qty] of Object.entries(ext.materials)) {
+    for (let i = 0; i < qty; i++) removeOneItem(player, item as ItemId);
+  }
+  obj.owned = true; // the doorway opens (walkability reads this live)
+  grantXp(state, content, "construction", 220, events);
+  events.push({ type: "LOG", message: `You raise the ${ext.name} wing. The doorway opens onto your new room.` });
 }
 
 /** Use a built functional piece as a station — bank / cook / build, at home. */

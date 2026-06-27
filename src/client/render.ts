@@ -427,6 +427,8 @@ export function drawWorld(
     } else if (def.kind === "build_hotspot") {
       const f = obj.furniture ? content.furniture[obj.furniture] : undefined;
       drawHotspot(g, px + TILE / 2, py + TILE / 2, f, now);
+    } else if (def.kind === "room_seal") {
+      if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
     } else {
       drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget, monsterAttack(def, obj, state, content, now));
     }
@@ -673,6 +675,17 @@ function drawObject(
       drawHouseDoor(g, cx, cy);
       break;
   }
+}
+
+/** An unbuilt add-on doorway: a boarded-up wall opening, awaiting its extension. */
+function drawRoomSeal(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  g.fillStyle = "#6b6157"; g.fillRect(cx - 12, cy - 12, 24, 24); // the wall masonry
+  g.strokeStyle = "#4a4138"; g.lineWidth = 1;
+  for (let i = -8; i <= 8; i += 8) { g.beginPath(); g.moveTo(cx - 12, cy + i); g.lineTo(cx + 12, cy + i); g.stroke(); }
+  // crossed boards over the opening — "under construction"
+  g.fillStyle = "#7a5532"; g.fillRect(cx - 11, cy - 3, 22, 4); g.fillRect(cx - 3, cy - 11, 4, 22);
+  g.strokeStyle = "#caa05a"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx - 10, cy - 9); g.lineTo(cx + 10, cy + 9); g.stroke();
 }
 
 /** A timber house door — a planked doorway in a frame, with a ring handle. */
