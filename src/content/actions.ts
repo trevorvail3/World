@@ -2748,7 +2748,7 @@ export const actions: SkillAction[] = [
     "skill": "construction",
     "name": "Dress Vault Stone ×2",
     "levelReq": 75,
-    "xp": 1600,
+    "xp": 450,
     "baseTime": 12000,
     "requires": {
       "bloodore_bar": 3,
