@@ -1,13 +1,19 @@
 /**
  * src/client/avatar.ts
  * --------------------
- * One place that knows how to draw a character — body, top, legs, shoes, hair
- * and facial hair — from an Appearance. The in-world player (render.ts) and the
- * character creator both call drawAvatar, so styles live here once.
+ * One place that knows how to draw a character — body, arms, top, legs, shoes,
+ * hair and facial hair — from an Appearance. The in-world player (render.ts) and
+ * the character creator both call drawAvatar, so styles live here once.
  *
  * Geometry is in "base units" (1 = one screen pixel at scale 1, which is how the
  * in-world figure is drawn); pass a larger `s` for the creator's big preview.
  * (cx, cy) is the figure's centre — the same reference the tile renderer uses.
+ *
+ * Animation is driven by the `anim` argument: a monotonic clock (`now`) and
+ * whether the figure is `moving`. Standing gives a gentle idle bob; moving runs
+ * a walk cycle — body bounce, swinging arms and alternating feet. The part
+ * helpers are written so a future "action" pose (e.g. a pickaxe swing) can drive
+ * the arms from the same place.
  */
 
 import type { Appearance } from "../core/types.ts";
@@ -74,6 +80,12 @@ export function withDefaults(a?: Partial<Appearance>): Appearance {
   return { ...DEFAULT_APPEARANCE, ...(a ?? {}) };
 }
 
+/** How the figure is animated: a clock and whether it's walking. */
+export interface AvatarAnim {
+  now?: number;
+  moving?: boolean;
+}
+
 type Ctx = CanvasRenderingContext2D;
 
 /** Darken a hex colour by `amt` (0..1) for shading. */
@@ -89,8 +101,7 @@ function shade(hex: string, amt: number): string {
 
 /**
  * Draw a full character at (cx, cy) — the figure's centre — scaled by `s`.
- * `bob` lifts the upper body (head/torso/hair) for the idle bounce; the legs
- * and feet stay planted.
+ * `anim` gives the idle bob or walk cycle.
  */
 export function drawAvatar(
   g: Ctx,
@@ -98,9 +109,17 @@ export function drawAvatar(
   cy: number,
   s: number,
   look: Appearance,
-  bob = 0,
+  anim: AvatarAnim = {},
 ): void {
-  // Helpers: rects/circles in base units. Upper-body helpers add the bob.
+  const t = anim.now ?? 0;
+  const moving = anim.moving ?? false;
+  // Walk cycle vs. a gentle idle breath.
+  const step = t / 110;
+  const bob = moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
+  const swing = moving ? Math.sin(step) * 0.5 : Math.sin(t / 340) * 0.05;
+  const liftL = moving ? Math.max(0, Math.sin(step)) * 1.8 : 0;
+  const liftR = moving ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
+
   const R = (dx: number, dy: number, w: number, h: number) =>
     g.fillRect(cx + dx * s, cy + dy * s, w * s, h * s);
   const Rb = (dx: number, dy: number, w: number, h: number) =>
@@ -116,9 +135,9 @@ export function drawAvatar(
   g.ellipse(cx, cy + 12.5 * s, 10 * s, 3.6 * s, 0, 0, Math.PI * 2);
   g.fill();
 
-  // --- Legs (planted) ---
-  g.fillStyle = look.legColor;
+  // --- Kilt is a single panel drawn before the (lifting) feet ---
   if (look.legs === "kilt") {
+    g.fillStyle = look.legColor;
     g.beginPath();
     g.moveTo(cx - 6 * s, cy + 5 * s);
     g.lineTo(cx + 6 * s, cy + 5 * s);
@@ -128,34 +147,34 @@ export function drawAvatar(
     g.fill();
     g.fillStyle = shade(look.legColor, 0.25);
     R(-0.6, 5, 1.2, 5.5); // centre pleat
-  } else if (look.legs === "shorts") {
-    R(-6, 5, 5, 3); R(1, 5, 5, 3); // short legs
-    g.fillStyle = look.skin; // bare shins
-    R(-5.5, 8, 4, 2.5); R(1.5, 8, 4, 2.5);
-  } else {
-    // trousers
-    R(-6, 5, 5, 6); R(1, 5, 5, 6);
-    g.fillStyle = shade(look.legColor, 0.22);
-    R(-0.4, 5, 0.8, 6); // inseam
   }
 
-  // --- Shoes (planted) ---
-  g.fillStyle = look.shoeColor;
-  if (look.shoes === "sandals") {
-    R(-6, 11.4, 5, 1.1); R(1, 11.4, 5, 1.1);
-    g.fillStyle = shade(look.shoeColor, 0.3);
-    R(-4.5, 10.4, 0.8, 1.2); R(2.7, 10.4, 0.8, 1.2); // ankle straps
-  } else if (look.shoes === "clogs") {
-    R(-6.5, 10.4, 5.8, 2.2); R(0.7, 10.4, 5.8, 2.2);
-    g.fillStyle = shade(look.shoeColor, 0.28);
-    R(-1.3, 10.4, 0.8, 2.2); // upturned toe hint via shading split
-    R(5.7, 10.4, 0.8, 2.2);
-  } else {
-    // boots
-    R(-6.2, 10, 5.4, 2.6); R(0.8, 10, 5.4, 2.6);
-    g.fillStyle = shade(look.shoeColor, 0.3);
-    R(-6.2, 12, 5.4, 0.6); R(0.8, 12, 5.4, 0.6); // soles
-  }
+  // --- Each leg + its shoe, lifting with the walk cycle ---
+  const foot = (bx: number, lift: number): void => {
+    const y = -lift;
+    if (look.legs === "shorts") {
+      g.fillStyle = look.legColor; R(bx, 5 + y, 5, 3);
+      g.fillStyle = look.skin; R(bx + 0.5, 8 + y, 4, 2.5); // bare shin
+    } else if (look.legs !== "kilt") {
+      g.fillStyle = look.legColor; R(bx, 5 + y, 5, 6); // trousers
+    }
+    g.fillStyle = look.shoeColor;
+    if (look.shoes === "sandals") {
+      R(bx, 11.4 + y, 5, 1.1);
+      g.fillStyle = shade(look.shoeColor, 0.3); R(bx + 1.6, 10.4 + y, 0.8, 1.1); // strap
+    } else if (look.shoes === "clogs") {
+      R(bx - 0.5, 10.4 + y, 5.8, 2.2);
+      g.fillStyle = shade(look.shoeColor, 0.28); R(bx + 4.5, 10.4 + y, 0.8, 2.2); // toe
+    } else {
+      R(bx - 0.2, 10 + y, 5.4, 2.6); // boot
+      g.fillStyle = shade(look.shoeColor, 0.3); R(bx - 0.2, 12 + y, 5.4, 0.6); // sole
+    }
+  };
+  foot(-6, liftL);
+  foot(1, liftR);
+
+  // --- The far arm (drawn before the torso so it reads as "behind") ---
+  drawArm(g, cx, cy, s, bob, look, 6.4, 0.12 - swing);
 
   // --- Torso / top (bobs) ---
   g.fillStyle = look.tunic;
@@ -184,16 +203,41 @@ export function drawAvatar(
     Rb(-0.6, -7, 1.2, 10); // plain front seam
   }
 
+  // --- The near arm (in front of the torso) ---
+  drawArm(g, cx, cy, s, bob, look, -6.4, -0.12 + swing);
+
   // --- Head (bobs) ---
   g.fillStyle = look.skin;
   arc(0, -12, 6, 0, Math.PI * 2);
   g.fill();
 
-  // --- Facial hair (bobs), tinted with hair colour ---
+  // --- Facial hair, then hair (both bob) ---
   drawFacial(g, cx, cy, s, bob, look);
-
-  // --- Hair (bobs) ---
   drawHair(g, cx, cy, s, bob, look);
+}
+
+/**
+ * Draw one arm hanging from a shoulder, rotated by `angle` (radians; 0 = straight
+ * down). Sleeve takes the top colour, forearm + hand the skin colour. Pulling the
+ * pivot + rotation out here is what a future pickaxe-swing pose will reuse.
+ */
+function drawArm(
+  g: Ctx, cx: number, cy: number, s: number, bob: number, look: Appearance,
+  shoulderDX: number, angle: number,
+): void {
+  const px = cx + shoulderDX * s;
+  const py = cy - 5 * s + bob;
+  g.save();
+  g.translate(px, py);
+  g.rotate(angle);
+  g.fillStyle = look.tunic; // sleeve (upper arm)
+  g.fillRect(-1.3 * s, 0, 2.6 * s, 4.2 * s);
+  g.fillStyle = look.skin; // forearm
+  g.fillRect(-1.1 * s, 3.8 * s, 2.2 * s, 3.6 * s);
+  g.beginPath(); // hand
+  g.arc(0, 7.7 * s, 1.6 * s, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
 }
 
 function drawFacial(g: Ctx, cx: number, cy: number, s: number, bob: number, look: Appearance): void {
@@ -218,7 +262,6 @@ function drawFacial(g: Ctx, cx: number, cy: number, s: number, bob: number, look
   if (look.facial === "goatee") {
     g.fillStyle = hc;
     Rb(-1.6, -8.6, 3.2, 2.6);
-    g.fillStyle = hc;
     Rb(-2.4, -10.4, 4.8, 1.1); // a small moustache with it
     return;
   }

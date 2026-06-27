@@ -26,6 +26,8 @@ export class CharacterCreator {
   private draft: Appearance = { ...DEFAULT_APPEARANCE, name: "" };
   private preview!: HTMLCanvasElement;
   private taken: Set<string>;
+  private t0 = performance.now();
+  private raf = 0;
 
   constructor(
     root: HTMLElement,
@@ -85,7 +87,9 @@ export class CharacterCreator {
       this.opts.onCreate({ ...this.draft });
     });
 
-    this.renderPreview();
+    // A gentle idle loop so the figure breathes (and its arms read) live.
+    const loop = (): void => { this.renderPreview(); this.raf = requestAnimationFrame(loop); };
+    this.raf = requestAnimationFrame(loop);
     setTimeout(() => nameEl.focus(), 50);
   }
 
@@ -163,10 +167,11 @@ export class CharacterCreator {
     const w = this.preview.width, h = this.preview.height;
     g.clearRect(0, 0, w, h);
     // Centre the figure (it spans roughly -20..+13 base units tall) and scale up.
-    drawAvatar(g, w / 2, h / 2 + 22, 3.7, this.draft, 0);
+    drawAvatar(g, w / 2, h / 2 + 22, 3.7, this.draft, { now: performance.now() - this.t0 });
   }
 
   private close(): void {
+    if (this.raf) cancelAnimationFrame(this.raf);
     this.backdrop.remove();
   }
 }

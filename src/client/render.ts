@@ -434,7 +434,7 @@ export function drawWorld(
 
   // --- Player ---
   if (state.player.alive) {
-    drawPlayer(g, state.player.pos, cam, now, state.player.appearance);
+    drawPlayer(g, state.player.pos, cam, now, state.player.appearance, state.player.path.length > 0);
   }
 
   // --- Time of day: a slow tint cycle, with firelight glowing through at night.
@@ -1864,11 +1864,11 @@ function drawPlayer(
   cam: Camera,
   now: number,
   look?: Appearance,
+  moving = false,
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
-  const bob = Math.sin(now / 180) * 1.2;
-  drawAvatar(g, cx, cy, 1, withDefaults(look), bob);
+  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving });
 }
 
 function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {
