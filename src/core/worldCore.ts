@@ -107,12 +107,17 @@ const WANDER = {
 
 // `deplete` is the chance, on a successful gather, that the node runs out and
 // the player stops — otherwise they keep gathering until the pack is full.
-const WOODCUTTING = { interval: 1500, success: 0.45, xp: 25, respawn: 7000, deplete: 0.25 };
-const MINING = { interval: 1800, success: 0.4, xp: 30, respawn: 8000, deplete: 0.3 };
-const FISHING = { interval: 1400, success: 0.5, xp: 20 };
+// Gathering rates (rebalanced): gathering used to lag the processing it feeds by
+// ~12× (Mining was a ~160h slog feeding a ~13h Smithing). Faster swings, higher
+// success, and less depletion downtime bring it into a healthier ~45–60h band —
+// still the input bottleneck, no longer a wall. Mining and Hunter got the most.
+const WOODCUTTING = { interval: 1400, success: 0.5, xp: 25, respawn: 7000, deplete: 0.25 };
+const MINING = { interval: 1500, success: 0.52, xp: 30, respawn: 7000, deplete: 0.25 };
+const FISHING = { interval: 1300, success: 0.55, xp: 20 };
 // Hunter: a snare you set and check. A catch "springs" the trap (it depletes),
-// then the game wanders back and the trap resets after a short wait.
-const HUNTER = { interval: 2400, success: 0.5, respawn: 9000, deplete: 0.4 };
+// then the game wanders back and the trap resets after a short wait. It has no
+// tool to speed it, so the constants carry the whole buff.
+const HUNTER = { interval: 1900, success: 0.55, respawn: 8000, deplete: 0.3 };
 
 // Re-tuned: one station-craft step every CRAFT_INTERVAL ms (the idle game's
 // per-recipe baseTimes are far slower; a single snappy interval feels right
@@ -898,8 +903,10 @@ const GATHER_TOOL: Partial<Record<string, "hatchet" | "pickaxe" | "rod">> = {
 /** Gathering-skill level needed to wield each tool tier (index = tier 1–10). */
 const TOOL_TIER_REQS = [0, 1, 10, 15, 30, 40, 45, 55, 60, 60, 75];
 
-/** Tool tier → gather-interval multiplier: better tools gather faster. */
-const TOOL_TIER_SPEED = [1, 1, 0.95, 0.9, 0.82, 0.77, 0.72, 0.68, 0.65, 0.62, 0.55];
+/** Tool tier → gather-interval multiplier: better tools gather faster. A steeper
+ *  ramp so upgrading your pickaxe/hatchet/rod is a real late-game speed reward
+ *  (top tier ≈ 2.2× the base rate), giving gathering room to scale with progress. */
+const TOOL_TIER_SPEED = [1, 1, 0.93, 0.86, 0.78, 0.72, 0.66, 0.6, 0.55, 0.5, 0.45];
 
 /**
  * The skill + level a piece of gear or a tool needs before it can be worn.
