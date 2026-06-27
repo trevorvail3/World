@@ -48,12 +48,14 @@ import type {
 // Times are in milliseconds.
 // ---------------------------------------------------------------------------
 
-const MOVE_SPEED = 3.5; // tiles per second
+const MOVE_SPEED = 1.8; // tiles per second — a deliberately slow walk
 const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost on top of everything
 
 // Run/walk (OSRS-style): running moves SPRINT_MULT× faster but drains run energy
-// per tile travelled; energy recovers while walking or standing still.
-const SPRINT_MULT = 1.9;
+// per tile travelled; energy recovers while walking or standing still. Walking is
+// slow on purpose; sprinting (~3.6 tiles/s) is the comfortable pace, so the run
+// bar — and Agility, which stretches it — actually matter.
+const SPRINT_MULT = 2.0;
 const ENERGY_MAX = 100;
 const ENERGY_DRAIN = 1.7; // energy spent per tile sprinted (~58 tiles on a full bar)
 const ENERGY_REGEN = 7; // energy recovered per second when not sprinting
