@@ -1196,4 +1196,153 @@ export const quests: QuestDef[] = [
       gold: 250,
     },
   },
+
+  // ===========================================================================
+  // THE SKRITT CONTRABAND LINE — a goblin fence's three jobs. Reachable now that
+  // a shopkeeper can be TALKED to (the Talk option), not just traded with. No
+  // faction; pays in coin. Cutting Skritt out (sk_freelance) sours the finale.
+  // ===========================================================================
+
+  {
+    id: "q_skritt_smalltime",
+    name: "Small-Time",
+    giver: "shop_trader",
+    intro: [
+      "Pssst. You've a careful look — Skritt likes careful. Skritt has work that pays better than honest and asks fewer questions.",
+      "Rough stones. The outlaws sit on them, the hills hide them. Bring Skritt three uncut gems and we see what kind of runner you are.",
+    ],
+    steps: [
+      { type: "gather", item: "rough_gem", count: 3, text: "Get 3 rough gems (outlaws carry them; so do the deep rocks)" },
+      { type: "deliver", npc: "shop_trader", item: "rough_gem", count: 3, text: "Bring the stones to Skritt" },
+      {
+        type: "choice",
+        npc: "shop_trader",
+        text: "Tell Skritt what kind of runner you are",
+        prompt: "Skritt weighs the stones, and weighs you. 'So. What is Skritt buying, with you?'",
+        options: [
+          {
+            label: "Discreet. I don't ask questions.",
+            flags: ["sk_smalltime_done", "met_skritt", "sk_discreet"],
+            gold: 350,
+            reply: "Skritt's grin widens. 'Discreet. Good word. Expensive word. Here — discreet money for a discreet face.'",
+          },
+          {
+            label: "Greedy. I want the bigger cut.",
+            flags: ["sk_smalltime_done", "met_skritt", "sk_greedy"],
+            gold: 450,
+            reply: "Skritt pays it, slow, eyeing you. 'Greedy is fine. Greedy Skritt understands. Greedy Skritt also watches. Take your coin.'",
+          },
+          {
+            label: "Honest. This is the last shady thing I do.",
+            flags: ["sk_smalltime_done", "met_skritt", "sk_reluctant"],
+            gold: 250,
+            reply: "Skritt cackles. 'The last one. They all say the last one. The coin spends the same either way, honest friend. Off you go.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "Come back when your conscience is quiet and your pockets are empty. Skritt always has work.",
+    ],
+    reward: {
+      xp: [{ skill: "crafting", amount: 180 }],
+    },
+  },
+
+  {
+    id: "q_skritt_runner",
+    name: "The Quiet Road",
+    giver: "shop_trader",
+    requiresFlags: ["sk_smalltime_done"],
+    intro: [
+      "A shipment of Skritt's went out and didn't come in. The cutthroats at the Roost took it — bold, even for them.",
+      "Go take it back. Put down enough of them that the rest learn the lesson. Then bring word, and we'll talk about where the goods go.",
+    ],
+    steps: [
+      { type: "kill", monster: "cutthroat", count: 4, text: "Take back the shipment from the cutthroats (0/4)" },
+      {
+        type: "choice",
+        npc: "shop_trader",
+        text: "Settle what happens to the recovered shipment",
+        prompt: "The shipment's yours to account for, and the Ironvale watch checks the gates. What do you do with it?",
+        options: [
+          {
+            label: "Run it past the watch for Skritt.",
+            flags: ["sk_runner_done", "sk_smuggler"],
+            gold: 500,
+            reply: "Skritt's eyes shine. 'Past the watch and into Skritt's hands, clean as a whistle. You're a runner now, friend. A real one.'",
+          },
+          {
+            label: "Hold out for double — it's risky work.",
+            flags: ["sk_runner_done", "sk_hardball"],
+            gold: 850,
+            reply: "Skritt pays, but the warmth's gone from the grin. 'Double. Fine. Skritt remembers double. Skritt remembers everything, friend.'",
+          },
+          {
+            label: "Keep the shipment. Sell it myself.",
+            flags: ["sk_runner_done", "sk_freelance"],
+            gold: 600,
+            reply: "Skritt's face shutters. 'Cut Skritt out of Skritt's own goods. Bold. Stupid-bold.' He pockets nothing, and forgets nothing. The road just got lonelier.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The Roost will think twice before touching a Skritt shipment again. Whether they touch a Skritt partner — that's still being decided.",
+    ],
+    reward: {
+      xp: [{ skill: "edge", amount: 220 }, { skill: "vigour", amount: 120 }],
+      items: [{ item: "arrow_ashiron", qty: 40 }],
+      gold: 150,
+    },
+  },
+
+  {
+    id: "q_skritt_partner",
+    name: "Goblin's Trust",
+    giver: "shop_trader",
+    requiresFlags: ["sk_runner_done"],
+    blockedByFlags: ["sk_freelance"],
+    intro: [
+      "Skritt has watched you run, and Skritt has decided. There's a partnership in it, if you want one — a whole quiet network, gates and roads and the warm stone too.",
+      "One last test. A rival fence runs highwaymen on the east road. Take two of them down — take their stones — and bring the prize to Skritt. Then we decide what you become.",
+    ],
+    steps: [
+      { type: "kill", monster: "highwayman", count: 2, text: "Rob the rival fence's highwaymen (0/2)" },
+      {
+        type: "choice",
+        npc: "shop_trader",
+        text: "Decide the fate of Skritt's network",
+        prompt: "The whole quiet trade is on the table now. What do you make of it?",
+        options: [
+          {
+            label: "Partner up. Run the network together.",
+            flags: ["sk_network_done", "sk_partner"],
+            gold: 800,
+            reply: "Skritt clasps your wrist, goblin-style, hard. 'Partners. Skritt and the careful one. The gates will never sleep easy again, and Skritt will never be alone at a counter again. Good.'",
+          },
+          {
+            label: "Take the network for yourself.",
+            flags: ["sk_network_done", "sk_boss"],
+            gold: 1300,
+            reply: "You lay out exactly how much you know, and exactly who you could tell. Skritt goes very still. 'So. The runner runs the run now.' He smiles like a closing door. 'Skritt works for you. For now.'",
+          },
+          {
+            label: "Walk the whole thing to the watch.",
+            flags: ["sk_network_done", "sk_busted"],
+            gold: 500,
+            reply: "The watch pays informants in clean coin and no thanks. By the time you've told it, Skritt's cart is gone from the trade row, and the row is a little duller, and a little more honest, for the loss.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "Whatever the quiet trade becomes — partner, master, or memory — you decided it. Few get to decide a whole hidden world. Spend the coin while it's warm.",
+    ],
+    reward: {
+      xp: [{ skill: "crafting", amount: 300 }, { skill: "agility", amount: 150 }],
+      items: [{ item: "cut_gem", qty: 2 }],
+      gold: 400,
+    },
+  },
 ];
