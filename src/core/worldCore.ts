@@ -231,6 +231,8 @@ export function buildWalkability(
   // the wing opens for pathfinding the moment you build it (no rebuild needed).
   const seals = new Map<string, string>();
   for (const obj of content.objects) {
+    // Rug footings are floor coverings — you walk over them, so they don't block.
+    if (obj.kind === "build_hotspot" && obj.category === "rug") continue;
     if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
     else if (obj.kind === "room_seal") seals.set(`${obj.x},${obj.y}`, obj.id);
   }
@@ -1404,9 +1406,19 @@ function interactPlot(
   events.push({
     type: "LOG",
     message: comfort > 0
-      ? `${def.name} — your homestead. Home comfort ${comfort}. Build at the footings to make it your own.`
-      : `${def.name} — your homestead, bare as yet. Build at the footings around the yard.`,
+      ? `${def.name} — by its comforts, ${comfortTitle(comfort)} (comfort ${comfort}). Keep upgrading the furnishings to raise its standing.`
+      : `${def.name} — your home, bare as yet. Step inside and build to furnish it.`,
   });
+}
+
+/** A home's "rating" from its total comfort — the visible reward for furnishing. */
+function comfortTitle(comfort: number): string {
+  if (comfort >= 280) return "a Palace";
+  if (comfort >= 190) return "an Estate";
+  if (comfort >= 120) return "a Manor";
+  if (comfort >= 60) return "a Fine Home";
+  if (comfort >= 25) return "a Cottage";
+  return "a Hovel";
 }
 
 /** Sum the comfort of every built piece across one plot's hotspots. */

@@ -208,6 +208,23 @@ function paintTile(
       if (tile === "cave_wall") { g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(px, py, TILE, 2); }
       break;
     }
+    case "plank": {
+      // A swept timber floor: warm boards with seams and a soft top highlight.
+      g.strokeStyle = "rgba(40,24,10,0.30)"; g.lineWidth = 1;
+      for (let i = 1; i < 3; i++) {
+        const yy = py + Math.round(i * TILE / 3);
+        g.beginPath(); g.moveTo(px, yy + 0.5); g.lineTo(px + TILE, yy + 0.5); g.stroke();
+      }
+      // a staggered cross-joint, so boards don't line up tile to tile
+      const jx = px + Math.round(TILE * (0.3 + 0.4 * hv));
+      const band = hv > 0.5 ? 0 : 1;
+      g.beginPath(); g.moveTo(jx + 0.5, py + band * TILE / 3); g.lineTo(jx + 0.5, py + (band + 1) * TILE / 3); g.stroke();
+      g.fillStyle = "rgba(255,224,170,0.07)";
+      for (let i = 0; i < 3; i++) g.fillRect(px, py + Math.round(i * TILE / 3) + 1, TILE, 1.5);
+      g.fillStyle = "rgba(60,38,18,0.18)"; // a few grain flecks
+      for (let i = 0; i < 3; i++) g.fillRect(px + hash(x * 3 + i, y) * (TILE - 6), py + hash(x, y * 3 + i) * (TILE - 4), 3, 1);
+      return; // boards are texture enough; skip the ground grid
+    }
   }
 
   // Faint grid for ground tiles (walls/mountain/water handle their own look).
@@ -426,7 +443,8 @@ export function drawWorld(
       drawHousingPlot(g, px + TILE / 2, py + TILE / 2, !!obj.owned);
     } else if (def.kind === "build_hotspot") {
       const f = obj.furniture ? content.furniture[obj.furniture] : undefined;
-      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, now);
+      const { idx, last } = furnitureRank(content, f);
+      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, idx, last, now);
     } else if (def.kind === "room_seal") {
       if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
     } else {
@@ -717,159 +735,204 @@ function drawHousingPlot(g: CanvasRenderingContext2D, cx: number, cy: number, ow
   }
 }
 
-/** A build footing: an empty peg-marked square, or the furniture built on it. */
+// --- Furniture drawing helpers ---------------------------------------------
+const GOLD = "#d8b24a", GOLDLT = "#f2db84", GEM = "#7fd0e0";
+/** A piece's rank within its category ladder (0 = first tier; `last` = top). */
+function furnitureRank(content: Content, f: FurnitureDef | undefined): { idx: number; last: number } {
+  if (!f) return { idx: 0, last: 0 };
+  const ladder = Object.values(content.furniture).filter((x) => x.category === f.category).sort((a, b) => a.levelReq - b.levelReq);
+  return { idx: Math.max(0, ladder.findIndex((x) => x.id === f.id)), last: ladder.length - 1 };
+}
+function rrect(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function vgrad(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, top: string, bot: string): void {
+  const lg = g.createLinearGradient(x, y, x, y + h); lg.addColorStop(0, top); lg.addColorStop(1, bot);
+  g.fillStyle = lg; g.fillRect(x, y, w, h);
+}
+function sparkle(g: CanvasRenderingContext2D, x: number, y: number, now: number): void {
+  const t = 0.3 + 0.7 * Math.abs(Math.sin(now / 260 + x * 0.4));
+  g.globalAlpha = t; g.fillStyle = "#fff7d8";
+  g.fillRect(x - 0.6, y - 2.5, 1.2, 5); g.fillRect(x - 2.5, y - 0.6, 5, 1.2);
+  g.globalAlpha = 1;
+}
+
+/** A floor carpet (drawn flat at floor level — you walk over it, so no shadow). */
+function drawRug(g: CanvasRenderingContext2D, cx: number, cy: number, idx: number): void {
+  const pal = [
+    { base: "#8a6a44", edge: "#5f4730", motif: "#a07b48" }, // hide
+    { base: "#883b39", edge: GOLD, motif: "#3f6a8a" },       // woven (red, gold border, blue motif)
+    { base: "#9a8466", edge: "#5f4730", motif: "#b6a182" }, // fur (mottled tan)
+    { base: "#5a2f6a", edge: GOLD, motif: "#a85fc0" },       // plush (royal purple + gold)
+  ][idx] ?? { base: "#8a6a44", edge: "#5f4730", motif: "#a07b48" };
+  g.fillStyle = pal.base; rrect(g, cx - 10, cy - 7, 20, 14, 2.5); g.fill();
+  g.strokeStyle = pal.edge; g.lineWidth = 1.6; g.stroke();
+  if (idx === 1) { g.strokeStyle = pal.motif; g.lineWidth = 1; g.strokeRect(cx - 6, cy - 4, 12, 8); g.beginPath(); g.moveTo(cx, cy - 4); g.lineTo(cx, cy + 4); g.stroke(); }
+  else if (idx === 2) { g.fillStyle = pal.motif; for (const [dx, dy] of [[-6, -3], [0, 2], [6, -2], [-3, 4], [4, 4]] as const) g.fillRect(cx + dx, cy + dy, 2, 2); }
+  else if (idx === 3) { g.strokeStyle = pal.motif; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 7, cy); g.lineTo(cx, cy + 5); g.lineTo(cx - 7, cy); g.closePath(); g.stroke(); g.fillStyle = GOLD; g.fillRect(cx - 1.5, cy - 1.5, 3, 3); }
+  else { g.fillStyle = pal.motif; g.fillRect(cx - 7, cy - 1, 14, 1); }
+  if (idx >= 1) { g.strokeStyle = pal.edge; g.lineWidth = 1; for (let i = -9; i <= 9; i += 3) { g.beginPath(); g.moveTo(cx + i, cy - 7); g.lineTo(cx + i, cy - 8.5); g.moveTo(cx + i, cy + 7); g.lineTo(cx + i, cy + 8.5); g.stroke(); } }
+}
+
+/** A build footing: an empty marked square, or the polished furniture built on it. */
 function drawHotspot(
   g: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   f: FurnitureDef | undefined,
+  idx: number,
+  last: number,
   now: number,
 ): void {
   if (!f) {
-    // an empty footing — a faint dashed square with corner pegs
     g.strokeStyle = "rgba(150,128,92,0.7)"; g.lineWidth = 1.4;
     g.setLineDash([3, 3]); g.strokeRect(cx - 8, cy - 6, 16, 12); g.setLineDash([]);
     g.fillStyle = "#6e5436";
     for (const [dx, dy] of [[-8, -6], [8, -6], [-8, 6], [8, 6]] as const) g.fillRect(cx + dx - 1, cy + dy - 1, 2, 2);
     return;
   }
-  // Tier (0..3) shades and adorns each piece: higher tiers look richer.
-  const tier = f.levelReq >= 70 ? 3 : f.levelReq >= 45 ? 2 : f.levelReq >= 20 ? 1 : 0;
-  const gold = "#d8b24a", gem = "#7fd0e0";
+  if (f.category === "rug") { drawRug(g, cx, cy, idx); return; } // floor-level
+  const top = idx === last; // the showpiece tier gets gold + a sparkle
   shadow(g, cx, cy + 8, 9, 3);
   switch (f.category) {
     case "kitchen": {
-      g.fillStyle = tier >= 2 ? "#4f535b" : tier ? "#5b5f68" : "#7c766c"; g.fillRect(cx - 9, cy - 3, 18, 11); // body
+      vgrad(g, cx - 9, cy - 3, 18, 11, idx >= 2 ? "#5a5f68" : idx ? "#666b74" : "#857e72", "#3e424a"); // body
       g.fillStyle = "#4b4f56"; g.fillRect(cx - 9, cy - 4, 18, 2.5); // mantel/flue
-      if (tier) { g.fillStyle = "#2b2e34"; g.fillRect(cx + 3, cy - 4, 5, 2.5); } // a range chimney stub
-      if (tier >= 2) { g.fillStyle = "#2b2e34"; g.fillRect(cx - 8, cy - 4, 5, 2.5); } // second hearth on the grand range
+      if (idx) { g.fillStyle = "#2b2e34"; g.fillRect(cx + 3, cy - 4, 5, 2.5); }
+      if (idx >= 2) { g.fillStyle = "#2b2e34"; g.fillRect(cx - 8, cy - 4, 5, 2.5); g.fillStyle = GOLD; g.fillRect(cx - 9, cy - 4.6, 18, 1); }
       g.fillStyle = "#241d18"; g.fillRect(cx - 5, cy + 1, 10, 7); // firebox
       const fl = 0.5 + 0.5 * Math.sin(now / 110);
-      g.fillStyle = `rgba(240,150,40,${0.65 + 0.3 * fl})`;
-      g.beginPath(); g.moveTo(cx, cy + 2 - 4 - 2 * fl); g.lineTo(cx - 3.5, cy + 7); g.lineTo(cx + 3.5, cy + 7); g.closePath(); g.fill();
-      g.fillStyle = "#ffd86a"; g.beginPath(); g.moveTo(cx, cy + 3 - 2 * fl); g.lineTo(cx - 1.6, cy + 7); g.lineTo(cx + 1.6, cy + 7); g.closePath(); g.fill();
+      g.fillStyle = `rgba(240,150,40,${0.65 + 0.3 * fl})`; g.beginPath(); g.moveTo(cx, cy - 2 - 2 * fl); g.lineTo(cx - 3.5, cy + 7); g.lineTo(cx + 3.5, cy + 7); g.closePath(); g.fill();
+      g.fillStyle = "#ffd86a"; g.beginPath(); g.moveTo(cx, cy + 1 - 2 * fl); g.lineTo(cx - 1.6, cy + 7); g.lineTo(cx + 1.6, cy + 7); g.closePath(); g.fill();
       break;
     }
     case "forge": {
-      // a small anvil on a stone/timber base, with a glowing piece on the face
-      g.fillStyle = tier ? "#5a4632" : "#6e5436"; g.fillRect(cx - 7, cy + 1, 14, 7); // base
-      g.fillStyle = tier ? "#3b3e45" : "#55585f"; // the anvil
-      g.fillRect(cx - 7, cy - 3, 14, 3); g.fillRect(cx - 2, cy, 4, 2); g.fillRect(cx - 8, cy - 4, 6, 2); // horn + waist
+      g.fillStyle = idx >= 2 ? "#4a3026" : "#6e5436"; g.fillRect(cx - 7, cy + 1, 14, 7); // base/stump
+      vgrad(g, cx - 8, cy - 4, 16, 5, idx ? "#6a6f79" : "#5b5f68", idx ? "#3a3e45" : "#33363c"); // anvil top
+      g.fillStyle = idx ? "#4a4e57" : "#44474d"; g.fillRect(cx - 2, cy, 4, 2); // waist
+      g.fillStyle = idx ? "#7c828c" : "#6a6f79"; g.fillRect(cx - 9, cy - 4, 3, 2); // horn
       const gl = 0.5 + 0.5 * Math.sin(now / 90);
       g.fillStyle = `rgba(255,140,40,${0.6 + 0.35 * gl})`; g.fillRect(cx + 1, cy - 4, 3, 2); // hot billet
-      if (tier) { g.fillStyle = "#caa05a"; g.fillRect(cx + 4, cy - 6, 1.5, 3); } // a hung hammer
+      if (idx >= 1) { g.fillStyle = "#caa05a"; g.fillRect(cx + 4, cy - 7, 1.6, 3.5); }
+      if (idx >= 2) { g.fillStyle = `rgba(255,90,30,${0.4 + 0.3 * gl})`; g.fillRect(cx - 6, cy + 8, 12, 1.5); sparkle(g, cx + 3, cy - 3, now); }
       break;
     }
     case "alchemy": {
-      g.fillStyle = tier ? "#7a4a52" : "#4a3f3a"; g.fillRect(cx - 6, cy + 2, 12, 4); // trivet/coals base
-      g.fillStyle = tier ? "#5b6a72" : "#3a3a40"; // cauldron belly
-      g.beginPath(); g.arc(cx, cy + 1, 6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = tier >= 1 ? "#7fb89a" : "#6a8a6a"; // bubbling brew
-      g.beginPath(); g.ellipse(cx, cy - 3, 5, 1.8, 0, 0, Math.PI * 2); g.fill();
-      const b = Math.sin(now / 160) > 0.6 ? 1 : 0;
-      if (b) { g.fillStyle = "#bfe6cf"; g.fillRect(cx - 1, cy - 6, 1.5, 1.5); }
-      if (tier) { g.strokeStyle = gem; g.lineWidth = 1; g.beginPath(); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 8, cy + 2); g.stroke(); } // a glass coil
+      g.fillStyle = idx ? "#7a4a52" : "#4a3f3a"; g.fillRect(cx - 6, cy + 2, 12, 4); // trivet/coals
+      g.fillStyle = idx >= 2 ? GOLD : idx ? "#6b7a82" : "#3a3a40"; g.beginPath(); g.arc(cx, cy + 1, 6, 0, Math.PI * 2); g.fill(); // belly
+      g.fillStyle = "#7fb89a"; g.beginPath(); g.ellipse(cx, cy - 3, 5, 1.8, 0, 0, Math.PI * 2); g.fill(); // brew
+      if (Math.sin(now / 160) > 0.6) { g.fillStyle = "#bfe6cf"; g.fillRect(cx - 1, cy - 6, 1.5, 1.5); }
+      if (idx >= 1) { g.strokeStyle = GEM; g.lineWidth = 1.2; g.beginPath(); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 8, cy + 2); g.stroke(); g.fillStyle = "rgba(150,220,235,0.5)"; g.fillRect(cx + 6, cy - 6, 2, 3); }
+      if (idx >= 2) { g.fillStyle = GEM; g.fillRect(cx - 2, cy - 7, 1.6, 2); sparkle(g, cx - 6, cy - 5, now); }
       break;
     }
     case "storage": {
-      const wood = tier >= 2 ? "#43403c" : tier ? "#4f3826" : "#7a5532";
-      g.fillStyle = wood; g.fillRect(cx - 9, cy - 2, 18, 10); // chest body
-      g.fillStyle = tier >= 2 ? "#34312e" : tier ? "#3c2a1c" : "#63421f"; g.fillRect(cx - 9, cy - 5, 18, 4); // lid
-      g.fillStyle = tier >= 2 ? "#6b6f78" : tier ? "#8a3f33" : "#8a8278"; // straps (bloodore / voidsteel)
-      g.fillRect(cx - 7, cy - 5, 2, 13); g.fillRect(cx + 5, cy - 5, 2, 13);
-      g.fillStyle = tier >= 2 ? gem : gold; g.fillRect(cx - 1, cy - 1, 2, 3); // lock plate / gem-lock
+      const wood = idx >= 2 ? ["#3f3c38", "#2c2a27"] : idx ? ["#4f3826", "#3a281a"] : ["#8a5532", "#5e3f1d"];
+      vgrad(g, cx - 9, cy - 2, 18, 10, wood[0]!, wood[1]!); // body
+      g.fillStyle = wood[1]!; rrect(g, cx - 9, cy - 6, 18, 5, 2); g.fill(); // domed lid
+      g.fillStyle = "rgba(255,255,255,0.10)"; g.fillRect(cx - 9, cy - 6, 18, 1.4);
+      g.fillStyle = idx >= 2 ? GOLD : idx ? "#8a3f33" : "#9a9088"; g.fillRect(cx - 7, cy - 6, 2, 14); g.fillRect(cx + 5, cy - 6, 2, 14); // straps
+      g.fillStyle = idx >= 2 ? GEM : "#d9b36a"; g.fillRect(cx - 1.4, cy - 1, 2.8, 3); // lock
+      if (top) sparkle(g, cx + 6, cy - 6, now);
       break;
     }
     case "workshop": {
-      const wood = tier ? "#5a4632" : "#7a5532";
-      g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
-      g.fillStyle = wood; g.fillRect(cx - 10, cy - 1, 20, 4); // bench top
-      if (tier) { g.fillStyle = "#6b6f78"; g.fillRect(cx - 10, cy - 2, 20, 1.6); } // stone-topped upgrade
-      g.fillStyle = "#8a8278"; g.fillRect(cx - 6, cy - 5, 3, 4); // a vice
-      if (tier >= 2) { g.fillStyle = "#8a8278"; g.fillRect(cx + 3, cy - 5, 3, 4); } // a second vice on the master bench
+      const wood = idx ? ["#5a4632", "#3c2e1f"] : ["#8a5532", "#5a4026"];
+      g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy + 2, 2.5, 7); g.fillRect(cx + 5.5, cy + 2, 2.5, 7); // legs
+      vgrad(g, cx - 10, cy - 2, 20, 5, wood[0]!, wood[1]!); // bench top
+      if (idx) { g.fillStyle = "#7c828c"; g.fillRect(cx - 10, cy - 2.5, 20, 1.6); } // stone-topped
+      g.fillStyle = "#8a8f99"; g.fillRect(cx - 6, cy - 6, 3, 5); // a vice
+      if (idx >= 2) { g.fillStyle = "#8a8f99"; g.fillRect(cx + 3, cy - 6, 3, 5); g.fillStyle = GOLD; g.fillRect(cx - 10, cy - 2.9, 20, 1); }
       g.strokeStyle = "#c9b070"; g.lineWidth = 1; g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 7, cy + 6); g.stroke(); // saw
       break;
     }
     case "bed": {
-      const frame = tier >= 3 ? "#5a2f33" : tier === 2 ? "#5e3a2a" : tier === 1 ? "#6e4a2c" : "#8a6a40";
-      if (tier >= 3) { g.fillStyle = frame; g.fillRect(cx - 11, cy - 9, 3, 17); g.fillRect(cx + 8, cy - 9, 3, 4); g.fillRect(cx - 11, cy - 9, 22, 2); } // canopy posts
-      g.fillStyle = frame; g.fillRect(cx - 11, cy - 6, 3, 14); // headboard
-      g.fillStyle = frame; g.fillRect(cx - 9, cy - 5, 19, 12); // bed base
-      g.fillStyle = "#e7ddc4"; g.fillRect(cx - 8, cy - 4, 8, 10); // sheet
-      g.fillStyle = tier >= 3 ? "#7a3f6a" : tier === 2 ? "#6f6256" : tier === 1 ? "#8f7048" : "#b3a06e"; g.fillRect(cx - 1, cy - 4, 10, 10); // blanket
-      g.fillStyle = "#f3ecd9"; g.fillRect(cx - 8, cy - 4, 7, 4); // pillow
-      if (tier >= 3) { g.fillStyle = gold; g.fillRect(cx - 1, cy - 4, 10, 1.2); } // gold trim
+      const wood = [["#9c7a48", "#6e5436"], ["#7e5a34", "#553d24"], ["#5c4730", "#3c2e1f"], ["#6a3340", "#43232c"]][idx]!;
+      const blanket = ["#b3a06e", "#8f7048", "#6f6256", "#8a3f5a"][idx]!;
+      if (idx === 3) { g.fillStyle = wood[1]!; g.fillRect(cx - 11, cy - 10, 3, 18); g.fillRect(cx + 8, cy - 10, 3, 6); g.fillRect(cx - 11, cy - 10, 22, 2.5); g.fillStyle = "rgba(150,40,70,0.45)"; g.fillRect(cx + 5, cy - 8, 6, 14); }
+      vgrad(g, cx - 9, cy - 6, 19, 13, wood[0]!, wood[1]!); // base
+      g.fillStyle = wood[1]!; g.fillRect(cx - 11, cy - 7, 3, 15); // headboard
+      g.fillStyle = "rgba(255,255,255,0.10)"; g.fillRect(cx - 11, cy - 7, 3, 2);
+      g.fillStyle = "#ece2c8"; g.fillRect(cx - 8, cy - 5, 8, 12); // sheet
+      g.fillStyle = blanket; g.fillRect(cx - 1, cy - 5, 10, 12); // blanket
+      g.fillStyle = "#f6efdc"; rrect(g, cx - 8, cy - 5, 7, 4, 1.5); g.fill(); // pillow
+      if (idx === 2) { g.fillStyle = "#9a8466"; g.fillRect(cx - 1, cy + 3, 10, 4); } // foot pelt
+      if (idx === 3) { g.fillStyle = GOLD; g.fillRect(cx - 1, cy - 5, 10, 1.4); sparkle(g, cx + 9, cy - 9, now); }
       break;
     }
     case "table": {
-      const wood = tier >= 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
-      g.fillStyle = "#5a4026"; g.fillRect(cx - 8, cy + 2, 2.5, 6); g.fillRect(cx + 5.5, cy + 2, 2.5, 6); // legs
-      g.fillStyle = wood; g.fillRect(cx - 10, cy - 2, 20, 5); // top
-      g.fillStyle = tier >= 2 ? gold : "rgba(255,255,255,0.08)"; g.fillRect(cx - 10, cy - 2, 20, 1.5); // sheen / gold inlay
-      g.fillStyle = "#6e5436"; g.fillRect(cx - 12, cy + 3, 3, 3); g.fillRect(cx + 9, cy + 3, 3, 3); // two stools
+      const wood = [["#a07b48", "#6e5436"], ["#85602f", "#5a4026"], ["#5f4a30", "#3c2e1f"], [GOLD, "#9a7a2f"]][idx]!;
+      g.fillStyle = wood[1]!; g.fillRect(cx - 8, cy + 2, 2.5, 7); g.fillRect(cx + 5.5, cy + 2, 2.5, 7); // legs
+      vgrad(g, cx - 10, cy - 3, 20, 6, wood[0]!, wood[1]!); // top
+      g.fillStyle = "rgba(255,255,255,0.14)"; g.fillRect(cx - 10, cy - 3, 20, 1.4); // highlight
+      if (idx === 1) { g.strokeStyle = wood[1]!; g.lineWidth = 1; for (let i = -6; i <= 6; i += 4) { g.beginPath(); g.moveTo(cx + i, cy + 1); g.lineTo(cx + i, cy + 3); g.stroke(); } }
+      if (idx === 2) { g.fillStyle = "#8a8f99"; g.fillRect(cx - 9, cy + 2.4, 18, 1.4); g.fillRect(cx - 7, cy - 3, 1.6, 6); g.fillRect(cx + 5.4, cy - 3, 1.6, 6); }
+      if (idx === 3) { g.fillStyle = GOLDLT; g.fillRect(cx - 9, cy - 2.2, 18, 1); g.fillStyle = GEM; g.fillRect(cx - 1, cy - 1.4, 2, 2); sparkle(g, cx + 7, cy - 2, now); }
       break;
     }
     case "seating": {
-      const wood = tier >= 2 ? "#5a3f28" : tier === 1 ? "#6e4a2c" : "#8a6a40";
-      if (tier === 0) { // a pair of stools
-        g.fillStyle = wood; g.fillRect(cx - 8, cy - 1, 6, 3); g.fillRect(cx + 2, cy - 1, 6, 3);
-        g.fillStyle = "#5a4026"; g.fillRect(cx - 7, cy + 2, 1.5, 5); g.fillRect(cx - 3, cy + 2, 1.5, 5); g.fillRect(cx + 3, cy + 2, 1.5, 5); g.fillRect(cx + 7, cy + 2, 1.5, 5);
-      } else { // a settle / armchair with a cushion (and a pelt on tier 2)
-        g.fillStyle = wood; g.fillRect(cx - 8, cy - 6, 16, 14); // back + seat block
-        g.fillStyle = tier >= 2 ? "#7a5038" : "#8f7048"; g.fillRect(cx - 6, cy - 1, 12, 6); // cushion
-        if (tier >= 2) { g.fillStyle = "#9a8466"; g.fillRect(cx - 7, cy + 4, 14, 3); } // a draped pelt
-        g.fillStyle = wood; g.fillRect(cx - 9, cy - 2, 2, 9); g.fillRect(cx + 7, cy - 2, 2, 9); // arms
+      const wood = [["#a07b48", "#6e5436"], ["#85602f", "#5a4026"], ["#5f4a30", "#3c2e1f"], [GOLD, "#9a7a2f"]][idx]!;
+      if (idx === 0) {
+        for (const sx of [-5, 5]) { g.fillStyle = wood[0]!; g.fillRect(cx + sx - 3, cy - 1, 6, 3); g.fillStyle = wood[1]!; g.fillRect(cx + sx - 2.5, cy + 2, 1.4, 5); g.fillRect(cx + sx + 1, cy + 2, 1.4, 5); }
+        break;
       }
+      g.fillStyle = wood[1]!; g.fillRect(cx - 7, cy - 8, 14, 4); // back rail
+      vgrad(g, cx - 7, cy - 4, 14, 11, wood[0]!, wood[1]!); // body
+      g.fillStyle = idx === 3 ? "#7a2f3a" : idx === 2 ? "#7a5038" : "#8f7048"; g.fillRect(cx - 5, cy - 1, 10, 6); // cushion
+      if (idx >= 2) { g.fillStyle = "#9a8466"; g.fillRect(cx - 6, cy + 4, 12, 3); } // draped pelt
+      g.fillStyle = wood[1]!; g.fillRect(cx - 8, cy - 2, 2, 9); g.fillRect(cx + 6, cy - 2, 2, 9); // arms
+      if (idx === 3) { g.fillStyle = GOLDLT; g.fillRect(cx - 7, cy - 8, 14, 1.2); g.fillRect(cx - 8, cy - 2, 2, 1.2); g.fillRect(cx + 6, cy - 2, 2, 1.2); sparkle(g, cx, cy - 9, now); }
       break;
     }
     case "hall": {
-      const wall = tier >= 3 ? "#8b8478" : tier === 1 ? "#7d756a" : tier === 2 ? "#83796b" : "#9a7b4e";
-      g.fillStyle = wall; g.fillRect(cx - 10, cy - 9, 20, 16);
-      g.strokeStyle = "#46402f"; g.lineWidth = 1; g.strokeRect(cx - 10, cy - 9, 20, 16);
-      if (tier === 0) { // a timber-framed wall: cross-braces
-        g.strokeStyle = "#6e5436"; g.lineWidth = 2; g.strokeRect(cx - 10, cy - 9, 20, 16);
-        g.beginPath(); g.moveTo(cx - 10, cy - 9); g.lineTo(cx + 10, cy + 7); g.moveTo(cx + 10, cy - 9); g.lineTo(cx - 10, cy + 7); g.stroke();
-      } else if (tier === 2) { // a stone mantel under a beam
-        g.fillStyle = "#6e4a2c"; g.fillRect(cx - 10, cy - 4, 20, 4);
-        g.fillStyle = "#6b6f78"; g.fillRect(cx - 7, cy, 14, 7);
-      } else { // a vaulted gallery: a dressed-stone arch
-        g.strokeStyle = "#5a554c"; g.lineWidth = 2;
-        g.beginPath(); g.arc(cx, cy + 1, 7, Math.PI, 0); g.stroke();
-        g.fillStyle = "#6f6a60"; g.fillRect(cx - 8, cy + 1, 16, 6);
-      }
+      if (idx === 0) { vgrad(g, cx - 10, cy - 9, 20, 16, "#cdbfa0", "#b3a585"); g.strokeStyle = "rgba(120,100,70,0.4)"; g.lineWidth = 1; g.strokeRect(cx - 10, cy - 9, 20, 16); g.beginPath(); g.moveTo(cx - 10, cy - 1); g.lineTo(cx + 10, cy - 1); g.stroke(); }
+      else if (idx === 1) { g.fillStyle = "#9a7b4e"; g.fillRect(cx - 10, cy - 9, 20, 16); g.strokeStyle = "#5a4026"; g.lineWidth = 2; g.strokeRect(cx - 10, cy - 9, 20, 16); g.beginPath(); g.moveTo(cx - 10, cy - 9); g.lineTo(cx + 10, cy + 7); g.moveTo(cx + 10, cy - 9); g.lineTo(cx - 10, cy + 7); g.moveTo(cx, cy - 9); g.lineTo(cx, cy + 7); g.stroke(); }
+      else if (idx === 2) { g.fillStyle = "#83796b"; g.fillRect(cx - 10, cy - 9, 20, 16); g.fillStyle = "#6e4a2c"; g.fillRect(cx - 10, cy - 4, 20, 4); g.fillStyle = "#6b6f78"; g.fillRect(cx - 7, cy, 14, 8); g.strokeStyle = "rgba(0,0,0,0.2)"; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, cy + 8); g.stroke(); }
+      else { g.fillStyle = "#8b8478"; g.fillRect(cx - 10, cy - 9, 20, 16); g.strokeStyle = GOLD; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy + 1, 7, Math.PI, 0); g.stroke(); g.fillStyle = "#6f6a60"; g.fillRect(cx - 8, cy + 1, 16, 7); g.fillStyle = GOLDLT; g.fillRect(cx - 10, cy - 9, 20, 1.4); sparkle(g, cx + 7, cy - 7, now); }
       break;
     }
     case "lighting": {
       const fl = 0.55 + 0.45 * Math.sin(now / 130);
-      if (tier >= 2) { // a chandelier: a gold ring of flames
-        g.strokeStyle = gold; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cx, cy - 11); g.lineTo(cx, cy - 6); g.stroke();
-        g.strokeStyle = gold; g.beginPath(); g.ellipse(cx, cy - 3, 9, 3, 0, 0, Math.PI * 2); g.stroke();
-        for (const dx of [-8, -3, 3, 8]) { g.fillStyle = `rgba(255,210,90,${fl})`; g.beginPath(); g.arc(cx + dx, cy - 4, 1.8, 0, Math.PI * 2); g.fill(); }
-      } else if (tier === 1) { // a wall sconce
-        g.fillStyle = "#3b3e45"; g.fillRect(cx - 2, cy - 2, 4, 9); // iron bracket
-        g.fillStyle = `rgba(255,200,90,${0.5 + 0.4 * fl})`; g.beginPath(); g.arc(cx, cy - 4, 4, 0, Math.PI * 2); g.fill(); // glass glow
-      } else { // a candle stand
-        g.fillStyle = "#6e5436"; g.fillRect(cx - 1.5, cy - 2, 3, 9); g.fillRect(cx - 4, cy + 6, 8, 2); // stand
-        g.fillStyle = "#efe7d2"; g.fillRect(cx - 3, cy - 5, 1.5, 3); g.fillRect(cx + 1.5, cy - 5, 1.5, 3); // candles
-        g.fillStyle = `rgba(255,210,90,${fl})`; g.beginPath(); g.arc(cx - 2.2, cy - 6, 1.4, 0, Math.PI * 2); g.arc(cx + 2.2, cy - 6, 1.4, 0, Math.PI * 2); g.fill();
+      if (idx === 0) { // candle stand
+        g.fillStyle = "#6e5436"; g.fillRect(cx - 1.5, cy - 2, 3, 9); g.fillRect(cx - 4, cy + 6, 8, 2);
+        g.fillStyle = "#efe7d2"; g.fillRect(cx - 3, cy - 5, 1.5, 3); g.fillRect(cx + 1.5, cy - 5, 1.5, 3);
+        g.fillStyle = `rgba(255,210,90,${fl})`; g.beginPath(); g.arc(cx - 2.2, cy - 6, 1.5, 0, Math.PI * 2); g.arc(cx + 2.2, cy - 6, 1.5, 0, Math.PI * 2); g.fill();
+      } else if (idx === 1) { // knucklestone lamp
+        g.fillStyle = "#5a4632"; g.fillRect(cx - 1.5, cy + 1, 3, 7); g.fillStyle = "#7c8088"; g.fillRect(cx - 3, cy - 5, 6, 6);
+        g.fillStyle = `rgba(255,210,120,${0.45 + 0.4 * fl})`; g.fillRect(cx - 2, cy - 4, 4, 4); g.strokeStyle = "#7c8088"; g.lineWidth = 1; g.strokeRect(cx - 3, cy - 5, 6, 6);
+      } else if (idx === 2) { // iron chandelier
+        g.strokeStyle = "#3b3e45"; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cx, cy - 11); g.lineTo(cx, cy - 6); g.stroke();
+        g.strokeStyle = "#4a4e57"; g.beginPath(); g.ellipse(cx, cy - 3, 9, 3, 0, 0, Math.PI * 2); g.stroke();
+        for (const dx of [-8, -3, 3, 8]) { g.fillStyle = `rgba(255,205,90,${fl})`; g.beginPath(); g.arc(cx + dx, cy - 4, 1.8, 0, Math.PI * 2); g.fill(); }
+      } else { // gold lamp / crystal standard
+        g.strokeStyle = GOLD; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx, cy - 12); g.lineTo(cx, cy - 6); g.stroke();
+        g.fillStyle = GOLD; g.beginPath(); g.ellipse(cx, cy - 3, 10, 3.2, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = GOLDLT; g.beginPath(); g.ellipse(cx, cy - 3.6, 10, 1.4, 0, 0, Math.PI * 2); g.fill();
+        for (const dx of [-9, -4.5, 0, 4.5, 9]) { g.fillStyle = `rgba(255,225,140,${fl})`; g.beginPath(); g.arc(cx + dx, cy - 2, 1.8, 0, Math.PI * 2); g.fill(); g.fillStyle = GEM; g.fillRect(cx + dx - 0.6, cy + 1, 1.2, 2); }
+        sparkle(g, cx, cy - 10, now);
       }
       break;
     }
     case "display": {
-      if (tier === 0) { // a curio shelf
-        g.fillStyle = "#6e5436"; g.fillRect(cx - 9, cy - 7, 18, 14);
-        g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy - 3, 16, 1.5); g.fillRect(cx - 8, cy + 2, 16, 1.5); // shelves
-        g.fillStyle = gem; for (const dx of [-6, 0, 6]) g.fillRect(cx + dx - 1, cy - 6, 2, 2); // curios
-      } else if (tier === 1) { // a trophy mount: a board with a skull + pelt
-        g.fillStyle = "#5a4632"; g.fillRect(cx - 9, cy - 8, 18, 16);
-        g.fillStyle = "#9a8466"; g.fillRect(cx - 6, cy - 1, 12, 7); // draped pelt
-        g.fillStyle = "#e7ddc4"; g.beginPath(); g.arc(cx, cy - 4, 3.5, 0, Math.PI * 2); g.fill(); // skull
-        g.fillStyle = "#cfc4ad"; g.fillRect(cx - 6, cy - 7, 2, 4); g.fillRect(cx + 4, cy - 7, 2, 4); // horns
-      } else { // a lit display case
-        g.fillStyle = gold; g.fillRect(cx - 8, cy - 9, 16, 17); // gold frame
-        g.fillStyle = "rgba(150,220,235,0.35)"; g.fillRect(cx - 6, cy - 7, 12, 13); // glass
-        g.fillStyle = `rgba(190,230,240,${0.5 + 0.3 * Math.sin(now / 200)})`; g.fillRect(cx - 5, cy - 6, 10, 2); // inner light
-        g.fillStyle = gem; g.fillRect(cx - 1.5, cy - 2, 3, 4); // the treasure within
+      if (idx === 0) { // curio shelf
+        g.fillStyle = "#7a5532"; rrect(g, cx - 9, cy - 7, 18, 14, 1.5); g.fill();
+        g.fillStyle = "#4a3a28"; g.fillRect(cx - 8, cy - 3, 16, 1.5); g.fillRect(cx - 8, cy + 2, 16, 1.5);
+        g.fillStyle = GEM; for (const dx of [-6, 0, 6]) g.fillRect(cx + dx - 1, cy - 6, 2, 2); g.fillStyle = "#caa24a"; for (const dx of [-3, 4]) g.fillRect(cx + dx, cy - 1, 2, 2);
+      } else if (idx === 1) { // trophy mount
+        g.fillStyle = "#5a4632"; rrect(g, cx - 9, cy - 8, 18, 16, 2); g.fill();
+        g.fillStyle = "#9a8466"; g.fillRect(cx - 6, cy - 1, 12, 7); g.fillStyle = "#ece2c8"; g.beginPath(); g.arc(cx, cy - 4, 3.5, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#cfc4ad"; g.fillRect(cx - 6, cy - 7, 2, 4); g.fillRect(cx + 4, cy - 7, 2, 4);
+      } else if (idx === 2) { // glass cabinet
+        g.fillStyle = "#5a4026"; g.fillRect(cx - 9, cy - 9, 18, 18); g.fillStyle = "rgba(150,210,225,0.30)"; g.fillRect(cx - 7, cy - 7, 14, 15);
+        g.strokeStyle = "#3a2e1f"; g.lineWidth = 1; g.strokeRect(cx - 7, cy - 7, 14, 15); g.beginPath(); g.moveTo(cx, cy - 7); g.lineTo(cx, cy + 8); g.moveTo(cx - 7, cy); g.lineTo(cx + 7, cy); g.stroke();
+        g.fillStyle = GEM; g.fillRect(cx - 4, cy - 4, 2, 2); g.fillRect(cx + 2, cy + 2, 2, 3);
+      } else { // gold display case
+        g.fillStyle = GOLD; g.fillRect(cx - 8, cy - 9, 16, 18); g.fillStyle = GOLDLT; g.fillRect(cx - 8, cy - 9, 16, 1.5);
+        g.fillStyle = "rgba(150,220,235,0.35)"; g.fillRect(cx - 6, cy - 7, 12, 14);
+        g.fillStyle = `rgba(190,230,240,${0.5 + 0.3 * Math.sin(now / 200)})`; g.fillRect(cx - 5, cy - 6, 10, 2);
+        g.fillStyle = GEM; g.fillRect(cx - 1.5, cy - 2, 3, 5); sparkle(g, cx + 6, cy - 8, now);
       }
       break;
     }

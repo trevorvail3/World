@@ -105,6 +105,9 @@ export function homeLayout(ox: number): HomeLayout {
       { category: "display", room: "living", x: ox + 13, y: oy + 8 },
       { category: "table", room: "living", x: ox + 10, y: oy + 8 },
       { category: "seating", room: "living", x: ox + 8, y: oy + 9 },
+      // Rugs are floor coverings you walk over (their footing doesn't block).
+      { category: "rug", room: "living", x: ox + 11, y: oy + 7 },
+      { category: "rug", room: "bedroom", x: ox + 3, y: oy + 3 },
     ],
   };
 }
