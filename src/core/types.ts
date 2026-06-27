@@ -557,7 +557,14 @@ export type ItemId =
   | "warden_longbow"
   | "chronicler_seal"
   | "ironbark_shard"
-  | "heartoak_amber";
+  | "heartoak_amber"
+  // --- Progression dead-zone fills (mid/high-tier content) ---
+  | "neck_warden"
+  | "neck_orun"
+  | "marsh_eel_raw"
+  | "marsh_eel_cooked"
+  | "moorhart_raw"
+  | "moorhart_cooked";
 
 /**
  * The wearable equipment slots, named per the idle game's canon `equip` values.

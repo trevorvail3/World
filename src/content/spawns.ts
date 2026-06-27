@@ -281,6 +281,9 @@ export const objects: WorldObjectDef[] = [
   { id: "trap_stag_1", kind: "trap", x: 18, y: 91, name: "Stag Snare", resource: "hunt_stag" },
   { id: "trap_stag_2", kind: "trap", x: 27, y: 93, name: "Stag Snare", resource: "hunt_stag" },
   { id: "trap_aurochs_1", kind: "trap", x: 22, y: 96, name: "Aurochs Snare", resource: "hunt_aurochs" },
+  // Mid/high-tier gap fills: a marsh-eel pool (Fishing 45) and a moorhart snare (Hunter 75).
+  { id: "hm_fish_eel", kind: "fishing_spot", x: 24, y: 94, name: "Eel Pool", resource: "fish_marsh_eel" },
+  { id: "trap_moorhart", kind: "trap", x: 16, y: 84, name: "Hart Snare", resource: "hunt_moorhart" },
   { id: "portal_bog", kind: "portal", x: 15, y: 98, name: "The Bog Barrow", dungeon: "bog_barrow", target: { x: 24, y: 118 }, lines: ["You wade down into the Bog Barrow."] },
 
   // === THE ASHFEN FLATS (south) =============================================
@@ -497,6 +500,13 @@ export const objects: WorldObjectDef[] = [
   { id: "course_scramble_2", kind: "agility_obstacle", x: 20, y: 27, name: "Knuckle Hills Scramble: Rope Swing", course: "course_scramble", order: 2, exit: { x: 19, y: 27 }, xp: 100, levelReq: 20, obstacle: "rope" },
   { id: "course_scramble_3", kind: "agility_obstacle", x: 16, y: 27, name: "Knuckle Hills Scramble: Wall Scramble", course: "course_scramble", order: 3, exit: { x: 16, y: 26 }, xp: 100, levelReq: 20, obstacle: "wall" },
   { id: "course_scramble_4", kind: "agility_obstacle", x: 15, y: 23, name: "Knuckle Hills Scramble: Stepping Stones", course: "course_scramble", order: 4, exit: { x: 16, y: 23 }, xp: 100, levelReq: 20, obstacle: "stones" },
+  // A third, mid-tier course in Greyoak Wood (Agility 40+) — fills the long gap
+  // above the Knuckle scramble. Tiles validated reachable with reachable exits.
+  { id: "course_greyoak_0", kind: "agility_obstacle", x: 22, y: 52, name: "Greyoak Run: Balance Log", course: "course_greyoak", order: 0, exit: { x: 23, y: 52 }, xp: 200, levelReq: 40, obstacle: "log" },
+  { id: "course_greyoak_1", kind: "agility_obstacle", x: 25, y: 52, name: "Greyoak Run: Climbing Net", course: "course_greyoak", order: 1, exit: { x: 25, y: 53 }, xp: 200, levelReq: 40, obstacle: "net" },
+  { id: "course_greyoak_2", kind: "agility_obstacle", x: 27, y: 54, name: "Greyoak Run: Rope Swing", course: "course_greyoak", order: 2, exit: { x: 27, y: 55 }, xp: 200, levelReq: 40, obstacle: "rope" },
+  { id: "course_greyoak_3", kind: "agility_obstacle", x: 24, y: 56, name: "Greyoak Run: Wall Scramble", course: "course_greyoak", order: 3, exit: { x: 23, y: 56 }, xp: 200, levelReq: 40, obstacle: "wall" },
+  { id: "course_greyoak_4", kind: "agility_obstacle", x: 22, y: 57, name: "Greyoak Run: Stepping Stones", course: "course_greyoak", order: 4, exit: { x: 22, y: 56 }, xp: 200, levelReq: 40, obstacle: "stones" },
 
   // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===
   // Each sits beside a landmark whose mystery it deepens; tiles chosen by the

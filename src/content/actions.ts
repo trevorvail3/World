@@ -1645,6 +1645,18 @@ export const actions: SkillAction[] = [
     }
   },
   {
+    "id": "hunt_moorhart",
+    "skill": "hunter",
+    "name": "Moorhart",
+    "levelReq": 75,
+    "xp": 245,
+    "produces": "moorhart_raw",
+    "rareDrop": {
+      "item": "sinew",
+      "chance": 0.18
+    }
+  },
+  {
     "id": "hunt_aurochs",
     "skill": "hunter",
     "name": "Ashen Aurochs",
@@ -1694,6 +1706,15 @@ export const actions: SkillAction[] = [
       "item": "waterlogged_coin",
       "chance": 0.04
     }
+  },
+  {
+    "id": "fish_marsh_eel",
+    "skill": "fishing",
+    "name": "Marsh Eel",
+    "levelReq": 45,
+    "xp": 110,
+    "produces": "marsh_eel_raw",
+    "location": "moor"
   },
   {
     "id": "fish_redgill",
@@ -1781,6 +1802,30 @@ export const actions: SkillAction[] = [
     },
     "produces": "ribperch_cooked",
     "group": "fish"
+  },
+  {
+    "id": "cook_marsh_eel",
+    "skill": "cooking",
+    "name": "Marsh Eel (+50 HP)",
+    "levelReq": 45,
+    "xp": 155,
+    "requires": {
+      "marsh_eel_raw": 1
+    },
+    "produces": "marsh_eel_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_moorhart",
+    "skill": "cooking",
+    "name": "Moorhart Steak (+68 HP)",
+    "levelReq": 75,
+    "xp": 245,
+    "requires": {
+      "moorhart_raw": 1
+    },
+    "produces": "moorhart_cooked",
+    "group": "meat"
   },
   {
     "id": "cook_coldwater_eel",
@@ -3290,6 +3335,35 @@ export const actions: SkillAction[] = [
       "cut_gem": 2
     },
     "produces": "craft_neck_gem",
+    "group": "jewelry"
+  },
+  {
+    "id": "craft_neck_warden_make",
+    "skill": "crafting",
+    "name": "Warden's Amulet",
+    "levelReq": 78,
+    "xp": 360,
+    "baseTime": 11000,
+    "requires": {
+      "gold_bar": 2,
+      "cut_gem": 1,
+      "master_leather": 1
+    },
+    "produces": "neck_warden",
+    "group": "jewelry"
+  },
+  {
+    "id": "craft_neck_orun_make",
+    "skill": "crafting",
+    "name": "Orunwrought Amulet",
+    "levelReq": 92,
+    "xp": 560,
+    "baseTime": 13000,
+    "requires": {
+      "gold_bar": 3,
+      "cut_gem": 2
+    },
+    "produces": "neck_orun",
     "group": "jewelry"
   },
   {

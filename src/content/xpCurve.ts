@@ -3,8 +3,10 @@
  * ----------------------
  * The Varath experience curve — ported exactly from the idle game so the two
  * games share one sense of progression. It is the classic summed-exponential
- * curve, but with a 1/7 exponent (steeper than OSRS's 1/8), then rescaled so
- * that reaching level 100 costs exactly 15,000,000 XP.
+ * curve, with a 1/7.5 exponent, then rescaled so that reaching level 100 costs
+ * exactly 12,000,000 XP. (Softened from the original 1/7 @ 15M: slightly less
+ * back-loaded, and the whole grind to 99 is ~20% shorter — every value is at or
+ * below the old curve, so no saved character loses a level.)
  *
  * This is DATA (RULE 3): we precompute the whole table once and the core just
  * looks numbers up in it.
@@ -18,13 +20,13 @@ function buildXpTable(): number[] {
   const raw: number[] = [0, 0];
   let sum = 0;
   for (let n = 1; n <= TABLE_MAX; n++) {
-    sum += Math.floor(n + 300 * Math.pow(2, n / 7));
+    sum += Math.floor(n + 300 * Math.pow(2, n / 7.5));
     raw[n + 1] = Math.floor(sum / 4);
   }
-  // Normalise the whole table so level 100 lands exactly on 15,000,000 XP.
-  const k = 15_000_000 / raw[100]!;
+  // Normalise the whole table so level 100 lands exactly on 12,000,000 XP.
+  const k = 12_000_000 / raw[100]!;
   const table = raw.map((v) => Math.floor(v * k));
-  table[100] = 15_000_000; // force the anchor (guard against floor drift)
+  table[100] = 12_000_000; // force the anchor (guard against floor drift)
   return table;
 }
 

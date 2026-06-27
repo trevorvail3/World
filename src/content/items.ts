@@ -3581,6 +3581,62 @@ export const items: Record<ItemId, ItemDef> = {
     "acc": 18,
     "sell": 1100
   },
+  "neck_warden": {
+    "id": "neck_warden",
+    "name": "Warden's Amulet",
+    "description": "A gold amulet set with a single cut gem, struck for the Lodge's senior wardens. A craftsman's late work.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 22,
+    "def": 6,
+    "sell": 2200
+  },
+  "neck_orun": {
+    "id": "neck_orun",
+    "name": "Orunwrought Amulet",
+    "description": "Twin gems on a heavy gold chain, joined by a jeweller at the height of the craft. The finest chain in Varath.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 30,
+    "def": 10,
+    "sell": 5000
+  },
+  "marsh_eel_raw": {
+    "id": "marsh_eel_raw",
+    "name": "Raw Marsh Eel",
+    "description": "A fat, silt-dark eel hauled from the Heartmoor pools. Slippery work, and worth the trouble.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 34
+  },
+  "marsh_eel_cooked": {
+    "id": "marsh_eel_cooked",
+    "name": "Marsh Eel",
+    "description": "Smoked over moor-peat until the flesh flakes. Restores 50 HP.",
+    "icon": "🍢",
+    "cat": "Food",
+    "heals": 50,
+    "sell": 60
+  },
+  "moorhart_raw": {
+    "id": "moorhart_raw",
+    "name": "Raw Moorhart",
+    "description": "A cut from the great moor-hart, the wary grey deer of the deep Heartmoor. Few hunters get close enough.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 44
+  },
+  "moorhart_cooked": {
+    "id": "moorhart_cooked",
+    "name": "Moorhart Steak",
+    "description": "A dark, rich venison steak, seared through. Restores 68 HP.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 68,
+    "sell": 78
+  },
   "sigil_knuckle": {
     "id": "sigil_knuckle",
     "name": "Knuckle Sigil",
