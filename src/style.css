@@ -889,6 +889,25 @@ body {
 }
 
 /* --- Reset button inside the Settings tab --- */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+  font-family: "EB Garamond", serif;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #c9a24a;
+  cursor: pointer;
+}
+
 .settings-reset {
   display: block;
   width: 100%;

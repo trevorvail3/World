@@ -37,6 +37,7 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
+import { audio } from "./audio.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { objectPos, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
@@ -245,6 +246,10 @@ export class Game {
   private pickupTarget: Vec2 | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
   private hurtFlash = 0;
+  /** Active screen-shake: when it started, how strong (px), and how long. */
+  private shake: { born: number; mag: number; dur: number } | null = null;
+  /** Throttle so the gather "tick" SFX doesn't machine-gun on fast actions. */
+  private lastGatherSfx = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -291,6 +296,10 @@ export class Game {
     }, { passive: false });
     // Suppress the browser's own right-click menu; we provide our own.
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    // Browsers block audio until the first gesture — wake it on any input.
+    const wake = (): void => audio.resume();
+    window.addEventListener("pointerdown", wake);
+    window.addEventListener("keydown", wake);
   }
 
   start(): void {
@@ -366,7 +375,8 @@ export class Game {
     //    The DPR is folded in here so one world pixel covers `zoom` CSS pixels at
     //    full device resolution; everything below works in world pixels.
     const s = this.zoom * this.dpr;
-    this.g.setTransform(s, 0, 0, s, 0, 0);
+    const [shx, shy] = this.shakeOffset(now);
+    this.g.setTransform(s, 0, 0, s, shx, shy);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
       this.viewW, this.viewH,
@@ -394,6 +404,19 @@ export class Game {
         this.viewH,
       );
     }
+  }
+
+  /** Current screen-shake translation in device pixels (decays over its life). */
+  private shakeOffset(now: number): [number, number] {
+    if (!this.shake) return [0, 0];
+    const age = now - this.shake.born;
+    if (age >= this.shake.dur) { this.shake = null; return [0, 0]; }
+    const decay = 1 - age / this.shake.dur;
+    const amp = this.shake.mag * decay * this.dpr;
+    // Fast oscillation, phase-shifted per axis, for a sharp rattle.
+    const ox = Math.sin(age / 18) * amp;
+    const oy = Math.cos(age / 13) * amp;
+    return [ox, oy];
   }
 
   private followCamera(): void {
@@ -434,12 +457,18 @@ export class Game {
           const tid = this.bridge.state.player.activity.targetId;
           const tp = tid ? this.positionOf(tid) : null;
           if (tp) this.sparks.push({ x: tp.x, y: tp.y, born: now, color: SPARK_COLOR[ev.skill] ?? "#caa05a", n: 5 });
+          // A soft tick for gathering/production skills (combat has its own hits).
+          if (SPARK_COLOR[ev.skill] && now - this.lastGatherSfx > 240) {
+            audio.play("gather");
+            this.lastGatherSfx = now;
+          }
           break;
         }
         case "LEVEL_UP": {
           const name = this.bridge.content.skills[ev.skill].name;
           this.hud.log(`You reach ${name} level ${ev.level}!`);
           this.levelUp.show(ev.skill, ev.level); // the OSRS "ding"
+          audio.play("level");
           break;
         }
         case "INVENTORY_FULL":
@@ -450,6 +479,8 @@ export class Game {
           break;
         case "PLAYER_DIED":
           this.hud.log("You have been knocked out...");
+          audio.play("death");
+          this.shake = { born: now, mag: 9, dur: 500 };
           break;
         case "PLAYER_RESPAWNED":
           this.hud.log("You wake up, dazed but alive.");
@@ -481,6 +512,7 @@ export class Game {
           this.openTravel(ev.objId);
           break;
         case "QUEST_COMPLETED": {
+          audio.play("quest");
           const p = this.bridge.state.player.pos;
           this.floats.push({
             x: p.x,
@@ -505,11 +537,13 @@ export class Game {
           break;
         }
         case "ACHIEVEMENT": {
+          audio.play("achievement");
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
         }
         case "HEALED": {
+          audio.play("eat");
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.3, text: `+${ev.amount}`, color: "#5fd06a", born: now, size: 15 });
           this.sparks.push({ x: p.x, y: p.y, born: now, color: "#5fd06a", n: 6 });
@@ -517,8 +551,19 @@ export class Game {
         }
         case "DAMAGE": {
           // Taking a real hit flashes the screen edges red — the harder the hit
-          // (relative to max HP), the stronger the flash.
-          if (ev.targetId === "player" && ev.amount > 0) this.hurtFlash = now;
+          // (relative to max HP), the stronger the flash, with a little shake.
+          if (ev.targetId === "player") {
+            if (ev.amount > 0) {
+              this.hurtFlash = now;
+              const frac = Math.min(1, ev.amount / Math.max(1, this.bridge.state.player.maxHp));
+              this.shake = { born: now, mag: 2 + frac * 6, dur: 280 };
+              audio.play("hurt");
+            } else {
+              audio.play("miss");
+            }
+          } else {
+            audio.play(ev.amount > 0 ? "hit" : "miss", ev.weak ? 1.3 : 1);
+          }
           const pos = this.positionOf(ev.targetId);
           if (pos) {
             // A weakness-exploiting hit reads in bright gold ("super effective"),
@@ -1375,6 +1420,7 @@ export class Game {
     const near =
       Math.max(Math.abs(Math.round(player.pos.x) - tile.x), Math.abs(Math.round(player.pos.y) - tile.y)) <= 1;
     if (near) {
+      audio.play("pickup");
       this.dispatch({ type: "PICKUP", x: tile.x, y: tile.y });
       this.pickupTarget = null;
       return;
@@ -1393,6 +1439,7 @@ export class Game {
     const p = this.bridge.state.player;
     const near = Math.max(Math.abs(Math.round(p.pos.x) - t.x), Math.abs(Math.round(p.pos.y) - t.y)) <= 1;
     if (near) {
+      audio.play("pickup");
       this.dispatch({ type: "PICKUP", x: t.x, y: t.y });
       this.pickupTarget = null;
     } else if (p.path.length === 0) {

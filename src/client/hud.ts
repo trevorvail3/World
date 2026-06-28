@@ -25,6 +25,7 @@ import type {
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import { glyph, iconize } from "./glyph.ts";
+import { audio } from "./audio.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 
@@ -419,6 +420,23 @@ export class Hud {
         this.zoomSlider = zoomSlider;
         this.zoomReadout = zoomReadout;
         p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
+
+        // --- Audio toggles ---
+        const mkToggle = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLElement => {
+          const row = document.createElement("label");
+          row.className = "settings-toggle";
+          const box = document.createElement("input");
+          box.type = "checkbox";
+          box.checked = get();
+          box.addEventListener("change", () => set(box.checked));
+          const span = document.createElement("span");
+          span.textContent = label;
+          row.append(box, span);
+          return row;
+        };
+        p.appendChild(mkToggle("Sound effects", () => audio.sfxEnabled(), (v) => audio.setSfx(v)));
+        p.appendChild(mkToggle("Ambient music", () => audio.ambientEnabled(), (v) => audio.setAmbient(v)));
+
         const help = document.createElement("button");
         help.type = "button";
         help.className = "settings-help";
@@ -439,6 +457,7 @@ export class Hud {
   }
 
   private setTab(id: TabId): void {
+    audio.play("click");
     // Tapping the already-open tab collapses the dock to just its tab column.
     if (id === this.activeTab && !this.collapsed) {
       this.collapsed = true;
