@@ -111,6 +111,35 @@ export const shops: ShopDef[] = [
     ],
   },
   {
+    id: "shop_builder",
+    npc: "builder_merchant",
+    name: "Marrick's Builders' Yard",
+    greeting: "Timber, stone and mortar by the stack. Buy the makings and pour your coin straight into the build — that's how a purse becomes a Construction level.",
+    // The Construction gold sink: the raw inputs of building, sold for coin so a
+    // rich player can buy their way up the skill (OSRS-style). Priced well above
+    // sell value (≈1.7×) — pure drain, no arbitrage — and bundled to cut clicks.
+    stock: [
+      // --- Planks (the bulk of every build) ---
+      { item: "plank_ashwood", price: 70, qty: 5 },     // sell 8
+      { item: "plank_stonewood", price: 550, qty: 5 },  // sell 65
+      { item: "plank_greyoak", price: 935, qty: 5 },    // sell 110
+      { item: "plank_ironbark", price: 1235, qty: 5 },  // sell 145
+      { item: "plank_heartoak", price: 1325, qty: 3 },  // sell 260
+      // --- Stone, mortar and frames ---
+      { item: "stone_block", price: 130, qty: 5 },      // sell 15
+      { item: "timber_frame", price: 215, qty: 5 },     // sell 25
+      { item: "mortar_basic", price: 170, qty: 5 },     // sell 20
+      { item: "mortar_spinite", price: 460, qty: 3 },   // sell 90
+      { item: "stonewood_beam", price: 306, qty: 3 },   // sell 60
+      { item: "heartoak_beam", price: 1530, qty: 1 },   // sell 900
+      // --- Fittings: cheaper bars and gems the higher tiers need ---
+      { item: "knucklestone_bar", price: 100, qty: 5 }, // sell 12
+      { item: "ashiron_bar", price: 306, qty: 3 },      // sell 60
+      { item: "gold_bar", price: 408, qty: 2 },         // sell 120
+      { item: "cut_gem", price: 510, qty: 1 },          // sell 300
+    ],
+  },
+  {
     id: "shop_capes",
     npc: "cape_master",
     name: "The Hall of Capes",

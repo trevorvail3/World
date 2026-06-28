@@ -124,6 +124,17 @@ export const objects: WorldObjectDef[] = [
       "Master all of them, and there is one cape left: the Cape of Varath. No coin truly buys it. You earn it, and I merely hand it over.",
     ],
   },
+  // --- The Builders' Merchant: a sawmill yard by the Craftworks. Sells the raw
+  //     stuff of Construction for gold, so a full purse can be poured straight
+  //     into building (an OSRS-style skill sink). ---
+  {
+    id: "builder_merchant", kind: "npc", x: 47, y: 61, name: "Marrick, Builders' Merchant",
+    lines: [
+      "Building something? Then you'll want timber, stone and mortar — and I've a yard full.",
+      "Planks cut, blocks dressed, beams squared. Bring coin and I'll save you the felling and the sawing. Your Construction will thank you.",
+    ],
+  },
+  { id: "cart_builder", kind: "cart", x: 48, y: 61, name: "Sawmill Stacks", lines: ["Stacked planks and dressed stone under a timber awning, smelling of sawdust and pitch."] },
   { id: "cart_produce", kind: "cart", x: 64, y: 47, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
   { id: "cart_cloth", kind: "cart", x: 70, y: 47, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
   { id: "cart_spice", kind: "cart", x: 67, y: 45, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },
