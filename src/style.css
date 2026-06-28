@@ -2244,13 +2244,14 @@ button.inv-slot {
 .run-toggle {
   --e: 100;
   --ring: #b6d24a;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   padding: 3px; /* ring thickness */
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   cursor: pointer;
-  /* The depleting ring: filled arc up to --e%, dim track beyond. */
+  /* The depleting border: a filled arc up to --e%, dim track beyond — clipped to
+     the square, so the energy reads as the square's own edge draining away. */
   background: conic-gradient(var(--ring) calc(var(--e) * 3.6deg), rgba(28, 21, 15, 0.7) 0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
@@ -2260,7 +2261,7 @@ button.inv-slot {
   justify-content: center;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
+  border-radius: 6px;
   background: rgba(20, 16, 12, 0.96);
   color: var(--ink-dim);
 }
