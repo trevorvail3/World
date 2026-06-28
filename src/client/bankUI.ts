@@ -14,6 +14,7 @@ export class BankUI {
   private bankGrid: HTMLElement;
   private invGrid: HTMLElement;
   private countEl: HTMLElement;
+  private valueEl: HTMLElement;
   private searchEl: HTMLInputElement;
   private filter = "";
   private open = false;
@@ -30,6 +31,7 @@ export class BankUI {
       <div class="bank-modal">
         <div class="bank-head">
           <span class="bank-title">Bank Chest</span>
+          <span class="bank-value"></span>
           <button class="bank-close" type="button">✕</button>
         </div>
         <div class="bank-label">Stored <span class="bank-count"></span>
@@ -42,6 +44,7 @@ export class BankUI {
     this.bankGrid = this.backdrop.querySelector(".bank-grid") as HTMLElement;
     this.invGrid = this.backdrop.querySelector(".bank-inv") as HTMLElement;
     this.countEl = this.backdrop.querySelector(".bank-count") as HTMLElement;
+    this.valueEl = this.backdrop.querySelector(".bank-value") as HTMLElement;
     this.searchEl = this.backdrop.querySelector(".bank-search") as HTMLInputElement;
     root.appendChild(this.backdrop);
 
@@ -110,6 +113,12 @@ export class BankUI {
       (id) => (player.bank[id] ?? 0) > 0,
     );
     this.countEl.textContent = stored.length ? `(${stored.length})` : "";
+    // Total sell value of everything stored, shown in the header.
+    const value = stored.reduce(
+      (sum, id) => sum + (this.content.items[id]?.sell ?? 0) * (player.bank[id] ?? 0),
+      0,
+    );
+    this.valueEl.textContent = value > 0 ? `${value.toLocaleString()}g` : "";
     const entries = this.filter
       ? stored.filter((id) => this.content.items[id]?.name.toLowerCase().includes(this.filter))
       : stored;

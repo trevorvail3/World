@@ -1344,6 +1344,15 @@ body {
   color: var(--gold);
   font-size: 16px;
   letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.bank-value {
+  font-family: "EB Garamond", serif;
+  font-size: 13px;
+  color: var(--ember);
+  margin-right: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .bank-close {
