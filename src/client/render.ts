@@ -454,6 +454,116 @@ export interface Camera {
   y: number;
 }
 
+/** Obstacles of each agility course, grouped and ordered (cheap; few objects). */
+function agilityCourses(content: Content): Map<string, WorldObjectDef[]> {
+  const byCourse = new Map<string, WorldObjectDef[]>();
+  for (const o of content.objects) {
+    if (o.kind !== "agility_obstacle" || !o.course) continue;
+    const arr = byCourse.get(o.course) ?? [];
+    arr.push(o);
+    byCourse.set(o.course, arr);
+  }
+  for (const arr of byCourse.values()) arr.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return byCourse;
+}
+
+/**
+ * The worn track + fence that turn scattered obstacles into a readable course:
+ * a looping dirt path through the obstacles in order, ringed by fence posts.
+ * Purely cosmetic (drawn under the obstacles); no collision.
+ */
+function drawAgilityTracks(
+  g: CanvasRenderingContext2D,
+  content: Content,
+  cam: Camera,
+  w: number,
+  h: number,
+  inRegion: (x: number, y: number) => boolean,
+): void {
+  const sx = (tx: number): number => tx * TILE + TILE / 2 - cam.x;
+  const sy = (ty: number): number => ty * TILE + TILE / 2 - cam.y;
+  for (const pts of agilityCourses(content).values()) {
+    if (pts.length < 2) continue;
+    let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+    for (const p of pts) {
+      minx = Math.min(minx, p.x!); miny = Math.min(miny, p.y!);
+      maxx = Math.max(maxx, p.x!); maxy = Math.max(maxy, p.y!);
+    }
+    if (!inRegion(Math.round((minx + maxx) / 2), Math.round((miny + maxy) / 2))) continue;
+    if (sx(maxx) < -TILE || sx(minx) > w + TILE || sy(maxy) < -TILE || sy(miny) > h + TILE) continue;
+
+    g.save();
+    // Worn dirt track looping through the obstacles in order.
+    g.strokeStyle = "rgba(116, 92, 56, 0.4)";
+    g.lineWidth = 11;
+    g.lineCap = "round";
+    g.lineJoin = "round";
+    g.beginPath();
+    g.moveTo(sx(pts[0]!.x!), sy(pts[0]!.y!));
+    for (let i = 1; i < pts.length; i++) g.lineTo(sx(pts[i]!.x!), sy(pts[i]!.y!));
+    g.lineTo(sx(pts[0]!.x!), sy(pts[0]!.y!)); // close the circuit
+    g.stroke();
+    // A light fence ringing the course.
+    const fx0 = (minx - 1) * TILE - cam.x, fy0 = (miny - 1) * TILE - cam.y;
+    const fx1 = (maxx + 2) * TILE - cam.x, fy1 = (maxy + 2) * TILE - cam.y;
+    g.strokeStyle = "rgba(110, 84, 50, 0.55)";
+    g.lineWidth = 2;
+    g.strokeRect(fx0, fy0, fx1 - fx0, fy1 - fy0);
+    g.fillStyle = "#6e542f";
+    for (let px = fx0; px <= fx1 + 1; px += TILE) {
+      g.fillRect(px - 1.5, fy0 - 3, 3, 7);
+      g.fillRect(px - 1.5, fy1 - 3, 3, 7);
+    }
+    for (let py = fy0; py <= fy1 + 1; py += TILE) {
+      g.fillRect(fx0 - 1.5, py - 3, 3, 7);
+      g.fillRect(fx1 - 1.5, py - 3, 3, 7);
+    }
+    g.restore();
+  }
+}
+
+/**
+ * OSRS-style next-obstacle marker: a pulsing green ring + chevron over the
+ * obstacle to take next — the course's first leg until you start a lap, then
+ * advancing leg by leg as you clear them.
+ */
+function drawAgilityMarkers(
+  g: CanvasRenderingContext2D,
+  state: WorldState,
+  content: Content,
+  cam: Camera,
+  w: number,
+  h: number,
+  now: number,
+  inRegion: (x: number, y: number) => boolean,
+): void {
+  const lap = state.player.agilityLap;
+  for (const [course, obs] of agilityCourses(content)) {
+    const nextIdx = lap && lap.course === course ? lap.next : 0;
+    const target = obs.find((o) => (o.order ?? 0) === nextIdx);
+    if (!target || !inRegion(target.x!, target.y!)) continue;
+    const px = target.x! * TILE + TILE / 2 - cam.x;
+    const py = target.y! * TILE + TILE / 2 - cam.y;
+    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+    const pulse = 0.5 + 0.5 * Math.sin(now / 300);
+    g.save();
+    g.strokeStyle = `rgba(150, 210, 74, ${0.45 + 0.4 * pulse})`;
+    g.lineWidth = 2.5;
+    g.beginPath();
+    g.arc(px, py, TILE * 0.42 + pulse * 3, 0, Math.PI * 2);
+    g.stroke();
+    const by = py - TILE * 0.72 - pulse * 3;
+    g.fillStyle = "#b6d24a";
+    g.beginPath();
+    g.moveTo(px, by + 7);
+    g.lineTo(px - 6, by - 3);
+    g.lineTo(px + 6, by - 3);
+    g.closePath();
+    g.fill();
+    g.restore();
+  }
+}
+
 /** A small glowing loot pile on the floor — a kill's spoils, waiting to be taken. */
 function drawGroundItem(
   g: CanvasRenderingContext2D,
@@ -538,6 +648,9 @@ export function drawWorld(
     }
   }
 
+  // Agility courses: worn track + fence, drawn under the obstacles themselves.
+  drawAgilityTracks(g, content, cam, w, h, inRegion);
+
   // --- Objects ---
   const lights: Array<[number, number]> = []; // warm light sources, for night
   const trophy = trophyGlyph(state, content); // the player's rarest item, for display cases
@@ -579,6 +692,9 @@ export function drawWorld(
       label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
     }
   }
+
+  // Agility: pulsing marker over the next obstacle to take.
+  drawAgilityMarkers(g, state, content, cam, w, h, now, inRegion);
 
   // --- Loot on the floor (kill drops awaiting pickup) ---
   for (const gi of state.ground) {
