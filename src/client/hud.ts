@@ -154,6 +154,7 @@ export class Hud {
     dispatch: (intent: Intent) => void = () => {},
     private zoom: { get(): number; set(z: number): void } = { get: () => 1, set: () => {} },
     private onHelp: () => void = () => {},
+    private onSignOut: () => void = () => {},
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -601,6 +602,13 @@ export class Hud {
         reset.title = "Erase all saved progress and start over";
         reset.addEventListener("click", () => this.onReset());
         p.appendChild(reset);
+        const signout = document.createElement("button");
+        signout.type = "button";
+        signout.className = "settings-signout";
+        signout.textContent = "Sign out";
+        signout.title = "Sign out of your account and return to the login screen";
+        signout.addEventListener("click", () => this.onSignOut());
+        p.appendChild(signout);
         break;
       }
     }

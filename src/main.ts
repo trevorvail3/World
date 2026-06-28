@@ -39,6 +39,8 @@ import {
   writeSave,
 } from "./client/storage.ts";
 import { CharacterCreator, type CreatedCharacter } from "./client/characterCreator.ts";
+import { LoginUI } from "./client/loginUI.ts";
+import { currentUser, signOut } from "./client/supabase.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
 // (never stated as fact) to honour the world's load-bearing ambiguity.
@@ -62,10 +64,18 @@ if (!canvas || !hudRoot || !app) {
   throw new Error("Missing #game / #hud / #app elements in index.html");
 }
 
+// --- Sign-in gate: you must be signed in (same account as the idle game)
+//     before reaching character creation or your save. A live session is kept
+//     in localStorage, so returning visitors skip straight past the login. ---
+function start(): void {
+  if (currentUser()) { afterLogin(); return; }
+  new LoginUI(app!, afterLogin);
+}
+
 // --- One character per account (OSRS-style): no selection screen. Load the
 //     single existing save if there is one; otherwise go straight to the
 //     character creator. ---
-function start(): void {
+function afterLogin(): void {
   const accounts = listAccounts();
   if (accounts.length > 0) {
     setCurrentAccount(accounts[0]!); // the one and only character
@@ -127,10 +137,18 @@ function boot(newChar: CreatedCharacter | null): void {
   const dispatch = (intent: Intent): void => game.dispatch(intent);
   // `game` is assigned just below; the slider may read zoom during Hud build,
   // so guard until the loop exists (the HUD re-syncs the slider each frame).
+  // Sign out: persist first so progress is safe, then drop the session and
+  // return to the login screen.
+  const signOutAndReturn = (): void => {
+    persist(false);
+    signOut();
+    window.location.reload();
+  };
+
   const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
     get: () => game?.getZoom() ?? 1,
     set: (z) => game?.setZoom(z),
-  }, () => new Primer(app!, () => {}, true));
+  }, () => new Primer(app!, () => {}, true), signOutAndReturn);
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 

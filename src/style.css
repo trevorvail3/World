@@ -1895,32 +1895,48 @@ button.inv-slot {
 .hiscores-val { font-family: "Cinzel", serif; color: var(--ember); font-variant-numeric: tabular-nums; }
 .hiscores-empty { color: var(--ink-dim); text-align: center; padding: 16px; font-style: italic; }
 .hiscores-note { margin-top: 9px; text-align: center; font-size: 11px; color: var(--ink-dim); font-style: italic; }
-.hiscores-auth { margin-top: 10px; border-top: 1px solid var(--panel-edge); padding-top: 10px; }
-.hiscores-who { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim); }
-.hiscores-signout {
-  float: right; font-family: "EB Garamond", serif; font-size: 12px;
+/* --- Login gate (shown before character creation) --- */
+.login-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 35%, #241d14 0%, #0c0a07 80%);
+}
+.login-box {
+  background: var(--panel, #1c1812); border: 1px solid var(--gold);
+  border-radius: 12px; padding: 26px 28px; width: calc(100% - 48px); max-width: 320px;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.7); text-align: center;
+}
+.login-title { font-family: "Cinzel", serif; color: var(--gold); font-size: 30px; letter-spacing: 0.16em; }
+.login-sub { font-family: "EB Garamond", serif; color: var(--ink-dim); font-size: 13px; margin: 6px 0 18px; }
+.login-form { display: flex; flex-direction: column; gap: 9px; }
+.login-email, .login-pass {
+  font-family: "EB Garamond", serif; font-size: 14px; color: var(--ink);
+  background: rgba(0, 0, 0, 0.32); border: 1px solid var(--panel-edge);
+  border-radius: 8px; padding: 9px 11px;
+}
+.login-email:focus, .login-pass:focus { outline: none; border-color: var(--gold); }
+.login-go {
+  font-family: "Cinzel", serif; font-size: 14px; cursor: pointer; margin-top: 2px;
+  color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b;
+  border-radius: 8px; padding: 9px 11px;
+}
+.login-go:hover { background: #e08a3e; }
+.login-go:disabled, .login-create:disabled { opacity: 0.5; cursor: default; }
+.login-create {
+  font-family: "EB Garamond", serif; font-size: 13px; cursor: pointer;
+  color: var(--ink-dim); background: transparent; border: 0; padding: 2px;
+}
+.login-create:hover { color: var(--ink); }
+.login-msg { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ember); min-height: 1.1em; }
+.login-msg.ok { color: var(--gold); }
+.login-foot { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); margin-top: 14px; font-style: italic; }
+.settings-signout {
+  display: block; width: 100%; margin-top: 8px;
+  font-family: "EB Garamond", serif; font-size: 13px; cursor: pointer;
   color: var(--ink-dim); background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--panel-edge); border-radius: 8px; padding: 2px 9px; cursor: pointer;
+  border: 1px solid var(--panel-edge); border-radius: 8px; padding: 7px 10px;
 }
-.hiscores-signout:hover { color: var(--ember); }
-.hiscores-form { display: flex; flex-direction: column; gap: 6px; }
-.hiscores-form-tip { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); }
-.hiscores-email, .hiscores-pass {
-  font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink);
-  background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-edge);
-  border-radius: 7px; padding: 6px 8px;
-}
-.hiscores-email:focus, .hiscores-pass:focus { outline: none; border-color: var(--gold); }
-.hiscores-form-btns { display: flex; gap: 6px; }
-.hiscores-signin, .hiscores-signup {
-  flex: 1; font-family: "Cinzel", serif; font-size: 12px; cursor: pointer;
-  border-radius: 8px; padding: 6px 8px;
-}
-.hiscores-signin { color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b; }
-.hiscores-signup { color: var(--ink-dim); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-edge); }
-.hiscores-signin:hover { background: #e08a3e; }
-.hiscores-signup:hover { color: var(--ink); }
-.hiscores-err { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ember); min-height: 1em; }
+.settings-signout:hover { color: var(--ember); }
 .skillpick-modal {
   background: var(--panel, #1c1812);
   border: 1px solid var(--panel-edge);

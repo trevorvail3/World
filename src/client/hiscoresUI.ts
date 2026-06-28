@@ -12,7 +12,7 @@ import type { Content } from "../core/types.ts";
 import {
   getSocial, getLocal, submitCurrent, type HiscoreEntry,
 } from "./social.ts";
-import { currentUser, onAuth, signIn, signUp, signOut } from "./supabase.ts";
+import { currentUser } from "./supabase.ts";
 
 type Metric = { key: keyof HiscoreEntry; label: string; fmt: (e: HiscoreEntry) => string };
 
@@ -36,11 +36,9 @@ export class HiscoresUI {
   private tabs: HTMLElement;
   private body: HTMLElement;
   private note!: HTMLElement;
-  private auth!: HTMLElement;
   private open = false;
   private metric: Metric = METRICS[0]!;
   private entries: HiscoreEntry[] = [];
-  private lastYou = "";
 
   constructor(root: HTMLElement, private content: Content) {
     this.backdrop = document.createElement("div");
@@ -54,12 +52,10 @@ export class HiscoresUI {
         <div class="hiscores-tabs"></div>
         <div class="hiscores-body"></div>
         <div class="hiscores-note"></div>
-        <div class="hiscores-auth"></div>
       </div>`;
     this.tabs = this.backdrop.querySelector(".hiscores-tabs") as HTMLElement;
     this.body = this.backdrop.querySelector(".hiscores-body") as HTMLElement;
     this.note = this.backdrop.querySelector(".hiscores-note") as HTMLElement;
-    this.auth = this.backdrop.querySelector(".hiscores-auth") as HTMLElement;
     root.appendChild(this.backdrop);
 
     for (const m of METRICS) {
@@ -83,20 +79,15 @@ export class HiscoresUI {
     this.backdrop.addEventListener("pointerdown", (e) => {
       if (e.target === this.backdrop) this.close();
     });
-
-    // Re-render the sign-in panel whenever auth state flips.
-    onAuth(() => { if (this.open) this.renderAuth(); });
   }
 
   isOpen(): boolean { return this.open; }
   close(): void { this.open = false; this.backdrop.classList.add("hidden"); }
 
   async show(youName: string): Promise<void> {
-    this.lastYou = youName;
     this.open = true;
     this.backdrop.classList.remove("hidden");
     this.body.innerHTML = `<div class="hiscores-empty">Loading…</div>`;
-    this.renderAuth();
     await submitCurrent(this.content);
 
     let list: HiscoreEntry[];
@@ -129,60 +120,6 @@ export class HiscoresUI {
         <span class="hiscores-name">${escapeHtml(e.name)}</span>
         <span class="hiscores-val">${m.fmt(e)}</span>
       </div>`).join("");
-  }
-
-  /** The sign-in / signed-in strip below the board. */
-  private renderAuth(): void {
-    const user = currentUser();
-    if (user) {
-      this.auth.innerHTML = `
-        <span class="hiscores-who">Signed in as ${escapeHtml(user.email || "your account")}</span>
-        <button class="hiscores-signout" type="button">Sign out</button>`;
-      (this.auth.querySelector(".hiscores-signout") as HTMLElement).addEventListener(
-        "pointerdown", (e) => {
-          e.stopPropagation();
-          signOut();
-          void this.show(this.lastYou);
-        },
-      );
-      return;
-    }
-    this.auth.innerHTML = `
-      <form class="hiscores-form">
-        <div class="hiscores-form-tip">Sign in (same account as the idle game) to join the board.</div>
-        <input class="hiscores-email" type="email" placeholder="email" autocomplete="email" />
-        <input class="hiscores-pass" type="password" placeholder="password" autocomplete="current-password" />
-        <div class="hiscores-form-btns">
-          <button class="hiscores-signin" type="submit">Sign in</button>
-          <button class="hiscores-signup" type="button">Create account</button>
-        </div>
-        <div class="hiscores-err"></div>
-      </form>`;
-    const form = this.auth.querySelector(".hiscores-form") as HTMLFormElement;
-    const email = this.auth.querySelector(".hiscores-email") as HTMLInputElement;
-    const pass = this.auth.querySelector(".hiscores-pass") as HTMLInputElement;
-    const err = this.auth.querySelector(".hiscores-err") as HTMLElement;
-    const fail = (m: string): void => { err.textContent = m; };
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      fail("");
-      signIn(email.value.trim(), pass.value)
-        .then(() => this.show(this.lastYou))
-        .catch((ex) => fail(ex?.message ?? "Sign-in failed"));
-    });
-    (this.auth.querySelector(".hiscores-signup") as HTMLElement).addEventListener(
-      "pointerdown", (e) => {
-        e.stopPropagation();
-        fail("");
-        signUp(email.value.trim(), pass.value)
-          .then((started) => {
-            if (started) void this.show(this.lastYou);
-            else fail("Check your email to confirm, then sign in.");
-          })
-          .catch((ex) => fail(ex?.message ?? "Sign-up failed"));
-      },
-    );
   }
 }
 
