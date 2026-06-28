@@ -12,7 +12,7 @@ export interface MenuItem {
   /** Optional dimmer target text shown after the label, e.g. "Ashwood Tree". */
   target?: string;
   onSelect: () => void;
-  tone?: "action" | "normal";
+  tone?: "action" | "normal" | "locked";
 }
 
 export class ContextMenu {
@@ -64,7 +64,7 @@ export class ContextMenu {
     for (const item of items) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = `ctx-item ${item.tone === "action" ? "ctx-action" : ""}`;
+      btn.className = `ctx-item ${item.tone === "action" ? "ctx-action" : ""}${item.tone === "locked" ? " ctx-locked" : ""}`;
       btn.innerHTML = item.target
         ? `<span class="ctx-verb">${esc(item.label)}</span> <span class="ctx-target">${esc(item.target)}</span>`
         : `<span class="ctx-verb">${esc(item.label)}</span>`;

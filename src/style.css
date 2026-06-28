@@ -81,17 +81,17 @@ body {
   padding-bottom: 4px;
 }
 
-/* --- Hitpoints (always-on, top-left) --- */
+/* --- Hitpoints (top-right, tucked under the minimap so it's always in view) --- */
 .hud-vitals {
-  top: 10px;
-  left: 10px;
-  min-width: 160px;
+  top: 118px; /* below the minimap (top 10 + ~104 tall) */
+  right: 10px;
+  width: 124px;
 }
 
-/* --- Buffs strip + pinned quest tracker, stacked under the vitals --- */
+/* --- Buffs strip (top-left; the corner is otherwise free now) --- */
 .hud-topleft {
   position: absolute;
-  top: 86px;
+  top: 10px;
   left: 10px;
   display: flex;
   flex-direction: column;
@@ -115,31 +115,18 @@ body {
 .buff-amt { color: var(--gold); font-family: "Cinzel", serif; }
 .buff-time { color: var(--ink-dim); font-size: 10px; }
 
-.hud-quest {
-  position: static; /* flow within the column, not as an absolute panel */
-  pointer-events: auto;
-  max-width: 230px;
-  padding: 7px 10px;
-}
-.hud-quest.hidden { display: none; }
-.quest-title {
-  font-family: "Cinzel", serif;
-  font-size: 12px;
-  color: var(--gold);
-  letter-spacing: 0.03em;
-}
-.quest-obj { font-size: 12px; color: var(--ink); margin-top: 3px; line-height: 1.3; }
-
 .vitals-label {
   font-size: 13px;
-  color: var(--ink-dim);
+  color: var(--ink);
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 5px;
 }
-/* The heart only shows in the compact mobile readout (hidden on desktop). */
-.vitals-heart { display: none; }
+.vitals-name { display: none; } /* the heart speaks for itself */
+.vitals-heart { display: inline-flex; }
 .vitals-heart .g-ico { width: 15px; height: 15px; color: #e2483a; vertical-align: -0.2em; }
+.hp-text { margin-left: auto; font-family: "Cinzel", serif; color: var(--ink); }
 
 /* Skills tab — OSRS-style grid of small skill buttons (icon · level · XP bar).
    Sized so the grid matches the Pack tab's footprint. */
@@ -923,13 +910,22 @@ body {
 .ctx-menu {
   position: absolute;
   min-width: 168px;
+  max-height: 80vh;
   background: rgba(20, 16, 12, 0.96);
   border: 1px solid var(--panel-edge);
   border-radius: 8px;
   padding: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+.ctx-menu::-webkit-scrollbar { width: 6px; }
+.ctx-menu::-webkit-scrollbar-thumb { background: rgba(120, 100, 70, 0.5); border-radius: 3px; }
+
+/* Recipes above your level: dimmed, with their level requirement shown. */
+.ctx-item.ctx-locked { opacity: 0.5; }
+.ctx-item.ctx-locked .ctx-verb { color: var(--ink-dim); }
+.ctx-item.ctx-locked .ctx-target { color: #9a6a4a; }
 
 .ctx-title {
   font-family: "Cinzel", serif;
@@ -2235,66 +2231,46 @@ button.inv-slot {
   100% { opacity: 0; }
 }
 
-/* ── Run/walk toggle + energy bar (under the minimap, top-right) ───────────── */
+/* ── Run/walk orb (top-right, under the HP readout) ─────────────────────────
+   No bar: the boot sits in a circular ring that depletes with energy (driven by
+   the --e custom property, 0–100), and the orb tints by state. ───────────── */
 .run-control {
   position: absolute;
-  top: 116px; /* clear of the slimmer minimap (top 10 + ~100 tall) */
-  right: 10px;
+  top: 188px; /* under the minimap (10+104) and HP panel (~64) */
+  right: 12px;
   z-index: 6; /* always above the minimap, never covered by it */
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 8px 5px 6px;
+  pointer-events: auto;
 }
 .run-toggle {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
+  --e: 100;
+  --ring: #b6d24a;
+  width: 42px;
+  height: 42px;
+  padding: 3px; /* ring thickness */
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  /* The depleting ring: filled arc up to --e%, dim track beyond. */
+  background: conic-gradient(var(--ring) calc(var(--e) * 3.6deg), rgba(28, 21, 15, 0.7) 0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.run-face {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--panel-edge);
-  border-radius: 6px;
-  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(20, 16, 12, 0.96);
   color: var(--ink-dim);
 }
-.run-toggle .g-ico { width: 17px; height: 17px; }
-.run-control.on .run-toggle { color: var(--ember); border-color: var(--ember); background: rgba(210, 116, 44, 0.16); }
-.run-control.spent .run-toggle { color: #b5564a; border-color: #7d3a2a; }
-.run-energy {
-  position: relative;
-  width: 62px;
-  height: 12px;
-  background: #2a1f17;
-  border: 1px solid #503a26;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.run-energy-fill {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, #6a8a3a, #b6d24a);
-  transition: width 0.2s ease;
-}
-.run-energy-fill.lowenergy { background: linear-gradient(90deg, #7d1f15, #c43a23); }
-.run-energy-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  color: var(--ink);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
-  letter-spacing: 0.04em;
-}
-/* On phones the vitals readout moves to the log box; nudge the run control up
-   to sit just under the (smaller) minimap. */
-@media (max-width: 520px) {
-  .run-control { top: 116px; padding: 4px 6px; }
-  .run-energy { width: 52px; }
-}
+.run-face .g-ico { width: 19px; height: 19px; }
+/* Running: the orb face glows ember. Low/spent: the ring turns to warning red. */
+.run-control.on .run-face { color: var(--ember); }
+.run-control.low .run-toggle { --ring: #d9a441; }
+.run-control.spent .run-toggle { --ring: #c43a23; }
+.run-control.spent .run-face { color: #c43a23; }
+/* Phones: the same top-right stack (minimap · HP · run orb) works as-is. */
 
 /* ── Short / landscape viewports (a phone turned sideways) ──────────────────
    The default chrome assumes a tall window: the bottom-right dock alone wants
@@ -2308,13 +2284,9 @@ button.inv-slot {
    `100dvh` (the *dynamic* viewport height) tracks the mobile URL bar as it hides
    and shows; a `100vh` line precedes it as a fallback for older engines. */
 @media (max-height: 540px) {
-  /* The minimap sizes itself (height by viewport aspect); just trim its frame. */
+  /* The minimap sizes itself (square, 96px); just trim its frame. */
   .hud-minimap { padding: 4px; }
   .minimap-worldbtn { width: 22px; height: 22px; font-size: 12px; bottom: 6px; right: 6px; }
-
-  /* Run control sits just under the minimap. */
-  .run-control { top: 116px; padding: 4px 6px; }
-  .run-energy { width: 52px; }
 
   /* The dock can never be taller than the space between the run bar and the
      bottom margin — its body scrolls when the catalogue doesn't fit. */
@@ -2328,16 +2300,12 @@ button.inv-slot {
   .dock-tab { width: 30px; height: 30px; font-size: 15px; }
   .dock-tab .g-ico { width: 19px; height: 19px; }
 
-  /* Keep the bottom-left log clear of the buffs/quest column above it. */
+  /* Keep the bottom-left log compact on short screens. */
   .hud-log { width: min(260px, 40vw); }
   .log-lines {
     max-height: 96px;
     max-height: min(96px, calc(100dvh - 250px));
   }
-
-  /* Buffs + quest tracker: keep the column narrow so it doesn't reach the log. */
-  .hud-topleft { top: 76px; max-width: 200px; }
-  .hud-quest { max-width: 200px; padding: 6px 9px; }
 
   /* The continent map must fit the short height too. */
   .worldmap-modal { padding: 9px 11px; }
@@ -2347,8 +2315,9 @@ button.inv-slot {
 /* A genuinely tiny window (very small phones in landscape): trim further so the
    dock and minimap still both fit without overlapping. */
 @media (max-height: 430px) {
-  /* Below 440px tall the minimap drops to a 72px height (see minimap.ts). */
-  .run-control { top: 96px; }
+  /* Below 440px tall the minimap drops to 76px; pull the HP + run orb up too. */
+  .hud-vitals { top: 96px; }
+  .run-control { top: 162px; }
   .dock-body {
     height: min(300px, calc(100vh - 150px));
     height: min(300px, calc(100dvh - 150px));

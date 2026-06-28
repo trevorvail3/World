@@ -97,14 +97,9 @@ export class Hud {
   private hpText!: HTMLElement;
   private goldText!: HTMLElement;
   private vitals!: HTMLElement;
-  private logPanel!: HTMLElement;
-  private hudRoot!: HTMLElement;
   private runControl!: HTMLElement;
-  private runEnergyFill!: HTMLElement;
-  private runEnergyText!: HTMLElement;
+  private runToggle!: HTMLElement;
   private buffStrip!: HTMLElement;
-  private questTracker!: HTMLElement;
-  private pinnedQuestId: string | null = null;
   private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
   private logLines: string[] = [];
@@ -159,8 +154,7 @@ export class Hud {
   }
 
   private build(root: HTMLElement): void {
-    this.hudRoot = root;
-    // --- Always-on Hitpoints (top-left) ---
+    // --- Always-on Hitpoints (top-right, under the minimap) ---
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
       <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="vitals-name">Hitpoints</span> <span class="hp-text">10 / 10</span></div>
@@ -172,35 +166,30 @@ export class Hud {
     this.vitals = vitals;
     root.appendChild(vitals);
 
-    // --- Run/walk toggle + energy bar (under the minimap, top-right) ---
+    // --- Run/walk orb (top-right): a boot whose ring drains as energy spends,
+    //     the orb itself tinting by state. No separate bar. ---
     const runCtl = document.createElement("div");
-    runCtl.className = "hud-panel run-control";
+    runCtl.className = "hud-control run-control";
     runCtl.innerHTML =
-      `<button class="run-toggle" type="button" title="Toggle run / walk">${glyph("boot")}</button>` +
-      `<div class="run-energy"><div class="run-energy-fill"></div><span class="run-energy-text">100%</span></div>`;
-    (runCtl.querySelector(".run-toggle") as HTMLElement).addEventListener("click", (e) => {
+      `<button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button>`;
+    this.runToggle = runCtl.querySelector(".run-toggle") as HTMLElement;
+    this.runToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       this.dispatch({ type: "TOGGLE_RUN" });
     });
-    this.runEnergyFill = runCtl.querySelector(".run-energy-fill") as HTMLElement;
-    this.runEnergyText = runCtl.querySelector(".run-energy-text") as HTMLElement;
     this.runControl = runCtl;
     root.appendChild(runCtl);
 
-    // --- A stacking column under vitals: active buffs + pinned quest tracker ---
+    // --- Active buff chips (top-left) ---
     const topLeft = document.createElement("div");
     topLeft.className = "hud-topleft";
     this.buffStrip = document.createElement("div");
     this.buffStrip.className = "hud-buffs";
-    this.questTracker = document.createElement("div");
-    this.questTracker.className = "hud-panel hud-quest hidden";
     topLeft.appendChild(this.buffStrip);
-    topLeft.appendChild(this.questTracker);
     root.appendChild(topLeft);
 
     // --- Game log (bottom-left) ---
     const logPanel = panel("hud-panel hud-log");
-    this.logPanel = logPanel;
     this.logEl = document.createElement("div");
     this.logEl.className = "log-lines";
     logPanel.appendChild(this.logEl);
@@ -236,23 +225,6 @@ export class Hud {
     root.appendChild(dock);
 
     this.applyTabState(); // start expanded on the default tab
-
-    // On phones the vitals readout rides on top of the log box instead of
-    // floating in the top-left corner; re-evaluate on rotate/resize.
-    this.placeVitals();
-    window.matchMedia("(max-width: 520px)").addEventListener("change", () => this.placeVitals());
-  }
-
-  /** Top-left on desktop; a header row on the log box on mobile. */
-  private placeVitals(): void {
-    const mobile = window.matchMedia("(max-width: 520px)").matches;
-    if (mobile) {
-      if (this.vitals.parentElement !== this.logPanel) {
-        this.logPanel.insertBefore(this.vitals, this.logPanel.firstChild);
-      }
-    } else if (this.vitals.parentElement !== this.hudRoot) {
-      this.hudRoot.appendChild(this.vitals);
-    }
   }
 
   private buildTab(id: TabId, title: string, p: HTMLElement): void {
@@ -520,47 +492,6 @@ export class Hud {
       .join("");
   }
 
-  /** A pinned card showing the active quest and its current objective. */
-  private renderQuestTracker(player: WorldState["player"]): void {
-    const ids = Object.keys(player.quests);
-    if (ids.length === 0) { this.questTracker.classList.add("hidden"); return; }
-    // Prefer the most-recently-advanced quest; else a main-story quest (those
-    // carry an `act`); else whatever's first — so a side-quest can't mask the
-    // story objective.
-    let qid =
-      this.pinnedQuestId && player.quests[this.pinnedQuestId] ? this.pinnedQuestId : null;
-    if (!qid) qid = ids.find((id) => this.content.quests.find((q) => q.id === id)?.act !== undefined) ?? ids[0]!;
-    const def = this.content.quests.find((q) => q.id === qid);
-    const st = player.quests[qid];
-    if (!def || !st) { this.questTracker.classList.add("hidden"); return; }
-    const step = def.steps[st.step] as
-      | { type?: string; text?: string; count?: number; item?: string }
-      | undefined;
-    let obj = step?.text ?? "Return to the quest-giver.";
-    const base = obj.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/, "");
-    if (step?.type === "kill" && typeof step.count === "number") {
-      obj = `${base} (${st.killCount}/${step.count})`;
-    } else if ((step?.type === "gather" || step?.type === "deliver") && step.item && typeof step.count === "number") {
-      const have = Math.min(step.count, this.carried(player, step.item));
-      obj = `${base} (${have}/${step.count})`;
-    }
-    this.questTracker.innerHTML =
-      `<div class="quest-title"><span class="quest-ic">${iconize("📜")}</span>${escapeHtml(def.name)}</div><div class="quest-obj">${escapeHtml(obj)}</div>`;
-    this.questTracker.classList.remove("hidden");
-  }
-
-  /** How many of an item the player is carrying (matches the core's gather check). */
-  private carried(player: WorldState["player"], item: string): number {
-    let n = 0;
-    for (const slot of player.inventory) if (slot?.item === item) n += slot.qty;
-    return n;
-  }
-
-  /** Pin a quest to the tracker (called when one starts or advances). */
-  pinQuest(id: string): void {
-    this.pinnedQuestId = id;
-  }
-
   /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */
   private tapItem(index: number, screenX: number, screenY: number): void {
     const data = this.invData[index];
@@ -688,7 +619,6 @@ export class Hud {
     this.lastState = state;
 
     this.renderBuffs(player);
-    this.renderQuestTracker(player);
 
     // Keep the zoom slider in step with wheel/pinch changes (unless the player
     // is actively dragging it, in which case it's already the source of truth).
@@ -747,12 +677,14 @@ export class Hud {
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
 
     // Run/walk: bar width, percentage, on/off and low-energy styling.
+    // Run orb: the ring depletes with energy (a CSS var drives the conic fill),
+    // and the orb tints by state (running / low / spent).
     const energy = Math.round(player.energy);
-    this.runEnergyFill.style.width = `${energy}%`;
-    this.runEnergyText.textContent = `${energy}%`;
+    this.runToggle.style.setProperty("--e", String(energy));
+    this.runToggle.title = `${player.running ? "Running" : "Walking"} · ${energy}% energy`;
     this.runControl.classList.toggle("on", player.running && player.energy > 0);
-    this.runControl.classList.toggle("spent", player.running && player.energy <= 0);
-    this.runEnergyFill.classList.toggle("lowenergy", energy <= 25);
+    this.runControl.classList.toggle("spent", player.energy <= 0);
+    this.runControl.classList.toggle("low", energy <= 25 && player.energy > 0);
 
     // Character sheet
     const ids = Object.keys(this.content.skills) as SkillId[];

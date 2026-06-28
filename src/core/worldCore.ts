@@ -2962,6 +2962,11 @@ function playerSwing(
     const dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });
+    // OSRS-style combat XP, earned per point of damage dealt (not on the kill):
+    // 4 xp to the attack skill (Draw for ranged, the chosen melee style else),
+    // and 1.33 (4/3) xp to Vitality — the Hitpoints model, ranged included.
+    grantXp(state, content, ranged ? "draw" : player.combatStyle, dmg * 4, events);
+    grantXp(state, content, "vitality", Math.round((dmg * 4) / 3), events);
   } else {
     events.push({ type: "DAMAGE", targetId: obj.id, amount: 0 });
   }
@@ -2971,9 +2976,7 @@ function playerSwing(
     obj.available = false;
     obj.respawnAt = ctx.now + COMBAT.respawn;
     obj.nextAttackAt = 0;
-    // Vitality always trains; ranged kills train Draw, melee the chosen style.
-    grantXp(state, content, "vitality", Math.floor(stats.xp * 0.33), events);
-    grantXp(state, content, ranged ? "draw" : player.combatStyle, Math.floor(stats.xp), events);
+    // Combat XP is granted per hit (see above), OSRS-style — not on the kill.
     player.killsSinceShard += 1;
     rollDrops(player, stats, ctx, events); // resets killsSinceShard if the shard drops
     // Pity guarantee: once the count crosses the threshold without a shard, the

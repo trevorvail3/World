@@ -490,7 +490,6 @@ export class Game {
           break;
         case "QUEST_STARTED":
         case "QUEST_ADVANCED":
-          this.hud.pinQuest(ev.quest); // track the freshest quest in the pinned card
           break;
         case "COMPANION_FOUND": {
           const p = this.bridge.state.player.pos;
@@ -561,22 +560,30 @@ export class Game {
       return true;
     };
 
-    // Show recipes the player has the level for, that produce something — the
-    // ones they can make right now lead the list and are tappable.
+    // Show EVERY recipe for the station as a level ladder — the ones you can make
+    // now are highlighted, ones above your level are greyed with their level req,
+    // so you can see what's coming and what to train toward (OSRS-style).
     const recipes = this.bridge
       .stationRecipes(station)
-      .filter((a) => a.produces && player.skills[a.skill].level >= a.levelReq)
-      .sort((a, b) => Number(has(b)) - Number(has(a)) || a.levelReq - b.levelReq);
+      .filter((a) => a.produces)
+      .sort((a, b) => a.levelReq - b.levelReq || content.items[a.produces!].name.localeCompare(content.items[b.produces!].name));
 
     const items: MenuItem[] = recipes.map((a) => {
       const out = content.items[a.produces!];
-      const ready = has(a);
+      const lvl = player.skills[a.skill].level;
+      const leveled = lvl >= a.levelReq;
+      const ready = leveled && has(a);
+      const skillName = content.skills[a.skill].name;
       return {
         label: out.name,
-        target: this.costText(a),
-        tone: ready ? "action" : "normal",
+        target: leveled ? this.costText(a) : `${skillName} Lv ${a.levelReq}`,
+        tone: ready ? "action" : leveled ? "normal" : "locked",
         onSelect: () => {
-          if (!ready) {
+          if (!leveled) {
+            this.hud.log(`You need ${skillName} level ${a.levelReq} to make ${out.name}.`);
+            return;
+          }
+          if (!has(a)) {
             this.hud.log(`You don't have the materials for ${out.name}.`);
             return;
           }
