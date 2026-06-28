@@ -1767,6 +1767,7 @@ button.inv-slot {
   justify-content: center;
   z-index: 60;
 }
+.skillpick-backdrop.hidden { display: none; }
 .skillpick-modal {
   background: var(--panel, #1c1812);
   border: 1px solid var(--panel-edge);
