@@ -13,6 +13,9 @@ export class BankUI {
   private backdrop: HTMLElement;
   private bankGrid: HTMLElement;
   private invGrid: HTMLElement;
+  private countEl: HTMLElement;
+  private searchEl: HTMLInputElement;
+  private filter = "";
   private open = false;
   private state: WorldState | null = null;
 
@@ -29,14 +32,25 @@ export class BankUI {
           <span class="bank-title">Bank Chest</span>
           <button class="bank-close" type="button">✕</button>
         </div>
-        <div class="bank-label">Stored</div>
+        <div class="bank-label">Stored <span class="bank-count"></span>
+          <input class="bank-search" type="text" placeholder="Search…" />
+        </div>
         <div class="bank-grid"></div>
         <div class="bank-label">Your Pack <button class="bank-depositall" type="button">Deposit all</button></div>
         <div class="bank-inv inv-grid"></div>
       </div>`;
     this.bankGrid = this.backdrop.querySelector(".bank-grid") as HTMLElement;
     this.invGrid = this.backdrop.querySelector(".bank-inv") as HTMLElement;
+    this.countEl = this.backdrop.querySelector(".bank-count") as HTMLElement;
+    this.searchEl = this.backdrop.querySelector(".bank-search") as HTMLInputElement;
     root.appendChild(this.backdrop);
+
+    // Live search: filter the stored grid by item name as you type.
+    this.searchEl.addEventListener("pointerdown", (e) => e.stopPropagation());
+    this.searchEl.addEventListener("input", () => {
+      this.filter = this.searchEl.value.trim().toLowerCase();
+      this.render();
+    });
 
     // Close on the X, or by tapping the dim area outside the window.
     (this.backdrop.querySelector(".bank-close") as HTMLElement).addEventListener(
@@ -75,6 +89,8 @@ export class BankUI {
   show(state: WorldState): void {
     this.state = state;
     this.open = true;
+    this.filter = "";
+    this.searchEl.value = "";
     this.backdrop.classList.remove("hidden");
     this.render();
   }
@@ -88,15 +104,24 @@ export class BankUI {
     if (!this.state) return;
     const { player } = this.state;
 
-    // Stored items (stacked).
+    // Stored items (stacked), filtered by the search box.
     this.bankGrid.innerHTML = "";
-    const entries = (Object.keys(player.bank) as ItemId[]).filter(
+    const stored = (Object.keys(player.bank) as ItemId[]).filter(
       (id) => (player.bank[id] ?? 0) > 0,
     );
-    if (entries.length === 0) {
+    this.countEl.textContent = stored.length ? `(${stored.length})` : "";
+    const entries = this.filter
+      ? stored.filter((id) => this.content.items[id]?.name.toLowerCase().includes(this.filter))
+      : stored;
+    if (stored.length === 0) {
       const empty = document.createElement("div");
       empty.className = "bank-empty";
       empty.textContent = "The chest is empty.";
+      this.bankGrid.appendChild(empty);
+    } else if (entries.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "bank-empty";
+      empty.textContent = `No stored item matches “${this.filter}”.`;
       this.bankGrid.appendChild(empty);
     } else {
       for (const id of entries) {

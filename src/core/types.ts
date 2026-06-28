@@ -1509,6 +1509,20 @@ export interface AchievementDef {
   cond: AchievementCond;
 }
 
+/** One task on a regional Achievement Diary (reuses the achievement evaluator). */
+export interface DiaryTask {
+  label: string;
+  cond: AchievementCond;
+}
+
+/** A region's Achievement Diary: a themed checklist of goals for that area. */
+export interface DiaryDef {
+  id: string;
+  name: string;
+  icon: string;
+  tasks: DiaryTask[];
+}
+
 /** One choice a player can make at a "choose" step. */
 export interface QuestChoice {
   /** The button label shown to the player. */
@@ -1694,6 +1708,8 @@ export interface Content {
   factions: { id: FactionId; name: string; icon: string; blurb: string }[];
   /** The achievements (data). */
   achievements: AchievementDef[];
+  /** Per-region Achievement Diaries (data). */
+  diaries: DiaryDef[];
   /** Farmable crops, keyed by crop id. */
   crops: Record<string, CropDef>;
   /** Buildable housing furniture, keyed by furniture id. */

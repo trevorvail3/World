@@ -1377,6 +1377,30 @@ body {
   color: #6f655a;
 }
 
+.bank-count {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: #6f655a;
+}
+
+.bank-search {
+  float: right;
+  font-family: "EB Garamond", serif;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 2px 8px;
+  width: 120px;
+  outline: none;
+}
+
+.bank-search:focus { border-color: var(--ember); }
+
 .bank-depositall {
   float: right;
   font-family: "EB Garamond", serif;
@@ -1658,6 +1682,51 @@ button.inv-slot {
 .bounty-buy.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
 
 /* --- Factions tab --- */
+/* --- Area Diaries (World tab): collapsible per-region goal checklists --- */
+.diary-block {
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.16);
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.diary-block.complete { border-color: #c9a24a; background: rgba(120, 90, 30, 0.16); }
+.diary-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  padding: 7px 8px;
+  font-family: "Cinzel", serif;
+  font-size: 12.5px;
+  color: var(--gold);
+}
+.diary-head:hover { color: #f0c187; }
+.diary-chev { width: 11px; color: var(--ember); font-size: 10px; transition: transform 0.15s; }
+.diary-block.open .diary-chev { transform: rotate(90deg); }
+.diary-name { flex: 1; }
+.diary-count { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); }
+.diary-block.complete .diary-count { color: var(--gold); }
+.diary-tasks { display: none; padding: 2px 8px 7px; }
+.diary-block.open .diary-tasks { display: block; }
+.diary-task {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: "EB Garamond", serif;
+  font-size: 12px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+.diary-task.done { color: var(--ink); }
+.diary-tick { width: 12px; color: #6cc06a; font-weight: 700; text-align: center; }
+.diary-label { flex: 1; }
+.diary-prog { font-size: 11px; color: #8a7f70; font-variant-numeric: tabular-nums; }
+
 .faction-block {
   margin-bottom: 9px;
 }

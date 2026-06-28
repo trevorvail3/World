@@ -42,7 +42,7 @@ const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "skills", icon: "📜", title: "Skills" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
-  { id: "factions", icon: "🤝", title: "Factions" },
+  { id: "factions", icon: "🌍", title: "World" },
   { id: "records", icon: "🏆", title: "Records" },
   { id: "settings", icon: "⚙️", title: "Settings" },
 ];
@@ -123,6 +123,8 @@ export class Hud {
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
+  // World tab: per-region Achievement Diary blocks, with live task/progress refs.
+  private diaryBlocks: { id: string; block: HTMLElement; count: HTMLElement; tasks: HTMLElement[] }[] = [];
   // Records tab: one container, accordion open-state, and a render signature so
   // it only rebuilds when something actually changes (never every frame).
   private recordsEl?: HTMLElement;
@@ -371,6 +373,33 @@ export class Hud {
         break;
       }
       case "factions": {
+        // --- Area Diaries: a themed goal checklist per region (collapsible). ---
+        p.appendChild(subhead("Area Diaries"));
+        for (const d of this.content.diaries) {
+          const block = document.createElement("div");
+          block.className = "diary-block";
+          const head = document.createElement("button");
+          head.type = "button";
+          head.className = "diary-head";
+          head.innerHTML = `<span class="diary-chev">▸</span><span class="diary-ic">${iconize(d.icon)}</span><span class="diary-name">${escapeHtml(d.name)}</span><span class="diary-count">0/${d.tasks.length}</span>`;
+          const body = document.createElement("div");
+          body.className = "diary-tasks";
+          const taskEls: HTMLElement[] = [];
+          for (const t of d.tasks) {
+            const row = document.createElement("div");
+            row.className = "diary-task";
+            row.innerHTML = `<span class="diary-tick"></span><span class="diary-label">${escapeHtml(t.label)}</span><span class="diary-prog"></span>`;
+            body.appendChild(row);
+            taskEls.push(row);
+          }
+          head.addEventListener("click", () => block.classList.toggle("open"));
+          block.append(head, body);
+          p.appendChild(block);
+          this.diaryBlocks.push({ id: d.id, block, count: head.querySelector(".diary-count") as HTMLElement, tasks: taskEls });
+        }
+
+        // --- Factions: standing with each power in Varath. ---
+        p.appendChild(subhead("Factions"));
         for (const f of this.content.factions) {
           const row = document.createElement("div");
           row.className = "faction-block";
@@ -736,6 +765,27 @@ export class Hud {
     });
 
     if (this.activeTab === "records") this.renderRecords(player);
+
+    // Area Diaries: tick each task and the per-region completion count.
+    if (this.activeTab === "factions" && this.diaryBlocks.length) {
+      for (const blk of this.diaryBlocks) {
+        const def = this.content.diaries.find((d) => d.id === blk.id);
+        if (!def) continue;
+        let done = 0;
+        for (let i = 0; i < def.tasks.length; i++) {
+          const ev = evalAchievement(player, this.content, def.tasks[i]!.cond);
+          const row = blk.tasks[i]!;
+          if (ev.met) done++;
+          row.classList.toggle("done", ev.met);
+          const tick = row.querySelector(".diary-tick") as HTMLElement;
+          const prog = row.querySelector(".diary-prog") as HTMLElement;
+          tick.textContent = ev.met ? "✓" : "";
+          prog.textContent = ev.met ? "" : (ev.target > 1 ? `${Math.min(ev.cur, ev.target)}/${ev.target}` : "");
+        }
+        blk.count.textContent = `${done}/${def.tasks.length}`;
+        blk.block.classList.toggle("complete", done >= def.tasks.length);
+      }
+    }
 
     // Faction standings.
     for (const f of this.content.factions) {
