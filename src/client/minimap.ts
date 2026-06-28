@@ -12,6 +12,10 @@ import { OVERWORLD_HEIGHT, instanceRectAt } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
 import { iconize } from "./glyph.ts";
 
+/** Tiles across the (square) minimap — a fixed local radius, OSRS-style, so the
+ *  area around the character is always the same regardless of the view's zoom. */
+const MINIMAP_SPAN = 26;
+
 const MM_TILE: Record<TileType, string> = {
   grass: "#34402d",
   dirt: "#473720",
@@ -131,61 +135,50 @@ export class Minimap {
   }
 
   /**
-   * Mirror exactly what's on screen — nothing beyond it. The minimap's shape
-   * follows the viewport's aspect ratio (fixed height, width by aspect), and the
-   * visible tiles are fit inside, centred, with at most a thin letterbox margin.
-   * No "see past the edges" reveal, no view-frame box. viewW/viewH are the
-   * visible extent in world pixels.
+   * OSRS-style: a fixed radius around the character, always — independent of the
+   * main view's zoom or what fits on screen, and always centred on the player.
+   * Square, north-up, no view-frame box.
    */
   draw(
     state: WorldState,
     content: Content,
-    cam: Camera,
-    viewW: number,
-    viewH: number,
   ): void {
     const g = this.g;
     const m = state.map;
 
-    // Element size: fixed height (so the HUD layout stays put), width by aspect.
+    // Square element; one fixed tile-span so the local area is always the same.
     const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
-    const H = window.innerHeight < 440 ? 72 : 92;
-    const aspect = viewH > 0 ? viewW / viewH : 1;
-    const W = Math.max(70, Math.min(168, Math.round(H * aspect)));
-    if (W !== this.cw || H !== this.ch || dpr !== this.mdpr) {
-      this.cw = W; this.ch = H; this.mdpr = dpr;
-      this.canvas.width = Math.round(W * dpr);
-      this.canvas.height = Math.round(H * dpr);
-      this.canvas.style.width = `${W}px`;
-      this.canvas.style.height = `${H}px`;
+    const S = window.innerHeight < 440 ? 76 : 96; // px, square
+    if (S !== this.cw || S !== this.ch || dpr !== this.mdpr) {
+      this.cw = S; this.ch = S; this.mdpr = dpr;
+      this.canvas.width = Math.round(S * dpr);
+      this.canvas.height = Math.round(S * dpr);
+      this.canvas.style.width = `${S}px`;
+      this.canvas.style.height = `${S}px`;
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); // work in CSS px below
 
-    // Fit the visible tile-window inside W×H (contain), centred. cell is chosen
-    // so the whole viewport shows — never cropped, never overscanned.
-    const visW = viewW / TILE;
-    const visH = viewH / TILE;
-    const cell = Math.min(W / visW, H / visH);
-    const offX = (W - visW * cell) / 2;
-    const offY = (H - visH * cell) / 2;
-    const originX = cam.x / TILE; // top-left visible tile (fractional)
-    const originY = cam.y / TILE;
-    this.view = { originX, originY, cell, offX, offY };
+    // A constant window of tiles, centred on the player (not the camera), so the
+    // character sits dead-centre and you always see the same distance around them.
+    const cell = S / MINIMAP_SPAN;
+    const p = state.player.pos;
+    const originX = p.x + 0.5 - MINIMAP_SPAN / 2; // tile at the minimap's left edge
+    const originY = p.y + 0.5 - MINIMAP_SPAN / 2;
+    this.view = { originX, originY, cell, offX: 0, offY: 0 };
 
     g.fillStyle = "#0c0907";
-    g.fillRect(0, 0, W, H);
+    g.fillRect(0, 0, S, S);
 
     // Inside a sealed instance (a home / arena) the minimap shows only that room.
-    const pp = state.player.pos;
-    const region = instanceRectAt(Math.round(pp.x), Math.round(pp.y));
+    const region = instanceRectAt(Math.round(p.x), Math.round(p.y));
     const inRegion = (x: number, y: number): boolean =>
       !region || (x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1);
-    const sx = (tx: number): number => offX + (tx - originX) * cell;
-    const sy = (ty: number): number => offY + (ty - originY) * cell;
+    const sx = (tx: number): number => (tx - originX) * cell;
+    const sy = (ty: number): number => (ty - originY) * cell;
 
-    // Tiles within the visible window.
-    const x0 = Math.floor(originX), x1 = Math.ceil(originX + visW);
-    const y0 = Math.floor(originY), y1 = Math.ceil(originY + visH);
+    // Tiles within the fixed window.
+    const x0 = Math.floor(originX), x1 = Math.ceil(originX + MINIMAP_SPAN);
+    const y0 = Math.floor(originY), y1 = Math.ceil(originY + MINIMAP_SPAN);
     for (let y = y0; y < y1; y++) {
       if (y < 0 || y >= m.height) continue;
       for (let x = x0; x < x1; x++) {
@@ -209,7 +202,6 @@ export class Minimap {
       g.fill();
     }
 
-    const p = state.player.pos;
     drawPlayerDot(g, sx(p.x + 0.5), sy(p.y + 0.5));
   }
 }

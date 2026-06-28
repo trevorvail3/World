@@ -377,13 +377,7 @@ export class Game {
 
     // 4) Refresh the HUD readouts and the minimap.
     this.hud.update(this.bridge.state);
-    this.minimap.draw(
-      this.bridge.state,
-      this.bridge.content,
-      this.cam,
-      this.viewW,
-      this.viewH,
-    );
+    this.minimap.draw(this.bridge.state, this.bridge.content);
     if (this.worldMap.isOpen()) {
       this.worldMap.draw(
         this.bridge.state,
