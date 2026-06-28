@@ -2834,7 +2834,7 @@ function drawGhost(g: CanvasRenderingContext2D, gh: Ghost, cam: Camera, now: num
   shadow(g, cx, cy + TILE / 2 - 4, 8, 3);
   g.save();
   g.globalAlpha = 0.4; // translucent so it clearly reads as "not really here"
-  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: false });
+  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: gh.moving });
   g.restore();
   label(g, gh.name, cx, cy - TILE / 2 - 2, "#a9d8e8"); // cool, spectral blue
 }

@@ -1,14 +1,18 @@
 /**
  * src/client/presence.ts
  * ----------------------
- * The ghost layer: see other signed-in players as translucent snapshots in the
+ * The ghost layer: see other signed-in players as translucent figures in the
  * shared world. Each player periodically publishes a tiny "presence" row
- * (position + look + which zone they're in); everyone reads back the recent ones
- * for their own zone. It's purely cosmetic — ghosts never interact with the
- * core, exactly like the hiscores board.
+ * (position + look + zone); everyone reads back the recent ones for their zone.
+ * Purely cosmetic — ghosts never interact with the core, like the hiscores board.
  *
- * "Zone" keeps you from seeing players who are inside their own sealed home
- * instances: the overworld is one shared zone; each interior is its own.
+ * Snapshots arrive every poll, so to avoid teleporting we keep each ghost's last
+ * two positions and GLIDE between them: currentGhosts() returns an interpolated
+ * position computed at the moment the renderer asks, so motion looks smooth even
+ * though the data underneath is a slow series of snapshots.
+ *
+ * "Zone" keeps you from seeing players inside their own sealed home instances:
+ * the overworld is one shared zone; each interior is its own.
  */
 
 import type { Appearance } from "../core/types.ts";
@@ -21,16 +25,30 @@ export interface Ghost {
   x: number;
   y: number;
   look: Appearance;
+  /** True while gliding between snapshots, so the figure shows a walk cycle. */
+  moving: boolean;
 }
 
 /** What the game feeds us each beat: where the player is and how they look. */
 export interface PresenceSnapshot { x: number; y: number; name: string; look: Appearance }
 
-const STALE_MS = 60_000; // a presence older than this is treated as gone
-const PUSH_MS = 4_000;   // how often we publish our own position
-const PULL_MS = 6_000;   // how often we refresh the ghosts around us
+const STALE_MS = 15_000; // a presence older than this is treated as gone
+const PUSH_MS = 1_500;   // how often we publish our own position
+const PULL_MS = 1_500;   // how often we refresh the ghosts around us
+const GLIDE_MS = 1_600;  // how long a ghost takes to slide to its new snapshot
+const TELEPORT_TILES = 10; // jumps larger than this snap instead of gliding
 
-let ghosts: Ghost[] = [];
+/** One tracked ghost: the segment it's currently gliding along. */
+interface Rec {
+  id: string;
+  name: string;
+  look: Appearance;
+  fromX: number; fromY: number; // where the glide starts
+  toX: number; toY: number;     // the latest snapshot (glide target)
+  since: number;                // ms when this segment began
+}
+
+const recs = new Map<string, Rec>();
 let provider: (() => PresenceSnapshot | null) | null = null;
 let started = false;
 
@@ -40,8 +58,26 @@ function zoneKey(x: number, y: number): string {
   return r ? `i:${r.x0},${r.y0}` : "overworld";
 }
 
-/** The ghosts currently near the player (for the renderer to draw). */
-export function currentGhosts(): Ghost[] { return ghosts; }
+const smooth = (t: number): number => t * t * (3 - 2 * t); // ease in/out
+
+/** The ghosts near the player right now, positions interpolated for this frame. */
+export function currentGhosts(): Ghost[] {
+  const now = Date.now();
+  const out: Ghost[] = [];
+  for (const r of recs.values()) {
+    const t = Math.min(1, (now - r.since) / GLIDE_MS);
+    const k = smooth(t);
+    out.push({
+      id: r.id,
+      name: r.name,
+      look: r.look,
+      x: r.fromX + (r.toX - r.fromX) * k,
+      y: r.fromY + (r.toY - r.fromY) * k,
+      moving: t < 1 && (Math.abs(r.toX - r.fromX) + Math.abs(r.toY - r.fromY)) > 0.15,
+    });
+  }
+  return out;
+}
 
 async function push(): Promise<void> {
   const user = currentUser();
@@ -76,15 +112,38 @@ async function pull(): Promise<void> {
     if (!res.ok) return;
     const rows = await res.json();
     if (!Array.isArray(rows)) return;
-    ghosts = rows
-      .filter((r) => r && r.user_id !== user.id && r.look)
-      .map((r) => ({
-        id: String(r.user_id),
-        name: typeof r.name === "string" && r.name ? r.name : "Wanderer",
-        x: Number(r.x) || 0,
-        y: Number(r.y) || 0,
-        look: r.look as Appearance,
-      }));
+
+    const now = Date.now();
+    const seen = new Set<string>();
+    for (const row of rows) {
+      if (!row || !row.look || row.user_id === user.id) continue;
+      const id = String(row.user_id);
+      seen.add(id);
+      const x = Number(row.x) || 0;
+      const y = Number(row.y) || 0;
+      const name = typeof row.name === "string" && row.name ? row.name : "Wanderer";
+      const look = row.look as Appearance;
+      const prev = recs.get(id);
+      if (!prev) {
+        recs.set(id, { id, name, look, fromX: x, fromY: y, toX: x, toY: y, since: now });
+        continue;
+      }
+      // Continue gliding from where the ghost VISUALLY is right now, toward the
+      // new snapshot — unless it's a big jump (zone change / respawn), then snap.
+      const t = Math.min(1, (now - prev.since) / GLIDE_MS);
+      const k = smooth(t);
+      const curX = prev.fromX + (prev.toX - prev.fromX) * k;
+      const curY = prev.fromY + (prev.toY - prev.fromY) * k;
+      const jump = Math.abs(x - prev.toX) + Math.abs(y - prev.toY);
+      const teleport = jump > TELEPORT_TILES;
+      prev.name = name; prev.look = look;
+      prev.fromX = teleport ? x : curX;
+      prev.fromY = teleport ? y : curY;
+      prev.toX = x; prev.toY = y;
+      prev.since = now;
+    }
+    // Drop ghosts that aged out of the latest result.
+    for (const id of [...recs.keys()]) if (!seen.has(id)) recs.delete(id);
   } catch { /* offline — keep the last set until we can refresh */ }
 }
 
