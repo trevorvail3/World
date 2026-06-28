@@ -123,6 +123,9 @@ export const HOMES: {
 ];
 export { HOUSE_W as HOME_WIDTH };
 
+/** Tiles that block movement (mirrors the core's walkability check). */
+const BLOCKED = new Set<TileType>(["water", "mountain", "cave_wall", "deep", "wall"]);
+
 /** A cheap, stable pseudo-noise so terrain is fixed (not random). */
 function noise(x: number, y: number): number {
   const n = Math.sin(x * 157.31 + y * 113.77) * 43758.5453;
@@ -145,13 +148,23 @@ function spineTile(x: number, y: number): TileType {
   const sx = x - 28;
   if ((x === 39 || x === 40) && y >= 9 && y <= 27) return "water"; // Cold Stream
   if (sx <= 3 && y >= 5 && y <= 9) return "stone"; // the pass off the hills
-  const peakChance = sx < 6 ? 0.78 : 0.7;
-  if (noise(x, y) > peakChance) return "mountain";
+  // Clumped peaks at a lower density form a few ridges with clear lanes between,
+  // rather than scattered single blocks you have to thread around every step.
+  const peakChance = sx < 6 ? 0.82 : 0.76;
+  if (clump(x, y) > peakChance) return "mountain";
   return sx < 6 || y < 5 ? "stone" : "snow";
 }
 
+/** Coarse noise: each 2×2 block shares a value, so blockers form clumps (rock
+ *  masses / ridges) rather than single-tile speckle that mazes up traversal. */
+function clump(x: number, y: number): number {
+  return noise(Math.floor(x / 2), Math.floor(y / 2));
+}
+
 function marrowTile(x: number, y: number): TileType {
-  if (noise(x, y) > 0.6) return "cave_wall";
+  // Clumped walls at a lower density read as cavern walls with broad galleries
+  // between them, instead of a salt-and-pepper maze.
+  if (clump(x, y) > 0.66) return "cave_wall";
   return "cave";
 }
 
@@ -308,6 +321,57 @@ function decode(): WorldMap {
       }
     }
   }
+
+  // 2b) The clumped mountain/cave noise reads as masses with lanes, but a clump
+  //     can still wall off a pocket of floor. This repair flood-fills the floor
+  //     inside a region and carves a thin tunnel from any orphaned pocket back
+  //     to the largest one — guaranteeing every cavern and ledge stays reachable
+  //     (it only opens blockers, so it can never strand a spawn).
+  const inRect = (x: number, y: number, x0: number, y0: number, x1: number, y1: number): boolean =>
+    x >= x0 && x <= x1 && y >= y0 && y <= y1;
+  const repairConnectivity = (
+    x0: number, y0: number, x1: number, y1: number, floorAt: (x: number, y: number) => TileType,
+  ): void => {
+    const walkableHere = (x: number, y: number): boolean =>
+      inRect(x, y, x0, y0, x1, y1) && !BLOCKED.has(tiles[y * WIDTH + x]!);
+    const seen = new Set<number>();
+    const pockets: [number, number][][] = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const idx = y * WIDTH + x;
+      if (!walkableHere(x, y) || seen.has(idx)) continue;
+      const cells: [number, number][] = []; const q: [number, number][] = [[x, y]]; seen.add(idx);
+      while (q.length) {
+        const [cx, cy] = q.shift()!; cells.push([cx, cy]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const nx = cx + dx, ny = cy + dy, ni = ny * WIDTH + nx;
+          if (walkableHere(nx, ny) && !seen.has(ni)) { seen.add(ni); q.push([nx, ny]); }
+        }
+      }
+      pockets.push(cells);
+    }
+    if (pockets.length <= 1) return;
+    pockets.sort((a, b) => b.length - a.length);
+    const centre = (c: [number, number][]): [number, number] =>
+      [Math.round(c.reduce((s, p) => s + p[0], 0) / c.length), Math.round(c.reduce((s, p) => s + p[1], 0) / c.length)];
+    const [mx, my] = centre(pockets[0]!);
+    for (let i = 1; i < pockets.length; i++) {
+      let [cx, cy] = centre(pockets[i]!);
+      let guard = 0;
+      while ((cx !== mx || cy !== my) && guard++ < 200) {
+        if (cx !== mx) cx += Math.sign(mx - cx);
+        else if (cy !== my) cy += Math.sign(my - cy);
+        if (inRect(cx, cy, x0, y0, x1, y1) && BLOCKED.has(tiles[cy * WIDTH + cx]!)) set(cx, cy, floorAt(cx, cy));
+      }
+    }
+  };
+
+  const marrow = REGIONS.find((r) => r.key === "marrow")!;
+  const spine = REGIONS.find((r) => r.key === "spine")!;
+  repairConnectivity(marrow.nx, marrow.ny, marrow.nx + marrow.w - 1, marrow.ny + marrow.h - 1, () => "cave");
+  repairConnectivity(spine.nx, spine.ny, spine.nx + spine.w - 1, spine.ny + spine.h - 1, (x, y) => {
+    const sx = (x - spine.nx + spine.ogx) - 28;
+    return sx < 6 || (y - spine.ny + spine.ogy) < 5 ? "stone" : "snow";
+  });
 
   // 3) The home Knuckle Hills wrap the city: a dirt grove + rock outcrop to the
   //    north, a lake to the south-west, open hill grass all around.

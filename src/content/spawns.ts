@@ -301,12 +301,12 @@ export const objects: WorldObjectDef[] = [
 
   // === THE MARROW DEEPS (north-east) ========================================
   { id: "md_crawler_1", kind: "monster", monster: "cave_crawler", x: 85, y: 12, name: "Cave Crawler" },
-  { id: "md_crawler_2", kind: "monster", monster: "cave_crawler", x: 91, y: 17, name: "Cave Crawler" },
+  { id: "md_crawler_2", kind: "monster", monster: "cave_crawler", x: 92, y: 17, name: "Cave Crawler" },
   { id: "md_bat_1", kind: "monster", monster: "deep_bat", x: 89, y: 10, name: "Deep Bat" },
   { id: "md_bat_2", kind: "monster", monster: "deep_bat", x: 93, y: 23, name: "Deep Bat" },
   { id: "md_wraith_1", kind: "monster", monster: "marrow_wraith", x: 84, y: 27, name: "Marrow Wraith" },
-  { id: "md_golem_1", kind: "monster", monster: "deep_golem", x: 93, y: 29, name: "Deepstone Golem" },
-  { id: "md_rock_1", kind: "rock", x: 88, y: 22, name: "Voidstone Shaft", resource: "mine_voidstone" },
+  { id: "md_golem_1", kind: "monster", monster: "deep_golem", x: 92, y: 29, name: "Deepstone Golem" },
+  { id: "md_rock_1", kind: "rock", x: 88, y: 21, name: "Voidstone Shaft", resource: "mine_voidstone" },
   { id: "md_rock_2", kind: "rock", x: 92, y: 28, name: "Voidstone Shaft", resource: "mine_voidstone" },
   { id: "marrow_vault", kind: "shrine", x: 95, y: 14, name: "The Marrow Vault", lines: ["Walls too smooth to be the dark's work, and a door that was opened from the inside. Whatever stayed down here, stayed because it chose to."] },
   { id: "marrow_keeper", kind: "npc", x: 94, y: 15, name: "The Marrow Keeper", lines: ["You came down the long dark and the door let you. Few things it lets through.","I kept the watch when there was an order to keep it for. Now there is only the watch, and the stone, and the warmth that will not cool.","Ask what you came to ask. But know that I have stood here longer than your kingdom, and even I cannot tell you whether the warmth is a god."] },
@@ -420,7 +420,7 @@ export const objects: WorldObjectDef[] = [
   { id: "ws_spine", kind: "waystone", x: 44, y: 8, name: "The Spine", target: { x: 43, y: 7 } },
   { id: "ws_heartmoor", kind: "waystone", x: 19, y: 82, name: "Heartmoor", target: { x: 18, y: 81 } },
   { id: "ws_ashfen", kind: "waystone", x: 62, y: 86, name: "Ashfen Flats", target: { x: 61, y: 87 } },
-  { id: "ws_marrow", kind: "waystone", x: 90, y: 16, name: "The Marrow Deeps", target: { x: 89, y: 15 } },
+  { id: "ws_marrow", kind: "waystone", x: 90, y: 15, name: "The Marrow Deeps", target: { x: 89, y: 14 } },
   { id: "ws_redrun", kind: "waystone", x: 90, y: 70, name: "The Redrun", target: { x: 91, y: 71 } },
 
   // === WILDLIFE — ambient critters (wander, flee, don't block) ==============
