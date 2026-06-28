@@ -158,11 +158,9 @@ export class Hud {
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
       <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="vitals-name">Hitpoints</span> <span class="hp-text">10 / 10</span></div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>
-      <div class="gold-line"><span class="gold-coin">${iconize("🪙")}</span><span class="gold-text">0</span>g</div>`;
+      <div class="hp-bar"><div class="hp-fill"></div></div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
-    this.goldText = vitals.querySelector(".gold-text") as HTMLElement;
     this.vitals = vitals;
     root.appendChild(vitals);
 
@@ -231,6 +229,14 @@ export class Hud {
     p.appendChild(heading(title));
     switch (id) {
       case "inventory": {
+        // Gold lives beside the PACK title (not on the Hitpoints panel).
+        const head = p.firstChild as HTMLElement;
+        head.classList.add("pack-head");
+        const gold = document.createElement("span");
+        gold.className = "pack-gold";
+        gold.innerHTML = `<span class="gold-coin">${iconize("🪙")}</span><span class="gold-text">0</span>g`;
+        head.appendChild(gold);
+        this.goldText = gold.querySelector(".gold-text") as HTMLElement;
         const grid = document.createElement("div");
         grid.className = "inv-grid";
         for (let i = 0; i < 28; i++) {

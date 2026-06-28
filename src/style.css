@@ -81,6 +81,21 @@ body {
   padding-bottom: 4px;
 }
 
+/* Pack tab: title on the left, gold readout on the right. */
+.hud-heading.pack-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pack-gold {
+  font-family: "EB Garamond", serif;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--gold);
+}
+.pack-gold .gold-text { font-variant-numeric: tabular-nums; }
+
 /* --- Hitpoints (top-right, tucked under the minimap so it's always in view) --- */
 .hud-vitals {
   top: 118px; /* below the minimap (top 10 + ~104 tall) */
