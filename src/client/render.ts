@@ -21,7 +21,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos } from "../core/worldCore.ts";
-import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt } from "../content/map.ts";
+import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 
 export const TILE = 40; // pixels per tile
@@ -71,6 +71,7 @@ function scatterVegetation(
   py: number,
   x: number,
   y: number,
+  now: number,
 ): void {
   if (tile !== "grass" && tile !== "moss" && tile !== "bog") return;
   const h = hash(x, y);
@@ -80,6 +81,8 @@ function scatterVegetation(
   const jy = py + 8 + hash(x, y + 13) * (TILE - 16);
   const tint = tile === "bog" ? "#3c5436" : tile === "moss" ? "#46622f" : "#4f6e33";
   const dark = tile === "bog" ? "#2c3f28" : "#374e25";
+  // A gentle breeze: tops sway, rooted bases stay put (phase varies per tile).
+  const sway = Math.sin(now / 900 + x * 0.7 + y * 0.5) * 1.7;
 
   if (h < 0.05) {
     // A small decorative tree: a round canopy on a short trunk.
@@ -87,11 +90,11 @@ function scatterVegetation(
     g.fillRect(jx - 1.5, jy, 3, 9);
     g.fillStyle = dark;
     g.beginPath();
-    g.arc(jx, jy - 2, 9, 0, Math.PI * 2);
+    g.arc(jx + sway, jy - 2, 9, 0, Math.PI * 2);
     g.fill();
     g.fillStyle = tint;
     g.beginPath();
-    g.arc(jx - 2, jy - 4, 6, 0, Math.PI * 2);
+    g.arc(jx - 2 + sway, jy - 4, 6, 0, Math.PI * 2);
     g.fill();
   } else if (h < 0.16) {
     // A leafy bush: two overlapping blobs.
@@ -101,17 +104,17 @@ function scatterVegetation(
     g.fill();
     g.fillStyle = tint;
     g.beginPath();
-    g.ellipse(jx - 2, jy - 1.5, 4.5, 3.5, 0, 0, Math.PI * 2);
+    g.ellipse(jx - 2 + sway * 0.5, jy - 1.5, 4.5, 3.5, 0, 0, Math.PI * 2);
     g.fill();
   } else {
-    // Grass / fern tufts: a few upright blades.
+    // Grass / fern tufts: a few upright blades that bend in the breeze.
     g.strokeStyle = tint;
     g.lineWidth = 1.4;
     g.beginPath();
     for (let i = 0; i < 4; i++) {
       const bx = jx - 4 + i * 2.6;
       g.moveTo(bx, jy + 4);
-      g.lineTo(bx + (i % 2 ? 1.5 : -1.5), jy - 3);
+      g.lineTo(bx + (i % 2 ? 1.5 : -1.5) + sway, jy - 3);
     }
     g.stroke();
   }
@@ -339,6 +342,34 @@ function paintTile(
     if (wet(x + 1, y)) g.fillRect(px + TILE - 3, py, 3, TILE);
     if (wet(x, y - 1)) g.fillRect(px, py, TILE, 3);
     if (wet(x, y + 1)) g.fillRect(px, py + TILE - 3, TILE, 3);
+  }
+
+  // Edge blending: where two different walkable ground types meet, dither a few
+  // specks of the neighbour's colour across the seam so biomes feather into one
+  // another instead of hard-cutting on the grid. (Skips water/walls — those have
+  // their own edges above.)
+  const groundFamily = (t: TileType | undefined): boolean =>
+    t === "grass" || t === "dirt" || t === "moss" || t === "ash" || t === "snow" ||
+    t === "bog" || t === "stone" || t === "cave" || t === "path";
+  if (groundFamily(tile)) {
+    const edges: [number, number, number, number][] = [
+      [-1, 0, px + 1, py], [1, 0, px + TILE - 4, py],
+      [0, -1, px, py + 1], [0, 1, px, py + TILE - 4],
+    ];
+    for (const [dx, dy, ex, ey] of edges) {
+      const nt = map.tiles[(y + dy) * wid + (x + dx)] as TileType | undefined;
+      if (!nt || nt === tile || !groundFamily(nt)) continue;
+      g.fillStyle = TILE_COLORS[nt][0];
+      for (let i = 0; i < 4; i++) {
+        const a = hash(x * 7 + i + dx * 3, y * 5 + i + dy * 3);
+        const along = a * (TILE - 4);
+        const into = hash(x + i, y + i * 2) * 3;
+        g.globalAlpha = 0.35 + 0.35 * a;
+        if (dx === 0) g.fillRect(ex + along, ey + into, 3, 3);
+        else g.fillRect(ex + into, ey + along, 3, 3);
+      }
+    }
+    g.globalAlpha = 1;
   }
 
   // Faint grid for ground tiles (walls/mountain/water handle their own look).
@@ -697,7 +728,7 @@ export function drawWorld(
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
       paintTile(g, tile, px, py, x, y, now, map);
-      scatterVegetation(g, tile, px, py, x, y);
+      scatterVegetation(g, tile, px, py, x, y, now);
     }
   }
 
@@ -738,6 +769,11 @@ export function drawWorld(
     } else if (def.kind === "room_seal") {
       if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
     } else {
+      // A soft contact shadow under living things (and not under a slain, mid-
+      // respawn monster) so they sit on the ground and read against the terrain.
+      if ((def.kind === "npc" || def.kind === "critter" || (def.kind === "monster" && obj.available))) {
+        shadow(g, px + TILE / 2, py + TILE - 4, 9, 3.5);
+      }
       drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget, monsterAttack(def, obj, state, content, now));
     }
     if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
@@ -773,9 +809,21 @@ export function drawWorld(
     );
   }
 
+  // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;
+  //     a vignette frames every view. Skipped inside sealed instances (homes /
+  //     arenas), which keep their own controlled look.
+  const outdoor = !region;
+  const biome = outdoor ? biomeAt(Math.round(ppos.x), Math.round(ppos.y)) : "city";
+  if (outdoor) drawBiomeGrade(g, w, h, biome);
+
   // --- Time of day: a slow tint cycle (skipped indoors — a home has its own
   //     warm, even light, lit by its sconces and lamps rather than the sky).
   drawDaylight(g, w, h, lights, !!region);
+
+  // Weather sits on top of the day/night veil so snow and embers read at night;
+  // the vignette is the very last layer.
+  if (outdoor) drawWeather(g, w, h, now, biome);
+  drawVignette(g, w, h);
 }
 
 /** The player's "trophy" — their rarest/most-valuable item — for display cases. */
@@ -885,6 +933,130 @@ function drawDaylight(
     g.fillStyle = `rgba(214,120,50,${twilight.toFixed(3)})`;
     g.fillRect(0, 0, w, h);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Atmosphere: biome colour-grading, ambient weather/particles, and a vignette.
+// All screen-space and asset-free — layered over the painted world to give each
+// region its own mood.
+// ---------------------------------------------------------------------------
+
+type Biome = "spine" | "marrow" | "redrun" | "ashfen" | "heartmoor" | "greyoak" | "city" | "hills";
+
+/** Which region the player is standing in (drives grading + which weather runs). */
+function biomeAt(x: number, y: number): Biome {
+  for (const r of REGIONS) {
+    if (x >= r.nx && x < r.nx + r.w && y >= r.ny && y < r.ny + r.h) return r.key as Biome;
+  }
+  if (x >= CITY.x0 && x <= CITY.x1 && y >= CITY.y0 && y <= CITY.y1) return "city";
+  return "hills";
+}
+
+/** Cheap stable hash → [0,1), for stateless particle fields. */
+function frac(n: number): number { const v = Math.sin(n) * 43758.5453; return v - Math.floor(v); }
+
+/** A translucent wash that tints a whole region toward its character. */
+function drawBiomeGrade(g: CanvasRenderingContext2D, w: number, h: number, b: Biome): void {
+  const tint: Partial<Record<Biome, string>> = {
+    spine: "rgba(150,180,225,0.10)",     // cold blue light off the snow
+    marrow: "rgba(24,18,40,0.26)",        // deep cave gloom
+    redrun: "rgba(60,110,135,0.07)",      // cool river air
+    ashfen: "rgba(214,120,50,0.09)",      // warm geothermal haze
+    heartmoor: "rgba(44,72,56,0.12)",     // murky moor green
+    greyoak: "rgba(30,58,36,0.12)",       // deep forest shade
+  };
+  const t = tint[b];
+  if (!t) return;
+  g.fillStyle = t;
+  g.fillRect(0, 0, w, h);
+}
+
+/** Per-biome ambient weather/particles, animated by wall-clock `now`. */
+function drawWeather(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome): void {
+  switch (b) {
+    case "spine": { // drifting snow
+      g.fillStyle = "rgba(240,247,255,0.85)";
+      for (let i = 0; i < 80; i++) {
+        const sp = 16 + frac(i * 1.7) * 26;
+        const drift = Math.sin(now / 1400 + i) * 14;
+        const x = (frac(i * 12.9) * (w + 40) + drift) % (w + 40) - 20;
+        const y = ((frac(i * 7.1) * h + now * sp / 1000) % (h + 20)) - 10;
+        const s = 1 + frac(i * 3.3) * 1.8;
+        g.globalAlpha = 0.35 + 0.5 * frac(i * 5.5);
+        g.beginPath(); g.arc(x, y, s, 0, Math.PI * 2); g.fill();
+      }
+      g.globalAlpha = 1;
+      break;
+    }
+    case "ashfen": { // embers rising on the heat
+      for (let i = 0; i < 46; i++) {
+        const sp = 20 + frac(i * 2.3) * 30;
+        const sway = Math.sin(now / 700 + i * 2) * 10;
+        const x = (frac(i * 9.7) * w + sway + w) % w;
+        const y = h - ((now * sp / 1000 + frac(i * 4.2) * h) % (h + 16)) + 8;
+        const tw = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(now / 200 + i));
+        g.fillStyle = frac(i * 6.1) > 0.5 ? `rgba(255,150,60,${(0.5 * tw).toFixed(2)})` : `rgba(255,90,40,${(0.45 * tw).toFixed(2)})`;
+        g.beginPath(); g.arc(x, y, 1 + frac(i * 8.8) * 1.6, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "heartmoor": { // low mist banks drifting across
+      g.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 9; i++) {
+        const r = 60 + frac(i * 2.9) * 80;
+        const x = ((frac(i * 5.3) * (w + 300) + now * (6 + frac(i) * 6) / 1000)) % (w + 300) - 150;
+        const y = frac(i * 8.1) * h;
+        const grd = g.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, "rgba(170,190,180,0.05)");
+        grd.addColorStop(1, "rgba(170,190,180,0)");
+        g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      }
+      g.globalCompositeOperation = "source-over";
+      break;
+    }
+    case "greyoak": { // floating motes / fireflies among the trees
+      for (let i = 0; i < 34; i++) {
+        const x = (frac(i * 11.3) * w + Math.sin(now / 1800 + i) * 18 + w) % w;
+        const y = (frac(i * 6.7) * h + Math.cos(now / 2100 + i * 1.5) * 14 + h) % h;
+        const tw = 0.5 + 0.5 * Math.sin(now / 500 + i * 3);
+        g.fillStyle = `rgba(220,228,150,${(0.10 + 0.32 * tw).toFixed(2)})`;
+        g.beginPath(); g.arc(x, y, 1.4, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "marrow": { // faint cyan glow motes drifting up in the dark
+      for (let i = 0; i < 22; i++) {
+        const sp = 6 + frac(i * 3.1) * 10;
+        const x = (frac(i * 10.1) * w + Math.sin(now / 1600 + i) * 8 + w) % w;
+        const y = h - ((now * sp / 1000 + frac(i * 5.9) * h) % (h + 12));
+        const tw = 0.5 + 0.5 * Math.sin(now / 600 + i * 2);
+        g.fillStyle = `rgba(120,200,210,${(0.12 + 0.30 * tw).toFixed(2)})`;
+        g.beginPath(); g.arc(x, y, 1.3, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "redrun": { // sparse spray sparkle off the river
+      g.fillStyle = "rgba(210,235,245,0.5)";
+      for (let i = 0; i < 16; i++) {
+        const x = (frac(i * 13.7) * w + Math.sin(now / 1300 + i) * 10 + w) % w;
+        const y = (frac(i * 9.3) * h + Math.cos(now / 1500 + i) * 8 + h) % h;
+        g.globalAlpha = 0.2 + 0.5 * (0.5 + 0.5 * Math.sin(now / 350 + i * 4));
+        g.beginPath(); g.arc(x, y, 1, 0, Math.PI * 2); g.fill();
+      }
+      g.globalAlpha = 1;
+      break;
+    }
+    default: break; // city / hills: clear air
+  }
+}
+
+/** A soft darkened frame so the eye settles to the centre of the action. */
+function drawVignette(g: CanvasRenderingContext2D, w: number, h: number): void {
+  const grd = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.42, w / 2, h / 2, Math.max(w, h) * 0.72);
+  grd.addColorStop(0, "rgba(0,0,0,0)");
+  grd.addColorStop(1, "rgba(8,6,12,0.34)");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, w, h);
 }
 
 /** A farming patch: bare tilled soil, a growing sprout, or a ripe crop. */
@@ -1863,10 +2035,20 @@ function drawFurnace(g: CanvasRenderingContext2D, cx: number, cy: number, now: n
 
 /** A soft contact shadow under a sprite. */
 function shadow(g: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number): void {
-  g.fillStyle = "rgba(0,0,0,0.3)";
+  // A soft, feathered contact shadow (radial falloff) so things sit in the
+  // world instead of floating on a hard grey disc.
+  g.save();
+  g.translate(cx, cy);
+  g.scale(1, ry / rx);
+  const grd = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+  grd.addColorStop(0, "rgba(0,0,0,0.34)");
+  grd.addColorStop(0.7, "rgba(0,0,0,0.22)");
+  grd.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grd;
   g.beginPath();
-  g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  g.arc(0, 0, rx, 0, Math.PI * 2);
   g.fill();
+  g.restore();
 }
 
 // --- Trees: a shared stump when felled; species-specific canopy when standing ---
@@ -2629,6 +2811,7 @@ function drawPlayer(
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
+  shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain
   drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) });
 }
 
