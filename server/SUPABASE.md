@@ -98,6 +98,49 @@ Now your character loads from the cloud at sign-in and uploads as you play. Sign
 in on another device and the same character is there. (Unlike the hiscores
 board, saves are private — the RLS rules above let you read only your own.)
 
+## Ghosts — third table (run this too)
+
+So you can see other signed-in players moving around the world as translucent
+"ghosts". Each player publishes a lightweight presence (position + look + zone);
+everyone reads the recent ones for their area. Same SQL editor, paste and **Run**:
+
+```sql
+-- One row per signed-in user: where they are right now.
+create table if not exists public.world_presence (
+  user_id    uuid primary key references auth.users (id) on delete cascade,
+  name       text,
+  x          double precision not null default 0,
+  y          double precision not null default 0,
+  zone       text not null default 'overworld',
+  look       jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.world_presence enable row level security;
+
+-- Anyone signed in can SEE everyone's presence (that's the point of ghosts).
+drop policy if exists "world_presence_read" on public.world_presence;
+create policy "world_presence_read"
+  on public.world_presence for select
+  using (true);
+
+-- But you can only write/replace your own position.
+drop policy if exists "world_presence_insert_own" on public.world_presence;
+create policy "world_presence_insert_own"
+  on public.world_presence for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "world_presence_update_own" on public.world_presence;
+create policy "world_presence_update_own"
+  on public.world_presence for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+```
+
+That's the last table. Now when two signed-in players are in the same area,
+they'll see each other as faint figures with name labels. (Players inside their
+own house don't show to others — interiors are private instances.)
+
 ## How it works
 - **Read** is public: anyone can see the rankings, even before signing in.
 - **Write** is locked to the owner: the RLS rules mean a signed-in user can only

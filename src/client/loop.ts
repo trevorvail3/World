@@ -39,6 +39,7 @@ import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { audio } from "./audio.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
+import { currentGhosts, startPresence } from "./presence.ts";
 import { objectPos, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
@@ -306,6 +307,12 @@ export class Game {
 
   start(): void {
     this.hud.log("Welcome to The Knuckle Hills.");
+    // Publish our presence and watch for nearby ghosts (online players only).
+    startPresence(() => {
+      const p = this.bridge.state.player;
+      if (!p.alive) return null;
+      return { x: p.pos.x, y: p.pos.y, name: p.appearance.name, look: p.appearance };
+    });
     const frame = (now: number) => {
       requestAnimationFrame(frame); // schedule next first so one bad frame can't stop the loop
       this.update(now);
@@ -381,7 +388,7 @@ export class Game {
     this.g.setTransform(s, 0, 0, s, shx, shy);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
-      this.viewW, this.viewH,
+      this.viewW, this.viewH, currentGhosts(),
     );
     this.drawMarker(now);
     this.drawHighlights(now);

@@ -23,6 +23,7 @@ import type {
 import { objectPos } from "../core/worldCore.ts";
 import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
+import type { Ghost } from "./presence.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -697,6 +698,7 @@ export function drawWorld(
   now: number,
   viewW = canvas.width,
   viewH = canvas.height,
+  ghosts: Ghost[] = [],
 ): void {
   // Visible span in world pixels. Under a zoom transform this is the device size
   // over the zoom, so tile culling and the night veil cover exactly the view.
@@ -800,6 +802,16 @@ export function drawWorld(
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
   // whichever home the player is standing in (so a bare house still feels lived-in).
   if (region && region.y0 === INTERIOR_TOP) drawHomeDressing(g, region.x0, cam, now, lights);
+
+  // --- Other players (ghosts): translucent snapshots from the shared world,
+  //     drawn under the player and culled to the current view + instance. ---
+  for (const gh of ghosts) {
+    if (!inRegion(Math.round(gh.x), Math.round(gh.y))) continue;
+    const px = gh.x * TILE - cam.x;
+    const py = gh.y * TILE - cam.y;
+    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+    drawGhost(g, gh, cam, now);
+  }
 
   // --- Player ---
   if (state.player.alive) {
@@ -2813,6 +2825,18 @@ function drawPlayer(
   const cy = pos.y * TILE + TILE / 2 - cam.y;
   shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain
   drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) });
+}
+
+// --- Another player, rendered as a faint, idle apparition with a name label. ---
+function drawGhost(g: CanvasRenderingContext2D, gh: Ghost, cam: Camera, now: number): void {
+  const cx = gh.x * TILE + TILE / 2 - cam.x;
+  const cy = gh.y * TILE + TILE / 2 - cam.y;
+  shadow(g, cx, cy + TILE / 2 - 4, 8, 3);
+  g.save();
+  g.globalAlpha = 0.4; // translucent so it clearly reads as "not really here"
+  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: false });
+  g.restore();
+  label(g, gh.name, cx, cy - TILE / 2 - 2, "#a9d8e8"); // cool, spectral blue
 }
 
 /**
