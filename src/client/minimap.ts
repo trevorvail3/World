@@ -22,7 +22,8 @@ const MAP_CATS: { id: string; label: string; icon: string; kinds: ObjKind[]; on:
   { id: "brew", label: "Brewing", icon: "⚗️", kinds: ["cauldron"], on: true },
   { id: "craft", label: "Crafting", icon: "🪚", kinds: ["workbench", "crafting_table", "sawmill"], on: true },
   { id: "travel", label: "Waystone", icon: "🗺", kinds: ["waystone"], on: true },
-  { id: "shrine", label: "Shrine / Relic", icon: "✨", kinds: ["shrine", "relic", "portal"], on: true },
+  // Shrines, relics and sealed vaults are deliberately left off — they're
+  // discoveries you find by exploring, not pins on the map.
   { id: "people", label: "People", icon: "👤", kinds: ["npc"], on: true },
   { id: "bounty", label: "Bounty", icon: "🎯", kinds: ["bounty_board"], on: true },
   { id: "home", label: "Homestead", icon: "🏠", kinds: ["housing_plot"], on: true },
