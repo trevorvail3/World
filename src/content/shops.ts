@@ -140,6 +140,42 @@ export const shops: ShopDef[] = [
     ],
   },
   {
+    id: "shop_apothecary",
+    npc: "apothecary",
+    name: "Wenna's Apothecary",
+    greeting: "Herbs by the bunch, secondaries by the scoop, vials and flasks to hold them. Buy the makings and brew your way up Herblore.",
+    // The Herblore gold sink: the herbs, field secondaries and glassware that
+    // tinctures and elixirs need, sold for coin at ≈1.7× sell (pure drain, no
+    // arbitrage) and bundled. Pair with a cauldron and pour gold into Herblore.
+    stock: [
+      // --- Herbs (the heart of every brew) ---
+      { item: "herb_ashweed", price: 77, qty: 3 },        // sell 15
+      { item: "herb_thornroot", price: 143, qty: 3 },     // sell 28
+      { item: "herb_bloodberry", price: 230, qty: 3 },    // sell 45
+      { item: "herb_coldmoss", price: 357, qty: 3 },      // sell 70
+      { item: "herb_ironleaf", price: 536, qty: 3 },      // sell 105
+      { item: "herb_greybloom", price: 765, qty: 3 },     // sell 150
+      { item: "herb_spinethistle", price: 1071, qty: 3 }, // sell 210
+      { item: "herb_ruevine", price: 1479, qty: 3 },      // sell 290
+      { item: "herb_duskshade", price: 1360, qty: 2 },    // sell 400
+      { item: "herb_marrowflower", price: 1904, qty: 2 }, // sell 560
+      { item: "herb_hearthbloom", price: 2652, qty: 2 },  // sell 780
+      { item: "herb_orunroot", price: 8500, qty: 1 },     // sell 5000
+      // --- Field secondaries ---
+      { item: "forage_mushroom", price: 68, qty: 5 },     // sell 8
+      { item: "forage_thornberry", price: 128, qty: 5 },  // sell 15
+      { item: "greyoak_gall", price: 153, qty: 5 },       // sell 18
+      { item: "forage_deepmoss", price: 298, qty: 5 },    // sell 35
+      { item: "forage_hearthroot", price: 340, qty: 5 },  // sell 40
+      { item: "forage_ashbloom", price: 468, qty: 5 },    // sell 55
+      { item: "forage_ashroot", price: 850, qty: 5 },     // sell 100
+      { item: "forage_dawnspore", price: 816, qty: 3 },   // sell 160
+      // --- Glassware in bulk, so brewing for gold runs smoothly ---
+      { item: "glass_vial", price: 238, qty: 5 },         // sell 28
+      { item: "glass_flask", price: 765, qty: 5 },        // sell 90
+    ],
+  },
+  {
     id: "shop_capes",
     npc: "cape_master",
     name: "The Hall of Capes",

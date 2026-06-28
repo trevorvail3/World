@@ -138,6 +138,16 @@ export const objects: WorldObjectDef[] = [
   { id: "cart_produce", kind: "cart", x: 64, y: 47, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
   { id: "cart_cloth", kind: "cart", x: 70, y: 47, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
   { id: "cart_spice", kind: "cart", x: 67, y: 45, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },
+  // --- The Apothecary: herbs and field-gathered secondaries by the spice cart.
+  //     Buy the makings of a brew for coin and pour gold into Herblore (a sink
+  //     to match the Builders' Yard for Construction). ---
+  {
+    id: "apothecary", kind: "npc", x: 66, y: 44, name: "Wenna, Apothecary",
+    lines: [
+      "Herbs dried and roots ground — every leaf a tincture wants, and the field-stuff to bind them.",
+      "Brewing? Buy the makings here and save the long forage. Coin in, Herblore out — that's the trade.",
+    ],
+  },
   // --- Skritt keeps his exchange on the south-east trade row ---
   {
     id: "shop_trader", kind: "npc", x: 64, y: 63, name: "Skritt",
