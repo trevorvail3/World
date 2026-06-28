@@ -120,9 +120,9 @@ export class Hud {
   // Records tab: one container, accordion open-state, and a render signature so
   // it only rebuilds when something actually changes (never every frame).
   private recordsEl?: HTMLElement;
-  // Accordion open-state; everything starts collapsed so the tab opens as a
-  // tidy list of section headers the player expands as they like.
-  private openSecs = new Set<string>();
+  // Accordion open-state; everything but the Mastery dashboard starts collapsed
+  // so the tab opens as a tidy list of section headers the player expands.
+  private openSecs = new Set<string>(["mastery"]);
   private recordsSig = "";
   private skillDetail!: SkillDetailModal;
   private lastState: WorldState | null = null;
@@ -856,11 +856,25 @@ export class Hud {
     const achTotal = this.content.achievements.length;
     const loreTotal = this.content.lore.length;
 
+    // Mastery: total level across every skill, and how many are at the cap (99).
+    // Reaching all-99 unlocks the Cape of Varath — the game's completion goal.
+    const skillIds = (Object.keys(player.skills) as SkillId[]);
+    const numSkills = skillIds.length;
+    const levels = skillIds.map((id) => player.skills[id]?.level ?? 1);
+    const totalLevel = levels.reduce((a, b) => a + b, 0);
+    const maxTotal = numSkills * 99;
+    const maxed = levels.filter((l) => l >= 99).length;
+    const capeOwned =
+      player.equipment.cape === "cape_max" ||
+      player.inventory.some((s) => s?.item === "cape_max") ||
+      (player.bank["cape_max"] ?? 0) > 0;
+
     // Rebuild only on a real change (counts, summoned pet, or which sections are
     // open). This is what stops the per-frame churn that froze the tab.
     const sig = [
       compOwned, player.equipment.companion ?? "",
       player.achievements.length, achTotal, player.lore.length, loreTotal,
+      totalLevel, maxed, capeOwned ? "cape" : "",
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -921,13 +935,35 @@ export class Hud {
         ).join(""));
     }).join("");
 
-    // The three top-level sections.
+    // Mastery: the completion dashboard — total level, a per-skill grid, and the
+    // Cape of Varath progress bar.
+    const capePct = numSkills > 0 ? Math.round((maxed / numSkills) * 100) : 0;
+    const capeLine = capeOwned
+      ? `<div class="mastery-cape done">${iconize("🏆")} Cape of Varath earned — the mark of a true master of Varath.</div>`
+      : maxed >= numSkills
+        ? `<div class="mastery-cape ready">${iconize("✨")} Every skill maxed! Buy the Cape of Varath from the Cape Master in Ironvale for 1,000,000g.</div>`
+        : `<div class="mastery-cape">${iconize("🧥")} Master every skill to earn the <b>Cape of Varath</b>. ${numSkills - maxed} to go.</div>`;
+    const grid = skillIds.map((id) => {
+      const def = this.content.skills[id];
+      const lvl = player.skills[id]?.level ?? 1;
+      const max = lvl >= 99;
+      return `<div class="mastery-cell${max ? " max" : ""}" title="${escapeHtml(def.name)} ${lvl}"><span class="mastery-ic">${iconize(def.icon)}</span><span class="mastery-lvl">${lvl}</span></div>`;
+    }).join("");
+    const masteryBody =
+      `<div class="mastery-top"><div class="mastery-stat"><span class="mastery-big">${totalLevel.toLocaleString()}</span><span class="mastery-sub">/ ${maxTotal.toLocaleString()} total level</span></div>` +
+      `<div class="mastery-stat"><span class="mastery-big">${maxed}</span><span class="mastery-sub">/ ${numSkills} skills at 99</span></div></div>` +
+      `<div class="mastery-bar"><div class="mastery-fill" style="width:${capePct}%"></div></div>` +
+      capeLine +
+      `<div class="mastery-grid">${grid}</div>`;
+
+    // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {
       const open = this.openSecs.has(key);
       return `<div class="rec-sec ${open ? "open" : ""}"><button type="button" class="rec-head" data-toggle="${key}">${chev(open)}<span class="rec-secname">${title}</span><span class="rec-count">${count}</span></button>${open ? `<div class="rec-body">${body}</div>` : ""}</div>`;
     };
 
     this.recordsEl.innerHTML =
+      section("mastery", "Mastery", `${maxed}/${numSkills}`, masteryBody) +
       section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
       section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);
