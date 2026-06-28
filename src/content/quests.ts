@@ -68,7 +68,7 @@ export const quests: QuestDef[] = [
       "I'm Calder. I carry word for the Heartmoor, and we pay well for warm stone. Bring me one and we'll talk like honest people.",
     ],
     steps: [
-      { type: "gather", item: "shard_of_orun", count: 1, text: "Take a Shard of Orun from the moor's beasts — they carry one, rarely, and always by the time you've cleared a few hundred" },
+      { type: "gather", item: "shard_of_orun", count: 1, text: "Take a Shard of Orun from the moor's beasts — they carry one, rarely, and always by the time you've cleared a few hundred", from: "moor_rat" },
       {
         type: "choice",
         npc: "calder",
@@ -228,7 +228,7 @@ export const quests: QuestDef[] = [
     ],
     steps: [
       { type: "talk", npc: "sera", text: "Bring the worn coin to Sera" },
-      { type: "gather", item: "worn_coin", count: 3, text: "Gather 3 more worn coins from the moor rats" },
+      { type: "gather", item: "worn_coin", count: 3, text: "Gather 3 more worn coins from the moor rats", from: "moor_rat" },
       { type: "talk", npc: "ashfen_tender", text: "Investigate the warm workings the cult tends" },
       {
         type: "choice",

@@ -1555,7 +1555,7 @@ export interface QuestChoice {
 export type QuestObjective =
   | { type: "talk"; npc: string; text: string }
   | { type: "kill"; monster: string; count: number; text: string }
-  | { type: "gather"; item: ItemId; count: number; text: string }
+  | { type: "gather"; item: ItemId; count: number; text: string; from?: string }
   | { type: "deliver"; npc: string; item: ItemId; count: number; text: string }
   | { type: "reach"; skill: SkillId; level: number; text: string }
   | { type: "choice"; npc: string; text: string; prompt: string; options: QuestChoice[] }

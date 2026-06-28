@@ -1076,12 +1076,12 @@ export class Game {
       const st = player.quests[activeId];
       const step = def && st ? def.steps[st.step] : undefined;
       if (step) {
-        const s = step as { type: string; npc?: string; monster?: string; item?: string };
+        const s = step as { type: string; npc?: string; monster?: string; item?: string; from?: string };
         if ((s.type === "talk" || s.type === "deliver" || s.type === "choice") && s.npc) {
           return this.objTile(s.npc);
         }
         if (s.type === "kill" && s.monster) return this.nearestMonster(s.monster);
-        if (s.type === "gather" && s.item) return this.gatherTarget(s.item);
+        if (s.type === "gather" && s.item) return this.gatherTarget(s.item, s.from);
         return null; // "reach a skill level" has nowhere to point
       }
     }
@@ -1113,8 +1113,9 @@ export class Game {
     return found;
   }
 
-  /** Where to get a gathered/made item: a resource node, a station, or (last) a monster. */
-  private gatherTarget(item: string): { x: number; y: number } | null {
+  /** Where to get a gathered/made item: a named source creature, a resource
+   *  node, a station, or (last) any creature that drops it. */
+  private gatherTarget(item: string, from?: string): { x: number; y: number } | null {
     const { state, content } = this.bridge;
     const p = state.player.pos;
     const nearestOf = (pred: (o: typeof content.objects[number]) => boolean): { x: number; y: number } | null => {
@@ -1127,6 +1128,12 @@ export class Game {
       }
       return found;
     };
+    // 0) If the quest names the source creature (e.g. worn coins → moor rats),
+    //    point at the nearest one — the item itself may drop from many beasts.
+    if (from) {
+      const named = this.nearestMonster(from);
+      if (named) return named;
+    }
     // 1) A resource node that yields the item directly (mine/chop/fish/snare).
     const node = nearestOf((o) => {
       if (!o.resource) return false;
