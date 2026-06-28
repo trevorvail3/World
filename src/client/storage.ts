@@ -47,6 +47,10 @@ export function listAccounts(): string[] {
           if (p?.appearance?.name && typeof p.appearance.name === "string") name = p.appearance.name;
         } catch { /* keep default */ }
         localStorage.setItem(saveKey(name), legacy);
+        // Move, don't copy: a lingering legacy blob would be re-imported on every
+        // reload (resurrecting the character even after a reset), so this is a
+        // genuine one-time migration.
+        localStorage.removeItem(LEGACY_KEY);
         writeIndex([name]);
         return [name];
       }
@@ -98,6 +102,10 @@ export function clearSave(): void {
   try {
     localStorage.removeItem(saveKey(current));
     writeIndex(readIndex().filter((n) => n !== current));
+    // Also clear any pre-accounts save. If it survives, listAccounts() re-imports
+    // it on the next reload and the wiped character comes straight back — so a
+    // reset could never actually start over.
+    localStorage.removeItem(LEGACY_KEY);
   } catch {
     /* nothing we can do; ignore */
   }
