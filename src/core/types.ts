@@ -610,6 +610,12 @@ export interface ItemDef {
   sell?: number;
   /** Food only: hit points restored when eaten. */
   heals?: number;
+  /**
+   * OSRS-style stacking: most items are individual (one per inventory slot);
+   * only a few — ammo, currency-like tokens — stack. Undefined ⇒ not stackable.
+   * (Ammo, `slot: "ammo"`, is treated as stackable automatically.)
+   */
+  stackable?: boolean;
 
   // --- Gear ---
   /**
@@ -1128,11 +1134,26 @@ export interface Player {
 // The whole world state (everything the core owns and the client renders).
 // ---------------------------------------------------------------------------
 
+/** A pile of loot lying on the ground, dropped by a kill until picked up. */
+export interface GroundItem {
+  id: number;
+  item: ItemId;
+  qty: number;
+  x: number;
+  y: number;
+  /** Monotonic ctx.now deadline after which it vanishes. */
+  despawnAt: number;
+}
+
 export interface WorldState {
   map: WorldMap;
   player: Player;
   /** Live state for every world object, keyed by object id. */
   objects: Record<string, WorldObjectState>;
+  /** Loot on the floor (kill drops), awaiting pickup. Transient; not saved. */
+  ground: GroundItem[];
+  /** Incrementing id for ground piles. */
+  groundSeq: number;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the
@@ -1314,6 +1335,13 @@ export interface BuildRoomIntent {
   sealId: string;
 }
 
+/** "Pick up the loot lying on this tile" (honoured when the player is on/next to it). */
+export interface PickupIntent {
+  type: "PICKUP";
+  x: number;
+  y: number;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1339,7 +1367,8 @@ export type Intent =
   | BuildFurnitureIntent
   | RemoveFurnitureIntent
   | UseFurnitureIntent
-  | BuildRoomIntent;
+  | BuildRoomIntent
+  | PickupIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.

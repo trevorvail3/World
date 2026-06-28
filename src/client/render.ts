@@ -395,6 +395,46 @@ export interface Camera {
   y: number;
 }
 
+/** A small glowing loot pile on the floor — a kill's spoils, waiting to be taken. */
+function drawGroundItem(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+  qty: number,
+): void {
+  const pulse = 0.5 + 0.5 * Math.sin(now / 380);
+  g.save();
+  // Soft warm glow so loot reads against the ground.
+  const grad = g.createRadialGradient(cx, cy, 0, cx, cy, 13);
+  grad.addColorStop(0, `rgba(242,207,107,${0.22 + 0.16 * pulse})`);
+  grad.addColorStop(1, "rgba(242,207,107,0)");
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(cx, cy, 13, 0, Math.PI * 2);
+  g.fill();
+  // A little drawstring sack.
+  g.fillStyle = "#6e4f2c";
+  g.beginPath();
+  g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#8a6a3a";
+  g.fillRect(cx - 3.5, cy - 4, 7, 3);
+  g.strokeStyle = "rgba(0,0,0,0.45)";
+  g.lineWidth = 1;
+  g.beginPath();
+  g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
+  g.stroke();
+  if (qty > 1) {
+    g.fillStyle = "#f2cf6b";
+    g.font = "bold 10px 'Cinzel', serif";
+    g.textAlign = "center";
+    g.fillText(String(qty), cx, cy + 16);
+    g.textAlign = "left";
+  }
+  g.restore();
+}
+
 export function drawWorld(
   g: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -478,6 +518,15 @@ export function drawWorld(
       const text = lvl !== undefined ? `${def.name} (lvl ${lvl})` : def.name;
       label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
     }
+  }
+
+  // --- Loot on the floor (kill drops awaiting pickup) ---
+  for (const gi of state.ground) {
+    if (!inRegion(gi.x, gi.y)) continue;
+    const px = gi.x * TILE - cam.x;
+    const py = gi.y * TILE - cam.y;
+    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+    drawGroundItem(g, px + TILE / 2, py + TILE / 2, now, gi.qty);
   }
 
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for

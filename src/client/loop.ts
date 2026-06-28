@@ -241,6 +241,8 @@ export class Game {
   private longTimer: number | null = null;
   private marker: Marker | null = null;
   private tapFlash: TapFlash | null = null;
+  /** A loot tile the player is walking toward to pick up, polled each frame. */
+  private pickupTarget: Vec2 | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -353,6 +355,7 @@ export class Game {
     const events = this.bridge.tick(now);
     this.handleEvents(events, now);
     this.guide.update(this.bridge.state);
+    this.checkPickup();
 
     // 2) Camera follows the player.
     this.followCamera();
@@ -1278,7 +1281,11 @@ export class Game {
   /** A plain tap: do the obvious thing for whatever was under the finger. */
   private defaultAction(tile: Vec2, sx: number, sy: number): void {
     const obj = this.objectAt(tile);
-    if (obj) {
+    const st = obj ? this.bridge.state.objects[obj.id] : undefined;
+    // A felled monster's body lingers on its tile while it respawns; don't try to
+    // re-attack it — let loot there be picked up instead.
+    const deadMonster = obj?.kind === "monster" && !!st && !st.available;
+    if (obj && !deadMonster) {
       // A shopkeeper offers a choice — Talk or Shop — rather than one or the other.
       if (obj.kind === "npc" && this.isShopkeeper(obj.id)) {
         this.shopkeeperMenu(obj, sx, sy);
@@ -1287,7 +1294,44 @@ export class Game {
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
+    if (this.groundAt(tile)) { this.pickupAt(tile); return; }
     this.walkTo(tile);
+  }
+
+  /** Is there loot on this tile? */
+  private groundAt(tile: Vec2): boolean {
+    return this.bridge.state.ground.some((g) => g.x === tile.x && g.y === tile.y);
+  }
+
+  /** Walk to the loot tile (if needed) and pick it up on arrival. */
+  private pickupAt(tile: Vec2): void {
+    const player = this.bridge.state.player;
+    const near =
+      Math.max(Math.abs(Math.round(player.pos.x) - tile.x), Math.abs(Math.round(player.pos.y) - tile.y)) <= 1;
+    if (near) {
+      this.dispatch({ type: "PICKUP", x: tile.x, y: tile.y });
+      this.pickupTarget = null;
+      return;
+    }
+    const { path, reachable } = pathToAdjacent(this.bridge.walkable, player.pos, tile);
+    if (!reachable) { this.hud.log("You can't reach that."); return; }
+    this.setMarker(tile);
+    this.pickupTarget = { x: tile.x, y: tile.y };
+    if (path.length) this.dispatch({ type: "MOVE", path });
+  }
+
+  /** Each frame: if we're walking to loot and have arrived, grab it. */
+  private checkPickup(): void {
+    const t = this.pickupTarget;
+    if (!t) return;
+    const p = this.bridge.state.player;
+    const near = Math.max(Math.abs(Math.round(p.pos.x) - t.x), Math.abs(Math.round(p.pos.y) - t.y)) <= 1;
+    if (near) {
+      this.dispatch({ type: "PICKUP", x: t.x, y: t.y });
+      this.pickupTarget = null;
+    } else if (p.path.length === 0) {
+      this.pickupTarget = null; // stopped short — give up
+    }
   }
 
   private openMenu(screenX: number, screenY: number, tile: Vec2): void {
@@ -1331,6 +1375,16 @@ export class Game {
           onSelect: () => this.walkTo(tile),
         });
       }
+    }
+
+    // Loot on the tile is always grabbable, listed first (even under a creature).
+    const loot = this.bridge.state.ground.filter((g) => g.x === tile.x && g.y === tile.y);
+    if (loot.length) {
+      const first = this.bridge.content.items[loot[0]!.item].name;
+      const target = loot.length > 1
+        ? `${first} & more`
+        : loot[0]!.qty > 1 ? `${loot[0]!.qty}× ${first}` : first;
+      items.unshift({ label: "Pick up", target, tone: "action", onSelect: () => this.pickupAt(tile) });
     }
 
     this.menu.show(screenX, screenY, title, items, description);

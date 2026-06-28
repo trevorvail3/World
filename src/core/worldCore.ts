@@ -266,6 +266,7 @@ export function createWorld(
   spawn: Vec2,
   ctx: Ctx,
 ): WorldState {
+  activeContent = content;
   const objects: Record<string, WorldObjectState> = {};
   const creatureTiles = new Set<string>();
   for (const def of content.objects) {
@@ -345,8 +346,59 @@ export function createWorld(
     player,
     objects,
     creatureTiles,
+    ground: [],
+    groundSeq: 1,
     lastTick: ctx.now,
   };
+}
+
+/** How long loot lingers on the floor before vanishing (ms). */
+const GROUND_TTL = 90_000;
+
+/** Drop a pile of loot on the ground at a tile (a kill's spoils). */
+function dropToGround(
+  state: WorldState,
+  item: ItemId,
+  qty: number,
+  x: number,
+  y: number,
+  ctx: Ctx,
+): void {
+  state.ground.push({ id: state.groundSeq++, item, qty, x, y, despawnAt: ctx.now + GROUND_TTL });
+}
+
+/**
+ * Pick up the loot on a tile — honoured only when the player is standing on it
+ * or right beside it (the client walks them over first). Takes as much as the
+ * pack can hold; the rest stays on the floor.
+ */
+function pickupGround(
+  state: WorldState,
+  content: Content,
+  x: number,
+  y: number,
+  events: WorldEvent[],
+): void {
+  const player = state.player;
+  const dist = Math.max(Math.abs(Math.round(player.pos.x) - x), Math.abs(Math.round(player.pos.y) - y));
+  if (dist > 1) return; // not close enough yet
+  const here = state.ground.filter((g) => g.x === x && g.y === y);
+  if (here.length === 0) return;
+  let anyFull = false;
+  for (const g of here) {
+    const hasEmpty = player.inventory.some((s) => s === null);
+    const cap = isStackable(g.item)
+      ? (player.inventory.some((s) => s?.item === g.item) || hasEmpty ? g.qty : 0)
+      : player.inventory.filter((s) => s === null).length;
+    const take = Math.min(g.qty, cap);
+    if (take <= 0) { anyFull = true; continue; }
+    addItem(player, g.item, take, events);
+    g.qty -= take;
+    const name = content.items[g.item].name;
+    events.push({ type: "LOG", message: `You pick up ${take > 1 ? `${take}× ` : ""}${name}.` });
+  }
+  state.ground = state.ground.filter((g) => g.qty > 0); // drop empty piles
+  if (anyFull) events.push({ type: "INVENTORY_FULL" });
 }
 
 // ---------------------------------------------------------------------------
@@ -521,26 +573,59 @@ function grantXp(
 }
 
 /** Add an item to the inventory (items stack by id). Returns success. */
+/**
+ * The active content, cached at each core entry point (createWorld / applyIntent
+ * / tick). Content is static, deterministic data — not time or randomness — so a
+ * cached reference doesn't compromise the pure core; it just lets the inventory
+ * helpers look up an item's stackability without threading `content` through
+ * every caller.
+ */
+let activeContent: Content | null = null;
+
+/** OSRS rules: items are individual unless flagged stackable (ammo always is). */
+function isStackable(item: ItemId): boolean {
+  const d = activeContent?.items[item];
+  return !!d && (d.stackable === true || d.slot === "ammo");
+}
+
+/**
+ * Add `qty` of an item to the pack. Stackable items pile into one slot;
+ * everything else takes one slot per unit (OSRS-style), filling as many empty
+ * slots as it can and reporting a full pack if it can't place them all.
+ */
 function addItem(
   player: Player,
   item: ItemId,
   qty: number,
   events: WorldEvent[],
 ): boolean {
-  const existing = player.inventory.find((slot) => slot?.item === item);
-  if (existing) {
-    existing.qty += qty;
+  if (isStackable(item)) {
+    const existing = player.inventory.find((slot) => slot?.item === item);
+    if (existing) {
+      existing.qty += qty;
+      events.push({ type: "ITEM_GAINED", item, qty });
+      return true;
+    }
+    const emptyIndex = player.inventory.findIndex((slot) => slot === null);
+    if (emptyIndex === -1) {
+      events.push({ type: "INVENTORY_FULL" });
+      return false;
+    }
+    player.inventory[emptyIndex] = { item, qty };
     events.push({ type: "ITEM_GAINED", item, qty });
     return true;
   }
-  const emptyIndex = player.inventory.findIndex((slot) => slot === null);
-  if (emptyIndex === -1) {
-    events.push({ type: "INVENTORY_FULL" });
-    return false;
+  // Non-stackable: one slot per unit.
+  let placed = 0;
+  for (let n = 0; n < qty; n++) {
+    const emptyIndex = player.inventory.findIndex((slot) => slot === null);
+    if (emptyIndex === -1) break;
+    player.inventory[emptyIndex] = { item, qty: 1 };
+    placed++;
   }
-  player.inventory[emptyIndex] = { item, qty };
-  events.push({ type: "ITEM_GAINED", item, qty });
-  return true;
+  if (placed > 0) events.push({ type: "ITEM_GAINED", item, qty: placed });
+  if (placed < qty) events.push({ type: "INVENTORY_FULL" });
+  return placed > 0;
 }
 
 function clearActivity(player: Player): void {
@@ -554,7 +639,10 @@ function hasItem(player: Player, item: ItemId): boolean {
 
 /** Is there room in the pack for this item (a matching stack or an empty slot)? */
 function canAddItem(player: Player, item: ItemId): boolean {
-  return player.inventory.some((slot) => slot === null || slot.item === item);
+  if (isStackable(item)) {
+    return player.inventory.some((slot) => slot === null || slot.item === item);
+  }
+  return player.inventory.some((slot) => slot === null);
 }
 
 /** Buy one listing (its whole bundle) from a shop — needs gold and pack room. */
@@ -682,6 +770,7 @@ export function applyIntent(
   intent: Intent,
   ctx: Ctx,
 ): WorldEvent[] {
+  activeContent = content;
   const events: WorldEvent[] = [];
   const { player } = state;
   if (!player.alive) return events; // dead players can't act until they respawn
@@ -716,6 +805,10 @@ export function applyIntent(
     }
     case "EAT": {
       eatSlot(player, content, intent.slot, ctx, events);
+      break;
+    }
+    case "PICKUP": {
+      pickupGround(state, content, intent.x, intent.y, events);
       break;
     }
     case "DEPOSIT": {
@@ -1899,10 +1992,16 @@ export function tick(
   content: Content,
   ctx: Ctx,
 ): WorldEvent[] {
+  activeContent = content;
   const events: WorldEvent[] = [];
   // Clamp dt so a backgrounded tab doesn't teleport everything at once.
   const dt = Math.min(Math.max(ctx.now - state.lastTick, 0), 250);
   state.lastTick = ctx.now;
+
+  // Loot left on the floor too long fades away.
+  if (state.ground.length) {
+    state.ground = state.ground.filter((g) => g.despawnAt > ctx.now);
+  }
 
   const { player } = state;
 
@@ -2978,13 +3077,16 @@ function playerSwing(
     obj.nextAttackAt = 0;
     // Combat XP is granted per hit (see above), OSRS-style — not on the kill.
     player.killsSinceShard += 1;
-    rollDrops(player, stats, ctx, events); // resets killsSinceShard if the shard drops
+    // Loot falls to the floor where the creature stood — the player walks over
+    // and picks it up (OSRS-style), it isn't auto-collected.
+    const drop = objectPos(def, obj);
+    rollDrops(state, drop.x, drop.y, stats, ctx, events); // resets killsSinceShard if the shard drops
     // Pity guarantee: once the count crosses the threshold without a shard, the
     // next kill yields one and the count resets — a rare drop that can't wall you.
-    if (player.killsSinceShard >= SHARD_PITY && canAddItem(player, SHARD_ID)) {
-      addItem(player, SHARD_ID, 1, events);
+    if (player.killsSinceShard >= SHARD_PITY) {
+      dropToGround(state, SHARD_ID, 1, drop.x, drop.y, ctx);
       player.killsSinceShard = 0;
-      events.push({ type: "LOG", message: `Among the spoils: a warm black Shard of Orun.` });
+      events.push({ type: "LOG", message: `The ${def.name} drops a warm black Shard of Orun.` });
     }
     player.stats.monstersSlain += 1;
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
@@ -3074,9 +3176,11 @@ function monsterSwing(
   }
 }
 
-/** Roll a monster's loot table; each drop is an independent chance. */
+/** Roll a monster's loot table; each drop is an independent chance, to the floor. */
 function rollDrops(
-  player: Player,
+  state: WorldState,
+  x: number,
+  y: number,
   stats: MonsterStats,
   ctx: Ctx,
   events: WorldEvent[],
@@ -3086,12 +3190,12 @@ function rollDrops(
     const min = drop.min ?? 1;
     const max = drop.max ?? min;
     const qty = min + Math.floor(ctx.rng() * (max - min + 1));
-    addItem(player, drop.item, qty, events);
+    dropToGround(state, drop.item, qty, x, y, ctx);
     if (drop.item === "shard_of_orun") {
-      player.killsSinceShard = 0; // a natural drop re-arms the pity timer
+      state.player.killsSinceShard = 0; // a natural drop re-arms the pity timer
       events.push({
         type: "LOG",
-        message: "A Shard of Orun — warm and black. The hills give one up.",
+        message: "A Shard of Orun — warm and black — falls to the ground.",
       });
     }
   }
