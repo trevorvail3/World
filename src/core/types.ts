@@ -1092,6 +1092,8 @@ export interface Player {
   reputation: Record<FactionId, number>;
   /** Cumulative tallies for achievements. */
   stats: { goldEarned: number; monstersSlain: number };
+  /** Total active play time in milliseconds (accumulated each tick). */
+  playMs: number;
   /**
    * Kills since the last Shard of Orun. The shard is a rare drop, but a pity
    * timer guarantees one once this reaches SHARD_PITY — so the main story is

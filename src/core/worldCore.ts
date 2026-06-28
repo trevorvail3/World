@@ -320,6 +320,7 @@ export function createWorld(
     gold: STARTING_GOLD,
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
+    playMs: 0,
     killsSinceShard: 0,
     achievements: [],
     appearance: {
@@ -2067,6 +2068,10 @@ export function tick(
   // Clamp dt so a backgrounded tab doesn't teleport everything at once.
   const dt = Math.min(Math.max(ctx.now - state.lastTick, 0), 250);
   state.lastTick = ctx.now;
+  // Accumulate active play time. Because dt is clamped, a tab left in the
+  // background (where the loop pauses) never inflates the count — this only ever
+  // grows while the game is actually running in front of the player.
+  state.player.playMs += dt;
 
   // Loot left on the floor too long fades away.
   if (state.ground.length) {

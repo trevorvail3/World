@@ -115,6 +115,7 @@ export class Hud {
   private charTotal!: HTMLElement;
   private charMaxed!: HTMLElement;
   private charHp!: HTMLElement;
+  private charPlayed!: HTMLElement;
   private charCapeCount!: HTMLElement;
   private charCapeFill!: HTMLElement;
   private charCapeNote!: HTMLElement;
@@ -291,11 +292,13 @@ export class Hud {
           <div class="char-row"><span>Combat</span><span class="char-combat">1</span></div>
           <div class="char-row"><span>Total level</span><span class="char-total">6</span></div>
           <div class="char-row"><span>Skills at 99</span><span class="char-maxed">0 / 19</span></div>
-          <div class="char-row"><span>Hitpoints</span><span class="char-hp">10 / 10</span></div>`;
+          <div class="char-row"><span>Hitpoints</span><span class="char-hp">10 / 10</span></div>
+          <div class="char-row"><span>Played</span><span class="char-played">0m</span></div>`;
         this.charCombat = sheet.querySelector(".char-combat") as HTMLElement;
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
         this.charMaxed = sheet.querySelector(".char-maxed") as HTMLElement;
         this.charHp = sheet.querySelector(".char-hp") as HTMLElement;
+        this.charPlayed = sheet.querySelector(".char-played") as HTMLElement;
         p.appendChild(sheet);
         // Cape of Varath: the all-99 completion goal, shown as a progress bar.
         const cape = document.createElement("div");
@@ -777,6 +780,7 @@ export class Hud {
     this.charTotal.textContent = String(total);
     this.charMaxed.textContent = `${maxed} / ${ids.length}`;
     this.charHp.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    this.charPlayed.textContent = formatPlaytime(player.playMs);
     // Cape of Varath progress (the all-99 completion goal).
     const capeOwned =
       player.equipment.cape === "cape_max" ||
@@ -992,6 +996,16 @@ export class Hud {
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
       section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);
   }
+}
+
+/** "0m" / "47m" / "3h 12m" / "128h" — a compact, friendly playtime readout. */
+function formatPlaytime(ms: number): string {
+  const totalMin = Math.floor((ms || 0) / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}m`;
+  if (h >= 100) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 function panel(className: string): HTMLElement {
