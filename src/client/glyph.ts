@@ -55,6 +55,14 @@ const GLYPHS: Record<string, string> = {
   peak: line(`<path d="M3 19 L9 8 L13 14 L16 9 L21 19 Z"/><path d="M7.5 11 L9 9.5 L10.5 11"/>`),
   question: line(`<circle cx="12" cy="12" r="8"/><path d="M9.5 9.5 Q9.5 6.5 12 6.5 Q14.5 6.5 14.5 9 Q14.5 11 12 12 V14"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/>`),
   boot: line(`<path d="M9 4 L13 4 L13 13 L19 15 Q21 16 21 18 L21 20 L9 20 Z"/><path d="M9 17 H21"/><path d="M3 9 H6 M2 13 H5"/>`),
+  globe: line(`<circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.6" ry="8.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/>`),
+  cave: line(`<path d="M3 20 Q3 7 12 7 Q21 7 21 20"/><path d="M8.5 20 Q8.5 13 12 13 Q15.5 13 15.5 20"/>`),
+  mist: line(`<path d="M4 8 Q8 6 12 8 T20 8"/><path d="M4 12.5 Q8 10.5 12 12.5 T20 12.5"/><path d="M4 17 Q8 15 12 17 T20 17"/>`),
+  flame: line(`<path d="M12 3 Q15 8 13.5 12 Q17 11 15.5 16 Q14.5 20.5 12 20.5 Q9.5 20.5 8.5 16 Q7 11 10.5 12 Q9 8 12 3 Z"/>`),
+  wave: line(`<path d="M3 9 Q6 6 9 9 T15 9 T21 9"/><path d="M3 14 Q6 11 9 14 T15 14 T21 14"/><path d="M3 19 Q6 16 9 19 T15 19 T21 19"/>`),
+  house: line(`<path d="M4 11 L12 4 L20 11"/><path d="M6.5 10 V20 H17.5 V10"/><rect x="10.5" y="14.5" width="3" height="5.5"/>`),
+  castle: line(`<path d="M5 9 V20 H19 V9"/><path d="M5 9 V6 H7 V8 H9 V6 H11 V8 H13 V6 H15 V8 H17 V6 H19 V9"/><path d="M10 20 V15 H14 V20"/>`),
+  cape: line(`<path d="M8 4 Q12 7 16 4 L19 20 Q12 16 5 20 Z"/><path d="M8.5 4.5 Q12 9 15.5 4.5"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.
@@ -70,6 +78,10 @@ const EMOJI: Record<string, string> = {
   "🏔️": "peak", "⛰️": "peak", "✦": "sparkle", "🦜": "feather", "⚒️": "hammer",
   "🕯️": "candle", "🪶": "feather", "🗺": "map", "🗺️": "map", "🔒": "lock",
   "👟": "boot", "🥾": "boot", "📖": "scroll",
+  // Region / world icons (diaries, the World tab) + home achievements.
+  "🌍": "globe", "🌎": "globe", "🌏": "globe",
+  "🕳️": "cave", "🌫️": "mist", "🔥": "flame", "🌊": "wave",
+  "🏠": "house", "🏡": "house", "🏰": "castle", "🧥": "cape",
 };
 
 /** A named glyph's SVG (falls back to a neutral dot if unknown). */
