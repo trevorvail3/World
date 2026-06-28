@@ -275,9 +275,10 @@ body {
   padding: 7px 8px;
   box-sizing: border-box;
   /* Fixed footprint: the dock no longer resizes from tab to tab — content
-     that doesn't fit scrolls instead. */
-  width: 206px;
-  height: 320px;
+     that doesn't fit scrolls instead. Sized so the 4-wide inventory fills it
+     with no dead space (4×40 across, 7 rows tall). */
+  width: 188px;
+  height: 346px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -458,8 +459,8 @@ body {
 
 .inv-grid {
   display: grid;
-  grid-template-columns: repeat(4, 30px);
-  grid-auto-rows: 30px;
+  grid-template-columns: repeat(4, 40px);
+  grid-auto-rows: 40px;
   gap: 4px;
 }
 
@@ -1343,37 +1344,9 @@ button.inv-slot {
 }
 
 @media (max-width: 520px) {
-  /* Minimal vitals: it rides on top of the log box as a compact header row —
-     heart + HP and a coin + gold — instead of a panel in the top-left corner.
-     (placeVitals() reparents it into the log panel at this width.) */
-  .hud-vitals {
-    position: static;
-    min-width: 0;
-    padding: 0 0 6px;
-    margin-bottom: 6px;
-    background: none;
-    border: none;
-    box-shadow: none;
-    border-bottom: 1px solid rgba(74, 61, 44, 0.5);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .hud-vitals.low { box-shadow: none; }
-  .vitals-label {
-    margin: 0;
-    gap: 5px;
-    align-items: center;
-    font-size: 14px;
-    color: var(--ink);
-  }
-  .vitals-heart { display: inline-flex; }
-  .vitals-name { display: none; }
-  .hp-bar { display: none; }
-  .gold-line { margin: 0; font-size: 14px; }
-  .hud-vitals.low .vitals-heart .g-ico { animation: hp-pulse 0.9s ease-in-out infinite; }
-  /* Top-left column (buffs + quest tracker) reclaims the freed corner. */
-  .hud-topleft { top: 10px; }
+  /* HP stays a real bar tucked under the minimap (same as desktop) — just a
+     touch narrower to match the minimap. */
+  .hud-vitals { width: 110px; }
 
   /* Keep the bottom-left log and bottom-right dock from crowding each other. */
   .hud-log {
@@ -1383,8 +1356,8 @@ button.inv-slot {
     max-height: 124px;
   }
   .dock-body {
-    width: 190px;
-    height: 280px;
+    width: 178px;
+    height: 332px;
   }
   .dock-tab {
     width: 30px;
@@ -1392,8 +1365,8 @@ button.inv-slot {
     font-size: 15px;
   }
   .inv-grid {
-    grid-template-columns: repeat(4, 28px);
-    grid-auto-rows: 28px;
+    grid-template-columns: repeat(4, 38px);
+    grid-auto-rows: 38px;
   }
   .skill-grid {
     grid-template-columns: repeat(3, 37px);
@@ -2231,13 +2204,13 @@ button.inv-slot {
   100% { opacity: 0; }
 }
 
-/* ── Run/walk orb (top-right, under the HP readout) ─────────────────────────
-   No bar: the boot sits in a circular ring that depletes with energy (driven by
+/* ── Run/walk orb (top-right, tucked beside the minimap) ────────────────────
+   No bar: the boot sits in a square ring that depletes with energy (driven by
    the --e custom property, 0–100), and the orb tints by state. ───────────── */
 .run-control {
   position: absolute;
-  top: 188px; /* under the minimap (10+104) and HP panel (~64) */
-  right: 12px;
+  top: 12px; /* aligned with the minimap's top */
+  right: 118px; /* just left of the ~104px-wide minimap */
   z-index: 6; /* always above the minimap, never covered by it */
   pointer-events: auto;
 }
@@ -2293,10 +2266,10 @@ button.inv-slot {
      bottom margin — its body scrolls when the catalogue doesn't fit. */
   .hud-dock { bottom: 8px; right: 8px; }
   .dock-body {
-    height: 332px;
-    height: min(332px, calc(100vh - 168px));
-    height: min(332px, calc(100dvh - 168px));
-    width: 200px;
+    height: 346px;
+    height: min(346px, calc(100vh - 150px));
+    height: min(346px, calc(100dvh - 150px));
+    width: 188px;
   }
   .dock-tab { width: 30px; height: 30px; font-size: 15px; }
   .dock-tab .g-ico { width: 19px; height: 19px; }
@@ -2316,12 +2289,12 @@ button.inv-slot {
 /* A genuinely tiny window (very small phones in landscape): trim further so the
    dock and minimap still both fit without overlapping. */
 @media (max-height: 430px) {
-  /* Below 440px tall the minimap drops to 76px; pull the HP + run orb up too. */
+  /* Below 440px tall the minimap drops to 76px; pull the HP up + the run orb in. */
   .hud-vitals { top: 96px; }
-  .run-control { top: 162px; }
+  .run-control { right: 96px; }
   .dock-body {
-    height: min(300px, calc(100vh - 150px));
-    height: min(300px, calc(100dvh - 150px));
+    height: min(320px, calc(100vh - 130px));
+    height: min(320px, calc(100dvh - 130px));
   }
   .log-lines { max-height: min(72px, calc(100dvh - 200px)); }
 }
