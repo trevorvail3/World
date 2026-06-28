@@ -14,6 +14,7 @@
 
 const SFX_KEY = "varath.sfx";
 const AMBIENT_KEY = "varath.ambient";
+const VOLUME_KEY = "varath.volume";
 
 /** The named one-shot effects the game can ask for. */
 export type Sfx =
@@ -35,11 +36,22 @@ function writeBool(key: string, val: boolean): void {
   try { localStorage.setItem(key, val ? "1" : "0"); } catch { /* ignore */ }
 }
 
+function readNum(key: string, dflt: number): number {
+  try {
+    const v = parseFloat(localStorage.getItem(key) ?? "");
+    return Number.isFinite(v) ? v : dflt;
+  } catch {
+    return dflt;
+  }
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private sfxOn = readBool(SFX_KEY, true);
   private ambientOn = readBool(AMBIENT_KEY, true);
+  /** Master volume, 0..1 (the slider in Settings). */
+  private volume = Math.max(0, Math.min(1, readNum(VOLUME_KEY, 0.6)));
   private ambientNodes: AudioNode[] = [];
   private ambientGain: GainNode | null = null;
 
@@ -51,7 +63,7 @@ export class AudioEngine {
       if (!Ctor) return;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
+      this.master.gain.value = this.volume;
       // A gentle limiter on the master bus so layered SFX (a hit + its noise, an
       // overlapping fanfare, the ambient pad) never stack into harsh clipping.
       const comp = this.ctx.createDynamicsCompressor();
@@ -69,6 +81,16 @@ export class AudioEngine {
 
   sfxEnabled(): boolean { return this.sfxOn; }
   ambientEnabled(): boolean { return this.ambientOn; }
+  getVolume(): number { return this.volume; }
+
+  /** Set master volume (0..1), persist it, and apply it live. */
+  setVolume(v: number): void {
+    this.volume = Math.max(0, Math.min(1, v));
+    try { localStorage.setItem(VOLUME_KEY, String(this.volume)); } catch { /* ignore */ }
+    if (this.master && this.ctx) {
+      this.master.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.02);
+    }
+  }
 
   setSfx(on: boolean): void {
     this.sfxOn = on;

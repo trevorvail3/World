@@ -438,6 +438,34 @@ export class Hud {
         this.zoomReadout = zoomReadout;
         p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
 
+        // --- Volume ---
+        const volRow = document.createElement("div");
+        volRow.className = "settings-zoom";
+        const volLabel = document.createElement("div");
+        volLabel.className = "settings-label";
+        const volReadout = document.createElement("span");
+        volReadout.className = "settings-zoom-value";
+        volLabel.append("Volume ", volReadout);
+        const volSlider = document.createElement("input");
+        volSlider.type = "range";
+        volSlider.className = "settings-slider";
+        volSlider.min = "0";
+        volSlider.max = "1";
+        volSlider.step = "0.05";
+        volSlider.value = String(audio.getVolume());
+        const syncVol = (): void => {
+          volReadout.textContent = `${Math.round(Number(volSlider.value) * 100)}%`;
+        };
+        syncVol();
+        volSlider.addEventListener("input", () => {
+          audio.setVolume(Number(volSlider.value));
+          syncVol();
+        });
+        // A click at the new level on release, so you can hear the volume.
+        volSlider.addEventListener("change", () => audio.play("click"));
+        volRow.append(volLabel, volSlider);
+        p.appendChild(volRow);
+
         // --- Audio toggles ---
         const mkToggle = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLElement => {
           const row = document.createElement("label");
