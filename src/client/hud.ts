@@ -113,16 +113,20 @@ export class Hud {
 
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
+  private charMaxed!: HTMLElement;
   private charHp!: HTMLElement;
+  private charCapeCount!: HTMLElement;
+  private charCapeFill!: HTMLElement;
+  private charCapeNote!: HTMLElement;
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
   // Records tab: one container, accordion open-state, and a render signature so
   // it only rebuilds when something actually changes (never every frame).
   private recordsEl?: HTMLElement;
-  // Accordion open-state; everything but the Mastery dashboard starts collapsed
-  // so the tab opens as a tidy list of section headers the player expands.
-  private openSecs = new Set<string>(["mastery"]);
+  // Accordion open-state; everything starts collapsed so the tab opens as a
+  // tidy list of section headers the player expands as they like.
+  private openSecs = new Set<string>();
   private recordsSig = "";
   private skillDetail!: SkillDetailModal;
   private lastState: WorldState | null = null;
@@ -286,11 +290,24 @@ export class Hud {
           <div class="char-name">Wanderer of Ironvale</div>
           <div class="char-row"><span>Combat</span><span class="char-combat">1</span></div>
           <div class="char-row"><span>Total level</span><span class="char-total">6</span></div>
+          <div class="char-row"><span>Skills at 99</span><span class="char-maxed">0 / 19</span></div>
           <div class="char-row"><span>Hitpoints</span><span class="char-hp">10 / 10</span></div>`;
         this.charCombat = sheet.querySelector(".char-combat") as HTMLElement;
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
+        this.charMaxed = sheet.querySelector(".char-maxed") as HTMLElement;
         this.charHp = sheet.querySelector(".char-hp") as HTMLElement;
         p.appendChild(sheet);
+        // Cape of Varath: the all-99 completion goal, shown as a progress bar.
+        const cape = document.createElement("div");
+        cape.className = "char-cape";
+        cape.innerHTML = `
+          <div class="char-cape-top"><span>${iconize("🧥")} Cape of Varath</span><span class="char-cape-count"></span></div>
+          <div class="char-cape-bar"><div class="char-cape-fill"></div></div>
+          <div class="char-cape-note"></div>`;
+        this.charCapeCount = cape.querySelector(".char-cape-count") as HTMLElement;
+        this.charCapeFill = cape.querySelector(".char-cape-fill") as HTMLElement;
+        this.charCapeNote = cape.querySelector(".char-cape-note") as HTMLElement;
+        p.appendChild(cape);
 
         // Combat style — picks which combat skill your next kill trains.
         this.styleButtons.clear();
@@ -727,9 +744,24 @@ export class Hud {
         player.skills.vigour.level) /
         3,
     );
+    const maxed = ids.filter((id) => player.skills[id].level >= 99).length;
     this.charCombat.textContent = String(combat);
     this.charTotal.textContent = String(total);
+    this.charMaxed.textContent = `${maxed} / ${ids.length}`;
     this.charHp.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    // Cape of Varath progress (the all-99 completion goal).
+    const capeOwned =
+      player.equipment.cape === "cape_max" ||
+      player.inventory.some((s) => s?.item === "cape_max") ||
+      (player.bank["cape_max"] ?? 0) > 0;
+    this.charCapeCount.textContent = `${maxed} / ${ids.length}`;
+    this.charCapeFill.style.width = `${ids.length ? (maxed / ids.length) * 100 : 0}%`;
+    this.charCapeNote.textContent = capeOwned
+      ? "Earned — the mark of a true master of Varath."
+      : maxed >= ids.length
+        ? "All skills maxed! Buy it from the Cape Master in Ironvale (1,000,000g)."
+        : `Master every skill to earn it — ${ids.length - maxed} to go.`;
+    this.charCapeFill.parentElement!.parentElement!.classList.toggle("done", capeOwned);
     this.styleButtons.forEach((btn, id) => {
       btn.classList.toggle("active", id === player.combatStyle);
     });
@@ -856,25 +888,11 @@ export class Hud {
     const achTotal = this.content.achievements.length;
     const loreTotal = this.content.lore.length;
 
-    // Mastery: total level across every skill, and how many are at the cap (99).
-    // Reaching all-99 unlocks the Cape of Varath — the game's completion goal.
-    const skillIds = (Object.keys(player.skills) as SkillId[]);
-    const numSkills = skillIds.length;
-    const levels = skillIds.map((id) => player.skills[id]?.level ?? 1);
-    const totalLevel = levels.reduce((a, b) => a + b, 0);
-    const maxTotal = numSkills * 99;
-    const maxed = levels.filter((l) => l >= 99).length;
-    const capeOwned =
-      player.equipment.cape === "cape_max" ||
-      player.inventory.some((s) => s?.item === "cape_max") ||
-      (player.bank["cape_max"] ?? 0) > 0;
-
     // Rebuild only on a real change (counts, summoned pet, or which sections are
     // open). This is what stops the per-frame churn that froze the tab.
     const sig = [
       compOwned, player.equipment.companion ?? "",
       player.achievements.length, achTotal, player.lore.length, loreTotal,
-      totalLevel, maxed, capeOwned ? "cape" : "",
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -935,27 +953,6 @@ export class Hud {
         ).join(""));
     }).join("");
 
-    // Mastery: the completion dashboard — total level, a per-skill grid, and the
-    // Cape of Varath progress bar.
-    const capePct = numSkills > 0 ? Math.round((maxed / numSkills) * 100) : 0;
-    const capeLine = capeOwned
-      ? `<div class="mastery-cape done">${iconize("🏆")} Cape of Varath earned — the mark of a true master of Varath.</div>`
-      : maxed >= numSkills
-        ? `<div class="mastery-cape ready">${iconize("✨")} Every skill maxed! Buy the Cape of Varath from the Cape Master in Ironvale for 1,000,000g.</div>`
-        : `<div class="mastery-cape">${iconize("🧥")} Master every skill to earn the <b>Cape of Varath</b>. ${numSkills - maxed} to go.</div>`;
-    const grid = skillIds.map((id) => {
-      const def = this.content.skills[id];
-      const lvl = player.skills[id]?.level ?? 1;
-      const max = lvl >= 99;
-      return `<div class="mastery-cell${max ? " max" : ""}" title="${escapeHtml(def.name)} ${lvl}"><span class="mastery-ic">${iconize(def.icon)}</span><span class="mastery-lvl">${lvl}</span></div>`;
-    }).join("");
-    const masteryBody =
-      `<div class="mastery-top"><div class="mastery-stat"><span class="mastery-big">${totalLevel.toLocaleString()}</span><span class="mastery-sub">/ ${maxTotal.toLocaleString()} total level</span></div>` +
-      `<div class="mastery-stat"><span class="mastery-big">${maxed}</span><span class="mastery-sub">/ ${numSkills} skills at 99</span></div></div>` +
-      `<div class="mastery-bar"><div class="mastery-fill" style="width:${capePct}%"></div></div>` +
-      capeLine +
-      `<div class="mastery-grid">${grid}</div>`;
-
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {
       const open = this.openSecs.has(key);
@@ -963,7 +960,6 @@ export class Hud {
     };
 
     this.recordsEl.innerHTML =
-      section("mastery", "Mastery", `${maxed}/${numSkills}`, masteryBody) +
       section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
       section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);

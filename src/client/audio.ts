@@ -52,7 +52,16 @@ export class AudioEngine {
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.5;
-      this.master.connect(this.ctx.destination);
+      // A gentle limiter on the master bus so layered SFX (a hit + its noise, an
+      // overlapping fanfare, the ambient pad) never stack into harsh clipping.
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -14;
+      comp.knee.value = 22;
+      comp.ratio.value = 12;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.25;
+      this.master.connect(comp);
+      comp.connect(this.ctx.destination);
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
     if (this.ambientOn) this.startAmbient();
