@@ -942,6 +942,7 @@ body {
 .ctx-item.ctx-locked { opacity: 0.5; }
 .ctx-item.ctx-locked .ctx-verb { color: var(--ink-dim); }
 .ctx-item.ctx-locked .ctx-target { color: #9a6a4a; }
+.ctx-item.ctx-danger .ctx-verb { color: #e0654f; }
 
 .ctx-title {
   font-family: "Cinzel", serif;

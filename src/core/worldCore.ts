@@ -401,6 +401,29 @@ function pickupGround(
   if (anyFull) events.push({ type: "INVENTORY_FULL" });
 }
 
+/**
+ * Drop a whole inventory slot onto the player's tile. The pile lingers on the
+ * floor (same TTL as loot), so a misclick can be picked back up.
+ */
+function dropSlot(
+  state: WorldState,
+  content: Content,
+  slot: number,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const player = state.player;
+  const data = player.inventory[slot];
+  if (!data) return;
+  const x = Math.round(player.pos.x);
+  const y = Math.round(player.pos.y);
+  dropToGround(state, data.item, data.qty, x, y, ctx);
+  const name = content.items[data.item].name;
+  const qty = data.qty;
+  player.inventory[slot] = null;
+  events.push({ type: "LOG", message: `You drop ${qty > 1 ? `${qty}× ` : ""}${name}.` });
+}
+
 // ---------------------------------------------------------------------------
 // Small internal helpers (all pure).
 // ---------------------------------------------------------------------------
@@ -829,6 +852,10 @@ export function applyIntent(
     }
     case "PICKUP": {
       pickupGround(state, content, intent.x, intent.y, events);
+      break;
+    }
+    case "DROP": {
+      dropSlot(state, content, intent.slot, ctx, events);
       break;
     }
     case "DEPOSIT": {

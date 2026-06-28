@@ -534,6 +534,13 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "EQUIP", slot: index }),
       });
     }
+    const qty = data.qty > 1 ? ` (${data.qty})` : "";
+    items.push({
+      label: "Drop",
+      target: def.name + qty,
+      tone: "danger",
+      onSelect: () => this.dispatch({ type: "DROP", slot: index }),
+    });
     this.menu.show(screenX, screenY, def.name, items, this.gearDesc(data.item));
   }
 

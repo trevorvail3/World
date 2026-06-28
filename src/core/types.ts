@@ -1343,6 +1343,12 @@ export interface PickupIntent {
   y: number;
 }
 
+/** "Drop this inventory slot onto the floor at my feet" (the whole stack). */
+export interface DropIntent {
+  type: "DROP";
+  slot: number;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1369,7 +1375,8 @@ export type Intent =
   | RemoveFurnitureIntent
   | UseFurnitureIntent
   | BuildRoomIntent
-  | PickupIntent;
+  | PickupIntent
+  | DropIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
