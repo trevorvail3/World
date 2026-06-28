@@ -121,9 +121,13 @@ export class Hud {
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
-  private companionGrid?: HTMLElement;
-  private achieveList?: HTMLElement;
-  private loreList?: HTMLElement;
+  // Records tab: one container, accordion open-state, and a render signature so
+  // it only rebuilds when something actually changes (never every frame).
+  private recordsEl?: HTMLElement;
+  // Accordion open-state; everything starts collapsed so the tab opens as a
+  // tidy list of section headers the player expands as they like.
+  private openSecs = new Set<string>();
+  private recordsSig = "";
   private skillDetail!: SkillDetailModal;
   private lastState: WorldState | null = null;
   private equipCells = new Map<EquipSlot, HTMLElement>();
@@ -389,25 +393,23 @@ export class Hud {
         break;
       }
       case "records": {
-        // Companions, achievements and the lore Archive — all collections, one tab.
-        p.appendChild(subhead("Companions"));
-        const cgrid = document.createElement("div");
-        cgrid.className = "companion-grid";
-        this.companionGrid = cgrid;
-        p.appendChild(cgrid);
-        p.appendChild(note("Companions turn up while you train their skill. Tap one to summon it."));
-
-        p.appendChild(subhead("Achievements"));
-        const alist = document.createElement("div");
-        alist.className = "achieve-list";
-        this.achieveList = alist;
-        p.appendChild(alist);
-
-        p.appendChild(subhead("Archive"));
-        const llist = document.createElement("div");
-        llist.className = "lore-list";
-        this.loreList = llist;
-        p.appendChild(llist);
+        // Companions, achievements and the lore Archive — collections, each in
+        // its own collapsible accordion (and every sub-category collapsible too).
+        const wrap = document.createElement("div");
+        wrap.className = "records";
+        this.recordsEl = wrap;
+        // One delegated handler for the whole tab: header toggles + companion
+        // summon. (Rebuilding the inner HTML never re-binds anything.)
+        wrap.addEventListener("click", (e) => {
+          const t = (e.target as HTMLElement).closest("[data-toggle],[data-comp]") as HTMLElement | null;
+          if (!t) return;
+          if (t.dataset.comp) { this.summonCompanion(t.dataset.comp as ItemId); return; }
+          const key = t.dataset.toggle!;
+          if (this.openSecs.has(key)) this.openSecs.delete(key);
+          else this.openSecs.add(key);
+          if (this.lastState) this.renderRecords(this.lastState.player, true);
+        });
+        p.appendChild(wrap);
         break;
       }
       case "settings": {
@@ -467,6 +469,10 @@ export class Hud {
       this.collapsed = false;
     }
     this.applyTabState();
+    // Records renders on demand (not per-frame); refresh it the moment it opens.
+    if (this.activeTab === "records" && !this.collapsed && this.lastState) {
+      this.renderRecords(this.lastState.player, true);
+    }
   }
 
   /** Reflect the current active-tab / collapsed state in the DOM. */
@@ -717,11 +723,7 @@ export class Hud {
       }
     });
 
-    if (this.activeTab === "records") {
-      this.renderCompanions(player);
-      this.renderAchievements(player);
-      this.renderLore(player);
-    }
+    if (this.activeTab === "records") this.renderRecords(player);
 
     // Faction standings.
     for (const f of this.content.factions) {
@@ -856,34 +858,6 @@ export class Hud {
     this.questList.innerHTML = parts.join("");
   }
 
-  /** The companion collection: owned ones tappable to summon; rest locked. */
-  private renderCompanions(player: Player): void {
-    if (!this.companionGrid) return;
-    this.companionGrid.innerHTML = "";
-    const comps = (Object.keys(this.content.items) as ItemId[]).filter(
-      (id) => this.content.items[id].slot === "companion",
-    );
-    for (const id of comps) {
-      const def = this.content.items[id];
-      const owned =
-        player.equipment.companion === id ||
-        player.inventory.some((s) => s?.item === id) ||
-        (player.bank[id] ?? 0) > 0;
-      const active = player.equipment.companion === id;
-      const cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "comp-cell" + (owned ? " owned" : " locked") + (active ? " active" : "");
-      cell.title = owned
-        ? `${def.name}${active ? " (summoned)" : ""} — ${def.description}`
-        : "An undiscovered companion. Keep training.";
-      cell.innerHTML = `<span class="comp-ic">${owned ? itemIconSVG(def) : iconize("❓")}</span>${
-        active ? `<span class="comp-star">★</span>` : ""
-      }`;
-      if (owned) cell.addEventListener("click", () => this.summonCompanion(id));
-      this.companionGrid.appendChild(cell);
-    }
-  }
-
   private summonCompanion(id: ItemId): void {
     const player = this.lastState?.player;
     if (!player) return;
@@ -900,77 +874,99 @@ export class Hud {
     }
   }
 
-  /** The achievements, grouped by category, with ✓ or progress. */
-  private renderAchievements(player: Player): void {
-    if (!this.achieveList) return;
-    const all = this.content.achievements;
-    const cats: string[] = [];
-    for (const a of all) if (!cats.includes(a.category)) cats.push(a.category);
-    const parts: string[] = [
-      `<div class="achieve-summary">${player.achievements.length} / ${all.length} unlocked</div>`,
-    ];
-    for (const cat of cats) {
-      parts.push(`<div class="achieve-cat">${cat}</div>`);
-      for (const a of all.filter((x) => x.category === cat)) {
-        const done = player.achievements.includes(a.id);
-        const ev = evalAchievement(player, this.content, a.cond);
-        const right = done
-          ? `<span class="achieve-check">✓</span>`
-          : ev.target > 1
-            ? `<span class="achieve-prog">${Math.min(ev.cur, ev.target).toLocaleString()} / ${ev.target.toLocaleString()}</span>`
-            : `<span class="achieve-lock">${iconize("🔒")}</span>`;
-        parts.push(
-          `<div class="achieve-row ${done ? "done" : ""}">
-            <span class="achieve-ic">${iconize(done ? a.icon : "🔒")}</span>
-            <span class="achieve-info"><span class="achieve-name">${escapeHtml(a.name)}</span><span class="achieve-desc">${escapeHtml(a.desc)}</span></span>
-            ${right}
-          </div>`,
-        );
-      }
-    }
-    this.achieveList.innerHTML = parts.join("");
-  }
-
   /**
-   * The Archive: the lore fragments found out in the world, grouped by thread.
-   * Found ones show their title and opening line; undiscovered ones show as a
-   * locked stub with their thread — a breadcrumb that there's more to find.
+   * The Records tab: Companions, Achievements and the lore Archive, each a
+   * collapsible accordion (and every sub-category collapsible too). Rendered on
+   * demand — only when the data or the open/closed set actually changes — so it
+   * never churns every frame, keeps its scroll position, and stays responsive.
    */
-  private renderLore(player: Player): void {
-    if (!this.loreList) return;
-    const all = this.content.lore;
+  private renderRecords(player: Player, force = false): void {
+    if (!this.recordsEl) return;
+    const items = this.content.items;
+    const comps = (Object.keys(items) as ItemId[]).filter((id) => items[id].slot === "companion");
+    const ownedOf = (id: ItemId): boolean =>
+      player.equipment.companion === id ||
+      player.inventory.some((s) => s?.item === id) ||
+      (player.bank[id] ?? 0) > 0;
+    const compOwned = comps.filter(ownedOf).length;
+    const achTotal = this.content.achievements.length;
+    const loreTotal = this.content.lore.length;
+
+    // Rebuild only on a real change (counts, summoned pet, or which sections are
+    // open). This is what stops the per-frame churn that froze the tab.
+    const sig = [
+      compOwned, player.equipment.companion ?? "",
+      player.achievements.length, achTotal, player.lore.length, loreTotal,
+      [...this.openSecs].sort().join(","),
+    ].join("|");
+    if (!force && sig === this.recordsSig) return;
+    this.recordsSig = sig;
+
+    const chev = (open: boolean): string => `<span class="rec-chev">${open ? "▾" : "▸"}</span>`;
+
+    // Companions: a grid of owned (tappable) / locked cells.
+    const compBody =
+      `<div class="companion-grid">${comps.map((id) => {
+        const def = items[id];
+        const owned = ownedOf(id);
+        const isActive = player.equipment.companion === id;
+        const title = owned
+          ? `${def.name}${isActive ? " (summoned)" : ""} — ${def.description}`
+          : "An undiscovered companion. Keep training.";
+        return `<button type="button" class="comp-cell ${owned ? "owned" : "locked"}${isActive ? " active" : ""}" title="${escapeHtml(title)}"${owned ? ` data-comp="${id}"` : ""}><span class="comp-ic">${owned ? itemIconSVG(def) : iconize("❓")}</span>${isActive ? `<span class="comp-star">★</span>` : ""}</button>`;
+      }).join("")}</div>` +
+      `<div class="tab-note">Companions turn up while you train their skill. Tap one to summon it.</div>`;
+
+    // A category sub-accordion shared by Achievements and Archive.
+    const subSection = (key: string, label: string, count: string, rows: () => string): string => {
+      const open = this.openSecs.has(key);
+      return `<div class="rec-sub ${open ? "open" : ""}"><button type="button" class="rec-subhead" data-toggle="${key}">${chev(open)}<span class="rec-subname">${escapeHtml(label)}</span><span class="rec-count">${count}</span></button>${open ? `<div class="rec-subbody">${rows()}</div>` : ""}</div>`;
+    };
+
+    // Achievements, grouped by category, each category collapsible.
+    const achCats: string[] = [];
+    for (const a of this.content.achievements) if (!achCats.includes(a.category)) achCats.push(a.category);
+    const achBody = achCats.map((cat) => {
+      const rows = this.content.achievements.filter((x) => x.category === cat);
+      const done = rows.filter((a) => player.achievements.includes(a.id)).length;
+      return subSection(`ach:${cat}`, cat, `${done}/${rows.length}`, () =>
+        rows.map((a) => {
+          const isDone = player.achievements.includes(a.id);
+          const ev = evalAchievement(player, this.content, a.cond);
+          const right = isDone
+            ? `<span class="achieve-check">✓</span>`
+            : ev.target > 1
+              ? `<span class="achieve-prog">${Math.min(ev.cur, ev.target).toLocaleString()} / ${ev.target.toLocaleString()}</span>`
+              : `<span class="achieve-lock">${iconize("🔒")}</span>`;
+          return `<div class="achieve-row ${isDone ? "done" : ""}"><span class="achieve-ic">${iconize(isDone ? a.icon : "🔒")}</span><span class="achieve-info"><span class="achieve-name">${escapeHtml(a.name)}</span><span class="achieve-desc">${escapeHtml(a.desc)}</span></span>${right}</div>`;
+        }).join(""));
+    }).join("");
+
+    // Archive (found lore), grouped by thread, each thread collapsible.
     const found = new Set(player.lore);
-    const cats: string[] = [];
-    for (const l of all) if (!cats.includes(l.category)) cats.push(l.category);
-    const parts: string[] = [
-      `<div class="lore-summary">${found.size} / ${all.length} fragments recovered</div>`,
-    ];
-    if (found.size === 0) {
-      parts.push(note("Pages, rubbings and old markers lie scattered across Varath. Find one and read it — the shimmer marks the spot.").outerHTML);
-    }
-    for (const cat of cats) {
-      parts.push(`<div class="lore-cat">${escapeHtml(cat)}</div>`);
-      for (const l of all.filter((x) => x.category === cat)) {
-        const have = found.has(l.id);
-        if (have) {
-          const opener = l.text[0] ?? "";
-          parts.push(
-            `<div class="lore-row done">
-              <span class="lore-ic">${iconize("📖")}</span>
-              <span class="lore-info"><span class="lore-name">${escapeHtml(l.title)}</span><span class="lore-snip">${escapeHtml(opener)}</span></span>
-            </div>`,
-          );
-        } else {
-          parts.push(
-            `<div class="lore-row">
-              <span class="lore-ic">${iconize("🔒")}</span>
-              <span class="lore-info"><span class="lore-name">Undiscovered</span><span class="lore-snip">Somewhere in Varath, still waiting to be read.</span></span>
-            </div>`,
-          );
-        }
-      }
-    }
-    this.loreList.innerHTML = parts.join("");
+    const loreCats: string[] = [];
+    for (const l of this.content.lore) if (!loreCats.includes(l.category)) loreCats.push(l.category);
+    const loreBody = loreCats.map((cat) => {
+      const rows = this.content.lore.filter((x) => x.category === cat);
+      const have = rows.filter((l) => found.has(l.id)).length;
+      return subSection(`lore:${cat}`, cat, `${have}/${rows.length}`, () =>
+        rows.map((l) =>
+          found.has(l.id)
+            ? `<div class="lore-row done"><span class="lore-ic">${iconize("📖")}</span><span class="lore-info"><span class="lore-name">${escapeHtml(l.title)}</span><span class="lore-snip">${escapeHtml(l.text[0] ?? "")}</span></span></div>`
+            : `<div class="lore-row"><span class="lore-ic">${iconize("🔒")}</span><span class="lore-info"><span class="lore-name">Undiscovered</span><span class="lore-snip">Somewhere in Varath, still waiting to be read.</span></span></div>`,
+        ).join(""));
+    }).join("");
+
+    // The three top-level sections.
+    const section = (key: string, title: string, count: string, body: string): string => {
+      const open = this.openSecs.has(key);
+      return `<div class="rec-sec ${open ? "open" : ""}"><button type="button" class="rec-head" data-toggle="${key}">${chev(open)}<span class="rec-secname">${title}</span><span class="rec-count">${count}</span></button>${open ? `<div class="rec-body">${body}</div>` : ""}</div>`;
+    };
+
+    this.recordsEl.innerHTML =
+      section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
+      section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
+      section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);
   }
 }
 

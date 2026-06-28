@@ -1666,6 +1666,6 @@ export interface Content {
   bountyShop: BountyShopListing[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
-  /** Player-facing skill metadata (display name + icon glyph). */
-  skills: Record<SkillId, { name: string; icon: string }>;
+  /** Player-facing skill metadata (display name, icon glyph, explainer blurb). */
+  skills: Record<SkillId, { name: string; icon: string; blurb: string }>;
 }

@@ -63,10 +63,10 @@ body {
   pointer-events: auto;
   background: var(--panel);
   border: 1px solid var(--panel-edge);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 8px;
   backdrop-filter: blur(2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .hud-heading {
@@ -258,14 +258,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 6px 5px;
+  padding: 5px 4px;
   background: rgba(0, 0, 0, 0.28);
   border-right: 1px solid var(--panel-edge);
 }
 
 .dock-tab {
-  width: 34px;
-  height: 34px;
+  width: 31px;
+  height: 31px;
   font-size: 16px;
   line-height: 1;
   background: transparent;
@@ -285,12 +285,12 @@ body {
 }
 
 .dock-body {
-  padding: 8px 10px;
+  padding: 7px 8px;
   box-sizing: border-box;
   /* Fixed footprint: the dock no longer resizes from tab to tab — content
      that doesn't fit scrolls instead. */
-  width: 214px;
-  height: 332px;
+  width: 206px;
+  height: 320px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -723,7 +723,7 @@ body {
 .hud-minimap {
   top: 10px;
   right: 10px;
-  padding: 5px;
+  padding: 3px;
   position: absolute;
 }
 
@@ -1724,6 +1724,17 @@ button.inv-slot {
   font-size: 13px;
   margin-top: 8px;
 }
+/* The plain-language "what is this skill" explainer at the top of the popup. */
+.sd-blurb {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
 .sd-laddertitle {
   margin: 10px 0 4px;
   font-size: 12px;
@@ -1880,6 +1891,46 @@ button.inv-slot {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+/* === Records tab: collapsible accordions ================================== */
+.records { display: flex; flex-direction: column; gap: 5px; }
+.rec-sec {
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.16);
+}
+.rec-head,
+.rec-subhead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+}
+.rec-head { padding: 8px 9px; font-size: 13px; letter-spacing: 0.03em; }
+.rec-secname { flex: 1; }
+.rec-count {
+  font-family: "EB Garamond", serif;
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: 0;
+}
+.rec-chev { width: 11px; color: var(--ember); font-size: 10px; text-align: center; }
+.rec-body { padding: 2px 9px 8px; }
+.rec-head:hover, .rec-subhead:hover { color: #f0c187; }
+
+/* Each category within Achievements / Archive is itself collapsible. */
+.rec-sub { border-top: 1px solid rgba(74, 61, 44, 0.3); }
+.rec-sub:first-child { border-top: 0; }
+.rec-subhead { padding: 6px 2px; font-size: 12px; color: var(--ink); }
+.rec-subname { flex: 1; color: var(--ink); }
+.rec-subbody { padding: 1px 0 5px 6px; }
 
 /* === Login + Character Creator (startup overlays) ======================== */
 .login-backdrop, .creator-backdrop {
@@ -2187,7 +2238,7 @@ button.inv-slot {
 /* ── Run/walk toggle + energy bar (under the minimap, top-right) ───────────── */
 .run-control {
   position: absolute;
-  top: 162px; /* clear of the minimap (top 10 + ~152 tall) */
+  top: 138px; /* clear of the slimmer minimap (top 10 + ~124 tall) */
   right: 10px;
   z-index: 6; /* always above the minimap, never covered by it */
   display: flex;
@@ -2241,7 +2292,7 @@ button.inv-slot {
 /* On phones the vitals readout moves to the log box; nudge the run control up
    to sit just under the (smaller) minimap. */
 @media (max-width: 520px) {
-  .run-control { top: 162px; padding: 4px 6px; }
+  .run-control { top: 138px; padding: 4px 6px; }
   .run-energy { width: 52px; }
 }
 

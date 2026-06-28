@@ -9,18 +9,6 @@
 import type { Content, SkillId, WorldState } from "../core/types.ts";
 import { iconize } from "./glyph.ts";
 
-/** How the action-less skills are trained (no recipe ladder of their own). */
-const TRAIN_NOTE: Partial<Record<SkillId, string>> = {
-  vitality: "Trained by taking blows in combat — your health and max HP.",
-  edge: "Trained on the Edge style: melee accuracy.",
-  vigour: "Trained on the Vigour style: melee damage.",
-  ward: "Trained on the Ward style: melee defence.",
-  draw: "Trained by ranged attacks.",
-  agility: "Trained by running — the more ground you sprint, the longer your wind lasts and the faster it returns.",
-  farming: "Sow seeds in tilled patches; higher Farming unlocks better plants and trees.",
-  bounty: "Completing slay-tasks from the Bounty board for Hunt Marks.",
-};
-
 /** Pretty-print a SkillAction group key ("arrows" -> "Arrows"). */
 function groupLabel(key: string): string {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -77,7 +65,9 @@ export class SkillDetailModal {
       ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp`
       : "max level";
 
+    // A plain-language explainer at the top: what the skill is and how it trains.
     let html = `
+      <div class="sd-blurb">${meta.blurb}</div>
       <div class="sd-level">Level <b>${s.level}</b> · ${xpLine}</div>
       <div class="sd-xpbar"><div class="sd-xpfill" style="width:${Math.max(0, Math.min(1, pct)) * 100}%"></div></div>`;
 
@@ -99,7 +89,8 @@ export class SkillDetailModal {
     }
 
     if (activities.size === 0) {
-      html += `<div class="sd-note">${TRAIN_NOTE[skill] ?? "Trained through play."}</div>`;
+      // Action-less skills (combat, agility…) have no recipe ladder — the blurb
+      // above already explains how they train, so nothing more is needed here.
     } else {
       // Order activities by the lowest level they start at.
       const minLvl = (m: Map<number, string[]>) => Math.min(...m.keys());

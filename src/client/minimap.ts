@@ -86,7 +86,7 @@ export class Minimap {
     root: HTMLElement,
     onWorldMap: () => void,
     onWalk: (tile: Vec2) => void,
-    size = 132,
+    size = 112,
   ) {
     this.size = size;
     const panel = document.createElement("div");
