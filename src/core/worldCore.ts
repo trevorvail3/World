@@ -656,6 +656,20 @@ function buyFromShop(
   const shop = content.shops.find((s) => s.id === shopId);
   const line = shop?.stock.find((s) => s.item === item);
   if (!line) return;
+  const def = content.items[item];
+  // Skill capes are earned, not just bought: each needs level 99 in its skill,
+  // and the Cape of Varath needs every skill at 99.
+  const capeSkill = def.cat === "Capes" ? def.meta?.skill : undefined;
+  if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
+    if (skillLvl(player, capeSkill as SkillId) < 99) {
+      events.push({ type: "LOG", message: `You need ${content.skills[capeSkill as SkillId].name} level 99 to claim the ${def.name}.` });
+      return;
+    }
+  }
+  if (item === "cape_max" && !allSkillsMaxed(player)) {
+    events.push({ type: "LOG", message: "The Cape of Varath is earned only by mastering every skill to 99." });
+    return;
+  }
   if (player.gold < line.price) {
     events.push({ type: "LOG", message: "You can't afford that." });
     return;
@@ -755,7 +769,13 @@ function equipStat(
     if (!id) continue;
     // The bow and arrows feed ranged math only — never melee accuracy/damage.
     if (slot === "ranged" || slot === "ammo") continue;
-    total += content.items[id][field] ?? 0;
+    const idef = content.items[id];
+    total += idef[field] ?? 0;
+    // Skill capes are best-in-slot defensive gear — their worn benefit. The
+    // Cape of Varath (and its prestige reskin) gives the most.
+    if (field === "def" && idef.cat === "Capes") {
+      total += idef.meta?.skill === "max" || idef.meta?.skill === "ironvale" ? 18 : 10;
+    }
   }
   return total;
 }
@@ -1011,7 +1031,14 @@ export function equipRequirement(
   itemId: ItemId,
 ): { skill: SkillId | "combat"; level: number } | null {
   const def = content.items[itemId];
-  if (!def || def.tier === undefined) return null;
+  if (!def) return null;
+  // Skill capes are gated at level 99 in their skill (read from meta.skill). The
+  // max/prestige capes ("max"/"ironvale") are earned outright — no wield gate.
+  const capeSkill = def.cat === "Capes" ? def.meta?.skill : undefined;
+  if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
+    return { skill: capeSkill as SkillId, level: 99 };
+  }
+  if (def.tier === undefined) return null;
   if (def.tool) {
     const level = TOOL_TIER_REQS[def.tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
@@ -1030,6 +1057,11 @@ function atStation(
   if (player.station?.kind === kind) return true;
   events.push({ type: "LOG", message: `You need to be at ${what} to do that.` });
   return false;
+}
+
+/** True once every skill has reached the mastery cap (99) — for the max cape. */
+function allSkillsMaxed(player: Player): boolean {
+  return (Object.keys(player.skills) as SkillId[]).every((id) => skillLvl(player, id) >= 99);
 }
 
 /** The player's combat level (idle game formula). */

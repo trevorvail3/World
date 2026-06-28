@@ -117,6 +117,13 @@ export const objects: WorldObjectDef[] = [
     ],
   },
   { id: "cart_doran", kind: "cart", x: 71, y: 42, name: "Armourer's Stall", lines: ["A rack of field steel and dented Ashforge seconds."] },
+  {
+    id: "cape_master", kind: "npc", x: 67, y: 43, name: "Master of Capes",
+    lines: [
+      "Every skill has a summit. Reach it — level ninety-nine — and I'll cut you the cape that says so. A million gold; you'll have it by then.",
+      "Master all of them, and there is one cape left: the Cape of Varath. No coin truly buys it. You earn it, and I merely hand it over.",
+    ],
+  },
   { id: "cart_produce", kind: "cart", x: 64, y: 47, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
   { id: "cart_cloth", kind: "cart", x: 70, y: 47, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
   { id: "cart_spice", kind: "cart", x: 67, y: 45, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },

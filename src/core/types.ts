@@ -378,6 +378,7 @@ export type ItemId =
   | "cape_herblore"
   | "cape_crafting"
   | "cape_hunter"
+  | "cape_agility"
   | "cape_max"
   | "cape_ironvale"
   | "charcoal"

@@ -4881,5 +4881,16 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🟠",
     "cat": "Rare Drops",
     "sell": 120
+  },
+
+  "cape_agility": {
+    "id": "cape_agility",
+    "name": "Free Runner's Cape",
+    "description": "The mark of a master of Agility. The ground scarcely slows you.",
+    "icon": "👟",
+    "cat": "Capes",
+    "slot": "cape",
+    "sell": 0,
+    "meta": { "skill": "agility" }
   }
 };
