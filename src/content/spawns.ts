@@ -423,6 +423,17 @@ export const objects: WorldObjectDef[] = [
   { id: "ws_marrow", kind: "waystone", x: 90, y: 15, name: "The Marrow Deeps", target: { x: 89, y: 14 } },
   { id: "ws_redrun", kind: "waystone", x: 90, y: 70, name: "The Redrun", target: { x: 91, y: 71 } },
 
+  // === OUTPOST BANK CHESTS — regional banking at the populated outposts ======
+  // The only other bank is in Ironvale (bank_1). A strongbox at each far-flung
+  // settlement spares the long haul back to the city, without over-banking the
+  // map: north (the Fold), east (Redmouth), south (the Drover's Rest) and the
+  // south-west moor (Calder's camp). Greyoak Wood is left out — it sits right
+  // beside the city's west gate — and the deep wilds stay bankless on purpose.
+  { id: "bank_fold", kind: "bank", x: 63, y: 13, name: "Strongbox" },
+  { id: "bank_redmouth", kind: "bank", x: 86, y: 60, name: "Strongbox" },
+  { id: "bank_drover", kind: "bank", x: 69, y: 76, name: "Strongbox" },
+  { id: "bank_heartmoor", kind: "bank", x: 16, y: 83, name: "Strongbox" },
+
   // === WILDLIFE — ambient critters (wander, flee, don't block) ==============
   // City strays + birds:
   { id: "cr_cat", kind: "critter", species: "cat", x: 58, y: 60, name: "A Cat" },
