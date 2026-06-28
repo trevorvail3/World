@@ -364,6 +364,14 @@ function dropToGround(
   y: number,
   ctx: Ctx,
 ): void {
+  // OSRS-style: identical loot on the same tile merges into one stack instead of
+  // littering the tile with overlapping piles. Refresh the despawn timer too.
+  const existing = state.ground.find((g) => g.x === x && g.y === y && g.item === item);
+  if (existing) {
+    existing.qty += qty;
+    existing.despawnAt = ctx.now + GROUND_TTL;
+    return;
+  }
   state.ground.push({ id: state.groundSeq++, item, qty, x, y, despawnAt: ctx.now + GROUND_TTL });
 }
 

@@ -64,6 +64,8 @@ interface FloatText {
   color: string;
   born: number;
   size?: number;
+  /** How long the text lingers, in ms (defaults to the standard float life). */
+  life?: number;
 }
 
 /** A short impact burst (chips / sparks / splash) at a tile, for action feel. */
@@ -521,6 +523,7 @@ export class Game {
             color: "#f2cf6b",
             born: now,
             size: 17,
+            life: 1800, // lingers twice as long — it's a moment worth seeing
           });
           break;
         }
@@ -1134,7 +1137,16 @@ export class Game {
     const kinds: ObjKind[] = ["furnace", "anvil", "fire", "cauldron", "workbench", "crafting_table", "sawmill"];
     const kind = kinds.find((k) => this.bridge.stationRecipes(k).some((a) => a.produces === item));
     if (kind) { const st = nearestOf((o) => o.kind === kind); if (st) return st; }
-    // 3) Otherwise it's a drop — point at the nearest creature.
+    // 3) Otherwise it's a drop — point at the nearest creature that actually
+    //    drops it (e.g. worn coins come from moor rats, not just any beast).
+    const dropsIt = (o: typeof content.objects[number]): boolean => {
+      if (o.kind !== "monster" || !state.objects[o.id]?.available) return false;
+      const stats = o.monster ? content.monsters[o.monster] : undefined;
+      return !!stats?.drops?.some((d) => d.item === item);
+    };
+    const dropper = nearestOf(dropsIt);
+    if (dropper) return dropper;
+    // Last resort (nothing in the world drops it): the nearest creature at all.
     return nearestOf((o) => o.kind === "monster" && !!state.objects[o.id]?.available);
   }
 
@@ -1273,9 +1285,9 @@ export class Game {
 
   private drawFloats(now: number): void {
     const LIFE = 900;
-    this.floats = this.floats.filter((f) => now - f.born < LIFE);
+    this.floats = this.floats.filter((f) => now - f.born < (f.life ?? LIFE));
     for (const f of this.floats) {
-      const t = (now - f.born) / LIFE;
+      const t = (now - f.born) / (f.life ?? LIFE);
       const px = f.x * TILE + TILE / 2 - this.cam.x;
       const py = f.y * TILE + TILE / 2 - this.cam.y - t * 22;
       this.g.globalAlpha = 1 - t;

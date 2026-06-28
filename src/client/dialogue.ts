@@ -24,6 +24,13 @@ export class Dialogue {
     this.nameEl = this.box.querySelector(".dialogue-name") as HTMLElement;
     this.textEl = this.box.querySelector(".dialogue-text") as HTMLElement;
     this.hintEl = this.box.querySelector(".dialogue-hint") as HTMLElement;
+    // Tapping the box itself advances it — otherwise the tap lands on this HTML
+    // overlay (not the canvas) and the "Tap to continue" prompt does nothing.
+    this.box.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.advance();
+    });
     root.appendChild(this.box);
   }
 

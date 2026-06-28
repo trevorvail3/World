@@ -651,6 +651,17 @@ export function drawWorld(
   // Agility courses: worn track + fence, drawn under the obstacles themselves.
   drawAgilityTracks(g, content, cam, w, h, inRegion);
 
+  // --- Loot on the floor (kill drops awaiting pickup) ---
+  // Drawn before objects so creatures and the player render ON TOP of loot —
+  // it's lying on the ground, not floating over heads.
+  for (const gi of state.ground) {
+    if (!inRegion(gi.x, gi.y)) continue;
+    const px = gi.x * TILE - cam.x;
+    const py = gi.y * TILE - cam.y;
+    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+    drawGroundItem(g, px + TILE / 2, py + TILE / 2, now, gi.qty);
+  }
+
   // --- Objects ---
   const lights: Array<[number, number]> = []; // warm light sources, for night
   const trophy = trophyGlyph(state, content); // the player's rarest item, for display cases
@@ -685,8 +696,9 @@ export function drawWorld(
       // A built cooking hearth or any lighting piece warms/lights the home.
       if (lf && (lf.category === "kitchen" || lf.light)) lights.push([px + TILE / 2, py + TILE / 2]);
     }
-    // Name label — monsters show their combat level (OSRS-style).
-    if (def.kind === "npc" || def.kind === "monster") {
+    // Name label — monsters show their combat level (OSRS-style). A slain
+    // monster (respawning) drops its label until it's back.
+    if (def.kind === "npc" || (def.kind === "monster" && obj.available)) {
       const lvl = def.kind === "monster" && def.monster ? content.monsters[def.monster]?.level : undefined;
       const text = lvl !== undefined ? `${def.name} (lvl ${lvl})` : def.name;
       label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
@@ -695,15 +707,6 @@ export function drawWorld(
 
   // Agility: pulsing marker over the next obstacle to take.
   drawAgilityMarkers(g, state, content, cam, w, h, now, inRegion);
-
-  // --- Loot on the floor (kill drops awaiting pickup) ---
-  for (const gi of state.ground) {
-    if (!inRegion(gi.x, gi.y)) continue;
-    const px = gi.x * TILE - cam.x;
-    const py = gi.y * TILE - cam.y;
-    if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
-    drawGroundItem(g, px + TILE / 2, py + TILE / 2, now, gi.qty);
-  }
 
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
   // whichever home the player is standing in (so a bare house still feels lived-in).
