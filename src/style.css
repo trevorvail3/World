@@ -2238,7 +2238,7 @@ button.inv-slot {
 /* ── Run/walk toggle + energy bar (under the minimap, top-right) ───────────── */
 .run-control {
   position: absolute;
-  top: 138px; /* clear of the slimmer minimap (top 10 + ~124 tall) */
+  top: 116px; /* clear of the slimmer minimap (top 10 + ~100 tall) */
   right: 10px;
   z-index: 6; /* always above the minimap, never covered by it */
   display: flex;
@@ -2292,7 +2292,7 @@ button.inv-slot {
 /* On phones the vitals readout moves to the log box; nudge the run control up
    to sit just under the (smaller) minimap. */
 @media (max-width: 520px) {
-  .run-control { top: 138px; padding: 4px 6px; }
+  .run-control { top: 116px; padding: 4px 6px; }
   .run-energy { width: 52px; }
 }
 
@@ -2308,13 +2308,12 @@ button.inv-slot {
    `100dvh` (the *dynamic* viewport height) tracks the mobile URL bar as it hides
    and shows; a `100vh` line precedes it as a fallback for older engines. */
 @media (max-height: 540px) {
-  /* Smaller minimap so it, the run bar and the dock can stack in the height. */
+  /* The minimap sizes itself (height by viewport aspect); just trim its frame. */
   .hud-minimap { padding: 4px; }
-  .minimap-canvas { width: 104px; height: 104px; }
   .minimap-worldbtn { width: 22px; height: 22px; font-size: 12px; bottom: 6px; right: 6px; }
 
-  /* Run control sits just under the now-smaller minimap. */
-  .run-control { top: 124px; padding: 4px 6px; }
+  /* Run control sits just under the minimap. */
+  .run-control { top: 116px; padding: 4px 6px; }
   .run-energy { width: 52px; }
 
   /* The dock can never be taller than the space between the run bar and the
@@ -2348,8 +2347,8 @@ button.inv-slot {
 /* A genuinely tiny window (very small phones in landscape): trim further so the
    dock and minimap still both fit without overlapping. */
 @media (max-height: 430px) {
-  .minimap-canvas { width: 88px; height: 88px; }
-  .run-control { top: 108px; }
+  /* Below 440px tall the minimap drops to a 72px height (see minimap.ts). */
+  .run-control { top: 96px; }
   .dock-body {
     height: min(300px, calc(100vh - 150px));
     height: min(300px, calc(100dvh - 150px));

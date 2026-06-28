@@ -78,34 +78,37 @@ function drawPlayerDot(g: CanvasRenderingContext2D, px: number, py: number): voi
 
 export class Minimap {
   private g: CanvasRenderingContext2D;
-  private size: number;
-  /** Last-draw transform, so a click can be inverted to a world tile. */
-  private view = { originX: 0, originY: 0, cell: 1 };
+  private canvas: HTMLCanvasElement;
+  /** Backing-store size + DPR last applied, so we only resize on change. */
+  private cw = 0;
+  private ch = 0;
+  private mdpr = 0;
+  /** Last-draw transform (CSS px), so a click can be inverted to a world tile. */
+  private view = { originX: 0, originY: 0, cell: 1, offX: 0, offY: 0 };
 
   constructor(
     root: HTMLElement,
     onWorldMap: () => void,
     onWalk: (tile: Vec2) => void,
-    size = 112,
   ) {
-    this.size = size;
     const panel = document.createElement("div");
     panel.className = "hud-panel hud-minimap";
     const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
+    this.canvas = canvas;
     canvas.className = "minimap-canvas";
     panel.appendChild(canvas);
 
-    // Tap the minimap to walk toward that spot.
+    // Tap the minimap to walk toward that spot. The view is stored in CSS px
+    // with letterbox offsets, so invert through those.
     canvas.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
       const r = canvas.getBoundingClientRect();
-      const sx = (e.clientX - r.left) * (canvas.width / r.width);
-      const sy = (e.clientY - r.top) * (canvas.height / r.height);
+      const sx = e.clientX - r.left;
+      const sy = e.clientY - r.top;
+      const v = this.view;
       onWalk({
-        x: Math.round(this.view.originX + sx / this.view.cell - 0.5),
-        y: Math.round(this.view.originY + sy / this.view.cell - 0.5),
+        x: Math.round(v.originX + (sx - v.offX) / v.cell - 0.5),
+        y: Math.round(v.originY + (sy - v.offY) / v.cell - 0.5),
       });
     });
 
@@ -128,8 +131,11 @@ export class Minimap {
   }
 
   /**
-   * Paint the local area that's currently on screen, centred on the camera.
-   * viewW/viewH are the main canvas's pixel dimensions.
+   * Mirror exactly what's on screen — nothing beyond it. The minimap's shape
+   * follows the viewport's aspect ratio (fixed height, width by aspect), and the
+   * visible tiles are fit inside, centred, with at most a thin letterbox margin.
+   * No "see past the edges" reveal, no view-frame box. viewW/viewH are the
+   * visible extent in world pixels.
    */
   draw(
     state: WorldState,
@@ -139,38 +145,53 @@ export class Minimap {
     viewH: number,
   ): void {
     const g = this.g;
-    const size = this.size;
     const m = state.map;
 
+    // Element size: fixed height (so the HUD layout stays put), width by aspect.
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+    const H = window.innerHeight < 440 ? 72 : 92;
+    const aspect = viewH > 0 ? viewW / viewH : 1;
+    const W = Math.max(70, Math.min(168, Math.round(H * aspect)));
+    if (W !== this.cw || H !== this.ch || dpr !== this.mdpr) {
+      this.cw = W; this.ch = H; this.mdpr = dpr;
+      this.canvas.width = Math.round(W * dpr);
+      this.canvas.height = Math.round(H * dpr);
+      this.canvas.style.width = `${W}px`;
+      this.canvas.style.height = `${H}px`;
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); // work in CSS px below
+
+    // Fit the visible tile-window inside W×H (contain), centred. cell is chosen
+    // so the whole viewport shows — never cropped, never overscanned.
     const visW = viewW / TILE;
     const visH = viewH / TILE;
-    const span = Math.max(visW, visH); // tiles across the square minimap
-    const cell = size / span;
-    const centerX = (cam.x + viewW / 2) / TILE; // tile at screen centre
-    const centerY = (cam.y + viewH / 2) / TILE;
-    const originX = centerX - span / 2; // tile at the minimap's left edge
-    const originY = centerY - span / 2;
-    this.view = { originX, originY, cell }; // remember, so clicks can invert
+    const cell = Math.min(W / visW, H / visH);
+    const offX = (W - visW * cell) / 2;
+    const offY = (H - visH * cell) / 2;
+    const originX = cam.x / TILE; // top-left visible tile (fractional)
+    const originY = cam.y / TILE;
+    this.view = { originX, originY, cell, offX, offY };
 
     g.fillStyle = "#0c0907";
-    g.fillRect(0, 0, size, size);
+    g.fillRect(0, 0, W, H);
 
-    // Inside a sealed instance (a home / arena) the minimap shows only that room,
-    // never the neighbouring rooms or the band around it.
+    // Inside a sealed instance (a home / arena) the minimap shows only that room.
     const pp = state.player.pos;
     const region = instanceRectAt(Math.round(pp.x), Math.round(pp.y));
-    const inRegion = (x: number, y: number) =>
+    const inRegion = (x: number, y: number): boolean =>
       !region || (x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1);
+    const sx = (tx: number): number => offX + (tx - originX) * cell;
+    const sy = (ty: number): number => offY + (ty - originY) * cell;
 
-    // Tiles in the visible window (anything off the map stays background).
-    const x0 = Math.floor(originX), x1 = Math.ceil(originX + span);
-    const y0 = Math.floor(originY), y1 = Math.ceil(originY + span);
+    // Tiles within the visible window.
+    const x0 = Math.floor(originX), x1 = Math.ceil(originX + visW);
+    const y0 = Math.floor(originY), y1 = Math.ceil(originY + visH);
     for (let y = y0; y < y1; y++) {
       if (y < 0 || y >= m.height) continue;
       for (let x = x0; x < x1; x++) {
         if (x < 0 || x >= m.width || !inRegion(x, y)) continue;
         g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
-        g.fillRect((x - originX) * cell, (y - originY) * cell, cell + 0.8, cell + 0.8);
+        g.fillRect(sx(x), sy(y), cell + 0.8, cell + 0.8);
       }
     }
 
@@ -184,22 +205,12 @@ export class Minimap {
       if (!inRegion(Math.round(p.x), Math.round(p.y))) continue;
       g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
       g.beginPath();
-      g.arc((p.x + 0.5 - originX) * cell, (p.y + 0.5 - originY) * cell, Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
+      g.arc(sx(p.x + 0.5), sy(p.y + 0.5), Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
       g.fill();
     }
 
-    // A faint frame marking exactly what the main view shows.
-    g.strokeStyle = "rgba(242,207,107,0.4)";
-    g.lineWidth = 1;
-    g.strokeRect(
-      (centerX - visW / 2 - originX) * cell,
-      (centerY - visH / 2 - originY) * cell,
-      visW * cell,
-      visH * cell,
-    );
-
     const p = state.player.pos;
-    drawPlayerDot(g, (p.x + 0.5 - originX) * cell, (p.y + 0.5 - originY) * cell);
+    drawPlayerDot(g, sx(p.x + 0.5), sy(p.y + 0.5));
   }
 }
 
