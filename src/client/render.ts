@@ -58,6 +58,65 @@ function hash(x: number, y: number): number {
   return n - Math.floor(n);
 }
 
+/**
+ * Decorative, walk-through greenery scattered deterministically across wild
+ * ground — bushes, ferns and the odd small tree — so the world reads lush, not
+ * sparse. Purely cosmetic: these aren't objects and can't be chopped or
+ * collided with (the choppable trees are real world objects, drawn separately).
+ */
+function scatterVegetation(
+  g: CanvasRenderingContext2D,
+  tile: TileType,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+): void {
+  if (tile !== "grass" && tile !== "moss" && tile !== "bog") return;
+  const h = hash(x, y);
+  if (h > 0.34) return; // most tiles stay bare
+  // Jittered position within the tile, from independent hashes.
+  const jx = px + 6 + hash(x + 7, y) * (TILE - 12);
+  const jy = py + 8 + hash(x, y + 13) * (TILE - 16);
+  const tint = tile === "bog" ? "#3c5436" : tile === "moss" ? "#46622f" : "#4f6e33";
+  const dark = tile === "bog" ? "#2c3f28" : "#374e25";
+
+  if (h < 0.05) {
+    // A small decorative tree: a round canopy on a short trunk.
+    g.fillStyle = "#5a3f24";
+    g.fillRect(jx - 1.5, jy, 3, 9);
+    g.fillStyle = dark;
+    g.beginPath();
+    g.arc(jx, jy - 2, 9, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = tint;
+    g.beginPath();
+    g.arc(jx - 2, jy - 4, 6, 0, Math.PI * 2);
+    g.fill();
+  } else if (h < 0.16) {
+    // A leafy bush: two overlapping blobs.
+    g.fillStyle = dark;
+    g.beginPath();
+    g.ellipse(jx, jy, 7, 5, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = tint;
+    g.beginPath();
+    g.ellipse(jx - 2, jy - 1.5, 4.5, 3.5, 0, 0, Math.PI * 2);
+    g.fill();
+  } else {
+    // Grass / fern tufts: a few upright blades.
+    g.strokeStyle = tint;
+    g.lineWidth = 1.4;
+    g.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const bx = jx - 4 + i * 2.6;
+      g.moveTo(bx, jy + 4);
+      g.lineTo(bx + (i % 2 ? 1.5 : -1.5), jy - 3);
+    }
+    g.stroke();
+  }
+}
+
 /** Paint one terrain tile, base fill plus type-specific detail. */
 function paintTile(
   g: CanvasRenderingContext2D,
@@ -475,6 +534,7 @@ export function drawWorld(
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
       paintTile(g, tile, px, py, x, y, now, map);
+      scatterVegetation(g, tile, px, py, x, y);
     }
   }
 
