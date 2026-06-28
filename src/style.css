@@ -385,13 +385,15 @@ body {
 }
 
 .style-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0; /* let the three buttons share the row evenly without clipping */
   display: flex;
+  flex-direction: column; /* icon over label — compact enough that Ward always fits */
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 4px;
-  font-size: 12px;
+  gap: 2px;
+  padding: 6px 2px;
+  font-size: 11px;
   font-family: inherit;
   color: var(--ink-dim);
   background: rgba(10, 8, 6, 0.5);

@@ -111,6 +111,7 @@ export class Hud {
   private collapsed = false;
   private dock!: HTMLElement;
 
+  private charName!: HTMLElement;
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
   private charMaxed!: HTMLElement;
@@ -294,6 +295,7 @@ export class Hud {
           <div class="char-row"><span>Skills at 99</span><span class="char-maxed">0 / 19</span></div>
           <div class="char-row"><span>Hitpoints</span><span class="char-hp">10 / 10</span></div>
           <div class="char-row"><span>Played</span><span class="char-played">0m</span></div>`;
+        this.charName = sheet.querySelector(".char-name") as HTMLElement;
         this.charCombat = sheet.querySelector(".char-combat") as HTMLElement;
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
         this.charMaxed = sheet.querySelector(".char-maxed") as HTMLElement;
@@ -781,6 +783,8 @@ export class Hud {
     this.charMaxed.textContent = `${maxed} / ${ids.length}`;
     this.charHp.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
     this.charPlayed.textContent = formatPlaytime(player.playMs);
+    const cname = player.appearance?.name?.trim();
+    this.charName.textContent = cname ? `${cname} of Ironvale` : "Wanderer of Ironvale";
     // Cape of Varath progress (the all-99 completion goal).
     const capeOwned =
       player.equipment.cape === "cape_max" ||
