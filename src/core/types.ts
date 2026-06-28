@@ -1102,6 +1102,8 @@ export interface Player {
   killsSinceShard: number;
   /** Ids of achievements already unlocked (so they stay unlocked). */
   achievements: string[];
+  /** Ids of Area Diaries whose XP-lamp reward has been claimed. */
+  diariesClaimed: string[];
   /** The player's name, cosmetic colours and body styles (character creator). */
   appearance: Appearance;
   /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
@@ -1351,6 +1353,13 @@ export interface DropIntent {
   slot: number;
 }
 
+/** "Claim a completed Area Diary's XP lamp, applying it to this skill." */
+export interface ClaimDiaryIntent {
+  type: "CLAIM_DIARY";
+  diary: string;
+  skill: SkillId;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1378,7 +1387,8 @@ export type Intent =
   | UseFurnitureIntent
   | BuildRoomIntent
   | PickupIntent
-  | DropIntent;
+  | DropIntent
+  | ClaimDiaryIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -1521,6 +1531,8 @@ export interface DiaryDef {
   name: string;
   icon: string;
   tasks: DiaryTask[];
+  /** XP reward (an "XP lamp") granted on completion, applied to a chosen skill. */
+  reward: number;
 }
 
 /** One choice a player can make at a "choose" step. */

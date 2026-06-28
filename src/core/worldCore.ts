@@ -323,6 +323,7 @@ export function createWorld(
     playMs: 0,
     killsSinceShard: 0,
     achievements: [],
+    diariesClaimed: [],
     appearance: {
       name: "Wanderer", skin: "#e3bd92", hair: "#4a3320", tunic: "#6b6157",
       legColor: "#9a5a2a", shoeColor: "#3a2c20",
@@ -431,6 +432,42 @@ function dropSlot(
   const qty = data.qty;
   player.inventory[slot] = null;
   events.push({ type: "LOG", message: `You drop ${qty > 1 ? `${qty}× ` : ""}${name}.` });
+}
+
+/**
+ * Claim a completed Area Diary's XP lamp, pouring its reward into the chosen
+ * skill. Re-checks every task here (the client only offers it when complete, but
+ * the core is the authority) and guards against double-claims.
+ */
+function claimDiary(
+  state: WorldState,
+  content: Content,
+  diaryId: string,
+  skill: SkillId,
+  events: WorldEvent[],
+): void {
+  const player = state.player;
+  const diary = content.diaries.find((d) => d.id === diaryId);
+  if (!diary) return;
+  if (player.diariesClaimed.includes(diaryId)) {
+    events.push({ type: "LOG", message: "You've already claimed that diary's reward." });
+    return;
+  }
+  if (!player.skills[skill]) {
+    events.push({ type: "LOG", message: "You haven't unlocked that skill yet." });
+    return;
+  }
+  const allMet = diary.tasks.every((t) => evalAchievement(player, content, t.cond).met);
+  if (!allMet) {
+    events.push({ type: "LOG", message: `${diary.name} diary isn't finished yet.` });
+    return;
+  }
+  player.diariesClaimed.push(diaryId);
+  grantXp(state, content, skill, diary.reward, events);
+  events.push({
+    type: "LOG",
+    message: `${diary.name} diary complete! You pour ${diary.reward.toLocaleString()} XP into ${content.skills[skill].name}.`,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -865,6 +902,10 @@ export function applyIntent(
     }
     case "DROP": {
       dropSlot(state, content, intent.slot, ctx, events);
+      break;
+    }
+    case "CLAIM_DIARY": {
+      claimDiary(state, content, intent.diary, intent.skill, events);
       break;
     }
     case "DEPOSIT": {

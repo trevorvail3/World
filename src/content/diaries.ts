@@ -15,7 +15,7 @@ import type { DiaryDef } from "../core/types.ts";
 
 export const diaries: DiaryDef[] = [
   {
-    id: "diary_greyoak", name: "Greyoak Wood", icon: "🌲",
+    id: "diary_greyoak", reward: 10000, name: "Greyoak Wood", icon: "🌲",
     tasks: [
       { label: "Fell greyoak at Forestry 20", cond: { type: "skillLevel", skill: "forestry", level: 20 } },
       { label: "Work the traplines at Hunter 20", cond: { type: "skillLevel", skill: "hunter", level: 20 } },
@@ -24,7 +24,7 @@ export const diaries: DiaryDef[] = [
     ],
   },
   {
-    id: "diary_spine", name: "The Spine", icon: "⛰️",
+    id: "diary_spine", reward: 20000, name: "The Spine", icon: "⛰️",
     tasks: [
       { label: "Cut the cold ore at Mining 30", cond: { type: "skillLevel", skill: "mining", level: 30 } },
       { label: "Reach Combat level 30 for the heights", cond: { type: "combatLevel", level: 30 } },
@@ -33,7 +33,7 @@ export const diaries: DiaryDef[] = [
     ],
   },
   {
-    id: "diary_marrow", name: "The Marrow Deeps", icon: "🕳️",
+    id: "diary_marrow", reward: 50000, name: "The Marrow Deeps", icon: "🕳️",
     tasks: [
       { label: "Take a slay-task in the Deeps", cond: { type: "questDone", quest: "q_marrow_marks" } },
       { label: "Sink the deep shafts at Mining 60", cond: { type: "skillLevel", skill: "mining", level: 60 } },
@@ -42,7 +42,7 @@ export const diaries: DiaryDef[] = [
     ],
   },
   {
-    id: "diary_heartmoor", name: "The Heartmoor", icon: "🌫️",
+    id: "diary_heartmoor", reward: 25000, name: "The Heartmoor", icon: "🌫️",
     tasks: [
       { label: "Take Calder's peat-cutting", cond: { type: "questDone", quest: "q_calder_peat" } },
       { label: "Brew the moor's herbs at Herblore 25", cond: { type: "skillLevel", skill: "herblore", level: 25 } },
@@ -51,7 +51,7 @@ export const diaries: DiaryDef[] = [
     ],
   },
   {
-    id: "diary_ashfen", name: "The Ashfen Flats", icon: "🔥",
+    id: "diary_ashfen", reward: 35000, name: "The Ashfen Flats", icon: "🔥",
     tasks: [
       { label: "Witness the warm ground", cond: { type: "questDone", quest: "q_ashfen_witness" } },
       { label: "Cut embercite at Mining 40", cond: { type: "skillLevel", skill: "mining", level: 40 } },
@@ -60,7 +60,7 @@ export const diaries: DiaryDef[] = [
     ],
   },
   {
-    id: "diary_redrun", name: "The Redrun & Sea", icon: "🌊",
+    id: "diary_redrun", reward: 30000, name: "The Redrun & Sea", icon: "🌊",
     tasks: [
       { label: "Run a courier down the red river", cond: { type: "questDone", quest: "q_sq_redriver" } },
       { label: "Land the river's catch at Fishing 30", cond: { type: "skillLevel", skill: "fishing", level: 30 } },

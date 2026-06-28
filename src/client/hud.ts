@@ -124,7 +124,7 @@ export class Hud {
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
   // World tab: per-region Achievement Diary blocks, with live task/progress refs.
-  private diaryBlocks: { id: string; block: HTMLElement; count: HTMLElement; tasks: HTMLElement[] }[] = [];
+  private diaryBlocks: { id: string; block: HTMLElement; count: HTMLElement; tasks: HTMLElement[]; claim: HTMLElement }[] = [];
   // Records tab: one container, accordion open-state, and a render signature so
   // it only rebuilds when something actually changes (never every frame).
   private recordsEl?: HTMLElement;
@@ -160,6 +160,54 @@ export class Hud {
     this.dispatch = dispatch;
     this.skillDetail = new SkillDetailModal(root, content);
     this.build(root);
+    this.buildSkillPicker(root);
+  }
+
+  // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
+  private skillPicker!: HTMLElement;
+  private skillPickGrid!: HTMLElement;
+  private skillPickTitle!: HTMLElement;
+  private skillPickCb: ((skill: SkillId) => void) | null = null;
+
+  private buildSkillPicker(root: HTMLElement): void {
+    const back = document.createElement("div");
+    back.className = "skillpick-backdrop hidden";
+    back.innerHTML = `
+      <div class="skillpick-modal">
+        <div class="skillpick-title">Choose a skill</div>
+        <div class="skillpick-grid"></div>
+      </div>`;
+    this.skillPicker = back;
+    this.skillPickTitle = back.querySelector(".skillpick-title") as HTMLElement;
+    this.skillPickGrid = back.querySelector(".skillpick-grid") as HTMLElement;
+    back.addEventListener("pointerdown", (e) => { if (e.target === back) this.closeSkillPicker(); });
+    for (const sid of Object.keys(this.content.skills) as SkillId[]) {
+      const meta = this.content.skills[sid];
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "skillpick-cell";
+      cell.title = meta.name;
+      cell.innerHTML = `<span class="skillpick-ic">${iconize(meta.icon)}</span><span class="skillpick-name">${escapeHtml(meta.name)}</span>`;
+      cell.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const cb = this.skillPickCb;
+        this.closeSkillPicker();
+        cb?.(sid);
+      });
+      this.skillPickGrid.appendChild(cell);
+    }
+    root.appendChild(back);
+  }
+
+  private openSkillPicker(diaryName: string, reward: number, cb: (skill: SkillId) => void): void {
+    this.skillPickCb = cb;
+    this.skillPickTitle.textContent = `${diaryName} — pour ${reward.toLocaleString()} XP into…`;
+    this.skillPicker.classList.remove("hidden");
+  }
+
+  private closeSkillPicker(): void {
+    this.skillPickCb = null;
+    this.skillPicker.classList.add("hidden");
   }
 
   private build(root: HTMLElement): void {
@@ -392,10 +440,19 @@ export class Hud {
             body.appendChild(row);
             taskEls.push(row);
           }
+          // The XP-lamp reward: a Claim button that opens a skill picker.
+          const claim = document.createElement("button");
+          claim.type = "button";
+          claim.className = "diary-claim hidden";
+          claim.textContent = `Claim ${d.reward.toLocaleString()} XP`;
+          claim.addEventListener("click", () => this.openSkillPicker(d.name, d.reward, (skill) => {
+            this.dispatch({ type: "CLAIM_DIARY", diary: d.id, skill });
+          }));
+          body.appendChild(claim);
           head.addEventListener("click", () => block.classList.toggle("open"));
           block.append(head, body);
           p.appendChild(block);
-          this.diaryBlocks.push({ id: d.id, block, count: head.querySelector(".diary-count") as HTMLElement, tasks: taskEls });
+          this.diaryBlocks.push({ id: d.id, block, count: head.querySelector(".diary-count") as HTMLElement, tasks: taskEls, claim });
         }
 
         // --- Factions: standing with each power in Varath. ---
@@ -783,7 +840,17 @@ export class Hud {
           prog.textContent = ev.met ? "" : (ev.target > 1 ? `${Math.min(ev.cur, ev.target)}/${ev.target}` : "");
         }
         blk.count.textContent = `${done}/${def.tasks.length}`;
-        blk.block.classList.toggle("complete", done >= def.tasks.length);
+        const complete = done >= def.tasks.length;
+        const claimed = player.diariesClaimed.includes(blk.id);
+        blk.block.classList.toggle("complete", complete);
+        // Show the Claim button only when finished and unclaimed; once claimed,
+        // the button becomes a static "Reward claimed" marker.
+        blk.claim.classList.toggle("hidden", !complete);
+        if (claimed) {
+          blk.claim.textContent = "✓ Reward claimed";
+          blk.claim.classList.add("claimed");
+          (blk.claim as HTMLButtonElement).disabled = true;
+        }
       }
     }
 
