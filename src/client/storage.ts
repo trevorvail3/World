@@ -73,6 +73,17 @@ export function setCurrentAccount(name: string): void {
   }
 }
 
+/** Read a specific account's raw saved object (without changing the active one).
+ *  Used by the local hiscores backend to rank every character on this device. */
+export function readSaveFor(name: string): unknown | null {
+  try {
+    const raw = localStorage.getItem(saveKey(name));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Read the active account's raw saved object, or null. */
 export function readSave(): unknown | null {
   if (!current) return null;

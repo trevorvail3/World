@@ -28,6 +28,7 @@ import { glyph, iconize } from "./glyph.ts";
 import { audio } from "./audio.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
+import { HiscoresUI } from "./hiscoresUI.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -159,9 +160,12 @@ export class Hud {
     this.menu = menu;
     this.dispatch = dispatch;
     this.skillDetail = new SkillDetailModal(root, content);
+    this.hiscores = new HiscoresUI(root, content);
     this.build(root);
     this.buildSkillPicker(root);
   }
+
+  private hiscores: HiscoresUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -421,6 +425,16 @@ export class Hud {
         break;
       }
       case "factions": {
+        // --- Hiscores: ranking against other heroes (device-local for now). ---
+        const hs = document.createElement("button");
+        hs.type = "button";
+        hs.className = "world-hiscores";
+        hs.innerHTML = `<span class="world-hiscores-ic">${iconize("🏆")}</span> Hiscores`;
+        hs.addEventListener("click", () => {
+          void this.hiscores.show(this.lastState?.player.appearance?.name ?? "");
+        });
+        p.appendChild(hs);
+
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));
         for (const d of this.content.diaries) {

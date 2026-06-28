@@ -1830,6 +1830,71 @@ button.inv-slot {
   z-index: 60;
 }
 .skillpick-backdrop.hidden { display: none; }
+
+/* --- Hiscores board --- */
+.world-hiscores {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 7px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  color: #1a140f;
+  background: var(--gold, #e0b54a);
+  border: 1px solid #f2cf6b;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.world-hiscores:hover { background: #f2cf6b; }
+.world-hiscores-ic { width: 15px; height: 15px; display: inline-flex; }
+.world-hiscores-ic .g-ico { width: 15px; height: 15px; }
+
+.hiscores-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.hiscores-backdrop.hidden { display: none; }
+.hiscores-modal {
+  background: var(--panel, #1c1812);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 16px;
+  width: calc(100% - 40px);
+  max-width: 380px;
+  max-height: 86vh;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+.hiscores-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.hiscores-title { font-family: "Cinzel", serif; color: var(--gold); font-size: 16px; letter-spacing: 0.05em; }
+.hiscores-close { background: transparent; border: 0; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; }
+.hiscores-close:hover { color: var(--ember); }
+.hiscores-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.hiscores-tab {
+  font-family: "EB Garamond", serif; font-size: 12px;
+  color: var(--ink-dim); background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-edge); border-radius: 10px;
+  padding: 2px 9px; cursor: pointer;
+}
+.hiscores-tab.on { color: #1a140f; background: var(--ember, #d2742c); border-color: #f2cf6b; }
+.hiscores-body { overflow-y: auto; }
+.hiscores-row {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 4px 6px; border-radius: 5px;
+  font-family: "EB Garamond", serif; font-size: 14px; color: var(--ink);
+}
+.hiscores-row:nth-child(odd) { background: rgba(0, 0, 0, 0.16); }
+.hiscores-row.you { background: rgba(210, 116, 44, 0.2); border: 1px solid #6a5a3a; }
+.hiscores-rank { width: 22px; text-align: right; color: var(--gold); font-family: "Cinzel", serif; font-size: 12px; }
+.hiscores-name { flex: 1; }
+.hiscores-val { font-family: "Cinzel", serif; color: var(--ember); font-variant-numeric: tabular-nums; }
+.hiscores-empty { color: var(--ink-dim); text-align: center; padding: 16px; font-style: italic; }
+.hiscores-note { margin-top: 9px; text-align: center; font-size: 11px; color: var(--ink-dim); font-style: italic; }
 .skillpick-modal {
   background: var(--panel, #1c1812);
   border: 1px solid var(--panel-edge);
