@@ -153,6 +153,23 @@ function paintTile(
       g.fillStyle = tile === "deep" ? "#2b4a6e" : "#3f6488";
       g.fillRect(px + TILE * (0.3 + 0.4 * hv), py + TILE * 0.4, 3, 3);
       g.globalAlpha = 1;
+      // Foam where the water laps against land — a soft, breathing highlight on
+      // any edge facing a walkable tile (completes the shoreline from both sides).
+      const wd = map.width;
+      const land = (tx: number, ty: number): boolean => {
+        if (tx < 0 || ty < 0 || tx >= wd || ty >= map.height) return false;
+        const t = map.tiles[ty * wd + tx];
+        return t !== "water" && t !== "deep";
+      };
+      if (land(x - 1, y) || land(x + 1, y) || land(x, y - 1) || land(x, y + 1)) {
+        g.globalAlpha = 0.22 + 0.14 * Math.sin(now / 700 + x * 0.9 + y);
+        g.fillStyle = "rgba(225,238,245,0.9)";
+        if (land(x - 1, y)) g.fillRect(px, py + 2, 2, TILE - 4);
+        if (land(x + 1, y)) g.fillRect(px + TILE - 2, py + 2, 2, TILE - 4);
+        if (land(x, y - 1)) g.fillRect(px + 2, py, TILE - 4, 2);
+        if (land(x, y + 1)) g.fillRect(px + 2, py + TILE - 2, TILE - 4, 2);
+        g.globalAlpha = 1;
+      }
       return;
     }
     case "mountain": {
@@ -235,6 +252,13 @@ function paintTile(
       g.fillStyle = accent; g.globalAlpha = 0.4;
       g.fillRect(px + 4, py + 4, TILE * 0.4, TILE * 0.25);
       g.globalAlpha = 1;
+      // A couple of loose pebbles for grit.
+      if (hv > 0.4) {
+        g.fillStyle = "rgba(0,0,0,0.18)";
+        g.beginPath(); g.ellipse(px + TILE * (0.6 + 0.25 * hv), py + TILE * 0.7, 2.5, 1.8, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "rgba(150,150,160,0.22)";
+        g.beginPath(); g.ellipse(px + TILE * 0.3, py + TILE * (0.6 + 0.2 * hv), 2, 1.5, 0, 0, Math.PI * 2); g.fill();
+      }
       break;
     }
     case "bog": {
@@ -266,7 +290,19 @@ function paintTile(
         g.fillRect(px + hx * (TILE - 4), py + hash(x + i, y) * (TILE - 4), 3, 3);
       }
       g.globalAlpha = 1;
-      if (tile === "cave_wall") { g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(px, py, TILE, 2); }
+      if (tile === "cave_wall") {
+        g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(px, py, TILE, 2);
+        // A rare vein of glittering ore in the rock face.
+        if (hv > 0.84) {
+          g.fillStyle = hv > 0.93 ? "rgba(120,200,210,0.55)" : "rgba(150,130,90,0.5)";
+          g.fillRect(px + TILE * 0.3, py + TILE * (0.3 + 0.4 * hash(x, y + 9)), 3, 2);
+          g.fillRect(px + TILE * 0.3 + 3, py + TILE * (0.3 + 0.4 * hash(x, y + 9)) - 2, 2, 2);
+        }
+      } else if (hv > 0.9) {
+        // A faint mineral glint on the cave floor — a little life in the dark.
+        g.fillStyle = "rgba(110,170,180,0.4)";
+        g.fillRect(px + TILE * (0.4 + 0.2 * hv), py + TILE * 0.55, 2, 2);
+      }
       break;
     }
     case "plank": {
@@ -286,6 +322,23 @@ function paintTile(
       for (let i = 0; i < 3; i++) g.fillRect(px + hash(x * 3 + i, y) * (TILE - 6), py + hash(x, y * 3 + i) * (TILE - 4), 3, 1);
       return; // boards are texture enough; skip the ground grid
     }
+  }
+
+  // Shoreline: a pale, damp band wherever walkable ground meets open water, so
+  // coasts and riverbanks read as edges instead of a hard colour cut. Bog keeps
+  // a darker, muddier rim (no bright sand in a mire).
+  const wid = map.width;
+  const wet = (tx: number, ty: number): boolean => {
+    if (tx < 0 || ty < 0 || tx >= wid || ty >= map.height) return false;
+    const t = map.tiles[ty * wid + tx];
+    return t === "water" || t === "deep";
+  };
+  if (wet(x - 1, y) || wet(x + 1, y) || wet(x, y - 1) || wet(x, y + 1)) {
+    g.fillStyle = tile === "bog" ? "rgba(28,40,34,0.55)" : "rgba(204,190,150,0.45)";
+    if (wet(x - 1, y)) g.fillRect(px, py, 3, TILE);
+    if (wet(x + 1, y)) g.fillRect(px + TILE - 3, py, 3, TILE);
+    if (wet(x, y - 1)) g.fillRect(px, py, TILE, 3);
+    if (wet(x, y + 1)) g.fillRect(px, py + TILE - 3, TILE, 3);
   }
 
   // Faint grid for ground tiles (walls/mountain/water handle their own look).
