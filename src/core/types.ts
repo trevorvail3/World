@@ -1393,6 +1393,7 @@ export type WorldEvent =
   | { type: "INVENTORY_FULL" }
   | { type: "DIALOGUE"; npc: string; lines: string[] }
   | { type: "DAMAGE"; targetId: string; amount: number; weak?: boolean }
+  | { type: "HEALED"; amount: number }
   | { type: "OBJECT_DEPLETED"; objId: string }
   | { type: "OBJECT_RESPAWNED"; objId: string }
   | { type: "MONSTER_KILLED"; objId: string }

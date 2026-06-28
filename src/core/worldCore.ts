@@ -1303,7 +1303,10 @@ function eatSlot(
 
   let msg = canHeal && def.buff ? `You drink the ${def.name}.` : `You ${def.cat === "Food" || canHeal ? "eat" : "drink"} the ${def.name}.`;
   if (canHeal) {
+    const before = player.hp;
     player.hp = Math.min(player.maxHp, player.hp + def.heals!);
+    const healed = player.hp - before;
+    if (healed > 0) events.push({ type: "HEALED", amount: healed });
     msg += ` (+${def.heals})`;
   }
   if (canBuff) {

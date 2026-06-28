@@ -243,6 +243,8 @@ export class Game {
   private tapFlash: TapFlash | null = null;
   /** A loot tile the player is walking toward to pick up, polled each frame. */
   private pickupTarget: Vec2 | null = null;
+  /** Timestamp of the last hit the player took — drives a red screen flash. */
+  private hurtFlash = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -377,6 +379,8 @@ export class Game {
     this.drawSparks(now);
     this.drawFloats(now);
     this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
+    this.drawHurtVignette(now);
+    this.drawDeathOverlay(now);
 
     // 4) Refresh the HUD readouts and the minimap.
     this.hud.update(this.bridge.state);
@@ -505,7 +509,16 @@ export class Game {
           this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
         }
+        case "HEALED": {
+          const p = this.bridge.state.player.pos;
+          this.floats.push({ x: p.x, y: p.y - 0.3, text: `+${ev.amount}`, color: "#5fd06a", born: now, size: 15 });
+          this.sparks.push({ x: p.x, y: p.y, born: now, color: "#5fd06a", n: 6 });
+          break;
+        }
         case "DAMAGE": {
+          // Taking a real hit flashes the screen edges red — the harder the hit
+          // (relative to max HP), the stronger the flash.
+          if (ev.targetId === "player" && ev.amount > 0) this.hurtFlash = now;
           const pos = this.positionOf(ev.targetId);
           if (pos) {
             // A weakness-exploiting hit reads in bright gold ("super effective"),
@@ -1132,6 +1145,59 @@ export class Game {
       this.g.fillText(mark, cx, my);
     }
     this.g.textAlign = "left";
+  }
+
+  /**
+   * Screen-edge red vignette: a quick flash when the player is hit, plus a
+   * steady pulse while HP is critically low — so danger reads even with eyes
+   * on the fight, not the HP bar. Drawn in device space over the whole canvas.
+   */
+  private drawHurtVignette(now: number): void {
+    const player = this.bridge.state.player;
+    const lowFrac = player.maxHp > 0 ? player.hp / player.maxHp : 1;
+    const FLASH = 420;
+    const flashAge = now - this.hurtFlash;
+    const flash = flashAge >= 0 && flashAge < FLASH ? 1 - flashAge / FLASH : 0;
+    // Steady danger pulse below 25% HP (and only while alive).
+    const low = player.hp > 0 && lowFrac < 0.25 ? (1 - lowFrac / 0.25) : 0;
+    const pulse = low > 0 ? 0.5 + 0.5 * Math.sin(now / 220) : 0;
+    const alpha = Math.min(0.6, flash * 0.5 + low * pulse * 0.32);
+    if (alpha <= 0.01) return;
+
+    const g = this.g;
+    const w = this.canvas.width, h = this.canvas.height;
+    const grad = g.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.32,
+      w / 2, h / 2, Math.max(w, h) * 0.62,
+    );
+    grad.addColorStop(0, "rgba(150,12,12,0)");
+    grad.addColorStop(1, `rgba(150,12,12,${alpha.toFixed(3)})`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+  }
+
+  /**
+   * A dark "knocked out" curtain while the player is down, with the seconds
+   * left until they wake. Fades in fast and out as they respawn.
+   */
+  private drawDeathOverlay(now: number): void {
+    const player = this.bridge.state.player;
+    if (player.alive) return;
+    const g = this.g;
+    const w = this.canvas.width, h = this.canvas.height;
+    g.fillStyle = "rgba(8,4,4,0.68)";
+    g.fillRect(0, 0, w, h);
+    const secs = Math.max(0, Math.ceil((player.respawnAt - now) / 1000));
+    const px = (n: number): number => n * this.dpr;
+    g.save();
+    g.textAlign = "center";
+    g.fillStyle = "#e2483a";
+    g.font = `700 ${px(30)}px "Cinzel", serif`;
+    g.fillText("Knocked out", w / 2, h / 2 - px(8));
+    g.fillStyle = "#cdbfae";
+    g.font = `${px(15)}px "EB Garamond", serif`;
+    g.fillText(secs > 0 ? `Waking in ${secs}…` : "Waking…", w / 2, h / 2 + px(22));
+    g.restore();
   }
 
   /** Short radiating impact bursts on the worked tile (chips, sparks, splash). */
