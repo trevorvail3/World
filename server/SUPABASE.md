@@ -54,6 +54,50 @@ That's it. Open the game → **World** tab → **Hiscores** → **Sign in** with
 idle-game account. Your stats upload each time you open the board, and the
 rankings are shared with everyone who plays World.
 
+## Cloud saves — second table (run this too)
+
+So a character follows your account to any device, add the saves table. Same SQL
+editor, paste and **Run**:
+
+```sql
+-- One row per signed-in user: their character's full save blob.
+create table if not exists public.world_saves (
+  user_id    uuid primary key references auth.users (id) on delete cascade,
+  name       text,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.world_saves enable row level security;
+
+-- Saves are PRIVATE: you can only read your own.
+drop policy if exists "world_saves_read_own" on public.world_saves;
+create policy "world_saves_read_own"
+  on public.world_saves for select
+  using (auth.uid() = user_id);
+
+-- And only write/replace/delete your own.
+drop policy if exists "world_saves_insert_own" on public.world_saves;
+create policy "world_saves_insert_own"
+  on public.world_saves for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "world_saves_update_own" on public.world_saves;
+create policy "world_saves_update_own"
+  on public.world_saves for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "world_saves_delete_own" on public.world_saves;
+create policy "world_saves_delete_own"
+  on public.world_saves for delete
+  using (auth.uid() = user_id);
+```
+
+Now your character loads from the cloud at sign-in and uploads as you play. Sign
+in on another device and the same character is there. (Unlike the hiscores
+board, saves are private — the RLS rules above let you read only your own.)
+
 ## How it works
 - **Read** is public: anyone can see the rankings, even before signing in.
 - **Write** is locked to the owner: the RLS rules mean a signed-in user can only

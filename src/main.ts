@@ -35,12 +35,14 @@ import {
   clearSave,
   listAccounts,
   readSave,
+  readSaveFor,
   setCurrentAccount,
   writeSave,
 } from "./client/storage.ts";
 import { CharacterCreator, type CreatedCharacter } from "./client/characterCreator.ts";
 import { LoginUI } from "./client/loginUI.ts";
 import { currentUser, signOut } from "./client/supabase.ts";
+import { loadCloud, saveCloud, deleteCloud } from "./client/cloudSave.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
 // (never stated as fact) to honour the world's load-bearing ambiguity.
@@ -68,28 +70,82 @@ if (!canvas || !hudRoot || !app) {
 //     before reaching character creation or your save. A live session is kept
 //     in localStorage, so returning visitors skip straight past the login. ---
 function start(): void {
-  if (currentUser()) { afterLogin(); return; }
-  new LoginUI(app!, afterLogin);
+  if (currentUser()) { void afterLogin(); return; }
+  new LoginUI(app!, () => void afterLogin());
 }
 
-// --- One character per account (OSRS-style): no selection screen. Load the
-//     single existing save if there is one; otherwise go straight to the
-//     character creator. ---
-function afterLogin(): void {
-  const accounts = listAccounts();
-  if (accounts.length > 0) {
-    setCurrentAccount(accounts[0]!); // the one and only character
-    boot(null);
+// --- Cloud-first load: a character follows the account to any device.
+//     The cloud row is the source of truth; the local save is a fast mirror /
+//     offline fallback. We are careful NEVER to overwrite the cloud after a
+//     failed (offline) read, so a flaky connection can't wipe a real save. ---
+async function afterLogin(): Promise<void> {
+  const user = currentUser();
+  if (!user) { start(); return; }
+
+  // A character made on this device before cloud saves existed (keyed by name).
+  const priorNames = listAccounts().filter((n) => n !== user.id);
+  const priorSave = priorNames.length > 0 ? readSaveFor(priorNames[0]!) : null;
+
+  setCurrentAccount(user.id); // saves now target this account's slot
+
+  const cloud = await loadCloud();
+
+  // Cloud unreachable — its state is unknown. Play from a local copy if we have
+  // one (cloudReady=false: we won't push and risk clobbering), else ask to retry.
+  if (!cloud.ok) {
+    const local = readSave() ?? priorSave;
+    if (local) {
+      if (!readSave()) writeSave(local);
+      boot(null, false);
+    } else {
+      showCloudRetry();
+    }
+    return;
+  }
+
+  // Cloud has a save: it wins. Mirror it locally and play.
+  if (cloud.data) {
+    writeSave(cloud.data);
+    boot(null, true);
+    return;
+  }
+
+  // Cloud reached but empty. Migrate this device's existing character up, or
+  // start a brand-new one.
+  if (priorSave) {
+    writeSave(priorSave);
+    boot(null, true); // boot's first cloud push uploads it
     return;
   }
   new CharacterCreator(app!, {
     takenNames: [],
-    onCreate: (c) => { setCurrentAccount(c.name); boot(c); },
+    onCreate: (c) => boot(c, true),
   });
 }
 
-// --- Build the world for the chosen account and start playing. ---
-function boot(newChar: CreatedCharacter | null): void {
+// --- Shown only when the cloud can't be reached and there's nothing local to
+//     fall back to: starting fresh here could overwrite a save we just couldn't
+//     see, so we ask the player to reconnect instead. ---
+function showCloudRetry(): void {
+  const back = document.createElement("div");
+  back.className = "login-backdrop";
+  back.innerHTML = `
+    <div class="login-box">
+      <div class="login-title">VARATH</div>
+      <div class="login-sub">Couldn't reach your saved world.</div>
+      <div class="login-msg">Check your connection — we won't start a new character while your cloud save is out of reach.</div>
+      <button class="login-go" type="button">Retry</button>
+    </div>`;
+  (back.querySelector(".login-go") as HTMLElement).addEventListener(
+    "click", () => window.location.reload(),
+  );
+  app!.appendChild(back);
+}
+
+// --- Build the world for the chosen account and start playing.
+//     `cloudReady` is true only when we've confirmed the cloud's state this
+//     session; cloud writes are gated on it so an offline start can't clobber. ---
+function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   const startNow = performance.now();
   const state = createWorld(content, playerStart, ctxAt(startNow));
   const walkable = buildWalkability(content, state);
@@ -120,7 +176,7 @@ function boot(newChar: CreatedCharacter | null): void {
   // own `pagehide` would re-serialise the player and resurrect the cleared save.
   let wiped = false;
 
-  // Reset wipes this account's save and returns to the login screen.
+  // Reset wipes this account's save (local AND cloud) and returns to login.
   const resetProgress = (): void => {
     const ok = window.confirm(
       "Reset this character? This erases their skills, levels and pack for good.",
@@ -128,7 +184,10 @@ function boot(newChar: CreatedCharacter | null): void {
     if (!ok) return;
     wiped = true;
     clearSave();
-    window.location.reload();
+    const done = (): void => window.location.reload();
+    // Also clear the cloud, or the next load would restore the wiped character.
+    if (cloudReady && currentUser()) void deleteCloud().then(done, done);
+    else done();
   };
 
   const menu = new ContextMenu(app!);
@@ -137,12 +196,13 @@ function boot(newChar: CreatedCharacter | null): void {
   const dispatch = (intent: Intent): void => game.dispatch(intent);
   // `game` is assigned just below; the slider may read zoom during Hud build,
   // so guard until the loop exists (the HUD re-syncs the slider each frame).
-  // Sign out: persist first so progress is safe, then drop the session and
-  // return to the login screen.
+  // Sign out: persist first (local + cloud) so progress is safe, then drop the
+  // session and return to the login screen.
   const signOutAndReturn = (): void => {
     persist(false);
-    signOut();
-    window.location.reload();
+    const done = (): void => { signOut(); window.location.reload(); };
+    if (cloudReady && !wiped) void cloudPersist().then(done, done);
+    else done();
   };
 
   const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
@@ -158,7 +218,7 @@ function boot(newChar: CreatedCharacter | null): void {
   saveTag.textContent = "Saved";
   hudRoot!.appendChild(saveTag);
 
-  // Autosave: periodically and whenever the tab is hidden.
+  // Local autosave: periodically and whenever the tab is hidden.
   const persist = (showTag = false): void => {
     if (wiped) return;
     writeSave(serializePlayer(state));
@@ -168,15 +228,30 @@ function boot(newChar: CreatedCharacter | null): void {
       saveTag.classList.add("show");
     }
   };
+
+  // Cloud sync: push the save up so the character follows the account. Gated on
+  // cloudReady (only when we've confirmed the cloud's state) so an offline start
+  // can never overwrite a real save. Runs less often than the local autosave.
+  let cloudInFlight = false;
+  const cloudPersist = async (): Promise<void> => {
+    if (!cloudReady || wiped || cloudInFlight) return;
+    cloudInFlight = true;
+    try { await saveCloud(serializePlayer(state), state.player.appearance.name); }
+    finally { cloudInFlight = false; }
+  };
+
   window.setInterval(() => persist(true), 4000);
-  window.addEventListener("pagehide", () => persist(false));
+  window.setInterval(() => void cloudPersist(), 30000);
+  window.addEventListener("pagehide", () => { persist(false); void cloudPersist(); });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") persist(false);
+    if (document.visibilityState === "hidden") { persist(false); void cloudPersist(); }
   });
 
   // Write an immediate save so a brand-new character's name and colours survive
-  // a quit inside the first autosave window (4s).
+  // a quit inside the first autosave window (4s) — locally and (if migrating a
+  // local character or starting fresh) to the cloud.
   persist();
+  void cloudPersist();
 
   game.start();
 
