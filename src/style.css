@@ -1895,6 +1895,32 @@ button.inv-slot {
 .hiscores-val { font-family: "Cinzel", serif; color: var(--ember); font-variant-numeric: tabular-nums; }
 .hiscores-empty { color: var(--ink-dim); text-align: center; padding: 16px; font-style: italic; }
 .hiscores-note { margin-top: 9px; text-align: center; font-size: 11px; color: var(--ink-dim); font-style: italic; }
+.hiscores-auth { margin-top: 10px; border-top: 1px solid var(--panel-edge); padding-top: 10px; }
+.hiscores-who { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim); }
+.hiscores-signout {
+  float: right; font-family: "EB Garamond", serif; font-size: 12px;
+  color: var(--ink-dim); background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-edge); border-radius: 8px; padding: 2px 9px; cursor: pointer;
+}
+.hiscores-signout:hover { color: var(--ember); }
+.hiscores-form { display: flex; flex-direction: column; gap: 6px; }
+.hiscores-form-tip { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); }
+.hiscores-email, .hiscores-pass {
+  font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink);
+  background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-edge);
+  border-radius: 7px; padding: 6px 8px;
+}
+.hiscores-email:focus, .hiscores-pass:focus { outline: none; border-color: var(--gold); }
+.hiscores-form-btns { display: flex; gap: 6px; }
+.hiscores-signin, .hiscores-signup {
+  flex: 1; font-family: "Cinzel", serif; font-size: 12px; cursor: pointer;
+  border-radius: 8px; padding: 6px 8px;
+}
+.hiscores-signin { color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b; }
+.hiscores-signup { color: var(--ink-dim); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-edge); }
+.hiscores-signin:hover { background: #e08a3e; }
+.hiscores-signup:hover { color: var(--ink); }
+.hiscores-err { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ember); min-height: 1em; }
 .skillpick-modal {
   background: var(--panel, #1c1812);
   border: 1px solid var(--panel-edge);
