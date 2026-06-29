@@ -859,8 +859,7 @@ export class Hud {
     const base = gearLine(def) || def.description;
     const req = equipRequirement(this.content, id);
     if (!req) return base;
-    const what = req.skill === "combat" ? "Combat" : this.content.skills[req.skill].name;
-    return `${base} · Requires ${what} ${req.level}`;
+    return `${base} · Requires ${this.content.skills[req.skill].name} ${req.level}`;
   }
 
   /** Long-press a worn slot to inspect it, with the option to take it off. */

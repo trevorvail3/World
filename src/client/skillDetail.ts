@@ -10,11 +10,10 @@ import type { Content, ItemId, SkillId, WorldState } from "../core/types.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { equipRequirement } from "../core/worldCore.ts";
 
-/** Which gear each combat skill is about, and the slots that count toward it.
- *  All combat gear gates on the player's *combat* level, not the skill itself. */
+/** Which gear each combat skill gates: weapons need Edge, armour needs Ward,
+ *  bows & arrows need Draw — each measured against that skill's own level. */
 const COMBAT_GEAR: Partial<Record<SkillId, { label: string; slots: string[] }>> = {
   edge: { label: "Weapons", slots: ["mainhand"] },
-  vigour: { label: "Weapons", slots: ["mainhand"] },
   ward: { label: "Armour", slots: ["helmet", "armor", "legs", "boots", "offhand"] },
   draw: { label: "Bows & Arrows", slots: ["ranged", "ammo"] },
 };
@@ -124,7 +123,7 @@ export class SkillDetailModal {
         if (!def.slot || !gear.slots.includes(def.slot) || def.tool) continue;
         if (def.tier === undefined) continue;
         const req = equipRequirement(this.content, id);
-        if (req && req.skill !== "combat") continue; // capes etc. live elsewhere
+        if (req && req.skill !== skill) continue; // gated by a different skill
         const lvl = req ? req.level : 1;
         const list = byLevel.get(lvl) ?? [];
         if (!list.includes(def.name)) list.push(def.name);
@@ -145,14 +144,6 @@ export class SkillDetailModal {
       activities.set("Guides", byLevel);
     }
 
-    // What level the ladder is measured against: combat gear reads the player's
-    // combat level; everything else uses the skill's own level.
-    const lv = (id: SkillId): number => state.player.skills[id].level;
-    const combatLvl = Math.floor(
-      (lv("ward") + lv("vitality")) / 4 + Math.max((lv("edge") + lv("vigour")) / 4, lv("draw") / 2),
-    );
-    const ladderLevel = gear ? combatLvl : s.level;
-
     if (activities.size === 0) {
       // Action-less skills (combat, agility…) have no recipe ladder — the blurb
       // above already explains how they train, so nothing more is needed here.
@@ -161,13 +152,13 @@ export class SkillDetailModal {
       const minLvl = (m: Map<number, string[]>) => Math.min(...m.keys());
       const groups = [...activities.entries()].sort((a, b) => minLvl(a[1]) - minLvl(b[1]));
       const single = groups.length === 1;
-      html += `<div class="sd-laddertitle">${gear ? `Equip — by Combat level ${combatLvl}` : "Unlocks"}</div>`;
+      html += `<div class="sd-laddertitle">${gear ? "Equip" : "Unlocks"}</div>`;
       for (const [name, byLevel] of groups) {
         if (!single) html += `<div class="sd-actgroup">${name}</div>`;
         html += `<div class="sd-ladder">`;
         let nextMarked = false;
         for (const [lvl, names] of [...byLevel.entries()].sort((a, b) => a[0] - b[0])) {
-          const unlocked = ladderLevel >= lvl;
+          const unlocked = s.level >= lvl;
           let cls = unlocked ? "done" : "locked";
           if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
           const mark = unlocked ? glyph("check") : cls === "next" ? glyph("next") : glyph("lock");

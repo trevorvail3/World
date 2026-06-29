@@ -1181,8 +1181,22 @@ function tryPetDrop(
   }
 }
 
-/** Combat level needed to equip each gear tier (idle game GEAR_TIER_REQS). */
+/** Skill level needed to equip each gear tier (index = tier 1–10). */
 const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
+
+/** Which combat skill gates each wearable slot: weapons train/need Edge, armour
+ *  needs Ward, bows and arrows need Draw. Other slots (jewellery, capes, mount,
+ *  companion) carry no level gate. */
+const GEAR_SLOT_SKILL: Partial<Record<string, SkillId>> = {
+  mainhand: "edge",
+  ranged: "draw",
+  ammo: "draw",
+  helmet: "ward",
+  armor: "ward",
+  legs: "ward",
+  boots: "ward",
+  offhand: "ward",
+};
 
 /** Which gathering skill each tool kind serves. */
 const TOOL_SLOT_SKILL: Record<"hatchet" | "pickaxe" | "rod", SkillId> = {
@@ -1208,13 +1222,14 @@ const TOOL_TIER_SPEED = [1, 1, 0.93, 0.86, 0.78, 0.72, 0.66, 0.6, 0.55, 0.5, 0.4
 
 /**
  * The skill + level a piece of gear or a tool needs before it can be worn.
- * Tools gate on their gathering skill; combat gear gates on combat level.
- * Exported so the UI can show the same requirement the equip check enforces.
+ * Tools gate on their gathering skill; weapons gate on Edge, armour on Ward,
+ * bows/arrows on Draw. Exported so the UI shows the same requirement the equip
+ * check enforces.
  */
 export function equipRequirement(
   content: Content,
   itemId: ItemId,
-): { skill: SkillId | "combat"; level: number } | null {
+): { skill: SkillId; level: number } | null {
   const def = content.items[itemId];
   if (!def) return null;
   // Skill capes are gated at level 99 in their skill (read from meta.skill). The
@@ -1228,8 +1243,10 @@ export function equipRequirement(
     const level = TOOL_TIER_REQS[def.tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
+  const gearSkill = def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined;
+  if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
   const level = GEAR_TIER_REQS[def.tier] ?? 0;
-  return level > 1 ? { skill: "combat", level } : null;
+  return level > 1 ? { skill: gearSkill, level } : null;
 }
 
 /** Guard a counter intent: true only while the player stands at that station. */
@@ -1279,16 +1296,15 @@ function equipSlot(
     equipAmmo(player, content, slot, events);
     return;
   }
-  // Honour the level requirement: tools gate on their gathering skill, combat
-  // gear on combat level (e.g. a Ribstone Pickaxe needs Mining 30 to wield).
+  // Honour the level requirement: tools gate on their gathering skill, weapons
+  // on Edge, armour on Ward, bows on Draw (e.g. a Ribstone Pickaxe needs Mining
+  // 30; a tier-5 sword needs Edge 40).
   const req = equipRequirement(content, data.item);
   if (req) {
-    const have = req.skill === "combat" ? combatLevel(player) : skillLvl(player, req.skill);
-    if (have < req.level) {
-      const what = req.skill === "combat" ? "combat" : content.skills[req.skill].name;
+    if (skillLvl(player, req.skill) < req.level) {
       events.push({
         type: "LOG",
-        message: `You need ${what} level ${req.level} to wield the ${def.name}.`,
+        message: `You need ${content.skills[req.skill].name} level ${req.level} to wield the ${def.name}.`,
       });
       return;
     }
