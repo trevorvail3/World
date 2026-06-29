@@ -20,7 +20,7 @@ import type {
   WorldObjectState,
   WorldState,
 } from "../core/types.ts";
-import { objectPos } from "../core/worldCore.ts";
+import { objectPos, objectHidden } from "../core/worldCore.ts";
 import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
@@ -757,6 +757,7 @@ export function drawWorld(
   for (const def of content.objects) {
     const obj = state.objects[def.id];
     if (!obj) continue;
+    if (objectHidden(def, state.player)) continue; // story-gated: not revealed yet
     // Creatures render at their live (wandering) position; fixed objects at def.
     const p = objectPos(def, obj);
     if (!inRegion(Math.round(p.x), Math.round(p.y))) continue; // mask other instances
@@ -2474,6 +2475,8 @@ function drawMonsterBody(
       return drawBat(g, cx, cy, now);
     case "ashen_wyrm":
       return drawDragon(g, cx, cy, now);
+    case "boneman":
+      return drawBoneman(g, cx, cy, now);
     case "bog_knight":
       return H("#5b6470", "#7a8492"); // grey armour
     case "redrun_brigand":
@@ -2566,6 +2569,79 @@ function drawDragon(g: CanvasRenderingContext2D, cx: number, cy: number, now: nu
   g.beginPath(); g.ellipse(cx + 7, cy - 15, 2.4, 1.4, 0, 0, Math.PI * 2); g.fill();
   g.fillStyle = "#ffd23a";
   circle(g, cx + 4, cy - 18, 1.1);
+}
+
+/** The Boneman: a tall, gaunt killer draped in his victims' bones — a stitched
+ *  skull-mask, an exposed ribcage and a long, toothed saw he never sets down.
+ *  Drawn a touch oversized and hunched so he reads as a boss, not a bandit. */
+function drawBoneman(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const sway = Math.sin(now / 700) * 1.5;        // slow, predatory idle
+  const saw = Math.sin(now / 520) * 1.2;         // the saw twitches in his grip
+  shadow(g, cx, cy + 15, 13, 4.5);
+
+  // --- Legs: pale, bound bone ---
+  g.strokeStyle = "#cdc6b4"; g.lineWidth = 4.5; g.lineCap = "round";
+  g.beginPath(); g.moveTo(cx - 4, cy + 3); g.lineTo(cx - 5, cy + 14); g.stroke();
+  g.beginPath(); g.moveTo(cx + 4, cy + 3); g.lineTo(cx + 5, cy + 14); g.stroke();
+
+  // --- Torso: a dark sinew-and-rag robe ---
+  g.fillStyle = "#36312b";
+  g.beginPath();
+  g.moveTo(cx - 7 + sway, cy - 7);
+  g.quadraticCurveTo(cx - 9 + sway, cy + 4, cx - 6, cy + 5);
+  g.lineTo(cx + 6, cy + 5);
+  g.quadraticCurveTo(cx + 9 + sway, cy + 4, cx + 7 + sway, cy - 7);
+  g.closePath(); g.fill();
+
+  // --- Ribcage strapped over the chest (pale bone) ---
+  g.strokeStyle = "#e7e1d0"; g.lineWidth = 1.4; g.lineCap = "round";
+  for (const ry of [-4, -1, 2] as const) {
+    g.beginPath();
+    g.moveTo(cx - 5 + sway, cy + ry);
+    g.quadraticCurveTo(cx + sway, cy + ry + 2.4, cx + 5 + sway, cy + ry);
+    g.stroke();
+  }
+  g.lineWidth = 1.6; // spine
+  g.beginPath(); g.moveTo(cx + sway, cy - 6); g.lineTo(cx + sway, cy + 4); g.stroke();
+
+  // --- Left arm holding the saw across the body ---
+  g.strokeStyle = "#cdc6b4"; g.lineWidth = 3.4;
+  g.beginPath(); g.moveTo(cx + 6 + sway, cy - 5); g.lineTo(cx + 11, cy + 2 + saw); g.stroke();
+
+  // --- The Bonesaw: a long pale blade with teeth, wrapped handle ---
+  g.save();
+  g.translate(cx + 11, cy + 2 + saw);
+  g.rotate(-0.5);
+  g.strokeStyle = "#4a3527"; g.lineWidth = 2.6; // hide-wrapped handle
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 5); g.stroke();
+  g.fillStyle = "#ded7c4"; // blade
+  g.fillRect(-1.6, -20, 3.2, 20);
+  g.fillStyle = "#bdb6a2"; // teeth (a saw edge)
+  for (let t = -19; t < 0; t += 2.4) { g.beginPath(); g.moveTo(1.6, t); g.lineTo(3.4, t + 1.1); g.lineTo(1.6, t + 2.2); g.closePath(); g.fill(); }
+  g.restore();
+
+  // --- Right arm, hanging ---
+  g.strokeStyle = "#cdc6b4"; g.lineWidth = 3.4;
+  g.beginPath(); g.moveTo(cx - 6 + sway, cy - 5); g.lineTo(cx - 9, cy + 4); g.stroke();
+
+  // --- Head: a stitched skull-mask, hooded ---
+  const hx = cx + sway * 1.3, hy = cy - 12;
+  g.fillStyle = "#26221d"; // hood/shoulders behind the skull
+  g.beginPath(); g.ellipse(hx, hy + 1, 7, 6, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#ece6d6"; // pale skull face
+  g.beginPath(); g.ellipse(hx, hy, 5, 5.5, 0, 0, Math.PI * 2); g.fill();
+  // hollow eye sockets
+  g.fillStyle = "#15110d";
+  circle(g, hx - 2, hy - 0.5, 1.5);
+  circle(g, hx + 2, hy - 0.5, 1.5);
+  // a faint red gleam, deep in the sockets
+  g.fillStyle = "rgba(190,40,30,0.9)";
+  circle(g, hx - 2, hy - 0.5, 0.6);
+  circle(g, hx + 2, hy - 0.5, 0.6);
+  // stitched mouth-line
+  g.strokeStyle = "#15110d"; g.lineWidth = 0.9;
+  g.beginPath(); g.moveTo(hx - 2.6, hy + 3); g.lineTo(hx + 2.6, hy + 3); g.stroke();
+  for (let sx = -2; sx <= 2; sx += 1.3) { g.beginPath(); g.moveTo(hx + sx, hy + 2.2); g.lineTo(hx + sx, hy + 3.8); g.stroke(); }
 }
 
 // --- Serpent: a coiled, scaled body with a raised head ---

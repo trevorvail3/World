@@ -483,6 +483,11 @@ export type ItemId =
   | "wyrm_legs"
   | "wyrm_shield"
   | "wyrm_blade"
+  | "bone_helm"
+  | "bone_body"
+  | "bone_legs"
+  | "bone_shield"
+  | "bonesaw"
   | "serpent_scale"
   | "spider_silk"
   | "bat_wing"
@@ -805,6 +810,10 @@ export interface WorldObjectDef {
   name: string;
   /** Monsters only: which MonsterStats (in Content.monsters) this uses. */
   monster?: string;
+  /** Story-gated object: only present (visible, clickable, interactable) once
+   *  the player has this flag set. Used to keep a quest boss hidden until the
+   *  quest that unlocks it has revealed its lair. */
+  requiresFlag?: string;
   /**
    * Resource nodes (tree/rock/fishing_spot) only: the SkillAction id this node
    * yields (e.g. "fell_coldpine"). Determines the item, XP and level required.

@@ -41,7 +41,7 @@ import { Camera, drawWorld, TILE } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
-import { objectPos, travelFare } from "../core/worldCore.ts";
+import { objectPos, objectHidden, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
 /**
@@ -1116,6 +1116,7 @@ export class Game {
     let best = Infinity, found: { x: number; y: number } | null = null;
     for (const o of this.bridge.content.objects) {
       if (o.kind !== "monster" || o.monster !== monster) continue;
+      if (objectHidden(o, this.bridge.state.player)) continue; // story-gated
       if (!this.bridge.state.objects[o.id]?.available) continue;
       const op = objectPos(o, this.bridge.state.objects[o.id]);
       const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
@@ -1132,6 +1133,7 @@ export class Game {
     const nearestOf = (pred: (o: typeof content.objects[number]) => boolean): { x: number; y: number } | null => {
       let best = Infinity, found: { x: number; y: number } | null = null;
       for (const o of content.objects) {
+        if (objectHidden(o, state.player)) continue; // story-gated
         if (!pred(o)) continue;
         const op = objectPos(o, state.objects[o.id]);
         const d = (op.x - p.x) ** 2 + (op.y - p.y) ** 2;
@@ -1566,7 +1568,9 @@ export class Game {
   }
 
   private objectAt(tile: Vec2) {
+    const player = this.bridge.state.player;
     return this.bridge.content.objects.find((o) => {
+      if (objectHidden(o, player)) return false; // story-gated: not there yet
       const p = objectPos(o, this.bridge.state.objects[o.id]);
       return Math.round(p.x) === tile.x && Math.round(p.y) === tile.y;
     });

@@ -595,6 +595,12 @@ export const objects: WorldObjectDef[] = [
   { id: "wyrm_sign", kind: "signpost", x: 59, y: 91, name: "Cindrath's Roost", lines: ["CINDRATH'S ROOST — turn back unless you've come to kill a dragon. Bring a stabbing weapon."] },
   { id: "ashen_wyrm_1", kind: "monster", x: 62, y: 90, name: "Cindrath, the Ashen Wyrm", monster: "ashen_wyrm" },
 
+  // === The Boneman: a mid-tier quest boss in a hidden hollow of the old wood.
+  // Hidden until the Bone Collector quest tracks the killer to his lair (the
+  // boneman_revealed flag). A crushing weapon shatters his bone armour best. ===
+  { id: "bonefield_sign", kind: "signpost", x: 14, y: 62, name: "The Bonefield", requiresFlag: "boneman_revealed", lines: ["THE BONEFIELD — a clearing the wood grew around. Small cairns of stacked bone stand in rows, each one a person. Crushing weapons fare best against what made them."] },
+  { id: "boneman_1", kind: "monster", x: 17, y: 62, name: "The Boneman", monster: "boneman", requiresFlag: "boneman_revealed" },
+
   // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
   // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---
   { id: "fh_sign", kind: "signpost", x: 30, y: 58, name: "Forager's Hollow", lines: ["FORAGER'S HOLLOW — fibre and mushrooms to dawnspore, all of it grows wild here."] },

@@ -527,6 +527,16 @@ function findObjectDef(content: Content, id: string): WorldObjectDef | undefined
   return content.objects.find((o) => o.id === id);
 }
 
+/**
+ * Story gate: an object with a `requiresFlag` is treated as absent until the
+ * player owns that flag. The client (render, minimap, click-targeting) and the
+ * core (interaction) all consult this so a quest boss stays hidden — and
+ * un-attackable — until its quest reveals the lair.
+ */
+export function objectHidden(def: WorldObjectDef, player: Player): boolean {
+  return !!def.requiresFlag && !player.flags.includes(def.requiresFlag);
+}
+
 /** The combat stats for a monster object, or undefined for non-monsters. */
 function monsterFor(
   content: Content,
@@ -1556,6 +1566,7 @@ function startInteraction(
   const obj = state.objects[objId];
   if (!obj) return;
   const { player } = state;
+  if (objectHidden(def, player)) return; // story-gated: not here yet
   const mode = player.pendingInteractMode;
   player.pendingInteractId = null;
   player.pendingInteractMode = null;

@@ -1035,6 +1035,61 @@ export const quests: QuestDef[] = [
     },
   },
 
+  // ===========================================================================
+  // THE BONE COLLECTOR — a short, grim hunt the watch won't put on the ledger.
+  // Offered by the Off-Duty Guard once you've taken the Roost (sq_roost_done).
+  // A choice with Lenne reveals the Boneman's lair (boneman_revealed), which
+  // un-hides the mid-tier boss in the old wood — the only source of the
+  // Bonewrought set and the Bonesaw.
+  // ===========================================================================
+  {
+    id: "q_boneman",
+    name: "The Bone Collector",
+    giver: "town_guard",
+    requiresFlags: ["sq_roost_done"],
+    intro: [
+      "You took the Roost, so I'll trust you with the one that keeps me up at night. This doesn't go in the ledger — the watch pretends it isn't happening.",
+      "Years now, people go missing off the quiet roads. We find them later, if we find them — and never the bones. He takes the bones. Wears them, they say. Folk call him the Boneman, and call it a story so they can sleep.",
+      "It's no story. He keeps to the deep wood west of here, where even the Lodge won't mark the maps. Find Lenne the tracker — she watches that treeline. If anyone knows where his cairns are, it's her.",
+    ],
+    steps: [
+      {
+        type: "choice",
+        npc: "lenne",
+        text: "Find Lenne the tracker in the Greyoak wood",
+        prompt: "Lenne has tracked the bone-cairns to a hollow in the old growth. 'I'll take you to the edge of it. How do you mean to do this?'",
+        options: [
+          {
+            label: "Straight in. Before he moves the cairns again.",
+            flags: ["boneman_revealed", "boneman_hunt_direct"],
+            reply: "Lenne leads you to the treeline and points. 'The Bonefield's through there. I go no further — that's a place for one set of footprints, and they shouldn't be mine. Make them yours.'",
+          },
+          {
+            label: "Quietly. Read his ground first, then strike.",
+            flags: ["boneman_revealed", "boneman_hunt_careful"],
+            reply: "Lenne nods, approving. 'A tracker's answer. I'll show you the trail in. Read the cairns, learn how he moves — then end him on your terms. The Bonefield's waiting.'",
+          },
+        ],
+      },
+      { type: "kill", monster: "boneman", count: 1, text: "Put the Boneman down in the Bonefield (0/1)" },
+      { type: "talk", npc: "town_guard", text: "Bring the Off-Duty Guard the grim news" },
+    ],
+    outro: [
+      "Dead, then. After all these years. You'll forgive me if I don't celebrate a thing like that — but the roads are safer tonight than they've been in a long while.",
+      "Keep what you took off him. The watch wants no part of it — but a person who'll do the job nobody ledgers has earned the spoils nobody else will touch. He won't stay down for long; his kind never do. Come back to the Bonefield whenever you've the stomach for it.",
+    ],
+    reward: {
+      xp: [
+        { skill: "edge", amount: 650 },
+        { skill: "ward", amount: 350 },
+        { skill: "vitality", amount: 350 },
+      ],
+      items: [{ item: "marrow_shard", qty: 2 }],
+      gold: 600,
+      flags: ["q_boneman_complete"],
+    },
+  },
+
   {
     id: "q_sq_courier",
     name: "The Overdue Rider",

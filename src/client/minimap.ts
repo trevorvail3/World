@@ -7,7 +7,7 @@
  */
 
 import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types.ts";
-import { objectPos } from "../core/worldCore.ts";
+import { objectPos, objectHidden } from "../core/worldCore.ts";
 import { OVERWORLD_HEIGHT, instanceRectAt, REGIONS, CITY } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
 import { iconize } from "./glyph.ts";
@@ -274,6 +274,7 @@ export class Minimap {
     for (const def of content.objects) {
       const color = MM_OBJ[def.kind];
       if (!color) continue;
+      if (objectHidden(def, state.player)) continue; // story-gated: not revealed yet
       const obj = state.objects[def.id];
       const p = objectPos(def, obj);
       if (p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) continue;

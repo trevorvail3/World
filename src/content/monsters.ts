@@ -1223,5 +1223,32 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "cut_gem", chance: 0.4, min: 1, max: 2, tier: "uncommon" },
       { item: "shard_of_orun", chance: 0.05, tier: "legendary" },
     ],
+  },
+  // === The Boneman: a mid-tier quest boss — a serial killer's lair. ==========
+  "boneman": {
+    id: "boneman", name: "The Boneman", level: 56, hp: 340,
+    acc: 210, def: 58, maxHit: 30, speed: 3600, xp: 1400, attackStyle: "slash",
+    weakness: ["crush"],
+    desc: "A gaunt thing in a mask of stitched faces, dragging a long saw it never sets down. It has hunted the roads of Varath for years, taking the bones of those it kills and wearing them. Crushing weapons shatter its grisly armour best.",
+    mechanics: [
+      // 1. Bone Cleave — a wide, telegraphed saw stroke every 5th swing.
+      { type: "heavy", every: 5, mult: 2.0, tell: "The Boneman hauls the saw back over his shoulder — BONE CLEAVE!" },
+      // 2. Marrow Feast — once, below 45% HP, he feeds on his trophies and mends.
+      { type: "selfheal", below: 0.45, amount: 80, tell: "The Boneman cracks a bone and sucks the marrow — his wounds knit shut!" },
+    ],
+    drops: [
+      // The Bonewrought set + the Bonesaw, equal Barrows-style rates.
+      { item: "bone_helm", chance: 0.13, tier: "rare" },
+      { item: "bone_body", chance: 0.13, tier: "rare" },
+      { item: "bone_legs", chance: 0.13, tier: "rare" },
+      { item: "bone_shield", chance: 0.13, tier: "rare" },
+      { item: "bonesaw", chance: 0.13, tier: "rare" },
+      // A dry run still pays: coin, a bone trophy, gems, and seeds to sell.
+      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "marrow_shard", chance: 0.6, min: 1, max: 3, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
+      { item: "hearthite_bar", chance: 0.25, min: 1, max: 2, tier: "uncommon" },
+      { item: "seed_bloodberry", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
+    ],
   }
 };
