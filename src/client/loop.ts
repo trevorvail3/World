@@ -1569,6 +1569,17 @@ export class Game {
     }
     if (obj.kind === "shrine" && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
+    if (obj.kind === "fishing_spot" && obj.catches?.length) {
+      const lvl = this.bridge.state.player.skills.fishing?.level ?? 1;
+      const list = obj.catches.map((c) => {
+        const a = this.bridge.content.actions.find((x) => x.id === c.action);
+        if (!a) return null;
+        const req = a.levelReq ?? 1;
+        const fish = (a.produces && this.bridge.content.items[a.produces]?.name) || a.name;
+        return `${fish} (lvl ${req})${lvl >= req ? "" : " ✗"}`;
+      }).filter(Boolean);
+      return `Catch here: ${list.join(", ")}.`;
+    }
     return EXAMINE_OBJECT[obj.kind];
   }
 

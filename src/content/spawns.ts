@@ -15,6 +15,13 @@
 import type { WorldObjectDef } from "../core/types.ts";
 import { HOMES, homeLayout } from "./map.ts";
 
+// OSRS-style mixed fishing spots: each catch rolls one fish (weighted) from the
+// pool that you meet the level for. River = the early waters around Ironvale.
+const POOL_RIVER = [
+  { action: "fish_ashfin", weight: 10 },  // lvl 1
+  { action: "fish_greyfin", weight: 4 },  // lvl 20
+];
+
 /**
  * Every player home's objects, generated from the shared floorplan in map.ts:
  * the lot's claim marker + entry door, the interior exit door, the sealed
@@ -265,8 +272,12 @@ export const objects: WorldObjectDef[] = [
   { id: "rock_15", kind: "rock", x: 45, y: 42, name: "Knucklestone Rock", resource: "mine_knucklestone" },
 
   // --- Fishing on the lake, south-west of the city ---
-  { id: "fish_1", kind: "fishing_spot", x: 37, y: 72, name: "Fishing Spot", resource: "fish_ashfin" },
-  { id: "fish_2", kind: "fishing_spot", x: 37, y: 76, name: "Fishing Spot", resource: "fish_ashfin" },
+  { id: "fish_1", kind: "fishing_spot", x: 37, y: 72, name: "River Shallows", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_2", kind: "fishing_spot", x: 37, y: 76, name: "River Shallows", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_3", kind: "fishing_spot", x: 41, y: 71, name: "River Shallows", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_4", kind: "fishing_spot", x: 39, y: 79, name: "River Bend", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_5", kind: "fishing_spot", x: 31, y: 80, name: "Reedy Pool", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_6", kind: "fishing_spot", x: 35, y: 81, name: "Reedy Pool", resource: "fish_ashfin", catches: POOL_RIVER },
 
   // --- Aldric's farmstead (plant + tree patches) on the east apron ---
   { id: "patch_1", kind: "plant_patch", x: 81, y: 42, name: "Plant Patch" },
@@ -407,7 +418,8 @@ export const objects: WorldObjectDef[] = [
   { id: "furnace_hill", kind: "furnace", x: 21, y: 17, name: "Hill Kiln" },
   { id: "lm_coldvein", kind: "shrine", x: 8, y: 33, name: "The Coldvein Scar", lines: ["A surface cutting worked dry two generations back. A retired miner still walks up for one last look before his knees give out — not after ore, he says. Just the look."] },
   { id: "lm_redrun_head", kind: "shrine", x: 27, y: 32, name: "The Redrun Head", lines: ["Where a dozen hill-streams braid into the head of the Redrun. The whole long river starts as this — thin water over pale stone."] },
-  { id: "fish_tarn", kind: "fishing_spot", x: 33, y: 30, name: "The Head-Stream Pool", resource: "fish_ashfin" },
+  { id: "fish_tarn", kind: "fishing_spot", x: 33, y: 30, name: "The Head-Stream Pool", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_tarn_2", kind: "fishing_spot", x: 30, y: 34, name: "The Head-Stream Pool", resource: "fish_ashfin", catches: POOL_RIVER },
   { id: "tree_hill_1", kind: "tree", x: 16, y: 20, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
   { id: "tree_hill_2", kind: "tree", x: 20, y: 22, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
 

@@ -2522,6 +2522,31 @@ function processActivity(
  * the action the node yields), roll any rare drop, and — for depleting nodes —
  * roll whether the node runs out. Continuous nodes (fishing) never deplete.
  */
+/** Choose what a node yields this step. For a fishing spot with a catch pool,
+ *  roll one fish (weighted) from those you meet the level for; otherwise the
+ *  node's own action. */
+function rollCatch(
+  player: Player,
+  content: Content,
+  obj: WorldObjectState,
+  fallback: SkillAction,
+  ctx: Ctx,
+): SkillAction {
+  const def = content.objects.find((d) => d.id === obj.id);
+  const pool = def?.catches;
+  if (!pool || pool.length === 0) return fallback;
+  const lvl = skillLvl(player, fallback.skill);
+  const eligible: { a: SkillAction; w: number }[] = [];
+  for (const c of pool) {
+    const a = content.actions.find((x) => x.id === c.action);
+    if (a && a.produces && (a.levelReq ?? 1) <= lvl) eligible.push({ a, w: c.weight });
+  }
+  if (eligible.length === 0) return fallback;
+  let r = ctx.rng() * eligible.reduce((s, e) => s + e.w, 0);
+  for (const e of eligible) { r -= e.w; if (r <= 0) return e.a; }
+  return eligible[eligible.length - 1]!.a;
+}
+
 function gatherStep(
   state: WorldState,
   content: Content,
@@ -2545,25 +2570,29 @@ function gatherStep(
     return;
   }
   if (ctx.rng() < beh.success) {
-    if (!canAddItem(player, action.produces)) {
+    // A fishing spot with a catch pool rolls one fish you meet the level for
+    // (weighted) on each catch — OSRS-style mixed spots. Other nodes (and spots
+    // with no pool) just yield their single action.
+    const yieldAction = rollCatch(player, content, obj, action, ctx);
+    if (!canAddItem(player, yieldAction.produces!)) {
       events.push({ type: "INVENTORY_FULL" });
       clearActivity(player);
       return;
     }
-    grantXp(state, content, action.skill, action.xp, events);
-    addItem(player, action.produces, action.produceQty ?? 1, events);
+    grantXp(state, content, yieldAction.skill, yieldAction.xp, events);
+    addItem(player, yieldAction.produces!, yieldAction.produceQty ?? 1, events);
     events.push({
       type: "LOG",
-      message: `You get ${content.items[action.produces].name}.`,
+      message: `You get ${content.items[yieldAction.produces!].name}.`,
     });
-    tryPetDrop(state, content, action.skill, ctx, events);
+    tryPetDrop(state, content, yieldAction.skill, ctx, events);
     // A node's rare drop (bird nest, gem, etc.).
     if (
-      action.rareDrop &&
-      ctx.rng() < action.rareDrop.chance &&
-      canAddItem(player, action.rareDrop.item)
+      yieldAction.rareDrop &&
+      ctx.rng() < yieldAction.rareDrop.chance &&
+      canAddItem(player, yieldAction.rareDrop.item)
     ) {
-      addItem(player, action.rareDrop.item, 1, events);
+      addItem(player, yieldAction.rareDrop.item, 1, events);
     }
     if (depletes && ctx.rng() < (beh.deplete ?? 0)) {
       obj.available = false;

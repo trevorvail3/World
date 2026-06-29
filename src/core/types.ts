@@ -791,6 +791,10 @@ export interface WorldObjectDef {
    * Defaults to the tier-1 action for the node's kind if omitted.
    */
   resource?: string;
+  /** Fishing spots only: the pool of catches (each a `fish_*` action id + a
+   *  relative weight). On each catch the core rolls one you meet the level for.
+   *  `resource` stays the lowest-level catch (gates starting + the cast anim). */
+  catches?: { action: string; weight: number }[];
   /** NPC only: the lines spoken when talked to. */
   lines?: string[];
   /** A tree/rock species tag for rendering variety (e.g. "greyoak", "coldpine"). */
