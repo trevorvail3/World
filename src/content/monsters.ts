@@ -904,7 +904,7 @@ export const monsters: Record<string, MonsterStats> = {
   "hollow_warden": {
     "id": "hollow_warden",
     "boss": true,
-    "bossHint": "Guards the Hollow Barrows, reached through the cave mouth up in the northern grove. A first true boss — steady gear and a stock of food will see you through.",
+    "bossHint": "Guards the Hollow Barrows — a cave mouth lost in the far eastern woods beyond the Redrun, found only by those who wander off the road. A first true boss; bring steady gear and a stock of food.",
     "name": "The Hollow Warden",
     "icon": "💀",
     "level": 38,

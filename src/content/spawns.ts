@@ -421,11 +421,13 @@ const rawObjects: WorldObjectDef[] = [
 
   // --- The Hollow Barrows portal, up in the grove (arena at x=2) ---
   {
-    id: "portal_hollow", kind: "portal", x: 70, y: 28, name: "The Hollow Barrows",
+    // Moved out to the remote eastern woods edge — a cave mouth you only find by
+    // exploring, not a landmark beside the city. (Return portal target follows.)
+    id: "portal_hollow", kind: "portal", x: 108, y: 24, name: "The Hollow Barrows",
     dungeon: "hollow_barrows", target: { x: 8, y: 118 },
     lines: ["You descend into the Hollow Barrows."],
   },
-  { id: "ret_hollow", kind: "portal", x: 8, y: 119, name: "Barrow Exit", target: { x: 70, y: 29 }, lines: ["You climb back into the daylight."] },
+  { id: "ret_hollow", kind: "portal", x: 8, y: 119, name: "Barrow Exit", target: { x: 108, y: 25 }, lines: ["You climb back into the daylight."] },
   { id: "boss_hollow", kind: "monster", monster: "hollow_warden", x: 8, y: 115, name: "The Hollow Warden" },
   { id: "hollow_add1", kind: "monster", monster: "wild_boar", x: 5, y: 117, name: "Barrow Boar" },
   { id: "hollow_add2", kind: "monster", monster: "forest_bear", x: 11, y: 117, name: "Barrow Bear" },
@@ -456,7 +458,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trap_bear_2", kind: "trap", x: 26, y: 58, name: "Bear Snare", resource: "hunt_bear" },
 
   // === THE SPINE (north) ====================================================
-  { id: "serath", kind: "npc", bountyGuide: "serath", x: 42, y: 8, name: "Serath, the Spine Warden", lines: ["Far enough, for now. This is the Spine — Orun's backbone, the faithful say. Whatever it is, it does not forgive carelessness.","Ridge wolves on the low passes. Higher, the stone crawlers and the trolls. And the wraiths, where the wind never stops. Go up only as far as you can come down.","The Cut yields good metal — ashiron, and ribstone deeper. Bring a pick that can take the cold.","Two things you'll find and not understand: the Wind-Shrine, worn to the shape of a vertebra, and the Vault, shut from the inside. Measure them if you must. Don't pretend to read them."] },
+  { id: "serath", kind: "npc", bountyGuide: "serath", x: 42, y: 8, name: "Serath, the Spine Warden", lines: ["Far enough, for now. This is the Spine — Orun's backbone, the faithful say. Whatever it is, it does not forgive carelessness.","Ridge wolves on the low passes. Higher, the stone crawlers and the trolls. And the wraiths, where the wind never stops. Go up only as far as you can come down.","The Cut yields good metal — ashiron, and ribstone deeper. Bring a pick that can take the cold.","Two things you'll find and not understand: the Wind-Shrine, worn to the shape of a vertebra, and the Vault, shut from the inside. Measure them if you must. Don't pretend to read them.","The Vault sits high — climb the pass to the top of the Spine, past the Wind-Shrine, where the snow never leaves. Few go that far. Fewer come down."] },
   { id: "sp_rock_1", kind: "rock", x: 42, y: 13, name: "Ashiron Seam", resource: "mine_ashiron" },
   { id: "sp_rock_2", kind: "rock", x: 45, y: 17, name: "Ashiron Seam", resource: "mine_ashiron" },
   { id: "sp_rock_3", kind: "rock", x: 52, y: 24, name: "Ribstone Seam", resource: "mine_ribstone" },
@@ -470,7 +472,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "sp_wraith_2", kind: "monster", monster: "spine_wraith", x: 52, y: 35, name: "Spine Wraith" },
   { id: "spine_wind_shrine", kind: "shrine", x: 54, y: 7, name: "The Wind-Shrine", lines: ["A standing stone the wind has worn to the shape of a vertebra. Orun's, the believers say. A rock worn by weather, say the rest. The shrine settles nothing."] },
   { id: "spine_vault", kind: "shrine", x: 54, y: 32, name: "The Spine Vault", lines: ["A door of dressed stone set into the mountain — shut, and shut from the inside. The ward-stones around it have not been moved in a very long time."] },
-  { id: "portal_spine", kind: "portal", x: 52, y: 30, name: "The Spine Vault", dungeon: "spine_vault", target: { x: 40, y: 118 }, lines: ["You break the seal on the Spine Vault."] },
+  { id: "portal_spine", kind: "portal", x: 50, y: 12, name: "The Spine Vault", dungeon: "spine_vault", target: { x: 40, y: 118 }, lines: ["You break the seal on the Spine Vault."] }, // high in the remote northern pass
 
   // === HEARTMOOR (south-west) ===============================================
   { id: "calder", kind: "npc", x: 17, y: 82, name: "Calder", lines: ["Cold road, isn't it. Sit a moment — there's always a fire going at the moor's edge, and food for whoever the road gives out on.","We're the Heartmoor faithful. No, don't make the face. We feed people. What you do with the rest of it is your business.","The peat keeps things. Bog-bodies, old swords, older questions. And the warm seams — Hearthite, black and almost living. Rock, the miners say. We say otherwise. Both are true of the same stone.","Go careful past the pools. The bog knights don't sleep, and the serpents are patient."] },
@@ -805,7 +807,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 115, name: "The Bog Warden" },
   { id: "bog_add1", kind: "monster", monster: "heartmoor_hound", x: 21, y: 117, name: "Barrow Hound" },
   { id: "bog_add2", kind: "monster", monster: "bog_knight", x: 27, y: 117, name: "Sunken Knight" },
-  { id: "ret_spine", kind: "portal", x: 40, y: 119, name: "Vault Exit", target: { x: 51, y: 30 }, lines: ["You leave the vault to its silence."] },
+  { id: "ret_spine", kind: "portal", x: 40, y: 119, name: "Vault Exit", target: { x: 49, y: 11 }, lines: ["You leave the vault to its silence."] },
   { id: "boss_spine", kind: "monster", monster: "spine_warlord", x: 40, y: 115, name: "The Spine Warlord" },
   { id: "spine_add1", kind: "monster", monster: "stone_crawler", x: 37, y: 117, name: "Vault Crawler" },
   { id: "spine_add2", kind: "monster", monster: "mountain_troll", x: 43, y: 117, name: "Guard Troll" },
@@ -949,6 +951,7 @@ const rawObjects: WorldObjectDef[] = [
     lines: [
       "Mind the nets drying on the rail — a season's work, that, and a careless boot undoes a week of mending.",
       "My sister hawks our catch up in the Ironvale market — the fishwife by the square, you'll have heard her. She tells the city the red water's just the season. Out here we don't trouble to lie to ourselves about it.",
+      "If you've a death-wish and a strong arm: there's a barrow mouth swallowed up in the deep woods east of here, past the river. Cold air pours out of it. Folk who go in to map it don't come back to finish the map.",
     ],
   },
   { id: "fire_redmouth", kind: "fire", x: 86, y: 59, name: "Smokehouse Fire" },
