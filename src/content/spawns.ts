@@ -13,7 +13,35 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, homeLayout } from "./map.ts";
+import { HOMES, homeLayout, remap } from "./map.ts";
+
+/** A few spawns sit where the legacy region bounding-boxes overlap the central
+ *  Knuckle Hills, so remap() lands them on region rock/cave terrain that the
+ *  doubled map paints there. These overrides nudge that handful onto the nearest
+ *  walkable tile (computed against the new map). Keyed by object id. */
+const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
+  rock_7: { x: 52, y: 27 },
+  rock_8: { x: 120, y: 31 },
+  rock_10: { x: 53, y: 34 },
+  spine_vault: { x: 62, y: 34 },
+  md_golem_1: { x: 130, y: 32 },
+  md_rock_2: { x: 131, y: 31 },
+  trail_bone_1: { x: 52, y: 35 },
+  trail_bone_5: { x: 61, y: 109 },
+  cr_sheep1: { x: 58, y: 36 },
+  out_cutthroat_hollow_2: { x: 53, y: 103 },
+};
+
+/** Re-home a legacy-coordinate object (and its teleport target) onto the new,
+ *  doubled canvas. Applied to every hand-authored spawn so they land on the
+ *  same terrain the map's remap() shifted that terrain to. */
+function remapObject(o: WorldObjectDef): WorldObjectDef {
+  const p = SPAWN_FIXUP[o.id] ?? remap(o.x, o.y);
+  const out: WorldObjectDef = { ...o, x: p.x, y: p.y };
+  if (o.target) out.target = remap(o.target.x, o.target.y);   // portal/door teleport tile
+  if (o.exit) out.exit = remap(o.exit.x, o.exit.y);           // agility obstacle far side
+  return out;
+}
 
 // OSRS-style mixed fishing spots: each catch rolls one fish (weighted) from the
 // pool that you meet the level for. River = the early waters around Ironvale.
@@ -54,7 +82,7 @@ function buildHousing(): WorldObjectDef[] {
   return out;
 }
 
-export const objects: WorldObjectDef[] = [
+const rawObjects: WorldObjectDef[] = [
   // === IRONVALE — the central city =========================================
 
   // --- Civic yard (north-west): the forge stations, the bank, the crafting
@@ -889,9 +917,52 @@ export const objects: WorldObjectDef[] = [
   // you enter the LIVING room; the KITCHEN and BEDROOM open off it; the WORKSHOP
   // is a wing you add on (build the extension to open its sealed doorway). The
   // build footings + doors are generated from the shared floorplan below.
+];
+
+/** New points of interest filling the wide open country the doubled map opened
+ *  up — authored directly in NEW canvas coordinates (so they are NOT re-mapped),
+ *  each on the matching terrain patch carved in map.ts. */
+const newPois: WorldObjectDef[] = [
+  // Wayfarers' Crossroads (NW) — a ruined waystation where the north & west roads meet.
+  { id: "poi_cross_sign", kind: "signpost", x: 40, y: 43, name: "Wayfarers' Crossroads", lines: ["A ruined waystation where the north and west roads cross. Travellers rest here — and so do those who prey on them."] },
+  { id: "poi_cross_rock1", kind: "rock", x: 38, y: 45, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "poi_cross_rock2", kind: "rock", x: 42, y: 45, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "poi_cross_bandit", kind: "monster", monster: "bandit", x: 41, y: 42, name: "Roadside Bandit" },
+  { id: "poi_cross_footpad", kind: "monster", monster: "footpad", x: 38, y: 42, name: "Footpad" },
+  // The Old Quarry (NE) — abandoned stone-cutting on the city→marrow road.
+  { id: "poi_quarry_sign", kind: "signpost", x: 117, y: 51, name: "The Old Quarry", lines: ["A played-out stone quarry gone to weeds. The deep cuts still give good stone — and shelter for worse things."] },
+  { id: "poi_quarry_rock1", kind: "rock", x: 114, y: 49, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "poi_quarry_rock2", kind: "rock", x: 120, y: 53, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "poi_quarry_crawler", kind: "monster", monster: "stone_crawler", x: 117, y: 53, name: "Stone Crawler" },
+  // The East Commons (E) — drovers' grazing meadow on the city→redrun road.
+  { id: "poi_commons_sign", kind: "signpost", x: 116, y: 101, name: "The East Commons", lines: ["Open grazing where the drovers rest their herds before the river crossing. Peaceful — mostly."] },
+  { id: "poi_commons_sheep1", kind: "critter", species: "sheep", x: 113, y: 99, name: "A Grazing Sheep" },
+  { id: "poi_commons_sheep2", kind: "critter", species: "sheep", x: 119, y: 103, name: "A Grazing Sheep" },
+  { id: "poi_commons_boar", kind: "monster", monster: "greymane_boar", x: 118, y: 100, name: "Greymane Boar" },
+  // The Gallowsfield (SE) — an outlaw camp on the city→ashfen road.
+  { id: "poi_gallows_sign", kind: "signpost", x: 102, y: 118, name: "The Gallowsfield", lines: ["An old hanging-ground turned outlaw camp. The watch won't ride this far out. Bring steel."] },
+  { id: "poi_gallows_cut1", kind: "monster", monster: "cutthroat", x: 100, y: 116, name: "Cutthroat" },
+  { id: "poi_gallows_cut2", kind: "monster", monster: "cutthroat", x: 105, y: 120, name: "Cutthroat" },
+  { id: "poi_gallows_fire", kind: "fire", x: 102, y: 120, name: "Camp Fire" },
+  // The Sunken Mile (SW) — a treacherous bog on the city→heartmoor road.
+  { id: "poi_sunken_sign", kind: "signpost", x: 42, y: 110, name: "The Sunken Mile", lines: ["A mile of false ground where the road gives way to moor. Keep to the tussocks; the lurkers keep to the pools."] },
+  { id: "poi_sunken_lurker", kind: "monster", monster: "marsh_lurker", x: 40, y: 112, name: "Marsh Lurker" },
+  { id: "poi_sunken_forage", kind: "forage_spot", x: 44, y: 108, name: "Bog Fibreweed", resource: "surv_forage_fiber" },
+  // The Wood-Moor Verge (W) — a wild edge on the city→greyoak road.
+  { id: "poi_verge_sign", kind: "signpost", x: 36, y: 85, name: "The Wood-Moor Verge", lines: ["Where the hill country gives out to wood and moor both. The bears come down to the verge to feed."] },
+  { id: "poi_verge_bear", kind: "monster", monster: "forest_bear", x: 38, y: 87, name: "Forest Bear" },
+  { id: "poi_verge_tree", kind: "tree", x: 34, y: 83, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+];
+
+/** The world's objects: every hand-authored spawn re-homed onto the doubled
+ *  canvas via remap(), the new open-country POIs (new coords, not re-mapped),
+ *  plus the player-home interiors (authored in the new band by buildHousing()). */
+export const objects: WorldObjectDef[] = [
+  ...rawObjects.map(remapObject),
+  ...newPois,
   ...buildHousing(),
 ];
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric
  *  and the knucklestone outcrop, so the opening quest is right at hand. */
-export const playerSpawn = { x: 22, y: 16 };
+export const playerSpawn = remap(22, 16);
