@@ -7,7 +7,7 @@
  */
 
 import type { Content, SkillId, WorldState } from "../core/types.ts";
-import { iconize } from "./glyph.ts";
+import { glyph, iconize } from "./glyph.ts";
 
 /** Pretty-print a SkillAction group key ("arrows" -> "Arrows"). */
 function groupLabel(key: string): string {
@@ -119,7 +119,7 @@ export class SkillDetailModal {
           const unlocked = s.level >= lvl;
           let cls = unlocked ? "done" : "locked";
           if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
-          const mark = unlocked ? "✓" : cls === "next" ? "▶" : iconize("🔒");
+          const mark = unlocked ? glyph("check") : cls === "next" ? glyph("next") : glyph("lock");
           html += `
             <div class="sd-rung ${cls}">
               <span class="sd-rung-lvl">Lv ${lvl}</span>

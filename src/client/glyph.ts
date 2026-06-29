@@ -65,6 +65,8 @@ const GLYPHS: Record<string, string> = {
   cape: line(`<path d="M8 4 Q12 7 16 4 L19 20 Q12 16 5 20 Z"/><path d="M8.5 4.5 Q12 9 15.5 4.5"/>`),
   scales: line(`<line x1="12" y1="4" x2="12" y2="20"/><line x1="6" y1="20" x2="18" y2="20"/><line x1="5" y1="7" x2="19" y2="7"/><path d="M5 7 L2.5 13 Q5 15 7.5 13 Z"/><path d="M19 7 L16.5 13 Q19 15 21.5 13 Z"/>`),
   speech: line(`<path d="M4 6 H20 V16 H11 L6 20 V16 H4 Z"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="13" x2="14" y2="13"/>`),
+  check: line(`<path d="M5 13 L10 18 L19 6"/>`),
+  next: line(`<path d="M9 6 L15 12 L9 18"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.
