@@ -60,6 +60,55 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   plank: ["#6a4e30", "#79593a"],
 };
 
+/** Base colours pre-parsed to RGB once, so the gradient blend below stays cheap. */
+const BASE_RGB: Record<string, [number, number, number]> = (() => {
+  const out: Record<string, [number, number, number]> = {};
+  for (const k of Object.keys(TILE_COLORS)) {
+    const h = TILE_COLORS[k as TileType][0];
+    out[k] = [
+      parseInt(h.slice(1, 3), 16),
+      parseInt(h.slice(3, 5), 16),
+      parseInt(h.slice(5, 7), 16),
+    ];
+  }
+  return out;
+})();
+
+/** Open-air ground biomes whose base colour feathers into its neighbours. */
+const BLEND_GROUND = new Set<TileType>([
+  "grass", "dirt", "moss", "ash", "snow", "bog", "stone", "path",
+]);
+
+const BLEND_R = 2; // radius (in tiles) of the biome gradient
+
+/**
+ * The base fill for an open-ground tile, softened toward its surroundings so
+ * adjacent biomes roll into one another over a couple of tiles instead of
+ * cutting hard on the grid. A radius-2 weighted average (the centre weighted
+ * heaviest, nearer neighbours more than far): a biome's interior averages to
+ * itself, only its frontier shifts. Non-ground neighbours (open water, peaks,
+ * walls, interiors) contribute the centre's own colour so coasts and cliffs
+ * don't bleed; roads keep their crisp colour so the network still reads.
+ */
+function blendedBase(map: WorldMap, x: number, y: number, tile: TileType): string {
+  if (tile === "path") return TILE_COLORS.path[0];
+  const c = BASE_RGB[tile] ?? [0, 0, 0];
+  let r = 0, gn = 0, b = 0, wsum = 0;
+  for (let dy = -BLEND_R; dy <= BLEND_R; dy++) {
+    for (let dx = -BLEND_R; dx <= BLEND_R; dx++) {
+      const w = 1 / (1 + Math.abs(dx) + Math.abs(dy)); // nearer counts more
+      let s = c;
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && ny >= 0 && nx < map.width && ny < map.height) {
+        const nt = map.tiles[ny * map.width + nx] as TileType;
+        if (BLEND_GROUND.has(nt)) s = BASE_RGB[nt] ?? c;
+      }
+      r += s[0] * w; gn += s[1] * w; b += s[2] * w; wsum += w;
+    }
+  }
+  return `rgb(${Math.round(r / wsum)},${Math.round(gn / wsum)},${Math.round(b / wsum)})`;
+}
+
 /** A cheap, stable pseudo-noise so tiles get a fixed bit of texture. */
 function hash(x: number, y: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
@@ -140,7 +189,7 @@ function paintTile(
   map: WorldMap,
 ): void {
   const [base, accent] = TILE_COLORS[tile];
-  g.fillStyle = base;
+  g.fillStyle = BLEND_GROUND.has(tile) ? blendedBase(map, x, y, tile) : base;
   g.fillRect(px, py, TILE, TILE);
   const hv = hash(x, y);
 
@@ -352,33 +401,8 @@ function paintTile(
     if (wet(x, y + 1)) g.fillRect(px, py + TILE - 3, TILE, 3);
   }
 
-  // Edge blending: where two different walkable ground types meet, dither a few
-  // specks of the neighbour's colour across the seam so biomes feather into one
-  // another instead of hard-cutting on the grid. (Skips water/walls — those have
-  // their own edges above.)
-  const groundFamily = (t: TileType | undefined): boolean =>
-    t === "grass" || t === "dirt" || t === "moss" || t === "ash" || t === "snow" ||
-    t === "bog" || t === "stone" || t === "cave" || t === "path";
-  if (groundFamily(tile)) {
-    const edges: [number, number, number, number][] = [
-      [-1, 0, px + 1, py], [1, 0, px + TILE - 4, py],
-      [0, -1, px, py + 1], [0, 1, px, py + TILE - 4],
-    ];
-    for (const [dx, dy, ex, ey] of edges) {
-      const nt = map.tiles[(y + dy) * wid + (x + dx)] as TileType | undefined;
-      if (!nt || nt === tile || !groundFamily(nt)) continue;
-      g.fillStyle = TILE_COLORS[nt][0];
-      for (let i = 0; i < 4; i++) {
-        const a = hash(x * 7 + i + dx * 3, y * 5 + i + dy * 3);
-        const along = a * (TILE - 4);
-        const into = hash(x + i, y + i * 2) * 3;
-        g.globalAlpha = 0.35 + 0.35 * a;
-        if (dx === 0) g.fillRect(ex + along, ey + into, 3, 3);
-        else g.fillRect(ex + into, ey + along, 3, 3);
-      }
-    }
-    g.globalAlpha = 1;
-  }
+  // (Biome seams are now feathered by the radius-2 gradient in blendedBase,
+  // which softens the base fill itself — no per-edge speck dither needed.)
 
   // Faint grid for ground tiles (walls/mountain/water handle their own look).
   g.strokeStyle = "rgba(0,0,0,0.1)";
