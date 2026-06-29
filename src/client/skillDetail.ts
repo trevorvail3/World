@@ -121,7 +121,7 @@ export class SkillDetailModal {
       for (const id of Object.keys(this.content.items) as ItemId[]) {
         const def = this.content.items[id];
         if (!def.slot || !gear.slots.includes(def.slot) || def.tool) continue;
-        if (def.tier === undefined) continue;
+        if (def.tier === undefined && def.equipLevel === undefined) continue;
         const req = equipRequirement(this.content, id);
         if (req && req.skill !== skill) continue; // gated by a different skill
         const lvl = req ? req.level : 1;

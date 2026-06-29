@@ -45,6 +45,16 @@ const METAL: Metal[] = [
   { base: "#b5612a", edge: "#f3b94e" }, // 10 Hearthite — fiery gold
 ];
 
+// Unique looks keyed by id prefix — drops that should stand out from the metal
+// ladder. The Ashen Wyrm's set reads as black-red scale lit by molten seams.
+const DRAGON: Metal = { base: "#2e0f12", edge: "#ff7a2a" };
+
+/** A distinct look for a named unique set, or null to fall back to the ladder. */
+function uniqueLook(id: string): Metal | null {
+  if (id.startsWith("wyrm_")) return DRAGON;
+  return null;
+}
+
 // Leather sets: tanned → cured → hardened → master (brass-trimmed).
 const LEATHER: Metal[] = [
   { base: "#8a5a32", edge: "#ad7a4e" },
@@ -127,6 +137,8 @@ function clothOf(id: string): Metal | null {
 
 /** The render colour for a worn armour piece, by material. */
 function colorFor(item: ItemDef, ladderKey: string, content: Content): Metal {
+  const uniq = uniqueLook(item.id);
+  if (uniq) return uniq;
   const ls = leatherStep(item.id);
   if (ls) return LEATHER[ls - 1]!;
   const cloth = clothOf(item.id);
@@ -161,7 +173,8 @@ export function resolveGear(
   if (cape) out.cape = { color: capeColor(cape) };
   const main = eq.mainhand ? content.items[eq.mainhand] : undefined;
   if (main && !main.tool) {
-    out.weapon = { ...metalOf(metalTier(main, "weapon", content)), type: main.wepType ?? "sword" };
+    const metal = uniqueLook(main.id) ?? metalOf(metalTier(main, "weapon", content));
+    out.weapon = { ...metal, type: main.wepType ?? "sword" };
   }
   return out;
 }

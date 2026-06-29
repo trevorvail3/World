@@ -478,6 +478,11 @@ export type ItemId =
   | "warden_ring"
   | "bog_ward_helm"
   | "marrow_keep_plate"
+  | "wyrm_helm"
+  | "wyrm_body"
+  | "wyrm_legs"
+  | "wyrm_shield"
+  | "wyrm_blade"
   | "seed_ashweed"
   | "seed_thornroot"
   | "seed_bloodberry"
@@ -628,6 +633,9 @@ export interface ItemDef {
   slot?: string;
   /** Tier on the canon material ladder (1–10). */
   tier?: number;
+  /** Explicit equip level, overriding the tier→level table (for uniques like
+   *  the level-75 dragon set). Gated on the slot's combat skill. */
+  equipLevel?: number;
   /**
    * Gathering-tool kind. Tools are wielded in the mainhand (slot "mainhand")
    * but tagged here so the core knows a mainhand item is a hatchet/pickaxe/rod
@@ -885,7 +893,13 @@ export type BossMechanic =
   /** Each landed hit heals the boss for `frac` of the damage it dealt. */
   | { type: "lifedrain"; frac: number; tell: string }
   /** Below `below` HP fraction, the boss heals `amount` once. */
-  | { type: "selfheal"; below: number; amount: number; tell: string };
+  | { type: "selfheal"; below: number; amount: number; tell: string }
+  /** Thick hide: melee damage to the boss is cut by `reduce` (0–1) unless the
+   *  hit exploits its weakness. Rewards bringing the right attack style. */
+  | { type: "scaleguard"; reduce: number; tell?: string }
+  /** Searing hide: each landed MELEE hit burns the attacker for `frac` of the
+   *  damage dealt back at them. Ranged attackers avoid it. */
+  | { type: "recoil"; frac: number; tell: string };
 
 /** The mutable runtime state for a single world object. */
 export interface WorldObjectState {

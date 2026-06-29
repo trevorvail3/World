@@ -1238,14 +1238,16 @@ export function equipRequirement(
   if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
     return { skill: capeSkill as SkillId, level: 99 };
   }
-  if (def.tier === undefined) return null;
   if (def.tool) {
+    if (def.tier === undefined) return null;
     const level = TOOL_TIER_REQS[def.tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
   const gearSkill = def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined;
   if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
-  const level = GEAR_TIER_REQS[def.tier] ?? 0;
+  // An explicit equipLevel (uniques like the dragon set) overrides the tier
+  // table; otherwise the level comes from the material tier.
+  const level = def.equipLevel ?? (def.tier !== undefined ? (GEAR_TIER_REQS[def.tier] ?? 0) : 0);
   return level > 1 ? { skill: gearSkill, level } : null;
 }
 
@@ -3385,9 +3387,16 @@ function playerSwing(
   const acc = exploits ? Math.round(baseAcc * COMBAT.weaknessAcc) : baseAcc;
   const maxHit = ranged ? rangedMaxHit(player, content) : playerMaxHit(player, content);
 
+  const mechs = stats.mechanics ?? [];
   if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
     const base = randInt(ctx, 1, Math.max(1, maxHit));
-    const dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
+    let dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
+    // Thick hide (scaleguard): melee shrugs off most of the blow UNLESS the hit
+    // exploits the boss's weakness — so bringing the right style really matters.
+    const guard = mechs.find((m) => m.type === "scaleguard");
+    if (guard && guard.type === "scaleguard" && !exploits) {
+      dmg = Math.max(1, Math.round(dmg * (1 - guard.reduce)));
+    }
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });
     // OSRS-style combat XP, earned per point of damage dealt (not on the kill):
@@ -3395,6 +3404,19 @@ function playerSwing(
     // and 1.33 (4/3) xp to Vitality — the Hitpoints model, ranged included.
     grantXp(state, content, ranged ? "draw" : player.combatStyle, dmg * 4, events);
     grantXp(state, content, "vitality", Math.round((dmg * 4) / 3), events);
+    // Searing hide (recoil): a melee blow burns you back. Never lethal on its
+    // own — it can't drop you below 1 — but it forces you to keep healing.
+    if (!ranged) {
+      const rec = mechs.find((m) => m.type === "recoil");
+      if (rec && rec.type === "recoil" && player.hp > 1) {
+        const burn = Math.min(player.hp - 1, Math.max(1, Math.round(dmg * rec.frac)));
+        if (burn > 0) {
+          player.hp -= burn;
+          events.push({ type: "DAMAGE", targetId: "player", amount: burn });
+          if (ctx.rng() < 0.45) events.push({ type: "LOG", message: rec.tell });
+        }
+      }
+    }
   } else {
     events.push({ type: "DAMAGE", targetId: obj.id, amount: 0 });
   }

@@ -591,6 +591,10 @@ export const objects: WorldObjectDef[] = [
   { id: "ar_fish_13", kind: "fishing_spot", x: 101, y: 75, name: "Deepscale Shoal", resource: "fish_deepscale" },
   { id: "ar_fish_14", kind: "fishing_spot", x: 101, y: 78, name: "Eyeless Pike Shoal", resource: "fish_eyeless_pike" },
 
+  // === The Ashen Wyrm: Varath's flagship boss, nesting in the ash flats. =====
+  { id: "wyrm_sign", kind: "signpost", x: 59, y: 91, name: "Cindrath's Roost", lines: ["CINDRATH'S ROOST — turn back unless you've come to kill a dragon. Bring a stabbing weapon."] },
+  { id: "ashen_wyrm_1", kind: "monster", x: 62, y: 90, name: "Cindrath, the Ashen Wyrm", monster: "ashen_wyrm" },
+
   // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
   // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---
   { id: "fh_sign", kind: "signpost", x: 30, y: 58, name: "Forager's Hollow", lines: ["FORAGER'S HOLLOW — fibre and mushrooms to dawnspore, all of it grows wild here."] },

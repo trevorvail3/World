@@ -2450,6 +2450,8 @@ function drawMonsterBody(
       return drawSerpent(g, cx, cy, now);
     case "deep_bat":
       return drawBat(g, cx, cy, now);
+    case "ashen_wyrm":
+      return drawDragon(g, cx, cy, now);
     case "bog_knight":
       return H("#5b6470", "#7a8492"); // grey armour
     case "redrun_brigand":
@@ -2480,6 +2482,68 @@ function drawMonsterBody(
     default:
       return drawRat(g, cx, cy, now);
   }
+}
+
+/** Cindrath, the Ashen Wyrm: a large winged dragon with glowing ember scales,
+ *  flapping wings and a smouldering maw. Drawn oversized to read as a boss. */
+function drawDragon(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const flap = Math.sin(now / 240);          // wing beat
+  const glow = 0.6 + 0.4 * Math.sin(now / 320); // ember pulse
+  shadow(g, cx, cy + 16, 22, 7);
+
+  // --- Wings (behind the body) ---
+  const wing = (dir: number): void => {
+    g.fillStyle = "#241016";
+    g.beginPath();
+    g.moveTo(cx, cy - 4);
+    g.quadraticCurveTo(cx + dir * (24 + flap * 4), cy - 22 - flap * 6, cx + dir * 30, cy - 2 + flap * 3);
+    g.quadraticCurveTo(cx + dir * 20, cy + 2, cx + dir * 8, cy + 2);
+    g.closePath();
+    g.fill();
+    // membrane struts, ember-lit
+    g.strokeStyle = `rgba(226,96,42,${0.45 * glow + 0.3})`;
+    g.lineWidth = 1.4;
+    for (const f of [0.45, 0.7, 0.95]) {
+      g.beginPath();
+      g.moveTo(cx + dir * 6, cy - 3);
+      g.lineTo(cx + dir * (30 * f + 4), cy - 12 * (1 - f) + 1);
+      g.stroke();
+    }
+  };
+  wing(-1); wing(1);
+
+  // --- Tail ---
+  g.strokeStyle = "#2a1218"; g.lineWidth = 7; g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(cx, cy + 6);
+  g.quadraticCurveTo(cx - 4, cy + 16, cx + 10, cy + 18);
+  g.stroke();
+
+  // --- Body (dark scale with ember sheen) ---
+  g.fillStyle = "#3a1414";
+  g.beginPath(); g.ellipse(cx, cy + 2, 12, 14, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(150,40,28,${0.5 + 0.3 * glow})`;
+  g.beginPath(); g.ellipse(cx - 2, cy, 7, 10, 0, 0, Math.PI * 2); g.fill();
+  // scale flecks
+  g.fillStyle = `rgba(242,150,70,${0.6 * glow})`;
+  for (const [dx, dy] of [[-4, -3], [3, -1], [-1, 4], [5, 5], [-5, 6]] as const) {
+    circle(g, cx + dx, cy + dy, 1.2);
+  }
+
+  // --- Neck + horned head ---
+  g.strokeStyle = "#3a1414"; g.lineWidth = 8; g.lineCap = "round";
+  g.beginPath(); g.moveTo(cx, cy - 2); g.lineTo(cx + 2, cy - 14); g.stroke();
+  g.fillStyle = "#431818";
+  g.beginPath(); g.ellipse(cx + 3, cy - 17, 6, 5, 0, 0, Math.PI * 2); g.fill();
+  // horns
+  g.strokeStyle = "#1f0e12"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx + 1, cy - 20); g.lineTo(cx - 3, cy - 25); g.stroke();
+  g.beginPath(); g.moveTo(cx + 6, cy - 20); g.lineTo(cx + 10, cy - 25); g.stroke();
+  // molten maw + eye
+  g.fillStyle = `rgba(255,140,40,${0.7 + 0.3 * glow})`;
+  g.beginPath(); g.ellipse(cx + 7, cy - 15, 2.4, 1.4, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#ffd23a";
+  circle(g, cx + 4, cy - 18, 1.1);
 }
 
 // --- Serpent: a coiled, scaled body with a raised head ---

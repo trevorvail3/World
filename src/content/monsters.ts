@@ -1266,5 +1266,35 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
       { item: "cut_gem", chance: 0.04, tier: "rare" },
     ],
+  },
+  // === The flagship boss: the toughest thing in Varath. ===================
+  "ashen_wyrm": {
+    id: "ashen_wyrm", name: "Cindrath, the Ashen Wyrm", level: 90, hp: 620,
+    acc: 360, def: 80, maxHit: 72, speed: 3000, xp: 3200, attackStyle: "crush",
+    weakness: ["stab"],
+    desc: "The last great wyrm of Varath, coiled in the ash flats it burned to glass. Its scales run forge-hot and its patience is long gone. Bring a stabbing weapon and more food than you think you'll need.",
+    mechanics: [
+      // 1. Inferno Breath — a telegraphed, devastating breath every 4th swing.
+      { type: "heavy", every: 4, mult: 2.4, tell: "Cindrath rears back, throat glowing — INFERNO BREATH!" },
+      // 2. Wrath — past 35% HP it enrages, every blow harder.
+      { type: "enrage", below: 0.35, mult: 1.4, tell: "Cindrath shrieks, wounds blazing white — its fury redoubles!" },
+      // 3. Molten Scales — your melee blows sear you back (ranged is spared).
+      { type: "recoil", frac: 0.25, tell: "Your blow rings off Cindrath's molten scales and the heat sears you." },
+      // 4. Wyrmhide — thick scales shrug off most melee UNLESS you hit its stab weakness.
+      { type: "scaleguard", reduce: 0.4 },
+    ],
+    drops: [
+      // The Wyrmscale set + Wyrmfang: equal, high rates (Barrows-style).
+      { item: "wyrm_helm", chance: 0.12, tier: "legendary" },
+      { item: "wyrm_body", chance: 0.12, tier: "legendary" },
+      { item: "wyrm_legs", chance: 0.12, tier: "legendary" },
+      { item: "wyrm_shield", chance: 0.12, tier: "legendary" },
+      { item: "wyrm_blade", chance: 0.12, tier: "legendary" },
+      // A dry streak still pays: coin, bars, gems, and the story shard.
+      { item: "worn_coin", chance: 1, min: 1500, max: 4000, tier: "always" },
+      { item: "hearthite_bar", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.4, min: 1, max: 2, tier: "uncommon" },
+      { item: "shard_of_orun", chance: 0.05, tier: "legendary" },
+    ],
   }
 };
