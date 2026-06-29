@@ -24,6 +24,7 @@ import { objectPos } from "../core/worldCore.ts";
 import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
+import { type GearLook, resolveGear } from "./gearLook.ts";
 
 export const TILE = 40; // pixels per tile
 
@@ -818,6 +819,7 @@ export function drawWorld(
     drawPlayer(
       g, state.player.pos, cam, now, state.player.appearance,
       state.player.path.length > 0, playerAction(state.player, content, now),
+      resolveGear(state.player.equipment, content),
     );
   }
 
@@ -2820,11 +2822,12 @@ function drawPlayer(
   look?: Appearance,
   moving = false,
   action?: AvatarAnim["action"],
+  gear: GearLook = {},
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
   shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain
-  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) });
+  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) }, gear);
 }
 
 // --- Another player, rendered as a faint, idle apparition with a name label. ---
@@ -2834,7 +2837,7 @@ function drawGhost(g: CanvasRenderingContext2D, gh: Ghost, cam: Camera, now: num
   shadow(g, cx, cy + TILE / 2 - 4, 8, 3);
   g.save();
   g.globalAlpha = 0.4; // translucent so it clearly reads as "not really here"
-  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: gh.moving });
+  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: gh.moving }, gh.gear);
   g.restore();
   label(g, gh.name, cx, cy - TILE / 2 - 2, "#a9d8e8"); // cool, spectral blue
 }

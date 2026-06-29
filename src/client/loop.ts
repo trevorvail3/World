@@ -40,6 +40,7 @@ import { Minimap, WorldMapModal } from "./minimap.ts";
 import { audio } from "./audio.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
+import { resolveGear } from "./gearLook.ts";
 import { objectPos, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
@@ -311,7 +312,10 @@ export class Game {
     startPresence(() => {
       const p = this.bridge.state.player;
       if (!p.alive) return null;
-      return { x: p.pos.x, y: p.pos.y, name: p.appearance.name, look: p.appearance };
+      return {
+        x: p.pos.x, y: p.pos.y, name: p.appearance.name, look: p.appearance,
+        gear: resolveGear(p.equipment, this.bridge.content),
+      };
     });
     const frame = (now: number) => {
       requestAnimationFrame(frame); // schedule next first so one bad frame can't stop the loop

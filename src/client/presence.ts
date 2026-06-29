@@ -18,6 +18,7 @@
 import type { Appearance } from "../core/types.ts";
 import { instanceRectAt } from "../content/map.ts";
 import { currentUser, rest } from "./supabase.ts";
+import type { GearLook } from "./gearLook.ts";
 
 export interface Ghost {
   id: string;
@@ -25,12 +26,13 @@ export interface Ghost {
   x: number;
   y: number;
   look: Appearance;
+  gear: GearLook;
   /** True while gliding between snapshots, so the figure shows a walk cycle. */
   moving: boolean;
 }
 
 /** What the game feeds us each beat: where the player is and how they look. */
-export interface PresenceSnapshot { x: number; y: number; name: string; look: Appearance }
+export interface PresenceSnapshot { x: number; y: number; name: string; look: Appearance; gear: GearLook }
 
 const STALE_MS = 15_000; // a presence older than this is treated as gone
 const PUSH_MS = 1_500;   // how often we publish our own position
@@ -43,6 +45,7 @@ interface Rec {
   id: string;
   name: string;
   look: Appearance;
+  gear: GearLook;
   fromX: number; fromY: number; // where the glide starts
   toX: number; toY: number;     // the latest snapshot (glide target)
   since: number;                // ms when this segment began
@@ -71,6 +74,7 @@ export function currentGhosts(): Ghost[] {
       id: r.id,
       name: r.name,
       look: r.look,
+      gear: r.gear,
       x: r.fromX + (r.toX - r.fromX) * k,
       y: r.fromY + (r.toY - r.fromY) * k,
       moving: t < 1 && (Math.abs(r.toX - r.fromX) + Math.abs(r.toY - r.fromY)) > 0.15,
@@ -91,7 +95,8 @@ async function push(): Promise<void> {
       body: {
         user_id: user.id, name: s.name,
         x: s.x, y: s.y, zone: zoneKey(s.x, s.y),
-        look: s.look, updated_at: new Date().toISOString(),
+        // Gear is folded into the look blob so no extra DB column is needed.
+        look: { ...s.look, _gear: s.gear }, updated_at: new Date().toISOString(),
       },
     });
   } catch { /* offline — try again next beat */ }
@@ -122,10 +127,12 @@ async function pull(): Promise<void> {
       const x = Number(row.x) || 0;
       const y = Number(row.y) || 0;
       const name = typeof row.name === "string" && row.name ? row.name : "Wanderer";
-      const look = row.look as Appearance;
+      const blob = (row.look ?? {}) as Appearance & { _gear?: GearLook };
+      const look = blob as Appearance;
+      const gear: GearLook = blob._gear ?? {};
       const prev = recs.get(id);
       if (!prev) {
-        recs.set(id, { id, name, look, fromX: x, fromY: y, toX: x, toY: y, since: now });
+        recs.set(id, { id, name, look, gear, fromX: x, fromY: y, toX: x, toY: y, since: now });
         continue;
       }
       // Continue gliding from where the ghost VISUALLY is right now, toward the
@@ -136,7 +143,7 @@ async function pull(): Promise<void> {
       const curY = prev.fromY + (prev.toY - prev.fromY) * k;
       const jump = Math.abs(x - prev.toX) + Math.abs(y - prev.toY);
       const teleport = jump > TELEPORT_TILES;
-      prev.name = name; prev.look = look;
+      prev.name = name; prev.look = look; prev.gear = gear;
       prev.fromX = teleport ? x : curX;
       prev.fromY = teleport ? y : curY;
       prev.toX = x; prev.toY = y;

@@ -17,6 +17,7 @@
  */
 
 import type { Appearance } from "../core/types.ts";
+import type { GearLook, Metal } from "./gearLook.ts";
 
 // --- Shared colour palettes (the only colours the creator offers) ---
 export const SKINS = ["#f0d2a8", "#e3bd92", "#caa176", "#a9794f", "#855b38", "#5f3f26"];
@@ -117,6 +118,7 @@ export function drawAvatar(
   s: number,
   look: Appearance,
   anim: AvatarAnim = {},
+  gear: GearLook = {},
 ): void {
   const t = anim.now ?? 0;
   const action = anim.action;
@@ -129,10 +131,15 @@ export function drawAvatar(
   const swing = moving ? Math.sin(step) * 0.5 : (!acting ? Math.sin(t / 340) * 0.05 : 0);
   const liftL = moving ? Math.max(0, Math.sin(step)) * 1.8 : 0;
   const liftR = moving ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
-  // The near arm either swings the action, or follows the walk/idle.
+  // The near arm swings the action, or holds the equipped weapon while idle.
+  const heldWeapon = !acting && gear.weapon ? gear.weapon.type : "";
   const nearAngle = acting ? actionArmAngle(action!.frac, action!.kind) : -0.12 + swing;
   const farAngle = acting ? 0.22 : 0.12 - swing;
-  const nearTool = acting ? action!.tool : "";
+  const nearTool = acting ? action!.tool : heldWeapon;
+  // Tint the blade by the weapon's material — for the combat swing and the idle
+  // hold alike; gathering swings (pickaxe/axe/rod) keep their plain tool look.
+  const nearMetal: Metal | undefined =
+    acting ? (action!.kind === "combat" ? gear.weapon : undefined) : gear.weapon;
 
   const R = (dx: number, dy: number, w: number, h: number) =>
     g.fillRect(cx + dx * s, cy + dy * s, w * s, h * s);
@@ -148,6 +155,21 @@ export function drawAvatar(
   g.beginPath();
   g.ellipse(cx, cy + 12.5 * s, 10 * s, 3.6 * s, 0, 0, Math.PI * 2);
   g.fill();
+
+  // --- Cape (behind the body, drapes from the shoulders with a faint sway) ---
+  if (gear.cape) {
+    const sway = (moving ? Math.sin(step) * 0.8 : Math.sin(t / 300) * 0.4) * s;
+    g.fillStyle = gear.cape.color;
+    g.beginPath();
+    g.moveTo(cx - 5 * s, cy - 6 * s + bob);
+    g.lineTo(cx + 5 * s, cy - 6 * s + bob);
+    g.lineTo(cx + 7 * s + sway, cy + 11 * s);
+    g.lineTo(cx - 7 * s + sway, cy + 11 * s);
+    g.closePath();
+    g.fill();
+    g.fillStyle = shade(gear.cape.color, 0.28);
+    g.fillRect(cx - 0.8 * s + sway * 0.5, cy - 6 * s + bob, 1.6 * s, 17 * s); // centre fold
+  }
 
   // --- Kilt is a single panel drawn before the (lifting) feet ---
   if (look.legs === "kilt") {
@@ -171,6 +193,18 @@ export function drawAvatar(
       g.fillStyle = look.skin; R(bx + 0.5, 8 + y, 4, 2.5); // bare shin
     } else if (look.legs !== "kilt") {
       g.fillStyle = look.legColor; R(bx, 5 + y, 5, 6); // trousers
+    }
+    // Metal greave over the shin (worn leg armour).
+    if (gear.legs) {
+      g.fillStyle = gear.legs.base; R(bx - 0.2, 5 + y, 5.4, 5.2);
+      g.fillStyle = gear.legs.edge; R(bx - 0.2, 5 + y, 1, 5.2); // edge highlight
+    }
+    if (gear.boots) {
+      // Plated sabaton replaces the cloth shoe.
+      g.fillStyle = gear.boots.base; R(bx - 0.4, 9.8 + y, 5.8, 3);
+      g.fillStyle = gear.boots.edge; R(bx - 0.4, 9.8 + y, 5.8, 0.8);
+      g.fillStyle = shade(gear.boots.base, 0.35); R(bx - 0.4, 12.2 + y, 5.8, 0.6); // sole
+      return;
     }
     g.fillStyle = look.shoeColor;
     if (look.shoes === "sandals") {
@@ -217,8 +251,53 @@ export function drawAvatar(
     Rb(-0.6, -7, 1.2, 10); // plain front seam
   }
 
-  // --- The near arm (in front of the torso), holding any tool ---
-  drawArm(g, cx, cy, s, bob, look, -6.4, nearAngle, nearTool);
+  // --- Chestplate (worn body armour, over the top) ---
+  if (gear.body) {
+    g.fillStyle = gear.body.base;
+    Rb(-6.6, -6.6, 13.2, 9.4);
+    g.fillStyle = gear.body.edge;
+    Rb(-6.6, -6.6, 13.2, 1.2);            // top rim highlight
+    Rb(-6.6, -6.6, 1.2, 9.4);             // left edge highlight
+    g.fillStyle = shade(gear.body.base, 0.3);
+    Rb(-0.7, -6.6, 1.4, 9.4);             // central ridge
+    g.fillStyle = look.skin;
+    arc(0, -6.6, 2.2, 0, Math.PI, false); // neckline opening
+    g.fill();
+  }
+
+  // --- The near arm (in front of the torso), holding the weapon/tool ---
+  drawArm(g, cx, cy, s, bob, look, -6.4, nearAngle, nearTool, nearMetal);
+
+  // --- Pauldrons over both shoulders (sit on top of the arms) ---
+  if (gear.body) {
+    for (const sx of [-6.6, 6.6]) {
+      g.fillStyle = gear.body.base;
+      g.beginPath();
+      g.ellipse(cx + sx * s, cy - 5 * s + bob, 2.6 * s, 2 * s, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = gear.body.edge;
+      g.beginPath();
+      g.ellipse(cx + sx * s, cy - 5.6 * s + bob, 2.6 * s, 1 * s, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+
+  // --- Shield in the off hand (drawn to the far side) ---
+  if (gear.shield) {
+    const hx = cx + 7.2 * s, hy = cy + 1 * s + bob;
+    g.fillStyle = gear.shield.base;
+    g.beginPath();
+    g.moveTo(hx, hy - 4 * s);
+    g.lineTo(hx + 3 * s, hy - 2.5 * s);
+    g.lineTo(hx + 3 * s, hy + 2 * s);
+    g.lineTo(hx, hy + 4.5 * s);
+    g.lineTo(hx - 3 * s, hy + 2 * s);
+    g.lineTo(hx - 3 * s, hy - 2.5 * s);
+    g.closePath();
+    g.fill();
+    g.fillStyle = gear.shield.edge;
+    g.fillRect(hx - 0.6 * s, hy - 4 * s, 1.2 * s, 8.5 * s); // boss ridge
+  }
 
   // --- Head (bobs) ---
   g.fillStyle = look.skin;
@@ -228,6 +307,19 @@ export function drawAvatar(
   // --- Facial hair, then hair (both bob) ---
   drawFacial(g, cx, cy, s, bob, look);
   drawHair(g, cx, cy, s, bob, look);
+
+  // --- Helmet (over the hair) ---
+  if (gear.helmet) {
+    g.fillStyle = gear.helmet.base;
+    arc(0, -12, 6.4, Math.PI * 1.0, Math.PI * 2.0); // dome over the crown
+    g.fill();
+    g.fillStyle = gear.helmet.base;
+    Rb(-6.4, -12.4, 12.8, 2.2);          // brow band
+    g.fillStyle = gear.helmet.edge;
+    Rb(-6.4, -12.4, 12.8, 0.8);          // band highlight
+    g.fillStyle = shade(gear.helmet.base, 0.32);
+    Rb(-0.6, -17.6, 1.2, 5.2);           // a small crest/nasal ridge
+  }
 }
 
 /**
@@ -237,14 +329,14 @@ export function drawAvatar(
  */
 function drawArm(
   g: Ctx, cx: number, cy: number, s: number, bob: number, look: Appearance,
-  shoulderDX: number, angle: number, tool = "",
+  shoulderDX: number, angle: number, tool = "", metal?: Metal,
 ): void {
   const px = cx + shoulderDX * s;
   const py = cy - 5 * s + bob;
   g.save();
   g.translate(px, py);
   g.rotate(angle);
-  if (tool) drawTool(g, s, tool); // behind the hand, swings with the arm
+  if (tool) drawTool(g, s, tool, metal); // behind the hand, swings with the arm
   g.fillStyle = look.tunic; // sleeve (upper arm)
   g.fillRect(-1.3 * s, 0, 2.6 * s, 4.2 * s);
   g.fillStyle = look.skin; // forearm
@@ -277,9 +369,12 @@ export function actionArmAngle(frac: number, kind: string): number {
   return 0.68;                                          // follow-through
 }
 
-/** A tool/weapon in the hand, drawn in the arm's local frame (points "down"). */
-export function drawTool(g: Ctx, s: number, tool: string): void {
-  const handle = "#6a4a2e", steel = "#bcc2cc", iron = "#8c93a0";
+/** A tool/weapon in the hand, drawn in the arm's local frame (points "down").
+ *  `metal` tints weapon blades/heads by material tier; gathering tools ignore it. */
+export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal): void {
+  const handle = "#6a4a2e";
+  const steel = metal?.edge ?? "#bcc2cc"; // bright face / blade
+  const iron = metal?.base ?? "#8c93a0";  // darker fittings / guard
   const haft = (len: number) => { g.fillStyle = handle; g.fillRect(-0.7 * s, 5 * s, 1.4 * s, len * s); };
   switch (tool) {
     case "pickaxe":
