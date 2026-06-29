@@ -964,7 +964,7 @@ export class Hud {
       }
       const def = this.content.items[data.item];
       slot.className = "inv-slot filled";
-      slot.title = `${def.name} — ${def.description}`;
+      slot.title = `${def.name} — ${def.description}${def.sell ? ` · worth ${def.sell.toLocaleString()}g` : ""}`;
       slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;
@@ -984,7 +984,7 @@ export class Hud {
         def += item.def ?? 0;
         icon.className = "equip-slot filled";
         icon.innerHTML = itemIconSVG(item);
-        icon.title = `${item.name} — ${item.description}`;
+        icon.title = `${item.name} — ${item.description}${item.sell ? ` · worth ${item.sell.toLocaleString()}g` : ""}`;
         // The quiver shows how many arrows are nocked.
         if (slot === "ammo" && player.quiver > 0) {
           icon.innerHTML += `<span class="equip-qty">${player.quiver}</span>`;

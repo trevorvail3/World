@@ -9,12 +9,12 @@
 
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import {
-  cancelOrder, depositGold, depositItem, items as geItems, myOrders,
+  allOrders, cancelOrder, depositGold, depositItem, items as geItems, myOrders,
   placeOrder, quote, recentTrades, wallet, withdrawGold, withdrawItem,
   type GeItem, type GeOrder,
 } from "./exchange.ts";
 
-type Tab = "account" | "trade" | "offers";
+type Tab = "account" | "trade" | "offers" | "market";
 
 const fmt = (n: number): string => Math.floor(n).toLocaleString();
 
@@ -63,7 +63,7 @@ export class ExchangeUI {
       if (e.target === this.backdrop) this.close();
     });
 
-    const tabs: Array<[Tab, string]> = [["account", "Account"], ["trade", "Trade"], ["offers", "My Offers"]];
+    const tabs: Array<[Tab, string]> = [["account", "Account"], ["trade", "Trade"], ["offers", "My Offers"], ["market", "Market"]];
     for (const [id, label] of tabs) {
       const b = document.createElement("button");
       b.type = "button";
@@ -111,7 +111,34 @@ export class ExchangeUI {
     this.balEl.textContent = `Exchange gold: ${fmt(this.bal)}`;
     if (this.tab === "account") this.renderAccount();
     else if (this.tab === "trade") this.renderTrade();
+    else if (this.tab === "market") this.renderMarket();
     else this.renderOffers();
+  }
+
+  /** Every open offer on the board, across all players. */
+  private renderMarket(): void {
+    this.body.innerHTML = `<div class="ge-empty">Loading the market…</div>`;
+    void allOrders().then((orders) => {
+      if (this.tab !== "market" || !this.open) return;
+      if (orders.length === 0) {
+        this.body.innerHTML = `<div class="ge-empty">No open offers anywhere right now.</div>`;
+        return;
+      }
+      this.body.innerHTML = `<div class="ge-offers">${orders.map((o) => {
+        const remain = o.qty - o.filled;
+        return `
+          <div class="ge-offer">
+            <div class="ge-offer-top">
+              <span class="ge-offer-side ${o.side}">${o.side === "buy" ? "WANTS" : "SELLS"}</span>
+              <span class="ge-offer-name">${escapeHtml(this.itemName(o.item))}</span>
+              <span class="ge-offer-price">@ ${fmt(o.price)}</span>
+            </div>
+            <div class="ge-offer-bot"><span class="ge-dim">${fmt(remain)} left · ${fmt(remain * o.price)} total</span></div>
+          </div>`;
+      }).join("")}</div>`;
+    }).catch(() => {
+      this.body.innerHTML = `<div class="ge-empty">Couldn't load the market.</div>`;
+    });
   }
 
   // --- helpers shared by the actions ---

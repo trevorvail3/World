@@ -1069,6 +1069,10 @@ body {
 .ctx-item.ctx-danger .ctx-verb { color: #e0654f; }
 
 .ctx-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-family: "Cinzel", serif;
   font-size: 12px;
   letter-spacing: 0.06em;
@@ -1078,6 +1082,11 @@ body {
   border-bottom: 1px solid rgba(201, 162, 74, 0.25);
   margin-bottom: 3px;
 }
+.ctx-close {
+  background: transparent; border: 0; color: var(--ink-dim);
+  font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.ctx-close:hover { color: var(--ember); }
 
 .ctx-desc {
   font-family: "EB Garamond", serif;

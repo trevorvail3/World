@@ -11,6 +11,7 @@ import { objectPos } from "../core/worldCore.ts";
 import { OVERWORLD_HEIGHT, instanceRectAt, REGIONS, CITY } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
 import { iconize } from "./glyph.ts";
+import { currentGhosts } from "./presence.ts";
 
 /** Filterable world-map marker categories: which object kinds each covers, the
  *  legend icon/label, and whether it starts visible (resources/agility off, so
@@ -232,6 +233,25 @@ export class Minimap {
       g.beginPath();
       g.arc(sx(p.x + 0.5), sy(p.y + 0.5), Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
       g.fill();
+    }
+
+    // Other players (ghosts), live, with their name above the dot.
+    for (const gh of currentGhosts()) {
+      if (gh.x < x0 - 1 || gh.x > x1 + 1 || gh.y < y0 - 1 || gh.y > y1 + 1) continue;
+      if (!inRegion(Math.round(gh.x), Math.round(gh.y))) continue;
+      const gx = sx(gh.x + 0.5), gy = sy(gh.y + 0.5);
+      g.fillStyle = "#0c0907";
+      g.beginPath(); g.arc(gx, gy, 3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#a9d8e8"; // spectral blue, matching the in-world ghost
+      g.beginPath(); g.arc(gx, gy, 2, 0, Math.PI * 2); g.fill();
+      const name = gh.name.length > 9 ? `${gh.name.slice(0, 8)}…` : gh.name;
+      g.font = "6px 'EB Garamond', serif";
+      g.textAlign = "center";
+      g.fillStyle = "rgba(0,0,0,0.7)";
+      g.fillText(name, gx + 0.4, gy - 4 + 0.4);
+      g.fillStyle = "#cdeaf4";
+      g.fillText(name, gx, gy - 4);
+      g.textAlign = "start";
     }
 
     drawPlayerDot(g, sx(p.x + 0.5), sy(p.y + 0.5));

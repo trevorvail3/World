@@ -68,6 +68,12 @@ export async function items(): Promise<GeItem[]> {
   return rows.map((r) => r as GeItem);
 }
 
+/** Every open offer on the board, across all players (the public market). */
+export async function allOrders(): Promise<GeOrder[]> {
+  const rows = await get("ge_orders?select=*&status=eq.open&order=item.asc,side.asc,price.asc&limit=300");
+  return rows.map((r) => r as GeOrder);
+}
+
 /** Your live (open) offers. */
 export async function myOrders(): Promise<GeOrder[]> {
   const u = currentUser();

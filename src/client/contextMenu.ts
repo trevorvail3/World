@@ -25,10 +25,14 @@ export class ContextMenu {
   constructor(root: HTMLElement) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "ctx-backdrop hidden";
+    // Only an off-click (on the backdrop itself) dismisses the box — clicking
+    // inside it (title, description, padding) keeps it open. Action buttons and
+    // the X close it explicitly.
     this.backdrop.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.close();
+      if (e.target === this.backdrop) {
+        e.preventDefault();
+        this.close();
+      }
     });
 
     this.menu = document.createElement("div");
@@ -52,7 +56,13 @@ export class ContextMenu {
 
     const head = document.createElement("div");
     head.className = "ctx-title";
-    head.textContent = title;
+    head.innerHTML = `<span class="ctx-title-text"></span><button class="ctx-close" type="button">✕</button>`;
+    (head.querySelector(".ctx-title-text") as HTMLElement).textContent = title;
+    (head.querySelector(".ctx-close") as HTMLElement).addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.close();
+    });
     this.menu.appendChild(head);
 
     // Inspect text — what the thing IS — shown under the title.
