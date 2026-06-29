@@ -591,6 +591,26 @@ export const objects: WorldObjectDef[] = [
   { id: "ar_fish_13", kind: "fishing_spot", x: 101, y: 75, name: "Deepscale Shoal", resource: "fish_deepscale" },
   { id: "ar_fish_14", kind: "fishing_spot", x: 101, y: 78, name: "Eyeless Pike Shoal", resource: "fish_eyeless_pike" },
 
+  // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
+  // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---
+  { id: "fh_sign", kind: "signpost", x: 30, y: 58, name: "Forager's Hollow", lines: ["FORAGER'S HOLLOW — fibre and mushrooms to dawnspore, all of it grows wild here."] },
+  { id: "fg_fiber_1", kind: "forage_spot", x: 30, y: 59, name: "Fibreweed", resource: "surv_forage_fiber" },
+  { id: "fg_fiber_2", kind: "forage_spot", x: 31, y: 58, name: "Fibreweed", resource: "surv_forage_fiber" },
+  { id: "fg_mushroom_3", kind: "forage_spot", x: 32, y: 58, name: "Mushroom Cluster", resource: "surv_forage_mushroom" },
+  { id: "fg_mushroom_4", kind: "forage_spot", x: 32, y: 69, name: "Mushroom Cluster", resource: "surv_forage_mushroom" },
+  { id: "fg_thornberry_5", kind: "forage_spot", x: 33, y: 69, name: "Thornberry Bramble", resource: "surv_forage_thornberry" },
+  { id: "fg_thornberry_6", kind: "forage_spot", x: 34, y: 69, name: "Thornberry Bramble", resource: "surv_forage_thornberry" },
+  { id: "fg_hearthroot_7", kind: "forage_spot", x: 35, y: 68, name: "Hearthroot Tangle", resource: "surv_forage_hearthroot" },
+  { id: "fg_hearthroot_8", kind: "forage_spot", x: 37, y: 58, name: "Hearthroot Tangle", resource: "surv_forage_hearthroot" },
+  { id: "fg_nightshade_9", kind: "forage_spot", x: 38, y: 59, name: "Nightshade Patch", resource: "surv_forage_nightshade" },
+  { id: "fg_deepmoss_10", kind: "forage_spot", x: 39, y: 61, name: "Deepmoss Bed", resource: "surv_forage_deepmoss" },
+  { id: "fg_ashroot_11", kind: "forage_spot", x: 40, y: 63, name: "Ashroot Snarl", resource: "surv_forage_ashroot" },
+  { id: "fg_ashbloom_12", kind: "forage_spot", x: 41, y: 64, name: "Ashbloom Stand", resource: "surv_forage_ashbloom" },
+  { id: "fg_dawnspore_13", kind: "forage_spot", x: 42, y: 66, name: "Dawnspore Ring", resource: "surv_forage_dawnspore" },
+  // --- A couple of early clumps closer to the roads, for new foragers. ---
+  { id: "fg_mushroom_near", kind: "forage_spot", x: 46, y: 37, name: "Mushroom Cluster", resource: "surv_forage_mushroom" },
+  { id: "fg_fiber_near", kind: "forage_spot", x: 51, y: 33, name: "Fibreweed", resource: "surv_forage_fiber" },
+
   // === WILDLIFE — ambient critters (wander, flee, don't block) ==============
   // City strays + birds:
   { id: "cr_cat", kind: "critter", species: "cat", x: 58, y: 60, name: "A Cat" },

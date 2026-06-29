@@ -123,6 +123,7 @@ const FISHING = { interval: 1300, success: 0.55, xp: 20 };
 // then the game wanders back and the trap resets after a short wait. It has no
 // tool to speed it, so the constants carry the whole buff.
 const HUNTER = { interval: 1900, success: 0.55, respawn: 8000, deplete: 0.3 };
+const FORAGE = { interval: 2200, success: 0.6, respawn: 9000, deplete: 0.3 };
 
 // Re-tuned: one station-craft step every CRAFT_INTERVAL ms (the idle game's
 // per-recipe baseTimes are far slower; a single snappy interval feels right
@@ -145,7 +146,7 @@ export function stationActions(content: Content, station: string): SkillAction[]
     // the crafting table tans leather, blows glass and makes jewellery.
     if (station === "cauldron") return a.skill === "herblore";
     if (station === "workbench") return a.skill === "construction";
-    if (station === "crafting_table") return a.skill === "crafting";
+    if (station === "crafting_table") return a.skill === "crafting" || (a.skill === "survivalist" && a.group === "seeds");
     if (station === "sawmill") return a.skill === "woodcraft";
     return false;
   });
@@ -204,6 +205,7 @@ const BLOCKING_KINDS = new Set([
   "trap",
   "bounty_board",
   "grand_exchange",
+  "forage_spot",
   "cauldron",
   "workbench",
   "crafting_table",
@@ -557,7 +559,7 @@ function beginGather(
   content: Content,
   def: WorldObjectDef,
   objId: string,
-  kind: "woodcutting" | "mining" | "fishing" | "trapping",
+  kind: "woodcutting" | "mining" | "fishing" | "trapping" | "foraging",
   interval: number,
   ctx: Ctx,
   events: WorldEvent[],
@@ -1573,6 +1575,18 @@ function startInteraction(
       break;
     }
 
+    case "forage_spot": {
+      if (!obj.available) {
+        events.push({ type: "LOG", message: "You've picked this clean — give it time to grow back." });
+        return;
+      }
+      if (!beginGather(state, content, def, objId, "foraging", FORAGE.interval, ctx, events)) {
+        return;
+      }
+      events.push({ type: "LOG", message: `You search the ${def.name} for anything useful.` });
+      break;
+    }
+
     case "bounty_board": {
       player.station = { kind: "bounty" };
       events.push({ type: "OPEN_BOUNTY", objId });
@@ -2583,6 +2597,9 @@ function processActivity(
       break;
     case "trapping":
       gatherStep(state, content, obj, ctx, events, HUNTER, true);
+      break;
+    case "foraging":
+      gatherStep(state, content, obj, ctx, events, FORAGE, true);
       break;
     case "crafting":
       processCraft(state, content, ctx, events);

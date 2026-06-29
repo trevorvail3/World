@@ -1219,6 +1219,9 @@ function drawObject(
     case "bounty_board":
       drawBountyBoard(g, cx, cy);
       break;
+    case "forage_spot":
+      drawForageSpot(g, cx, cy, available);
+      break;
     case "cauldron":
       drawCauldron(g, cx, cy, now);
       break;
@@ -2034,6 +2037,30 @@ function drawGrandExchange(g: CanvasRenderingContext2D, cx: number, cy: number):
   g.fillStyle = "#e2c061";
   g.beginPath(); g.arc(cx - 5, cy - 3, 2, 0, Math.PI); g.fill(); // left pan
   g.beginPath(); g.arc(cx + 5, cy - 3, 2, 0, Math.PI); g.fill(); // right pan
+}
+
+/** A wild forage clump: a low leafy bush with a few berries/buds. Dims and
+ *  thins out while picked clean (respawning). */
+function drawForageSpot(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+  shadow(g, cx, cy + 9, 11, 4);
+  const leaf = available ? "#5d7e3e" : "#46503a";
+  const leafLit = available ? "#79a04e" : "#566048";
+  // A cluster of rounded leaves.
+  g.fillStyle = leaf;
+  for (const [dx, dy, r] of [[-6, 4, 6], [6, 4, 6], [0, 1, 7], [-3, -3, 5], [3, -3, 5]] as const) {
+    g.beginPath(); g.arc(cx + dx, cy + dy, r, 0, Math.PI * 2); g.fill();
+  }
+  g.fillStyle = leafLit;
+  for (const [dx, dy, r] of [[-3, -4, 3], [3, -4, 3], [0, -1, 3]] as const) {
+    g.beginPath(); g.arc(cx + dx, cy + dy, r, 0, Math.PI * 2); g.fill();
+  }
+  // A few ripe specks (only when ready to pick).
+  if (available) {
+    g.fillStyle = "#d2604a";
+    for (const [dx, dy] of [[-4, 0], [5, -1], [1, 4]] as const) {
+      g.beginPath(); g.arc(cx + dx, cy + dy, 1.6, 0, Math.PI * 2); g.fill();
+    }
+  }
 }
 
 // --- Cooking fire: logs with animated flame ---

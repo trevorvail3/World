@@ -6,8 +6,18 @@
  * so a player can see the whole path. Pure presentation; it only reads state.
  */
 
-import type { Content, SkillId, WorldState } from "../core/types.ts";
+import type { Content, ItemId, SkillId, WorldState } from "../core/types.ts";
 import { glyph, iconize } from "./glyph.ts";
+import { equipRequirement } from "../core/worldCore.ts";
+
+/** Which gear each combat skill is about, and the slots that count toward it.
+ *  All combat gear gates on the player's *combat* level, not the skill itself. */
+const COMBAT_GEAR: Partial<Record<SkillId, { label: string; slots: string[] }>> = {
+  edge: { label: "Weapons", slots: ["mainhand"] },
+  vigour: { label: "Weapons", slots: ["mainhand"] },
+  ward: { label: "Armour", slots: ["helmet", "armor", "legs", "boots", "offhand"] },
+  draw: { label: "Bows & Arrows", slots: ["ranged", "ammo"] },
+};
 
 /** Pretty-print a SkillAction group key ("arrows" -> "Arrows"). */
 function groupLabel(key: string): string {
@@ -102,6 +112,47 @@ export class SkillDetailModal {
       }
     }
 
+    // Combat skills have no actions either: their "ladder" is the gear you can
+    // equip and the COMBAT level each tier needs (weapons for Edge/Vigour,
+    // armour for Ward, bows for Draw). Tools are excluded — they gate on the
+    // gathering skills, not combat.
+    const gear = COMBAT_GEAR[skill];
+    if (gear) {
+      const byLevel = activities.get(gear.label) ?? new Map<number, string[]>();
+      for (const id of Object.keys(this.content.items) as ItemId[]) {
+        const def = this.content.items[id];
+        if (!def.slot || !gear.slots.includes(def.slot) || def.tool) continue;
+        if (def.tier === undefined) continue;
+        const req = equipRequirement(this.content, id);
+        if (req && req.skill !== "combat") continue; // capes etc. live elsewhere
+        const lvl = req ? req.level : 1;
+        const list = byLevel.get(lvl) ?? [];
+        if (!list.includes(def.name)) list.push(def.name);
+        byLevel.set(lvl, list);
+      }
+      if (byLevel.size) activities.set(gear.label, byLevel);
+    }
+
+    // Bounty: the guides, each at the bounty level it opens up.
+    if (skill === "bounty") {
+      const byLevel = activities.get("Guides") ?? new Map<number, string[]>();
+      for (const g of this.content.bountyGuides) {
+        const list = byLevel.get(g.levelReq) ?? [];
+        const label = `${g.name}, ${g.title}`;
+        if (!list.includes(label)) list.push(label);
+        byLevel.set(g.levelReq, list);
+      }
+      activities.set("Guides", byLevel);
+    }
+
+    // What level the ladder is measured against: combat gear reads the player's
+    // combat level; everything else uses the skill's own level.
+    const lv = (id: SkillId): number => state.player.skills[id].level;
+    const combatLvl = Math.floor(
+      (lv("ward") + lv("vitality")) / 4 + Math.max((lv("edge") + lv("vigour")) / 4, lv("draw") / 2),
+    );
+    const ladderLevel = gear ? combatLvl : s.level;
+
     if (activities.size === 0) {
       // Action-less skills (combat, agility…) have no recipe ladder — the blurb
       // above already explains how they train, so nothing more is needed here.
@@ -110,21 +161,22 @@ export class SkillDetailModal {
       const minLvl = (m: Map<number, string[]>) => Math.min(...m.keys());
       const groups = [...activities.entries()].sort((a, b) => minLvl(a[1]) - minLvl(b[1]));
       const single = groups.length === 1;
-      html += `<div class="sd-laddertitle">Unlocks</div>`;
+      html += `<div class="sd-laddertitle">${gear ? `Equip — by Combat level ${combatLvl}` : "Unlocks"}</div>`;
       for (const [name, byLevel] of groups) {
         if (!single) html += `<div class="sd-actgroup">${name}</div>`;
         html += `<div class="sd-ladder">`;
         let nextMarked = false;
         for (const [lvl, names] of [...byLevel.entries()].sort((a, b) => a[0] - b[0])) {
-          const unlocked = s.level >= lvl;
+          const unlocked = ladderLevel >= lvl;
           let cls = unlocked ? "done" : "locked";
           if (!unlocked && !nextMarked) { cls = "next"; nextMarked = true; }
           const mark = unlocked ? glyph("check") : cls === "next" ? glyph("next") : glyph("lock");
+          const shown = names.length > 6 ? `${names.slice(0, 6).join(", ")}, +${names.length - 6} more` : names.join(", ");
           html += `
             <div class="sd-rung ${cls}">
               <span class="sd-rung-lvl">Lv ${lvl}</span>
               <span class="sd-rung-mark">${mark}</span>
-              <span class="sd-rung-names">${names.join(", ")}</span>
+              <span class="sd-rung-names">${shown}</span>
             </div>`;
         }
         html += `</div>`;

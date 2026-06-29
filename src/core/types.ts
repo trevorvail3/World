@@ -734,6 +734,8 @@ export type ObjKind =
   | "bounty_board"
   /** The Grand Exchange clerk's booth: trade on the world market here. */
   | "grand_exchange"
+  /** A wild plant clump: forage it for Survivalist herbs, mushrooms and roots. */
+  | "forage_spot"
   /** A claimable homestead yard at a hamlet — the anchor of player housing. */
   | "housing_plot"
   /** A furniture footing inside a claimed plot: build/replace a piece here. */
@@ -968,6 +970,8 @@ export type ActivityKind =
   | "fishing"
   /** Setting and checking a Hunter trap (a depleting gather, like a snare). */
   | "trapping"
+  /** Foraging a wild plant clump for Survivalist (a depleting gather). */
+  | "foraging"
   | "combat"
   /** Any station recipe (cooking, smelting, smithing, firemaking…). */
   | "crafting";

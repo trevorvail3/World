@@ -75,6 +75,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   monster: "#cc4a3a",
   bank: "#caa05a",
   grand_exchange: "#e2c061", // a bright brass marker for the market booth
+  forage_spot: "#7fae5a", // herb-green for a wild forage clump
   fire: "#e08a3a",
   furnace: "#b06a48",
   anvil: "#7a7d86",
@@ -134,6 +135,14 @@ function drawObjShape(
     g.lineWidth = Math.max(0.8, r * 0.5);
     g.beginPath(); g.arc(cx, cy + r * 0.3, r, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
     g.beginPath(); g.arc(cx, cy - r * 0.5, r * 0.7, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  } else if (kind === "forage_spot") {
+    // A little three-leaf cluster.
+    const d = r * 0.9;
+    for (const a of [-Math.PI / 2, Math.PI / 6, Math.PI * 5 / 6]) {
+      g.beginPath();
+      g.arc(cx + Math.cos(a) * d * 0.7, cy + Math.sin(a) * d * 0.7, d, 0, Math.PI * 2);
+      g.fill();
+    }
   } else {
     g.beginPath();
     g.arc(cx, cy, r, 0, Math.PI * 2);
