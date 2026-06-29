@@ -1006,6 +1006,23 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Meat",
     "sell": 30
   },
+  "raw_meat": {
+    "id": "raw_meat",
+    "name": "Raw Meat",
+    "description": "A cut of wild game — venison, boar, whatever the hunt gave up. Cook it before you eat it.",
+    "icon": "🥩",
+    "cat": "Meat",
+    "sell": 18
+  },
+  "cooked_meat": {
+    "id": "cooked_meat",
+    "name": "Cooked Meat",
+    "description": "Game roasted over a fire. Honest food for the road.",
+    "icon": "🍗",
+    "cat": "Food",
+    "heals": 26,
+    "sell": 30
+  },
   "rat_meat_cooked": {
     "id": "rat_meat_cooked",
     "name": "Cooked Rat Meat",

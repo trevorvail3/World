@@ -952,6 +952,66 @@ const newPois: WorldObjectDef[] = [
   { id: "poi_verge_sign", kind: "signpost", x: 36, y: 85, name: "The Wood-Moor Verge", lines: ["Where the hill country gives out to wood and moor both. The bears come down to the verge to feed."] },
   { id: "poi_verge_bear", kind: "monster", monster: "forest_bear", x: 38, y: 87, name: "Forest Bear" },
   { id: "poi_verge_tree", kind: "tree", x: 34, y: 83, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+
+  // === REGION SETTLEMENTS — a village at each far region: a themed shop and a
+  // couple of folk, so arriving somewhere feels like arriving somewhere. =======
+  // --- Frostgate (Spine): the pass camp of mountaineers & ore-haulers ---
+  { id: "sign_frostgate", kind: "signpost", x: 50, y: 22, name: "Frostgate", lines: ["FROSTGATE — last shelter before the high pass. Buy rope and a warm coat, or buy nothing and freeze."] },
+  { id: "npc_frostgate_trader", kind: "npc", x: 50, y: 19, name: "Hesk, a Pass-Warden", lines: ["Cold enough for you? It gets worse up the pass. Take rope, take a lamp, take more food than your pride wants to.", "Ore comes down through here from the high cuttings. I'll sell you the tools to win your own."] },
+  { id: "npc_frostgate_folk", kind: "npc", x: 48, y: 20, name: "A Shivering Porter", lines: ["Twelve trips up the pass today. My back's a map of every one."] },
+  { id: "fire_frostgate", kind: "fire", x: 52, y: 20, name: "Pass Fire" },
+  // --- Deeplight (Marrow): a delvers' outpost in the cavern mouth ---
+  { id: "sign_deeplight", kind: "signpost", x: 125, y: 28, name: "Deeplight", lines: ["DEEPLIGHT — keep a light burning and keep it close. The deep doesn't forgive the dark."] },
+  { id: "npc_deeplight_trader", kind: "npc", x: 125, y: 26, name: "Mott, a Deep-Delver", lines: ["Down here we trade in light and in nerve. I've a stock of the one, at least.", "Gems come out of these walls if you've the pick and the patience. I'll buy what you bring up."] },
+  { id: "npc_deeplight_folk", kind: "npc", x: 127, y: 26, name: "A Wary Lampwright", lines: ["Never let it gutter. A lamp's the only friend that doesn't run when the crawlers come."] },
+  { id: "fire_deeplight", kind: "fire", x: 123, y: 27, name: "Delvers' Brazier" },
+  // --- Saltreach (Redrun): a fishing village on the river's east bank ---
+  { id: "sign_saltreach", kind: "signpost", x: 146, y: 109, name: "Saltreach", lines: ["SALTREACH — where the Redrun meets the Eyeless Sea. Fresh catch daily, weather and serpents allowing."] },
+  { id: "npc_saltreach_trader", kind: "npc", x: 146, y: 106, name: "Brine, a Fishwife", lines: ["Off the boats this morning — couldn't be fresher unless you caught it yourself. Which I'll sell you the gear to do.", "The deep water's good fishing and bad luck both. Mind the serpents past the bar."] },
+  { id: "npc_saltreach_folk", kind: "npc", x: 144, y: 107, name: "A Net-Mender", lines: ["A torn net catches nothing but blame. Patience and good twine, that's the whole trade."] },
+  { id: "fire_saltreach", kind: "fire", x: 148, y: 107, name: "Smoking Fire" },
+  // --- Emberhearth (Ashfen): a warm-flats camp of cult miners ---
+  { id: "sign_emberhearth", kind: "signpost", x: 77, y: 145, name: "Emberhearth", lines: ["EMBERHEARTH — the warm ground keeps the fires lit and the faithful close. Witness the heat, or move along."] },
+  { id: "npc_emberhearth_trader", kind: "npc", x: 77, y: 142, name: "Sefa, a Flux-Trader", lines: ["Embercite for your flux, charcoal for your forge, a flask for whatever you brew. The warm ground gives plenty.", "We don't sell the faith. Only the goods. The faith you feel through your boots, free of charge."] },
+  { id: "npc_emberhearth_folk", kind: "npc", x: 79, y: 142, name: "A Sweating Digger", lines: ["Short shifts down the warm cuts. Any longer and a man starts hearing the ground breathe."] },
+  { id: "fire_emberhearth", kind: "fire", x: 75, y: 143, name: "Ember Pit" },
+  // --- Mirehold (Heartmoor): a moor hamlet of cutters & trappers ---
+  { id: "sign_mirehold", kind: "signpost", x: 15, y: 143, name: "Mirehold", lines: ["MIREHOLD — a few roofs on firm ground in a sea of bog. Keep to the boards and the moor keeps its temper."] },
+  { id: "npc_mirehold_trader", kind: "npc", x: 15, y: 140, name: "Tam, a Peat-Cutter", lines: ["Eel, peat, snare-line and good moor boots — all a body needs out here. I'll trade you fair.", "The bog keeps things. Best not ask too closely what, or it keeps you too."] },
+  { id: "npc_mirehold_folk", kind: "npc", x: 13, y: 141, name: "A Moor-Wife", lines: ["My man went to check the snares at the pools this morning. The boards don't lie about where folk walk — but he strayed off them."] },
+  { id: "fire_mirehold", kind: "fire", x: 17, y: 141, name: "Peat Fire" },
+  // --- Lodgehold (Greyoak): a foresters' steading at the wood's heart ---
+  { id: "sign_lodgehold", kind: "signpost", x: 13, y: 85, name: "Lodgehold", lines: ["LODGEHOLD — the Warden's steading in the old wood. Bring an axe worth the name, and leave the deep growth its peace."] },
+  { id: "npc_lodgehold_trader", kind: "npc", x: 13, y: 82, name: "Bryn, a Bowyer", lines: ["Hatchets, bowstaves, good arrows fletched true — the wood gives, if you've the tools to ask. I'll sell you those.", "Greyoak's the finest timber in Varath. Cut honest and it'll never blunt you for spite."] },
+  { id: "npc_lodgehold_folk", kind: "npc", x: 15, y: 83, name: "A Lodge Fletcher", lines: ["Straight shaft, true feather, a head that flies where you look. Anything less is a stick with ambitions."] },
+  { id: "fire_lodgehold", kind: "fire", x: 11, y: 83, name: "Steading Hearth" },
+
+  // === WILD ANIMALS roaming the open country between places — huntable for the
+  // generic Raw Meat + Raw Hide (and a little coin). Spread across the gaps. ====
+  { id: "wild_deer_1", kind: "monster", monster: "red_deer", x: 24, y: 28, name: "Red Deer" },
+  { id: "wild_deer_2", kind: "monster", monster: "red_deer", x: 90, y: 40, name: "Red Deer" },
+  { id: "wild_deer_3", kind: "monster", monster: "red_deer", x: 110, y: 70, name: "Red Deer" },
+  { id: "wild_deer_4", kind: "monster", monster: "red_deer", x: 120, y: 115, name: "Red Deer" },
+  { id: "wild_deer_5", kind: "monster", monster: "red_deer", x: 60, y: 122, name: "Red Deer" },
+  { id: "wild_deer_6", kind: "monster", monster: "red_deer", x: 30, y: 108, name: "Red Deer" },
+  { id: "wild_deer_7", kind: "monster", monster: "red_deer", x: 20, y: 58, name: "Red Deer" },
+  { id: "wild_deer_8", kind: "monster", monster: "red_deer", x: 102, y: 50, name: "Red Deer" },
+  { id: "wild_bear_1", kind: "monster", monster: "forest_bear", x: 35, y: 30, name: "Forest Bear" },
+  { id: "wild_bear_2", kind: "monster", monster: "forest_bear", x: 126, y: 76, name: "Forest Bear" },
+  { id: "wild_bear_3", kind: "monster", monster: "forest_bear", x: 70, y: 126, name: "Forest Bear" },
+  { id: "wild_bear_4", kind: "monster", monster: "forest_bear", x: 46, y: 100, name: "Forest Bear" },
+  { id: "wild_bear_5", kind: "monster", monster: "forest_bear", x: 136, y: 56, name: "Forest Bear" },
+  { id: "wild_lion_1", kind: "monster", monster: "mountain_lion", x: 56, y: 46, name: "Mountain Lion" },
+  { id: "wild_lion_2", kind: "monster", monster: "mountain_lion", x: 112, y: 46, name: "Mountain Lion" },
+  { id: "wild_lion_3", kind: "monster", monster: "mountain_lion", x: 50, y: 120, name: "Mountain Lion" },
+  { id: "wild_lion_4", kind: "monster", monster: "mountain_lion", x: 130, y: 92, name: "Mountain Lion" },
+  { id: "wild_wolf_1", kind: "monster", monster: "hill_wolf", x: 28, y: 36, name: "Hill Wolf" },
+  { id: "wild_wolf_2", kind: "monster", monster: "hill_wolf", x: 96, y: 36, name: "Hill Wolf" },
+  { id: "wild_wolf_3", kind: "monster", monster: "hill_wolf", x: 116, y: 106, name: "Hill Wolf" },
+  { id: "wild_wolf_4", kind: "monster", monster: "hill_wolf", x: 40, y: 116, name: "Hill Wolf" },
+  { id: "wild_boar_w1", kind: "monster", monster: "wild_boar", x: 26, y: 55, name: "Wild Boar" },
+  { id: "wild_boar_w2", kind: "monster", monster: "wild_boar", x: 106, y: 60, name: "Wild Boar" },
+  { id: "wild_boar_w3", kind: "monster", monster: "wild_boar", x: 86, y: 118, name: "Wild Boar" },
 ];
 
 /** The world's objects: every hand-authored spawn re-homed onto the doubled

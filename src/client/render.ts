@@ -2493,6 +2493,10 @@ function drawMonsterBody(
       return drawBoar(g, cx, cy, now, true);
     case "forest_bear":
       return drawBear(g, cx, cy, now);
+    case "red_deer":
+      return drawStag(g, cx, cy, now);
+    case "mountain_lion":
+      return drawBigCat(g, cx, cy, now);
     case "stone_crawler":
     case "cave_crawler":
       return drawStoneCrawler(g, cx, cy, now);
@@ -2970,6 +2974,47 @@ function drawBoar(
   g.stroke();
   g.fillStyle = "#1a140f"; // eye
   circle(g, cx - 13 * s, cy - 1 + bob, 1);
+}
+
+// --- Red Deer: a slender russet stag with branching antlers ---
+function drawStag(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 240) * 0.6;
+  shadow(g, cx, cy + 9, 12, 4);
+  g.strokeStyle = "#6a4a2e"; g.lineWidth = 2.2; g.lineCap = "round"; // legs
+  g.beginPath(); g.moveTo(cx - 6, cy + 3 + bob); g.lineTo(cx - 6, cy + 9); g.stroke();
+  g.beginPath(); g.moveTo(cx + 5, cy + 3 + bob); g.lineTo(cx + 5, cy + 9); g.stroke();
+  g.fillStyle = "#9a6b3e"; // body
+  g.beginPath(); g.ellipse(cx, cy + bob, 11, 6, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#7a5230"; // neck
+  g.fillRect(cx + 6, cy - 6 + bob, 3.5, 8);
+  g.fillStyle = "#8a5e36"; // head
+  g.beginPath(); g.ellipse(cx + 9, cy - 8 + bob, 3.5, 3, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#caa570"; g.lineWidth = 1.2; // antlers
+  g.beginPath(); g.moveTo(cx + 8, cy - 10 + bob); g.lineTo(cx + 6, cy - 15 + bob); g.lineTo(cx + 4, cy - 14 + bob); g.stroke();
+  g.beginPath(); g.moveTo(cx + 10, cy - 10 + bob); g.lineTo(cx + 12, cy - 15 + bob); g.lineTo(cx + 14, cy - 14 + bob); g.stroke();
+  g.fillStyle = "#efe9dd"; g.beginPath(); g.arc(cx - 9, cy - 1 + bob, 1.6, 0, Math.PI * 2); g.fill(); // tail flash
+  g.fillStyle = "#1a140f"; circle(g, cx + 10, cy - 8 + bob, 0.9); // eye
+}
+
+// --- Mountain Lion: a low, tawny cat, long-tailed and rangy ---
+function drawBigCat(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 260) * 0.5;
+  shadow(g, cx, cy + 9, 14, 4);
+  g.strokeStyle = "#a8814a"; g.lineWidth = 2.6; g.lineCap = "round"; // tail, curling
+  g.beginPath(); g.moveTo(cx + 11, cy + 1 + bob); g.quadraticCurveTo(cx + 18, cy - 2 + bob, cx + 16, cy - 7 + bob); g.stroke();
+  g.fillStyle = "#7a5a32"; // legs
+  g.fillRect(cx - 7, cy + 4 + bob, 2.6, 6); g.fillRect(cx + 4, cy + 4 + bob, 2.6, 6);
+  g.fillStyle = "#c08f4e"; // long body
+  g.beginPath(); g.ellipse(cx, cy + bob, 13, 6, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#b07f3e"; // haunch
+  g.beginPath(); g.ellipse(cx + 7, cy + bob, 6, 6, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#cd9a56"; // head
+  g.beginPath(); g.ellipse(cx - 12, cy - 1 + bob, 5, 4.5, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#b07f3e"; // ears
+  g.beginPath(); g.moveTo(cx - 15, cy - 5 + bob); g.lineTo(cx - 13, cy - 7 + bob); g.lineTo(cx - 12, cy - 4 + bob); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(cx - 10, cy - 5 + bob); g.lineTo(cx - 9, cy - 7 + bob); g.lineTo(cx - 8, cy - 4 + bob); g.closePath(); g.fill();
+  g.fillStyle = "#e8d8b0"; g.beginPath(); g.ellipse(cx - 15, cy + 1 + bob, 2, 1.6, 0, 0, Math.PI * 2); g.fill(); // muzzle
+  g.fillStyle = "#1a140f"; circle(g, cx - 13, cy - 1 + bob, 1); // eye
 }
 
 // --- Forest Bear: large, heavy, dark-furred ---

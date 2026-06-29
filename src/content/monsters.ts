@@ -86,12 +86,12 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A lean grey wolf that hunts the Knuckle Hills in the cold months. Quick and wary.",
     "drops": [
       {
-        "item": "raw_wolf_meat",
+        "item": "raw_meat",
         "chance": 1,
         "tier": "always"
       },
       {
-        "item": "wolf_pelt",
+        "item": "raw_hide",
         "chance": 0.5,
         "tier": "common"
       },
@@ -135,12 +135,12 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A heavy, ill-tempered boar of the Greyoak understory. It charges before it thinks.",
     "drops": [
       {
-        "item": "raw_boar_meat",
+        "item": "raw_meat",
         "chance": 1,
         "tier": "always"
       },
       {
-        "item": "boar_hide",
+        "item": "raw_hide",
         "chance": 0.6,
         "tier": "common"
       },
@@ -184,12 +184,12 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A great bear of the deep Greyoak. Slow to rouse, devastating once roused.",
     "drops": [
       {
-        "item": "raw_bear_meat",
+        "item": "raw_meat",
         "chance": 1,
         "tier": "always"
       },
       {
-        "item": "bear_pelt",
+        "item": "raw_hide",
         "chance": 0.7,
         "tier": "common"
       },
@@ -208,6 +208,47 @@ export const monsters: Record<string, MonsterStats> = {
         "chance": 0.002,
         "tier": "legendary"
       }
+    ]
+  },
+  "red_deer": {
+    "id": "red_deer",
+    "name": "Red Deer",
+    "icon": "🦌",
+    "level": 8,
+    "hp": 20,
+    "acc": 10,
+    "def": 6,
+    "maxHit": 3,
+    "speed": 3000,
+    "xp": 24,
+    "attackStyle": "stab",
+    "weakness": ["stab"],
+    "desc": "A wary stag of the open country. It will bolt — or, cornered, drive its antlers home.",
+    "drops": [
+      { "item": "raw_meat", "chance": 1, "tier": "always" },
+      { "item": "raw_hide", "chance": 0.6, "tier": "common" },
+      { "item": "worn_coin", "chance": 0.4, "min": 2, "max": 12, "tier": "common" }
+    ]
+  },
+  "mountain_lion": {
+    "id": "mountain_lion",
+    "name": "Mountain Lion",
+    "icon": "🦁",
+    "level": 26,
+    "hp": 54,
+    "acc": 30,
+    "def": 18,
+    "maxHit": 9,
+    "speed": 2600,
+    "xp": 70,
+    "attackStyle": "slash",
+    "weakness": ["stab"],
+    "desc": "A tawny cat of the high rocks and the wood's edge. It stalks, then it sprints — and it does not miss twice.",
+    "drops": [
+      { "item": "raw_meat", "chance": 1, "min": 1, "max": 2, "tier": "always" },
+      { "item": "raw_hide", "chance": 0.7, "tier": "common" },
+      { "item": "worn_coin", "chance": 0.5, "min": 5, "max": 30, "tier": "common" },
+      { "item": "cut_gem", "chance": 0.02, "tier": "rare" }
     ]
   },
   "ridge_wolf": {
@@ -229,7 +270,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A mountain wolf, larger and meaner than its forest cousins.",
     "drops": [
       {
-        "item": "raw_wolf_meat",
+        "item": "raw_meat",
         "chance": 0.8,
         "tier": "always"
       },
@@ -239,7 +280,7 @@ export const monsters: Record<string, MonsterStats> = {
         "tier": "common"
       },
       {
-        "item": "wolf_pelt",
+        "item": "raw_hide",
         "chance": 0.25,
         "tier": "uncommon"
       },

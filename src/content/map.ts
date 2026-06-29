@@ -336,6 +336,39 @@ export const BUILDINGS: Building[] = BUILDINGS_LEGACY.map((b) => {
   return out;
 });
 
+// --- Region settlements: a small village at each far region's road-edge, so a
+// region is a place you arrive at (a shop + a few folk) and not just terrain.
+// Cleared yards (carved in decode after the region paint) + cottage footprints.
+export const SETTLEMENT_CLEARINGS: { x0: number; y0: number; x1: number; y1: number; floor: TileType }[] = [
+  { x0: 46, y0: 14, x1: 54, y1: 22, floor: "stone" },   // Spine — Frostgate (the pass camp)
+  { x0: 121, y0: 21, x1: 129, y1: 29, floor: "cave" },  // Marrow — Deeplight (delvers' outpost)
+  { x0: 142, y0: 101, x1: 150, y1: 109, floor: "dirt" },// Redrun — Saltreach (fishing village, east bank)
+  { x0: 73, y0: 137, x1: 81, y1: 145, floor: "ash" },   // Ashfen — Emberhearth (warm-flats camp)
+  { x0: 11, y0: 135, x1: 19, y1: 143, floor: "dirt" },  // Heartmoor — Mirehold (moor hamlet)
+  { x0: 9, y0: 77, x1: 17, y1: 85, floor: "dirt" },     // Greyoak — Lodgehold (foresters' steading)
+];
+const REGION_BUILDINGS: Building[] = [
+  // Frostgate (Spine)
+  { x0: 47, y0: 15, x1: 49, y1: 16, roof: "slate", door: { x: 48, y: 16 } },
+  { x0: 51, y0: 15, x1: 53, y1: 16, roof: "slate", door: { x: 52, y: 16 } },
+  // Deeplight (Marrow)
+  { x0: 122, y0: 22, x1: 124, y1: 23, roof: "slate", door: { x: 123, y: 23 } },
+  { x0: 126, y0: 22, x1: 128, y1: 23, roof: "slate", door: { x: 127, y: 23 } },
+  // Saltreach (Redrun)
+  { x0: 143, y0: 102, x1: 145, y1: 103, roof: "thatch", door: { x: 144, y: 103 } },
+  { x0: 147, y0: 102, x1: 149, y1: 103, roof: "thatch", door: { x: 148, y: 103 } },
+  // Emberhearth (Ashfen)
+  { x0: 74, y0: 138, x1: 76, y1: 139, roof: "tile", door: { x: 75, y: 139 } },
+  { x0: 78, y0: 138, x1: 80, y1: 139, roof: "tile", door: { x: 79, y: 139 } },
+  // Mirehold (Heartmoor)
+  { x0: 12, y0: 136, x1: 14, y1: 137, roof: "thatch", door: { x: 13, y: 137 } },
+  { x0: 16, y0: 136, x1: 18, y1: 137, roof: "thatch", door: { x: 17, y: 137 } },
+  // Lodgehold (Greyoak)
+  { x0: 10, y0: 78, x1: 12, y1: 79, roof: "thatch", door: { x: 11, y: 79 } },
+  { x0: 14, y0: 78, x1: 16, y1: 79, roof: "tile", door: { x: 15, y: 79 } },
+];
+(BUILDINGS as Building[]).push(...REGION_BUILDINGS);
+
 /** Roof style at a tile (so the renderer knows which walls are buildings). */
 const roofCells = new Map<string, RoofStyle>();
 const doorCells = new Set<string>();
@@ -414,6 +447,10 @@ function decode(): WorldMap {
       }
     }
   };
+
+  // 2c) Clear a yard for each region settlement (carved over the raw region
+  //     terrain), so the cottages + folk sit on cleared ground at the road-edge.
+  for (const s of SETTLEMENT_CLEARINGS) carve(s.x0, s.y0, s.x1, s.y1, s.floor);
 
   const marrow = REGIONS.find((r) => r.key === "marrow")!;
   const spine = REGIONS.find((r) => r.key === "spine")!;

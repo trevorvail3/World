@@ -217,4 +217,81 @@ export const shops: ShopDef[] = [
       { item: "ribperch_cooked", price: 78, qty: 1 },
     ],
   },
+
+  // === REGION SETTLEMENT SHOPS — each themed to its region's trade ===========
+  {
+    id: "shop_frostgate",
+    npc: "npc_frostgate_trader",
+    name: "Frostgate Outfitters",
+    greeting: "Hesk's stall — picks for the high cuttings, a flask, and a hot meal before the cold takes it.",
+    stock: [
+      { item: "pickaxe_3", price: 320, qty: 1 },
+      { item: "pickaxe_4", price: 950, qty: 1 },
+      { item: "embercite_ore", price: 90, qty: 5 },
+      { item: "glass_flask", price: 30, qty: 3 },
+      { item: "cooked_meat", price: 40, qty: 2 },
+    ],
+  },
+  {
+    id: "shop_deeplight",
+    npc: "npc_deeplight_trader",
+    name: "Deeplight Supply",
+    greeting: "Mott's cave-stall — heavier picks for the deep stone, a flask, and food that keeps in the dark.",
+    stock: [
+      { item: "pickaxe_4", price: 950, qty: 1 },
+      { item: "pickaxe_6", price: 4200, qty: 1 },
+      { item: "glass_flask", price: 30, qty: 3 },
+      { item: "cooked_meat", price: 40, qty: 2 },
+    ],
+  },
+  {
+    id: "shop_saltreach",
+    npc: "npc_saltreach_trader",
+    name: "Saltreach Fishmonger",
+    greeting: "Brine's counter — rods for the river and the deep water, and the day's catch, smoked and ready.",
+    stock: [
+      { item: "rod_2", price: 180, qty: 1 },
+      { item: "rod_3", price: 620, qty: 1 },
+      { item: "redrun_chowder", price: 60, qty: 2 },
+      { item: "cooked_meat", price: 40, qty: 2 },
+    ],
+  },
+  {
+    id: "shop_emberhearth",
+    npc: "npc_emberhearth_trader",
+    name: "Emberhearth Flux",
+    greeting: "Sefa's trade — embercite for flux, charcoal for the forge, flasks for the brew. The warm ground gives plenty.",
+    stock: [
+      { item: "embercite_ore", price: 90, qty: 5 },
+      { item: "charcoal", price: 24, qty: 5 },
+      { item: "glass_flask", price: 30, qty: 3 },
+      { item: "cooked_meat", price: 40, qty: 2 },
+    ],
+  },
+  {
+    id: "shop_mirehold",
+    npc: "npc_mirehold_trader",
+    name: "Mirehold Trade",
+    greeting: "Tam's board — an eel-rod, a flask, and rations for the long boards across the moor.",
+    stock: [
+      { item: "rod_2", price: 180, qty: 1 },
+      { item: "glass_flask", price: 30, qty: 3 },
+      { item: "battle_ration", price: 70, qty: 2 },
+      { item: "cooked_meat", price: 40, qty: 2 },
+    ],
+  },
+  {
+    id: "shop_lodgehold",
+    npc: "npc_lodgehold_trader",
+    name: "Lodgehold Bowyer",
+    greeting: "Bryn's bench — hatchets for honest timber, bows and true-fletched arrows for the deep wood.",
+    stock: [
+      { item: "hatchet_3", price: 320, qty: 1 },
+      { item: "hatchet_4", price: 950, qty: 1 },
+      { item: "shortbow", price: 220, qty: 1 },
+      { item: "longbow", price: 780, qty: 1 },
+      { item: "arrow_knucklestone", price: 2, qty: 50 },
+      { item: "arrow_ashiron", price: 6, qty: 50 },
+    ],
+  },
 ];

@@ -200,6 +200,8 @@ export type ItemId =
   | "raw_wolf_meat"
   | "raw_boar_meat"
   | "raw_bear_meat"
+  | "raw_meat"
+  | "cooked_meat"
   | "rat_meat_cooked"
   | "wolf_meat_cooked"
   | "boar_meat_cooked"
