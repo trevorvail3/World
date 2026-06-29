@@ -47,6 +47,17 @@ function isWater(x: number, y: number): boolean {
   const t = map.tiles[y * map.width + x] as string;
   return t === "water" || t === "deep";
 }
+function isPath(x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+  return map.tiles[y * map.width + x] === "path";
+}
+/** Natural resources and props that look wrong embedded in a paved road, so they
+ *  get nudged off it — ore rocks, trees, campfires, forage/herb patches, bone
+ *  cairns and traps. (Carts, lampposts, signposts, NPCs and wandering monsters
+ *  legitimately sit on or travel the roads, so they're left alone.) */
+const OFF_ROAD_KINDS = new Set([
+  "rock", "tree", "fire", "forage_spot", "plant_patch", "tree_patch", "bone_cairn", "trap",
+]);
 /** Nearest tile matching `pred` within `max` rings, or null. */
 function nearestMatch(x: number, y: number, max: number, pred: (x: number, y: number) => boolean): { x: number; y: number } | null {
   if (pred(x, y)) return { x, y };
@@ -67,6 +78,14 @@ function snapSpawn(o: WorldObjectDef): WorldObjectDef {
   if (o.kind === "fishing_spot") {
     if (isWater(o.x, o.y)) return o;
     const p = nearestMatch(o.x, o.y, 28, isWater);
+    return p ? { ...o, x: p.x, y: p.y } : o;
+  }
+  // Resources/props must sit on walkable, NON-road ground so the network stays
+  // clear (no ore in the middle of a road, no campfire on the highway).
+  if (OFF_ROAD_KINDS.has(o.kind)) {
+    const ok = (x: number, y: number) => tileWalkable(x, y) && !isPath(x, y);
+    if (ok(o.x, o.y)) return o;
+    const p = nearestMatch(o.x, o.y, 20, ok);
     return p ? { ...o, x: p.x, y: p.y } : o;
   }
   if (tileWalkable(o.x, o.y)) return o;
