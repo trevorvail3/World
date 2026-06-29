@@ -916,6 +916,21 @@ body {
   white-space: nowrap;
   opacity: 0.92;
 }
+/* Smaller, secondary labels for the many named landmarks (vaults, camps,
+   shrines, named signposts) so quests can be navigated to by name. */
+.wm-poi-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 8.5px;
+  letter-spacing: 0.02em;
+  color: #d9c69a;
+  text-shadow: 0 1px 2px #000, 0 0 4px #000;
+  white-space: nowrap;
+  opacity: 0.82;
+  pointer-events: none;
+}
 .worldmap-legend {
   display: flex;
   flex-wrap: wrap;

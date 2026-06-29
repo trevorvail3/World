@@ -393,6 +393,28 @@ export class WorldMapModal {
       this.markerLayer.appendChild(el);
       this.labelEls.push(el);
     }
+    // Named-landmark labels — every catalogued place (vaults, camps, shrines,
+    // dungeons and the named signposts) gets its name on the map, so a quest
+    // location like "The Brigand's Roost" can actually be found. Story-gated
+    // spots (requiresFlag) stay hidden until the quest reveals them; the four
+    // directional "Fingerpost" signs and unnamed props are skipped.
+    const seen = new Set(this.labelEls.map((e) => e.textContent));
+    for (const def of content.objects) {
+      if (def.kind !== "shrine" && def.kind !== "portal" && def.kind !== "signpost") continue;
+      if (def.requiresFlag) continue;
+      const name = def.name;
+      if (!name || name === "Fingerpost" || seen.has(name)) continue;
+      seen.add(name);
+      const p = objectPos(def, undefined);
+      if (p.y >= rows) continue;
+      const el = document.createElement("span");
+      el.className = "wm-poi-label";
+      el.textContent = name;
+      el.style.left = pct(p.x + 0.5, w);
+      el.style.top = pct(p.y + 0.5, rows);
+      this.markerLayer.appendChild(el);
+      this.labelEls.push(el);
+    }
     // POI markers, grouped by category.
     const kindCat = new Map<ObjKind, { id: string; icon: string; label: string }>();
     for (const c of MAP_CATS) for (const k of c.kinds) kindCat.set(k, c);
