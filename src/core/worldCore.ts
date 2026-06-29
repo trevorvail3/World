@@ -823,6 +823,21 @@ function countItem(player: Player, item: ItemId): number {
   return n;
 }
 
+/** Remove up to `qty` of an item from the pack; returns how many were removed. */
+function removeItems(player: Player, item: ItemId, qty: number): number {
+  let left = qty;
+  for (let i = 0; i < player.inventory.length && left > 0; i++) {
+    const slot = player.inventory[i];
+    if (slot?.item === item) {
+      const take = Math.min(slot.qty, left);
+      slot.qty -= take;
+      left -= take;
+      if (slot.qty <= 0) player.inventory[i] = null;
+    }
+  }
+  return qty - left;
+}
+
 /**
  * Sum a combat stat ("acc", "dmg" or "def") across everything the player is
  * wearing. This is how worn gear feeds into the fight without the core knowing
@@ -906,6 +921,23 @@ export function applyIntent(
     }
     case "CLAIM_DIARY": {
       claimDiary(state, content, intent.diary, intent.skill, events);
+      break;
+    }
+    case "GE_MOVE": {
+      // The local side of a Grand Exchange deposit/withdraw. The client validates
+      // against live state before dispatching, so a shortfall is a silent no-op.
+      const amt = Math.floor(intent.amount);
+      if (!(amt > 0)) break;
+      if (intent.kind === "gold") {
+        if (intent.dir === "take") { if (player.gold >= amt) player.gold -= amt; }
+        else player.gold += amt;
+      } else if (intent.item) {
+        if (intent.dir === "take") {
+          if (countItem(player, intent.item) >= amt) removeItems(player, intent.item, amt);
+        } else {
+          addItem(player, intent.item, amt, events);
+        }
+      }
       break;
     }
     case "DEPOSIT": {

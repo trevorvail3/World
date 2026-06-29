@@ -29,6 +29,7 @@ import { audio } from "./audio.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
+import { ExchangeUI } from "./exchangeUI.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -162,11 +163,13 @@ export class Hud {
     this.dispatch = dispatch;
     this.skillDetail = new SkillDetailModal(root, content);
     this.hiscores = new HiscoresUI(root, content);
+    this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
     this.build(root);
     this.buildSkillPicker(root);
   }
 
   private hiscores: HiscoresUI;
+  private exchange: ExchangeUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -435,6 +438,14 @@ export class Hud {
           void this.hiscores.show(this.lastState?.player.appearance?.name ?? "");
         });
         p.appendChild(hs);
+
+        // --- Grand Exchange: the player-driven marketplace. ---
+        const ge = document.createElement("button");
+        ge.type = "button";
+        ge.className = "world-hiscores world-ge";
+        ge.innerHTML = `<span class="world-hiscores-ic">${iconize("⚖️")}</span> Grand Exchange`;
+        ge.addEventListener("click", () => { void this.exchange.show(); });
+        p.appendChild(ge);
 
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));

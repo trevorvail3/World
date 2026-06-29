@@ -63,6 +63,7 @@ const GLYPHS: Record<string, string> = {
   house: line(`<path d="M4 11 L12 4 L20 11"/><path d="M6.5 10 V20 H17.5 V10"/><rect x="10.5" y="14.5" width="3" height="5.5"/>`),
   castle: line(`<path d="M5 9 V20 H19 V9"/><path d="M5 9 V6 H7 V8 H9 V6 H11 V8 H13 V6 H15 V8 H17 V6 H19 V9"/><path d="M10 20 V15 H14 V20"/>`),
   cape: line(`<path d="M8 4 Q12 7 16 4 L19 20 Q12 16 5 20 Z"/><path d="M8.5 4.5 Q12 9 15.5 4.5"/>`),
+  scales: line(`<line x1="12" y1="4" x2="12" y2="20"/><line x1="6" y1="20" x2="18" y2="20"/><line x1="5" y1="7" x2="19" y2="7"/><path d="M5 7 L2.5 13 Q5 15 7.5 13 Z"/><path d="M19 7 L16.5 13 Q19 15 21.5 13 Z"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.
@@ -82,6 +83,7 @@ const EMOJI: Record<string, string> = {
   "🌍": "globe", "🌎": "globe", "🌏": "globe",
   "🕳️": "cave", "🌫️": "mist", "🔥": "flame", "🌊": "wave",
   "🏠": "house", "🏡": "house", "🏰": "castle", "🧥": "cape",
+  "⚖️": "scales", "⚖": "scales",
 };
 
 /** A named glyph's SVG (falls back to a neutral dot if unknown). */

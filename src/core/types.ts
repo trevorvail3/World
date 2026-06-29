@@ -1219,6 +1219,20 @@ export interface WithdrawIntent {
   item: ItemId;
 }
 
+/**
+ * Move gold or an item between the pack and the Grand Exchange escrow. This is
+ * only the LOCAL side of an Exchange deposit/withdraw — the actual escrow lives
+ * server-side (Supabase); the client pairs this with a server call. "take"
+ * removes from the pack (a no-op if you don't have it), "give" adds it back.
+ */
+export interface GeMoveIntent {
+  type: "GE_MOVE";
+  dir: "take" | "give";
+  kind: "gold" | "item";
+  item?: ItemId;
+  amount: number;
+}
+
 /** "Wear the gear in this inventory slot" (swapping out anything already worn). */
 export interface EquipIntent {
   type: "EQUIP";
@@ -1388,7 +1402,8 @@ export type Intent =
   | BuildRoomIntent
   | PickupIntent
   | DropIntent
-  | ClaimDiaryIntent;
+  | ClaimDiaryIntent
+  | GeMoveIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.

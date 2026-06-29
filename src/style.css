@@ -1937,6 +1937,83 @@ button.inv-slot {
   border: 1px solid var(--panel-edge); border-radius: 8px; padding: 7px 10px;
 }
 .settings-signout:hover { color: var(--ember); }
+
+/* --- Grand Exchange --- */
+.world-ge { margin-top: 6px; }
+.ge-backdrop {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+.ge-backdrop.hidden { display: none; }
+.ge-modal {
+  background: var(--panel, #1c1812); border: 1px solid var(--gold);
+  border-radius: 10px; padding: 14px 16px;
+  width: calc(100% - 36px); max-width: 440px; max-height: 88vh;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  display: flex; flex-direction: column;
+}
+.ge-head { display: flex; justify-content: space-between; align-items: center; }
+.ge-title { font-family: "Cinzel", serif; color: var(--gold); font-size: 16px; letter-spacing: 0.05em; }
+.ge-close { background: transparent; border: 0; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; }
+.ge-close:hover { color: var(--ember); }
+.ge-balance { font-family: "Cinzel", serif; color: var(--ember); font-size: 13px; margin: 4px 0 8px; }
+.ge-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.ge-tab {
+  font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim);
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-edge);
+  border-radius: 10px; padding: 3px 11px; cursor: pointer;
+}
+.ge-tab.on { color: #1a140f; background: var(--ember, #d2742c); border-color: #f2cf6b; }
+.ge-msg { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ember); min-height: 1.1em; margin-bottom: 4px; }
+.ge-msg.ok { color: var(--gold); }
+.ge-body { overflow-y: auto; }
+.ge-empty { color: var(--ink-dim); text-align: center; padding: 18px; font-style: italic; }
+.ge-sect { border-top: 1px solid var(--panel-edge); padding: 9px 0; }
+.ge-sect:first-child { border-top: 0; }
+.ge-sect-h { font-family: "Cinzel", serif; color: var(--gold); font-size: 12px; margin-bottom: 6px; }
+.ge-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 5px; }
+.ge-dim { color: var(--ink-dim); font-family: "EB Garamond", serif; font-size: 12px; }
+.ge-in {
+  font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink);
+  background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-edge);
+  border-radius: 7px; padding: 6px 8px; flex: 1; min-width: 0;
+}
+.ge-in.narrow { flex: 0 0 70px; }
+.ge-in:focus { outline: none; border-color: var(--gold); }
+.ge-btn {
+  font-family: "Cinzel", serif; font-size: 12px; cursor: pointer; white-space: nowrap;
+  color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b;
+  border-radius: 8px; padding: 6px 10px;
+}
+.ge-btn:hover { background: #e08a3e; }
+.ge-btn.alt { color: var(--ink-dim); background: rgba(0, 0, 0, 0.25); border-color: var(--panel-edge); }
+.ge-btn.alt:hover, .ge-btn.alt.on { color: var(--ink); }
+.ge-btn.alt.on { color: #1a140f; background: var(--ember); border-color: #f2cf6b; }
+.ge-btn.small { padding: 3px 9px; font-size: 11px; }
+.ge-side .ge-btn { flex: 1; }
+.ge-bank-row, .ge-bank > .ge-dim { display: flex; align-items: center; gap: 8px; padding: 4px 2px; }
+.ge-bank-row { font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink); }
+.ge-bank-row:nth-child(odd) { background: rgba(0, 0, 0, 0.14); border-radius: 5px; }
+.ge-bank-name { flex: 1; }
+.ge-bank-qty { color: var(--ember); font-variant-numeric: tabular-nums; }
+.ge-quote { margin-top: 6px; }
+.ge-quote-row { display: flex; gap: 12px; font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink); }
+.ge-q b { color: var(--gold); font-weight: 600; }
+.ge-trades { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; }
+.ge-trade { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); }
+.ge-total { margin-top: 2px; }
+.ge-offers { display: flex; flex-direction: column; gap: 8px; }
+.ge-offer { border: 1px solid var(--panel-edge); border-radius: 8px; padding: 7px 9px; }
+.ge-offer-top { display: flex; align-items: center; gap: 7px; font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink); }
+.ge-offer-side { font-family: "Cinzel", serif; font-size: 10px; padding: 1px 6px; border-radius: 6px; }
+.ge-offer-side.buy { color: #1a140f; background: #6ab04a; }
+.ge-offer-side.sell { color: #1a140f; background: #d2742c; }
+.ge-offer-name { flex: 1; }
+.ge-offer-price { color: var(--ember); font-variant-numeric: tabular-nums; }
+.ge-offer-bar { height: 5px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; margin: 6px 0; overflow: hidden; }
+.ge-offer-fill { height: 100%; background: var(--gold); }
+.ge-offer-bot { display: flex; justify-content: space-between; align-items: center; }
 .skillpick-modal {
   background: var(--panel, #1c1812);
   border: 1px solid var(--panel-edge);
