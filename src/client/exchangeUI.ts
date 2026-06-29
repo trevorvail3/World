@@ -145,7 +145,7 @@ export class ExchangeUI {
   private itemName(id: ItemId): string { return this.content.items[id]?.name ?? id; }
   private isStackable(id: ItemId): boolean {
     const d = this.content.items[id];
-    return !!d && (d.stackable === true || d.slot === "ammo");
+    return !!d && (d.stackable === true || d.slot === "ammo" || d.cat === "Seeds");
   }
   private packCount(id: ItemId): number {
     const inv = this.getState()?.player.inventory ?? [];

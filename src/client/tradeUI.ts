@@ -318,7 +318,7 @@ const STACKABLE = new Set<ItemId>();
 export function registerStackables(content: Content): void {
   for (const id of Object.keys(content.items) as ItemId[]) {
     const d = content.items[id];
-    if (d.stackable === true || d.slot === "ammo") STACKABLE.add(id);
+    if (d.stackable === true || d.slot === "ammo" || d.cat === "Seeds") STACKABLE.add(id);
   }
 }
 

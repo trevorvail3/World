@@ -278,7 +278,7 @@ export class Game {
       () => this.worldMap.show(),
       (tile) => this.walkToWorldTile(tile),
     );
-    this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
+    this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent), menu);
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.bounty = new BountyUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.levelUp = new LevelUp(uiRoot, bridge.content);

@@ -10,6 +10,9 @@ import {
   acceptFriend, addFriend, listFriends, onlineNow, removeFriend, resolveByName,
   type Friend, type OnlinePlayer,
 } from "./friends.ts";
+import { profileFor, type HiscoreEntry } from "./social.ts";
+import type { Content, SkillId } from "../core/types.ts";
+import { iconize } from "./glyph.ts";
 
 type Tab = "online" | "friends";
 
@@ -20,6 +23,12 @@ function ago(ms: number): string {
   return m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`;
 }
 
+function fmtPlay(ms: number): string {
+  const min = Math.floor((ms || 0) / 60000);
+  const h = Math.floor(min / 60);
+  return h === 0 ? `${min}m` : `${h}h ${min % 60}m`;
+}
+
 export class PlayersUI {
   private backdrop: HTMLElement;
   private body: HTMLElement;
@@ -27,8 +36,14 @@ export class PlayersUI {
   private tabsEl: HTMLElement;
   private open = false;
   private tab: Tab = "online";
+  /** When set, the body shows this player's profile instead of a list. */
+  private viewing: { id: string; name: string } | null = null;
 
-  constructor(root: HTMLElement, private onTrade: (id: string, name: string) => void = () => {}) {
+  constructor(
+    root: HTMLElement,
+    private content: Content,
+    private onTrade: (id: string, name: string) => void = () => {},
+  ) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "players-backdrop hidden";
     this.backdrop.innerHTML = `
@@ -59,6 +74,7 @@ export class PlayersUI {
       b.addEventListener("pointerdown", (e) => {
         e.stopPropagation();
         this.tab = id;
+        this.viewing = null;
         this.tabsEl.querySelectorAll(".players-tab").forEach((t) => t.classList.remove("on"));
         b.classList.add("on");
         void this.refresh();
@@ -82,6 +98,7 @@ export class PlayersUI {
   }
 
   private async refresh(): Promise<void> {
+    if (this.viewing) { await this.renderProfile(this.viewing.id, this.viewing.name); return; }
     this.body.innerHTML = `<div class="players-empty">Loading…</div>`;
     try {
       if (this.tab === "online") this.renderOnline(await onlineNow());
@@ -89,6 +106,64 @@ export class PlayersUI {
     } catch {
       this.body.innerHTML = `<div class="players-empty">Couldn't reach the server.</div>`;
     }
+  }
+
+  /** Open a player's public profile (skills + time played). */
+  private openProfile(id: string, name: string): void {
+    if (!id) return;
+    this.viewing = { id, name };
+    void this.renderProfile(id, name);
+  }
+
+  /** Render the profile view for one player into the body. */
+  private async renderProfile(id: string, name: string): Promise<void> {
+    this.body.innerHTML = `<div class="players-empty">Loading ${escapeHtml(name)}…</div>`;
+    let entry: HiscoreEntry | null = null;
+    try { entry = await profileFor(id); } catch { entry = null; }
+    if (this.viewing?.id !== id) return; // navigated away while loading
+    const skills = entry?.skills ?? {};
+    const cells = (Object.keys(this.content.skills) as SkillId[]).map((sid) => {
+      const meta = this.content.skills[sid];
+      const lvl = skills[sid] ?? 1;
+      return `
+        <div class="players-skill">
+          <span class="players-skill-icon">${iconize(meta.icon)}</span>
+          <span class="players-skill-name">${escapeHtml(meta.name)}</span>
+          <span class="players-skill-lvl">${lvl}</span>
+        </div>`;
+    }).join("");
+    this.body.innerHTML = `
+      <div class="players-profile">
+        <button class="players-btn dim players-back" type="button">← Back</button>
+        <div class="players-profile-head">
+          <span class="players-name">${escapeHtml(entry?.name ?? name)}</span>
+        </div>
+        <div class="players-profile-stats">
+          <span>Total <b>${entry?.totalLevel ?? "—"}</b></span>
+          <span>Combat <b>${entry?.combat ?? "—"}</b></span>
+          <span>Played <b>${entry ? fmtPlay(entry.playMs) : "—"}</b></span>
+        </div>
+        ${entry ? `<div class="players-skill-grid">${cells}</div>`
+          : `<div class="players-empty">This player hasn't appeared on the hiscores yet.</div>`}
+      </div>`;
+    const back = this.body.querySelector(".players-back") as HTMLElement | null;
+    back?.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      this.viewing = null;
+      void this.refresh();
+    });
+  }
+
+  /** Wire up every clickable player name currently in the body. */
+  private bindProfile(): void {
+    this.body.querySelectorAll(".players-name[data-id]").forEach((el) => {
+      el.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const id = (el as HTMLElement).dataset.id ?? "";
+        const name = (el as HTMLElement).dataset.name ?? "";
+        this.openProfile(id, name);
+      });
+    });
   }
 
   private renderOnline(list: OnlinePlayer[]): void {
@@ -99,7 +174,7 @@ export class PlayersUI {
     this.body.innerHTML = list.map((p) => `
       <div class="players-row">
         <span class="players-dot on"></span>
-        <span class="players-name">${escapeHtml(p.name)}</span>
+        <span class="players-name" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
         <span class="players-ago">${ago(p.agoMs)}</span>
         <button class="players-btn trade" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" type="button">Trade</button>
         <button class="players-btn dim add-friend" data-name="${escapeHtml(p.name)}" type="button">+</button>
@@ -111,6 +186,7 @@ export class PlayersUI {
       });
     });
     this.bindTrade();
+    this.bindProfile();
   }
 
   /** Wire up every Trade button currently in the body. */
@@ -132,7 +208,7 @@ export class PlayersUI {
     const row = (f: Friend, actions: string): string => `
       <div class="players-row">
         <span class="players-dot${f.online ? " on" : ""}"></span>
-        <span class="players-name">${escapeHtml(f.name)}</span>
+        <span class="players-name" data-id="${escapeHtml(f.id)}" data-name="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
         ${f.online && f.status === "accepted" ? `<button class="players-btn trade" data-id="${escapeHtml(f.id)}" data-name="${escapeHtml(f.name)}" type="button">Trade</button>` : ""}
         ${actions}
       </div>`;
@@ -166,6 +242,7 @@ export class PlayersUI {
       void removeFriend(Number((el as HTMLElement).dataset.id)).then(() => this.refresh());
     }));
     this.bindTrade();
+    this.bindProfile();
   }
 
   private async doAdd(name: string): Promise<void> {

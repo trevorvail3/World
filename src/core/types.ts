@@ -1253,12 +1253,16 @@ export interface EatIntent {
 export interface DepositIntent {
   type: "DEPOSIT";
   item: ItemId;
+  /** How many to deposit; omitted = the whole stack. */
+  qty?: number;
 }
 
-/** "Withdraw one of this item from the bank into my pack." */
+/** "Withdraw some of this item from the bank into my pack." */
 export interface WithdrawIntent {
   type: "WITHDRAW";
   item: ItemId;
+  /** How many to withdraw; omitted = 1. (A big number = withdraw all.) */
+  qty?: number;
 }
 
 /**

@@ -24,8 +24,13 @@ create table if not exists public.world_hiscores (
   diaries       integer not null default 0,
   monsters_slain integer not null default 0,
   gold_earned   bigint  not null default 0,
+  skills        jsonb   not null default '{}'::jsonb,
   updated_at    timestamptz not null default now()
 );
+
+-- If the table already exists from an earlier version, add the skills column.
+alter table public.world_hiscores
+  add column if not exists skills jsonb not null default '{}'::jsonb;
 
 -- Turn on Row-Level Security and define who can do what.
 alter table public.world_hiscores enable row level security;

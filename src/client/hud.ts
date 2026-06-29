@@ -170,7 +170,7 @@ export class Hud {
     this.skillDetail = new SkillDetailModal(root, content);
     this.hiscores = new HiscoresUI(root, content);
     this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
-    this.players = new PlayersUI(root, (id, name) => void this.startTrade(id, name));
+    this.players = new PlayersUI(root, content, (id, name) => void this.startTrade(id, name));
     registerStackables(content);
     this.trade = new TradeUI(
       root, content, () => this.lastState?.player ?? null, dispatch, () => this.pollTrade(),
@@ -269,8 +269,32 @@ export class Hud {
     // --- Game log + world chat (bottom-left), OSRS-style: game messages and
     //     other players' chat share one scrollback, with a typing line below. ---
     const logPanel = panel("hud-panel hud-log");
+    // Filter row: show All, only Game updates, or only world Chat.
+    const filterRow = document.createElement("div");
+    filterRow.className = "log-filter";
     this.logEl = document.createElement("div");
     this.logEl.className = "log-lines";
+    const filters: { key: "" | "only-game" | "only-chat"; label: string }[] = [
+      { key: "", label: "All" },
+      { key: "only-game", label: "Game" },
+      { key: "only-chat", label: "Chat" },
+    ];
+    for (const f of filters) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = `log-filter-btn${f.key === "" ? " on" : ""}`;
+      b.textContent = f.label;
+      b.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        this.logEl.classList.remove("only-game", "only-chat");
+        if (f.key) this.logEl.classList.add(f.key);
+        filterRow.querySelectorAll(".log-filter-btn").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        this.logEl.scrollTop = this.logEl.scrollHeight;
+      });
+      filterRow.appendChild(b);
+    }
+    logPanel.appendChild(filterRow);
     logPanel.appendChild(this.logEl);
     const chatForm = document.createElement("form");
     chatForm.className = "log-chat";

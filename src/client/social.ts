@@ -29,6 +29,8 @@ export interface HiscoreEntry {
   userId?: string;
   /** True for the entry that is the player's own. */
   you?: boolean;
+  /** Per-skill level, keyed by skill id — shown on a player's profile. */
+  skills?: Record<string, number>;
 }
 
 export interface SocialBackend {
@@ -55,6 +57,8 @@ export function entryFromSave(raw: unknown, _content: Content): HiscoreEntry | n
   );
   const app = (r["appearance"] ?? {}) as Record<string, unknown>;
   const stats = (r["stats"] ?? {}) as Record<string, unknown>;
+  const skillLevels: Record<string, number> = {};
+  for (const id of ids) skillLevels[id] = lvl(id);
   return {
     name: typeof app["name"] === "string" && app["name"] ? (app["name"] as string) : "Wanderer",
     totalLevel,
@@ -63,6 +67,7 @@ export function entryFromSave(raw: unknown, _content: Content): HiscoreEntry | n
     diaries: Array.isArray(r["diariesClaimed"]) ? (r["diariesClaimed"] as unknown[]).length : 0,
     monstersSlain: num(stats["monstersSlain"]),
     goldEarned: num(stats["goldEarned"]),
+    skills: skillLevels,
   };
 }
 
@@ -92,7 +97,20 @@ function rowToEntry(row: Record<string, unknown>): HiscoreEntry {
     goldEarned: num(row["gold_earned"]),
   };
   if (typeof row["user_id"] === "string") e.userId = row["user_id"] as string;
+  if (row["skills"] && typeof row["skills"] === "object") {
+    e.skills = row["skills"] as Record<string, number>;
+  }
   return e;
+}
+
+/** Fetch one player's public profile (skills + playtime) by their user id. */
+export async function profileFor(userId: string): Promise<HiscoreEntry | null> {
+  try {
+    const res = await rest(`world_hiscores?user_id=eq.${userId}&select=*`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) && data.length ? rowToEntry(data[0]) : null;
+  } catch { return null; }
 }
 
 /** The real shared board, backed by Supabase + your account. */
@@ -113,6 +131,7 @@ class SupabaseSocialBackend implements SocialBackend {
           diaries: entry.diaries,
           monsters_slain: entry.monstersSlain,
           gold_earned: entry.goldEarned,
+          skills: entry.skills ?? {},
         },
       });
     } catch { /* offline — try again next time the board opens */ }

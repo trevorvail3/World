@@ -703,7 +703,7 @@ let activeContent: Content | null = null;
 /** OSRS rules: items are individual unless flagged stackable (ammo always is). */
 function isStackable(item: ItemId): boolean {
   const d = activeContent?.items[item];
-  return !!d && (d.stackable === true || d.slot === "ammo");
+  return !!d && (d.stackable === true || d.slot === "ammo" || d.cat === "Seeds");
 }
 
 /**
@@ -1018,12 +1018,12 @@ export function applyIntent(
     }
     case "DEPOSIT": {
       if (!atStation(player, "bank", "the bank", events)) break;
-      depositAll(player, intent.item);
+      depositItem(player, intent.item, intent.qty);
       break;
     }
     case "WITHDRAW": {
       if (!atStation(player, "bank", "the bank", events)) break;
-      withdrawOne(player, intent.item, events);
+      withdrawItem(player, intent.item, intent.qty ?? 1, events);
       break;
     }
     case "EQUIP": {
@@ -1511,25 +1511,37 @@ function buffVal(player: Player, kind: string): number {
 }
 
 /** Move every one of an item from the pack into the bank. */
-function depositAll(player: Player, item: ItemId): void {
+/** Deposit up to `want` of an item (undefined = the whole pack's worth). */
+function depositItem(player: Player, item: ItemId, want?: number): void {
+  let left = want === undefined ? Infinity : Math.max(0, Math.floor(want));
   let moved = 0;
-  for (let i = 0; i < player.inventory.length; i++) {
+  for (let i = 0; i < player.inventory.length && left > 0; i++) {
     const slot = player.inventory[i];
     if (slot && slot.item === item) {
-      moved += slot.qty;
-      player.inventory[i] = null;
+      const take = Math.min(slot.qty, left);
+      slot.qty -= take;
+      moved += take;
+      left -= take;
+      if (slot.qty <= 0) player.inventory[i] = null;
     }
   }
   if (moved > 0) player.bank[item] = (player.bank[item] ?? 0) + moved;
 }
 
-/** Withdraw one of an item from the bank into the pack (if there's room). */
-function withdrawOne(player: Player, item: ItemId, events: WorldEvent[]): void {
-  const have = player.bank[item] ?? 0;
-  if (have <= 0) return;
-  if (!addItem(player, item, 1, events)) return; // pack full; bank untouched
-  if (have - 1 <= 0) delete player.bank[item];
-  else player.bank[item] = have - 1;
+/** Withdraw up to `want` of an item from the bank into the pack (room permitting). */
+function withdrawItem(player: Player, item: ItemId, want: number, events: WorldEvent[]): void {
+  let left = Math.min(player.bank[item] ?? 0, Math.max(1, Math.floor(want)));
+  let pulled = 0;
+  while (left > 0) {
+    if (!addItem(player, item, 1, events)) break; // pack full; stop
+    pulled++;
+    left--;
+  }
+  if (pulled > 0) {
+    const have = (player.bank[item] ?? 0) - pulled;
+    if (have <= 0) delete player.bank[item];
+    else player.bank[item] = have;
+  }
 }
 
 function startInteraction(

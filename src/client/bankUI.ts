@@ -8,6 +8,7 @@
 
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 
 export class BankUI {
   private backdrop: HTMLElement;
@@ -24,6 +25,7 @@ export class BankUI {
     root: HTMLElement,
     private content: Content,
     private dispatch: (intent: Intent) => void,
+    private menu: ContextMenu | null = null,
   ) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "bank-backdrop hidden";
@@ -136,7 +138,7 @@ export class BankUI {
       for (const id of entries) {
         const qty = player.bank[id] ?? 0;
         this.bankGrid.appendChild(
-          this.slot(id, qty, () => this.dispatchAndRender({ type: "WITHDRAW", item: id })),
+          this.slot(id, qty, (x, y) => this.withdrawMenu(id, qty, x, y)),
         );
       }
     }
@@ -151,15 +153,14 @@ export class BankUI {
         this.invGrid.appendChild(blank);
         continue;
       }
+      const held = data;
       this.invGrid.appendChild(
-        this.slot(data.item, data.qty, () =>
-          this.dispatchAndRender({ type: "DEPOSIT", item: data.item }),
-        ),
+        this.slot(held.item, held.qty, (x, y) => this.depositMenu(held.item, x, y)),
       );
     }
   }
 
-  private slot(item: ItemId, qty: number, onTap: () => void): HTMLElement {
+  private slot(item: ItemId, qty: number, onTap: (x: number, y: number) => void): HTMLElement {
     const def = this.content.items[item];
     const slot = document.createElement("button");
     slot.type = "button";
@@ -170,9 +171,52 @@ export class BankUI {
     }`;
     slot.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
-      onTap();
+      onTap(e.clientX, e.clientY);
     });
     return slot;
+  }
+
+  /** Pack item: choose how much to bank — 1, a typed amount, or the whole stack. */
+  private depositMenu(item: ItemId, x: number, y: number): void {
+    const name = this.content.items[item]?.name ?? item;
+    const held = this.state
+      ? this.state.player.inventory.reduce((n, s) => (s?.item === item ? n + s.qty : n), 0)
+      : 0;
+    const dep = (qty?: number): void => this.dispatchAndRender(
+      qty === undefined ? { type: "DEPOSIT", item } : { type: "DEPOSIT", item, qty },
+    );
+    if (!this.menu || held <= 1) { dep(); return; } // nothing to choose
+    const items: MenuItem[] = [
+      { label: "Deposit", target: "1", tone: "action", onSelect: () => dep(1) },
+      { label: "Deposit", target: "amount…", onSelect: () => {
+        const n = this.askAmount(name, held);
+        if (n > 0) dep(n);
+      } },
+      { label: "Deposit", target: `all (${held})`, onSelect: () => dep() },
+    ];
+    this.menu.show(x, y, name, items, "Move into the bank chest.");
+  }
+
+  /** Bank item: choose how much to take out — 1, a typed amount, or all. */
+  private withdrawMenu(item: ItemId, have: number, x: number, y: number): void {
+    const name = this.content.items[item]?.name ?? item;
+    const wd = (qty: number): void => this.dispatchAndRender({ type: "WITHDRAW", item, qty });
+    if (!this.menu || have <= 1) { wd(1); return; }
+    const items: MenuItem[] = [
+      { label: "Withdraw", target: "1", tone: "action", onSelect: () => wd(1) },
+      { label: "Withdraw", target: "amount…", onSelect: () => {
+        const n = this.askAmount(name, have);
+        if (n > 0) wd(n);
+      } },
+      { label: "Withdraw", target: `all (${have})`, onSelect: () => wd(have) },
+    ];
+    this.menu.show(x, y, name, items, "Take out of the bank chest.");
+  }
+
+  private askAmount(name: string, max: number): number {
+    const ans = window.prompt(`How many ${name}? (1–${max})`, String(max));
+    if (ans === null) return 0;
+    return Math.max(0, Math.min(max, Math.floor(Number(ans)) || 0));
   }
 
   private dispatchAndRender(intent: Intent): void {
