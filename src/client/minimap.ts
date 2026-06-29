@@ -231,7 +231,7 @@ export class Minimap {
 
     // Square element; one fixed tile-span so the local area is always the same.
     const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
-    const S = window.innerHeight < 440 ? 76 : 96; // px, square
+    const S = window.innerHeight < 440 ? 92 : 116; // px, square
     if (S !== this.cw || S !== this.ch || dpr !== this.mdpr) {
       this.cw = S; this.ch = S; this.mdpr = dpr;
       this.canvas.width = Math.round(S * dpr);
@@ -393,17 +393,22 @@ export class WorldMapModal {
       this.markerLayer.appendChild(el);
       this.labelEls.push(el);
     }
-    // Named-landmark labels — every catalogued place (vaults, camps, shrines,
-    // dungeons and the named signposts) gets its name on the map, so a quest
-    // location like "The Brigand's Roost" can actually be found. Story-gated
-    // spots (requiresFlag) stay hidden until the quest reveals them; the four
-    // directional "Fingerpost" signs and unnamed props are skipped.
+    // Named-landmark labels — only the places worth navigating to: dungeon
+    // entrances (portals), settlements & major hubs (named signposts) and the
+    // quest/boss camps. The many minor lore shrines are left off so the map
+    // doesn't drown in text. Story-gated spots (requiresFlag) stay hidden until
+    // their quest reveals them; directional "Fingerpost" signs are skipped.
+    const KEEP_SHRINE = new Set(["The Brigand's Roost", "The Brigand Camp"]);
     const seen = new Set(this.labelEls.map((e) => e.textContent));
     for (const def of content.objects) {
-      if (def.kind !== "shrine" && def.kind !== "portal" && def.kind !== "signpost") continue;
+      const important =
+        def.kind === "portal" ||
+        (def.kind === "signpost" && !!def.name && def.name !== "Fingerpost") ||
+        (def.kind === "shrine" && !!def.name && KEEP_SHRINE.has(def.name));
+      if (!important) continue;
       if (def.requiresFlag) continue;
       const name = def.name;
-      if (!name || name === "Fingerpost" || seen.has(name)) continue;
+      if (!name || seen.has(name)) continue;
       seen.add(name);
       const p = objectPos(def, undefined);
       if (p.y >= rows) continue;

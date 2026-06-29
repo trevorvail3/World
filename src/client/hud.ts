@@ -126,9 +126,6 @@ export class Hud {
   private charMaxed!: HTMLElement;
   private charHp!: HTMLElement;
   private charPlayed!: HTMLElement;
-  private charCapeCount!: HTMLElement;
-  private charCapeFill!: HTMLElement;
-  private charCapeNote!: HTMLElement;
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
   private factionRows = new Map<string, { rep: HTMLElement; stand: HTMLElement; fill: HTMLElement }>();
@@ -413,17 +410,7 @@ export class Hud {
         this.charHp = sheet.querySelector(".char-hp") as HTMLElement;
         this.charPlayed = sheet.querySelector(".char-played") as HTMLElement;
         p.appendChild(sheet);
-        // Cape of Varath: the all-99 completion goal, shown as a progress bar.
-        const cape = document.createElement("div");
-        cape.className = "char-cape";
-        cape.innerHTML = `
-          <div class="char-cape-top"><span>${iconize("🧥")} Cape of Varath</span><span class="char-cape-count"></span></div>
-          <div class="char-cape-bar"><div class="char-cape-fill"></div></div>
-          <div class="char-cape-note"></div>`;
-        this.charCapeCount = cape.querySelector(".char-cape-count") as HTMLElement;
-        this.charCapeFill = cape.querySelector(".char-cape-fill") as HTMLElement;
-        this.charCapeNote = cape.querySelector(".char-cape-note") as HTMLElement;
-        p.appendChild(cape);
+        // (Cape of Varath progress now lives in the Records tab, as an achievement.)
 
         // Combat style — picks which combat skill your next kill trains.
         this.styleButtons.clear();
@@ -1049,19 +1036,6 @@ export class Hud {
     this.charPlayed.textContent = formatPlaytime(player.playMs);
     const cname = player.appearance?.name?.trim();
     this.charName.textContent = cname ? `${cname} of Ironvale` : "Wanderer of Ironvale";
-    // Cape of Varath progress (the all-99 completion goal).
-    const capeOwned =
-      player.equipment.cape === "cape_max" ||
-      player.inventory.some((s) => s?.item === "cape_max") ||
-      (player.bank["cape_max"] ?? 0) > 0;
-    this.charCapeCount.textContent = `${maxed} / ${ids.length}`;
-    this.charCapeFill.style.width = `${ids.length ? (maxed / ids.length) * 100 : 0}%`;
-    this.charCapeNote.textContent = capeOwned
-      ? "Earned — the mark of a true master of Varath."
-      : maxed >= ids.length
-        ? "All skills maxed! Buy it from the Cape Master in Ironvale (1,000,000g)."
-        : `Master every skill to earn it — ${ids.length - maxed} to go.`;
-    this.charCapeFill.parentElement!.parentElement!.classList.toggle("done", capeOwned);
     this.styleButtons.forEach((btn, id) => {
       btn.classList.toggle("active", id === player.combatStyle);
     });
@@ -1187,6 +1161,13 @@ export class Hud {
     const compOwned = comps.filter(ownedOf).length;
     const achTotal = this.content.achievements.length;
     const loreTotal = this.content.lore.length;
+    // Cape of Varath — the all-99 completion goal, now tracked here as an achievement.
+    const skillIds = Object.keys(this.content.skills) as SkillId[];
+    const capeMaxed = skillIds.filter((id) => player.skills[id].level >= 99).length;
+    const capeOwned =
+      player.equipment.cape === "cape_max" ||
+      player.inventory.some((s) => s?.item === "cape_max") ||
+      (player.bank["cape_max"] ?? 0) > 0;
 
     // Rebuild only on a real change (counts, summoned pet, or which sections are
     // open). This is what stops the per-frame churn that froze the tab.
@@ -1195,6 +1176,7 @@ export class Hud {
       compOwned, player.equipment.companion ?? "",
       player.achievements.length, achTotal, player.lore.length, loreTotal,
       bossKillSig, player.bossMilestonesClaimed.length,
+      capeMaxed, capeOwned ? 1 : 0,
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -1291,6 +1273,19 @@ export class Hud {
     }).join("")
       + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for an XP lamp — pour it into any skill — with a guaranteed pet at 100.</div>`;
 
+    // Cape of Varath: the grandmaster goal — every skill at 99 — as a progress bar.
+    const capePct = skillIds.length ? (capeMaxed / skillIds.length) * 100 : 0;
+    const capeNote = capeOwned
+      ? "Earned — the mark of a true master of Varath."
+      : capeMaxed >= skillIds.length
+        ? "All skills maxed! Buy it from the Cape Master in Ironvale (1,000,000g)."
+        : `Master every skill to earn it — ${skillIds.length - capeMaxed} to go.`;
+    const capeBody =
+      `<div class="char-cape${capeOwned ? " done" : ""}">` +
+      `<div class="char-cape-top"><span>${iconize("🧥")} Cape of Varath</span><span class="char-cape-count">${capeMaxed} / ${skillIds.length}</span></div>` +
+      `<div class="char-cape-bar"><div class="char-cape-fill" style="width:${capePct}%"></div></div>` +
+      `<div class="char-cape-note">${escapeHtml(capeNote)}</div></div>`;
+
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {
       const open = this.openSecs.has(key);
@@ -1299,6 +1294,7 @@ export class Hud {
 
     this.recordsEl.innerHTML =
       section("bosslog", "Boss Log", `${bossSlain}/${bosses.length}`, bossBody) +
+      section("cape", "Cape of Varath", capeOwned ? "Earned" : `${capeMaxed}/${skillIds.length}`, capeBody) +
       section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
       section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);

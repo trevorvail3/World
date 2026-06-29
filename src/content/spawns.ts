@@ -80,6 +80,19 @@ function snapSpawn(o: WorldObjectDef): WorldObjectDef {
     const p = nearestMatch(o.x, o.y, 28, isWater);
     return p ? { ...o, x: p.x, y: p.y } : o;
   }
+  // Banks need elbow room: a chest wedged into a one-tile gap can be sealed off
+  // by a wandering NPC, soft-locking the player. Require at least 3 of 4
+  // orthogonal neighbours walkable, nudging to the nearest such tile.
+  if (o.kind === "bank") {
+    const openSides = (x: number, y: number) =>
+      (tileWalkable(x, y - 1) ? 1 : 0) + (tileWalkable(x, y + 1) ? 1 : 0) +
+      (tileWalkable(x - 1, y) ? 1 : 0) + (tileWalkable(x + 1, y) ? 1 : 0);
+    const clear = (x: number, y: number) => tileWalkable(x, y) && openSides(x, y) >= 3;
+    if (clear(o.x, o.y)) return o;
+    const p = nearestMatch(o.x, o.y, 8, clear)
+      ?? (tileWalkable(o.x, o.y) ? { x: o.x, y: o.y } : nearestMatch(o.x, o.y, 20, tileWalkable));
+    return p ? { ...o, x: p.x, y: p.y } : o;
+  }
   // Resources/props must sit on walkable, NON-road ground so the network stays
   // clear (no ore in the middle of a road, no campfire on the highway).
   if (OFF_ROAD_KINDS.has(o.kind)) {
