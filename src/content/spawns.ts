@@ -13,7 +13,34 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, homeLayout, remap } from "./map.ts";
+import { HOMES, homeLayout, remap, map } from "./map.ts";
+
+const SCATTER_BLOCKED = new Set(["water", "mountain", "cave_wall", "deep", "wall", "plank"]);
+function tileWalkable(x: number, y: number): boolean {
+  return x >= 0 && y >= 0 && x < map.width && y < map.height &&
+    !SCATTER_BLOCKED.has(map.tiles[y * map.width + x] as string);
+}
+/** Break the grid look of the open-country fill nodes: jitter each `fz*` spawn
+ *  by a deterministic per-id offset, snapped to the nearest walkable tile so it
+ *  never lands on water/rock/structure. Leaves deliberately-placed spawns alone. */
+function scatterFill(o: WorldObjectDef): WorldObjectDef {
+  if (!o.id.startsWith("fz")) return o;
+  let h = 0;
+  for (let i = 0; i < o.id.length; i++) h = (h * 31 + o.id.charCodeAt(i)) >>> 0;
+  const jx = (h % 11) - 5;            // -5..5
+  const jy = (Math.floor(h / 11) % 11) - 5;
+  let nx = o.x + jx, ny = o.y + jy;
+  if (!tileWalkable(nx, ny)) {
+    let found = false;
+    for (let r = 1; r <= 5 && !found; r++) {
+      for (let ax = -r; ax <= r && !found; ax++) for (let ay = -r; ay <= r && !found; ay++) {
+        if (tileWalkable(nx + ax, ny + ay)) { nx += ax; ny += ay; found = true; }
+      }
+    }
+    if (!found) { nx = o.x; ny = o.y; }
+  }
+  return { ...o, x: nx, y: ny };
+}
 
 /** A few spawns sit where the legacy region bounding-boxes overlap the central
  *  Knuckle Hills, so remap() lands them on region rock/cave terrain that the
@@ -1101,7 +1128,7 @@ const newPois: WorldObjectDef[] = [
  *  plus the player-home interiors (authored in the new band by buildHousing()). */
 export const objects: WorldObjectDef[] = [
   ...rawObjects.map(remapObject),
-  ...newPois,
+  ...newPois.map(scatterFill),
   ...buildHousing(),
 ];
 
