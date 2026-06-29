@@ -1984,44 +1984,28 @@ button.inv-slot {
 }
 .players-input:focus { outline: none; border-color: var(--gold); }
 
-/* --- World chat --- */
-.world-chat-btn { margin-top: 6px; }
-.chat-backdrop {
-  position: fixed; inset: 0; z-index: 60; pointer-events: auto;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+/* --- World chat (lives in the bottom-left message box, OSRS-style) --- */
+/* A chat line in the game log: sender highlighted, the rest reads like a line. */
+.log-line.chat { opacity: 1; word-break: break-word; }
+.log-line.chat .chat-from { color: var(--gold); font-weight: 600; margin-right: 4px; }
+.log-line.chat.you .chat-from { color: var(--ember); }
+
+/* The typing line under the log. */
+.log-chat {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px solid rgba(201, 162, 74, 0.22);
 }
-.chat-backdrop.hidden { display: none; }
-.chat-modal {
-  background: var(--panel, #1c1812); border: 1px solid var(--gold);
-  border-radius: 10px; padding: 12px 14px;
-  width: calc(100% - 40px); max-width: 400px; height: min(70vh, 520px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column;
+.log-chat-ic { flex: 0 0 auto; width: 14px; height: 14px; opacity: 0.55; display: inline-flex; }
+.log-chat-ic svg { width: 14px; height: 14px; }
+.log-chat-input {
+  flex: 1 1 auto; min-width: 0;
+  font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink);
+  background: rgba(0, 0, 0, 0.32); border: 1px solid rgba(201, 162, 74, 0.3);
+  border-radius: 6px; padding: 4px 8px;
 }
-.chat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.chat-title { font-family: "Cinzel", serif; color: var(--gold); font-size: 15px; letter-spacing: 0.05em; }
-.chat-close { background: transparent; border: 0; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; }
-.chat-close:hover { color: var(--ember); }
-.chat-log {
-  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px;
-  padding: 4px 2px; border-top: 1px solid var(--panel-edge); border-bottom: 1px solid var(--panel-edge);
-}
-.chat-empty { color: var(--ink-dim); text-align: center; padding: 16px; font-style: italic; }
-.chat-msg { font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink); line-height: 1.35; word-break: break-word; }
-.chat-name { color: var(--gold); font-weight: 600; margin-right: 5px; }
-.chat-msg.you .chat-name { color: var(--ember); }
-.chat-form { display: flex; gap: 6px; margin-top: 8px; }
-.chat-input {
-  flex: 1; min-width: 0; font-family: "EB Garamond", serif; font-size: 14px; color: var(--ink);
-  background: rgba(0, 0, 0, 0.3); border: 1px solid var(--panel-edge); border-radius: 8px; padding: 7px 9px;
-}
-.chat-input:focus { outline: none; border-color: var(--gold); }
-.chat-send {
-  font-family: "Cinzel", serif; font-size: 13px; cursor: pointer;
-  color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b;
-  border-radius: 8px; padding: 7px 12px;
-}
-.chat-send:hover { background: #e08a3e; }
+.log-chat-input:focus { outline: none; border-color: var(--gold); }
+.log-chat-input::placeholder { color: rgba(230, 220, 200, 0.38); }
 /* --- Login gate (shown before character creation) --- */
 .login-backdrop {
   position: fixed; inset: 0; z-index: 50;

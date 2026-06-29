@@ -31,7 +31,7 @@ import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
 import { PlayersUI } from "./playersUI.ts";
-import { ChatUI } from "./chatUI.ts";
+import { recentChat, sendChat } from "./chat.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -108,6 +108,9 @@ export class Hud {
   private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
   private logLines: string[] = [];
+  private chatInput!: HTMLInputElement;
+  private chatLastId = -1;
+  private chatSeeded = false;
 
   private tabPanels = new Map<TabId, HTMLElement>();
   private tabButtons = new Map<TabId, HTMLElement>();
@@ -167,15 +170,14 @@ export class Hud {
     this.hiscores = new HiscoresUI(root, content);
     this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
     this.players = new PlayersUI(root);
-    this.chat = new ChatUI(root, () => this.lastState?.player.appearance?.name ?? "Wanderer");
     this.build(root);
     this.buildSkillPicker(root);
+    this.startChatFeed();
   }
 
   private hiscores: HiscoresUI;
   private exchange: ExchangeUI;
   private players: PlayersUI;
-  private chat: ChatUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -257,11 +259,22 @@ export class Hud {
     topLeft.appendChild(this.buffStrip);
     root.appendChild(topLeft);
 
-    // --- Game log (bottom-left) ---
+    // --- Game log + world chat (bottom-left), OSRS-style: game messages and
+    //     other players' chat share one scrollback, with a typing line below. ---
     const logPanel = panel("hud-panel hud-log");
     this.logEl = document.createElement("div");
     this.logEl.className = "log-lines";
     logPanel.appendChild(this.logEl);
+    const chatForm = document.createElement("form");
+    chatForm.className = "log-chat";
+    chatForm.innerHTML =
+      `<span class="log-chat-ic">${glyph("speech")}</span>` +
+      `<input class="log-chat-input" type="text" maxlength="200" placeholder="Chat to the world…" autocomplete="off" />`;
+    this.chatInput = chatForm.querySelector(".log-chat-input") as HTMLInputElement;
+    chatForm.addEventListener("submit", (e) => { e.preventDefault(); void this.sendChatLine(); });
+    // Keep keystrokes out of any game-side key handling while typing.
+    this.chatInput.addEventListener("keydown", (e) => e.stopPropagation());
+    logPanel.appendChild(chatForm);
     root.appendChild(logPanel);
 
     // --- Tabbed dock (bottom-right); tab column up the left side ---
@@ -460,14 +473,7 @@ export class Hud {
         pl.innerHTML = `<span class="world-hiscores-ic">${iconize("👤")}</span> Players`;
         pl.addEventListener("click", () => { void this.players.show(); });
         p.appendChild(pl);
-
-        // --- World chat: one shared channel. ---
-        const ch = document.createElement("button");
-        ch.type = "button";
-        ch.className = "world-hiscores world-chat-btn";
-        ch.innerHTML = `<span class="world-hiscores-ic">${iconize("💬")}</span> World Chat`;
-        ch.addEventListener("click", () => { void this.chat.show(); });
-        p.appendChild(ch);
+        p.appendChild(note("World chat lives in the message box, bottom-left — type and press Enter."));
 
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));
@@ -675,16 +681,65 @@ export class Hud {
   }
 
   log(message: string): void {
-    this.logLines.push(message);
+    this.pushLine(`<div class="log-line">${escapeHtml(message)}</div>`);
+  }
+
+  /** A world-chat line in the same scrollback (sender highlighted). */
+  private chatLine(name: string, body: string, you: boolean): void {
+    this.pushLine(
+      `<div class="log-line chat${you ? " you" : ""}"><span class="chat-from">${escapeHtml(name)}:</span> ${escapeHtml(body)}</div>`,
+    );
+  }
+
+  /** Append one pre-rendered line, trim history, and keep the view pinned. */
+  private pushLine(html: string): void {
+    this.logLines.push(html);
     if (this.logLines.length > MAX_LOG_LINES) this.logLines.shift();
     // Stay pinned to the newest line *unless* the player has scrolled up to
     // read history — then leave their scroll position alone.
     const el = this.logEl;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-    el.innerHTML = this.logLines
-      .map((l) => `<div class="log-line">${escapeHtml(l)}</div>`)
-      .join("");
+    el.innerHTML = this.logLines.join("");
     if (nearBottom) el.scrollTop = el.scrollHeight;
+  }
+
+  /** Poll the world-chat channel and fold new messages into the log. */
+  private startChatFeed(): void {
+    void this.pollChat();
+    window.setInterval(() => void this.pollChat(), 3500);
+  }
+
+  private async pollChat(): Promise<void> {
+    let msgs;
+    try { msgs = await recentChat(); }
+    catch { return; } // not signed in / offline — try again next tick
+    if (!this.chatSeeded) {
+      // Don't flood the box on load: show only the last few for context, then
+      // track the newest id and append only what arrives after.
+      for (const m of msgs.slice(-6)) this.chatLine(m.name, m.body, m.you);
+      this.chatLastId = msgs.length ? msgs[msgs.length - 1]!.id : -1;
+      this.chatSeeded = true;
+      return;
+    }
+    for (const m of msgs) {
+      if (m.id > this.chatLastId) {
+        this.chatLine(m.name, m.body, m.you);
+        this.chatLastId = m.id;
+      }
+    }
+  }
+
+  private async sendChatLine(): Promise<void> {
+    const text = this.chatInput.value.trim();
+    if (!text) return;
+    this.chatInput.value = "";
+    const name = this.lastState?.player.appearance?.name ?? "Wanderer";
+    try {
+      await sendChat(name, text);
+      await this.pollChat(); // reflect it right away rather than waiting a tick
+    } catch {
+      this.log("Couldn't send to world chat — check your connection.");
+    }
   }
 
   /** Active food/potion buffs as chips with a live countdown. */
