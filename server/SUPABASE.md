@@ -399,3 +399,32 @@ drop policy if exists friendships_delete on public.friendships;
 create policy friendships_delete on public.friendships for delete
   using (auth.uid() = requester or auth.uid() = addressee);
 ```
+
+## World chat (run this for the chat box)
+
+A single shared channel. Paste and **Run**:
+
+```sql
+create table if not exists public.world_chat (
+  id      bigint generated always as identity primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name    text,
+  body    text not null check (char_length(body) between 1 and 200),
+  at      timestamptz not null default now()
+);
+create index if not exists world_chat_at on public.world_chat (at desc);
+
+alter table public.world_chat enable row level security;
+
+-- Anyone signed in can read the channel.
+drop policy if exists world_chat_read on public.world_chat;
+create policy world_chat_read on public.world_chat for select using (true);
+
+-- You can post only as yourself, within the length limit.
+drop policy if exists world_chat_insert on public.world_chat;
+create policy world_chat_insert on public.world_chat for insert
+  with check (auth.uid() = user_id and char_length(body) between 1 and 200);
+```
+
+(Optional housekeeping: in the dashboard you can later add a scheduled job to
+delete chat older than a few days — not required to play.)

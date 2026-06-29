@@ -31,6 +31,7 @@ import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
 import { PlayersUI } from "./playersUI.ts";
+import { ChatUI } from "./chatUI.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -166,6 +167,7 @@ export class Hud {
     this.hiscores = new HiscoresUI(root, content);
     this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
     this.players = new PlayersUI(root);
+    this.chat = new ChatUI(root, () => this.lastState?.player.appearance?.name ?? "Wanderer");
     this.build(root);
     this.buildSkillPicker(root);
   }
@@ -173,6 +175,7 @@ export class Hud {
   private hiscores: HiscoresUI;
   private exchange: ExchangeUI;
   private players: PlayersUI;
+  private chat: ChatUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -457,6 +460,14 @@ export class Hud {
         pl.innerHTML = `<span class="world-hiscores-ic">${iconize("👤")}</span> Players`;
         pl.addEventListener("click", () => { void this.players.show(); });
         p.appendChild(pl);
+
+        // --- World chat: one shared channel. ---
+        const ch = document.createElement("button");
+        ch.type = "button";
+        ch.className = "world-hiscores world-chat-btn";
+        ch.innerHTML = `<span class="world-hiscores-ic">${iconize("💬")}</span> World Chat`;
+        ch.addEventListener("click", () => { void this.chat.show(); });
+        p.appendChild(ch);
 
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));
