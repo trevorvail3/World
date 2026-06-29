@@ -122,7 +122,9 @@ function classify(def: ItemDef): Shape {
 
   // worn gear by slot (most reliable), with keyword refinements first
   if (slot === "ranged" || has("bow") || has("warbow")) return has("unstrung") ? "bowU" : "bow";
-  if (slot === "ammo" || cat === "Arrows" || (has("arrow") && !has("arrowhead"))) return "arrow";
+  // NB: match "arrow" as a whole word — otherwise "marrow", "barrow", "narrow"
+  // (e.g. Marrowbone Greaves, Marrow Shard) get mis-iconed as arrows.
+  if (slot === "ammo" || cat === "Arrows" || (/\barrow\b/.test(s) && !has("arrowhead"))) return "arrow";
   if (slot === "helmet" || has("helm") || id.endsWith("_hat") || has(" hat")) return "helm";
   if (slot === "offhand" || has("shield") || has("ward shield")) return "shield";
   if (slot === "cape" || cat === "Capes" || has("cape")) return "cape";
