@@ -58,6 +58,8 @@ export interface SavedProgress {
   stats: { goldEarned: number; monstersSlain: number };
   /** Per-boss kill tallies, keyed by monster id. */
   bossKills?: Record<string, number>;
+  /** Claimed boss kill-milestone keys ("<bossId>:<kills>"). */
+  bossMilestonesClaimed?: string[];
   /** Total active play time in milliseconds. */
   playMs: number;
   /** Kills since the last Shard of Orun (drives the pity guarantee). */
@@ -124,6 +126,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     reputation: { ...player.reputation },
     stats: { ...player.stats },
     bossKills: { ...player.bossKills },
+    bossMilestonesClaimed: [...player.bossMilestonesClaimed],
     playMs: player.playMs,
     achievements: [...player.achievements],
     diariesClaimed: [...player.diariesClaimed],
@@ -287,6 +290,10 @@ export function hydratePlayer(
       const n = savedBossKills[id];
       if (finiteNum(n) && n > 0) player.bossKills[id] = Math.floor(n);
     }
+  }
+  const savedMilestones = raw["bossMilestonesClaimed"];
+  if (Array.isArray(savedMilestones)) {
+    player.bossMilestonesClaimed = savedMilestones.filter((k): k is string => typeof k === "string");
   }
   const savedPlay = raw["playMs"];
   if (finiteNum(savedPlay) && savedPlay >= 0) player.playMs = Math.floor(savedPlay);

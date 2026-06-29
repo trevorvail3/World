@@ -1151,6 +1151,8 @@ export interface Player {
   stats: { goldEarned: number; monstersSlain: number };
   /** Per-boss kill tally (keyed by monster id), shown in the Boss Log. */
   bossKills: Record<string, number>;
+  /** Claimed boss kill-milestone keys ("<bossId>:<kills>"). */
+  bossMilestonesClaimed: string[];
   /** Total active play time in milliseconds (accumulated each tick). */
   playMs: number;
   /**
@@ -1458,6 +1460,13 @@ export interface ClaimDiaryIntent {
   skill: SkillId;
 }
 
+/** "Claim a reached boss kill-count milestone reward." */
+export interface ClaimBossMilestoneIntent {
+  type: "CLAIM_BOSS_MILESTONE";
+  boss: string;
+  kills: number;
+}
+
 export type Intent =
   | MoveIntent
   | InteractIntent
@@ -1487,6 +1496,7 @@ export type Intent =
   | PickupIntent
   | DropIntent
   | ClaimDiaryIntent
+  | ClaimBossMilestoneIntent
   | GeMoveIntent
   | TradeApplyIntent
   | OpenNestIntent;

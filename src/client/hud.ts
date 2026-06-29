@@ -26,7 +26,7 @@ import type {
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import { glyph, iconize } from "./glyph.ts";
-import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
+import { bossMilestones, equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
@@ -566,8 +566,13 @@ export class Hud {
         // One delegated handler for the whole tab: header toggles + companion
         // summon. (Rebuilding the inner HTML never re-binds anything.)
         wrap.addEventListener("click", (e) => {
-          const t = (e.target as HTMLElement).closest("[data-toggle],[data-comp]") as HTMLElement | null;
+          const t = (e.target as HTMLElement).closest("[data-toggle],[data-comp],[data-claim-boss]") as HTMLElement | null;
           if (!t) return;
+          if (t.dataset.claimBoss) {
+            this.dispatch({ type: "CLAIM_BOSS_MILESTONE", boss: t.dataset.claimBoss, kills: Number(t.dataset.claimKills) });
+            if (this.lastState) this.renderRecords(this.lastState.player, true);
+            return;
+          }
           if (t.dataset.comp) { this.summonCompanion(t.dataset.comp as ItemId); return; }
           const key = t.dataset.toggle!;
           if (this.openSecs.has(key)) this.openSecs.delete(key);
@@ -1179,7 +1184,7 @@ export class Hud {
     const sig = [
       compOwned, player.equipment.companion ?? "",
       player.achievements.length, achTotal, player.lore.length, loreTotal,
-      bossKillSig,
+      bossKillSig, player.bossMilestonesClaimed.length,
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -1198,7 +1203,7 @@ export class Hud {
           : "An undiscovered companion. Keep training.";
         return `<button type="button" class="comp-cell ${owned ? "owned" : "locked"}${isActive ? " active" : ""}" title="${escapeHtml(title)}"${owned ? ` data-comp="${id}"` : ""}><span class="comp-ic">${owned ? itemIconSVG(def) : iconize("❓")}</span>${isActive ? `<span class="comp-star">★</span>` : ""}</button>`;
       }).join("")}</div>` +
-      `<div class="tab-note">Companions turn up while you train their skill. Tap one to summon it.</div>`;
+      `<div class="tab-note">Skilling pets turn up as you train; boss pets drop from their boss (or come from a kill milestone). Tap one to summon it — it'll follow you everywhere.</div>`;
 
     // A category sub-accordion shared by Achievements and Archive.
     const subSection = (key: string, label: string, count: string, rows: () => string): string => {
@@ -1252,14 +1257,29 @@ export class Hud {
       const slain = kills > 0;
       const weak = m.weakness?.length ? ` Weak to ${m.weakness.join(", ")}.` : "";
       const hint = `${m.bossHint ?? m.desc}${weak}`;
+      // Milestone ladder: claimed (✓), reached & unclaimed (a Claim button), or
+      // still locked (greyed, showing the threshold + reward).
+      const miles = bossMilestones(m, this.content).map((t) => {
+        const key = `${m.id}:${t.kills}`;
+        const reward = `${t.gold.toLocaleString()}g${t.pet ? " + pet" : ""}`;
+        if (player.bossMilestonesClaimed.includes(key)) {
+          return `<span class="boss-mile done" title="${reward}">✓ ${t.kills}</span>`;
+        }
+        if (kills >= t.kills) {
+          return `<button type="button" class="boss-mile claim" data-claim-boss="${m.id}" data-claim-kills="${t.kills}" title="Claim ${escapeHtml(reward)}">Claim ${t.kills} · ${reward}</button>`;
+        }
+        return `<span class="boss-mile" title="${reward}">${t.kills} · ${reward}</span>`;
+      }).join("");
       return `<div class="boss-row ${slain ? "slain" : ""}">`
         + `<span class="boss-ic">${iconize(m.icon ?? "💀")}</span>`
         + `<span class="boss-info"><span class="boss-name">${escapeHtml(m.name)}`
         + `<span class="boss-lvl">Lv ${m.level}</span></span>`
-        + `<span class="boss-hint">${escapeHtml(hint)}</span></span>`
+        + `<span class="boss-hint">${escapeHtml(hint)}</span>`
+        + `<span class="boss-miles">${miles}</span></span>`
         + `<span class="boss-kills" title="Kills">${slain ? `☠ ${kills.toLocaleString()}` : "—"}</span>`
         + `</div>`;
-    }).join("");
+    }).join("")
+      + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for gold — and a guaranteed pet at 100.</div>`;
 
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {

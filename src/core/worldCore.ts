@@ -331,6 +331,7 @@ export function createWorld(
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
     bossKills: {},
+    bossMilestonesClaimed: [],
     playMs: 0,
     killsSinceShard: 0,
     achievements: [],
@@ -518,6 +519,80 @@ function claimDiary(
   events.push({
     type: "LOG",
     message: `${diary.name} diary complete! You pour ${diary.reward.toLocaleString()} XP into ${content.skills[skill].name}.`,
+  });
+}
+
+/** Boss kill-count milestone thresholds, shared by every boss. */
+export const BOSS_MILESTONE_KILLS = [10, 25, 50, 100, 250] as const;
+
+/** One milestone tier: the kills needed and what it pays out. */
+export interface BossMilestone {
+  kills: number;
+  gold: number;
+  /** A pet granted at this tier (pity for the rare drop), if not already owned. */
+  pet?: ItemId;
+}
+
+/** The companion item whose meta.petBoss matches this boss, if any. */
+function bossPetItem(content: Content, bossId: string): ItemId | undefined {
+  for (const id of Object.keys(content.items) as ItemId[]) {
+    const d = content.items[id];
+    if (d.slot === "companion" && d.meta?.["petBoss"] === bossId) return id;
+  }
+  return undefined;
+}
+
+/** The milestone ladder for a boss: gold scales with its combat level, and the
+ *  100-kill tier also grants the boss's pet as a pity guarantee. */
+export function bossMilestones(stats: MonsterStats, content: Content): BossMilestone[] {
+  const petId = bossPetItem(content, stats.id);
+  return BOSS_MILESTONE_KILLS.map((k) => {
+    const gold = Math.round((stats.level * k * 5) / 10) * 10; // level-scaled, to nearest 10
+    const m: BossMilestone = { kills: k, gold };
+    if (k === 100 && petId) m.pet = petId;
+    return m;
+  });
+}
+
+function claimBossMilestone(
+  state: WorldState,
+  content: Content,
+  bossId: string,
+  kills: number,
+  events: WorldEvent[],
+): void {
+  const player = state.player;
+  const stats = content.monsters[bossId];
+  if (!stats || !stats.boss) return;
+  const key = `${bossId}:${kills}`;
+  if (player.bossMilestonesClaimed.includes(key)) {
+    events.push({ type: "LOG", message: "You've already claimed that milestone." });
+    return;
+  }
+  if ((player.bossKills[bossId] ?? 0) < kills) {
+    events.push({ type: "LOG", message: `Defeat ${stats.name} ${kills} times to claim that.` });
+    return;
+  }
+  const tier = bossMilestones(stats, content).find((m) => m.kills === kills);
+  if (!tier) return;
+  player.bossMilestonesClaimed.push(key);
+  if (tier.gold > 0) {
+    player.gold += tier.gold;
+    player.stats.goldEarned += tier.gold;
+  }
+  let petLine = "";
+  if (tier.pet && !ownsItem(player, tier.pet)) {
+    if (canAddItem(player, tier.pet)) {
+      addItem(player, tier.pet, 1, events);
+    } else {
+      player.bank[tier.pet] = (player.bank[tier.pet] ?? 0) + 1;
+      events.push({ type: "ITEM_GAINED", item: tier.pet, qty: 1 });
+    }
+    petLine = ` and ${content.items[tier.pet].name}`;
+  }
+  events.push({
+    type: "LOG",
+    message: `${stats.name}: ${kills} kills! You claim ${tier.gold.toLocaleString()}g${petLine}.`,
   });
 }
 
@@ -986,6 +1061,10 @@ export function applyIntent(
     }
     case "CLAIM_DIARY": {
       claimDiary(state, content, intent.diary, intent.skill, events);
+      break;
+    }
+    case "CLAIM_BOSS_MILESTONE": {
+      claimBossMilestone(state, content, intent.boss, intent.kills, events);
       break;
     }
     case "GE_MOVE": {
