@@ -6,7 +6,7 @@
  * whole continent. Pure presentation — reads the core's state, never changes it.
  */
 
-import type { Content, ObjKind, TileType, Vec2, WorldMap, WorldState } from "../core/types.ts";
+import type { Content, ObjKind, TileType, Vec2, WorldState } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
 import { OVERWORLD_HEIGHT, instanceRectAt, REGIONS, CITY } from "../content/map.ts";
 import { Camera, TILE } from "./render.ts";
@@ -66,52 +66,6 @@ const MM_TILE: Record<TileType, string> = {
   wall: "#736857",
   plank: "#5e4326",
 };
-
-/** MM_TILE pre-parsed to RGB, for the gradient blend below. */
-const MM_RGB: Record<string, [number, number, number]> = (() => {
-  const out: Record<string, [number, number, number]> = {};
-  for (const k of Object.keys(MM_TILE)) {
-    const h = MM_TILE[k as TileType];
-    out[k] = [
-      parseInt(h.slice(1, 3), 16),
-      parseInt(h.slice(3, 5), 16),
-      parseInt(h.slice(5, 7), 16),
-    ];
-  }
-  return out;
-})();
-
-const MM_BLEND_GROUND = new Set<TileType>([
-  "grass", "dirt", "moss", "ash", "snow", "bog", "stone", "path",
-]);
-const MM_BLEND_R = 2;
-
-/**
- * Minimap/world-map tile colour, feathered toward its neighbours so biomes roll
- * into one another instead of cutting hard on the grid — the same radius-2
- * gradient used on the main canvas. Roads stay crisp; water/peaks/walls don't
- * bleed (non-ground neighbours contribute the centre's own colour).
- */
-function mmColor(m: WorldMap, x: number, y: number): string {
-  const tile = m.tiles[y * m.width + x]!;
-  if (!MM_BLEND_GROUND.has(tile)) return MM_TILE[tile];
-  if (tile === "path") return MM_TILE.path;
-  const c = MM_RGB[tile] ?? [0, 0, 0];
-  let r = 0, gn = 0, b = 0, wsum = 0;
-  for (let dy = -MM_BLEND_R; dy <= MM_BLEND_R; dy++) {
-    for (let dx = -MM_BLEND_R; dx <= MM_BLEND_R; dx++) {
-      const w = 1 / (1 + Math.abs(dx) + Math.abs(dy));
-      let s = c;
-      const nx = x + dx, ny = y + dy;
-      if (nx >= 0 && ny >= 0 && nx < m.width && ny < m.height) {
-        const nt = m.tiles[ny * m.width + nx]!;
-        if (MM_BLEND_GROUND.has(nt)) s = MM_RGB[nt] ?? c;
-      }
-      r += s[0] * w; gn += s[1] * w; b += s[2] * w; wsum += w;
-    }
-  }
-  return `rgb(${Math.round(r / wsum)},${Math.round(gn / wsum)},${Math.round(b / wsum)})`;
-}
 
 const MM_OBJ: Record<ObjKind, string> = {
   tree: "#5d6e3e",
@@ -312,7 +266,7 @@ export class Minimap {
       if (y < 0 || y >= m.height) continue;
       for (let x = x0; x < x1; x++) {
         if (x < 0 || x >= m.width || !inRegion(x, y)) continue;
-        g.fillStyle = mmColor(m, x, y);
+        g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
         g.fillRect(sx(x), sy(y), cell + 0.8, cell + 0.8);
       }
     }
@@ -518,7 +472,7 @@ export class WorldMapModal {
     g.fillRect(0, 0, g.canvas.width, g.canvas.height);
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < m.width; x++) {
-        g.fillStyle = mmColor(m, x, y);
+        g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
         g.fillRect(x * cell, y * cell, cell + 0.6, cell + 0.6);
       }
     }
