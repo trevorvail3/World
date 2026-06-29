@@ -18,6 +18,7 @@ import type {
   Intent,
   InventorySlot,
   ItemId,
+  MonsterStats,
   Player,
   SkillId,
   WorldState,
@@ -1174,9 +1175,11 @@ export class Hud {
 
     // Rebuild only on a real change (counts, summoned pet, or which sections are
     // open). This is what stops the per-frame churn that froze the tab.
+    const bossKillSig = Object.values(player.bossKills).reduce((n, k) => n + k, 0);
     const sig = [
       compOwned, player.equipment.companion ?? "",
       player.achievements.length, achTotal, player.lore.length, loreTotal,
+      bossKillSig,
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -1237,6 +1240,27 @@ export class Hud {
         ).join(""));
     }).join("");
 
+    // Boss Log: every named boss, sorted by level — kills tallied, with a hint
+    // on where to find it (or how to take it on). Unfought bosses still show
+    // their hint, so the log doubles as a trail of clues.
+    const bosses = (Object.values(this.content.monsters) as MonsterStats[])
+      .filter((m) => m.boss)
+      .sort((a, b) => a.level - b.level);
+    const bossSlain = bosses.filter((m) => (player.bossKills[m.id] ?? 0) > 0).length;
+    const bossBody = bosses.map((m) => {
+      const kills = player.bossKills[m.id] ?? 0;
+      const slain = kills > 0;
+      const weak = m.weakness?.length ? ` Weak to ${m.weakness.join(", ")}.` : "";
+      const hint = `${m.bossHint ?? m.desc}${weak}`;
+      return `<div class="boss-row ${slain ? "slain" : ""}">`
+        + `<span class="boss-ic">${iconize(m.icon ?? "💀")}</span>`
+        + `<span class="boss-info"><span class="boss-name">${escapeHtml(m.name)}`
+        + `<span class="boss-lvl">Lv ${m.level}</span></span>`
+        + `<span class="boss-hint">${escapeHtml(hint)}</span></span>`
+        + `<span class="boss-kills" title="Kills">${slain ? `☠ ${kills.toLocaleString()}` : "—"}</span>`
+        + `</div>`;
+    }).join("");
+
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {
       const open = this.openSecs.has(key);
@@ -1244,6 +1268,7 @@ export class Hud {
     };
 
     this.recordsEl.innerHTML =
+      section("bosslog", "Boss Log", `${bossSlain}/${bosses.length}`, bossBody) +
       section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +
       section("archive", "Archive", `${player.lore.length}/${loreTotal}`, loreBody);

@@ -330,6 +330,7 @@ export function createWorld(
     gold: STARTING_GOLD,
     reputation: { ashforge: 0, lodge: 0, pale_record: 0, heartmoor_cult: 0 },
     stats: { goldEarned: 0, monstersSlain: 0 },
+    bossKills: {},
     playMs: 0,
     killsSinceShard: 0,
     achievements: [],
@@ -3465,6 +3466,7 @@ function playerSwing(
       events.push({ type: "LOG", message: `The ${def.name} drops a warm black Shard of Orun.` });
     }
     player.stats.monstersSlain += 1;
+    if (stats.boss) player.bossKills[stats.id] = (player.bossKills[stats.id] ?? 0) + 1;
     events.push({ type: "MONSTER_KILLED", objId: obj.id });
     events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
     advanceKillQuests(state, content, def.monster, events);

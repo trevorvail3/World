@@ -544,6 +544,8 @@ export const monsters: Record<string, MonsterStats> = {
   },
   "marrow_keeper": {
     "id": "marrow_keeper",
+    "boss": true,
+    "bossHint": "The last of the Underloft, sealed in the Marrow Vault deep in the northeast caves. An endgame trial — reached at the bottom of the long dark.",
     "name": "The Marrow Keeper",
     "icon": "💀",
     "level": 72,
@@ -860,6 +862,8 @@ export const monsters: Record<string, MonsterStats> = {
   },
   "hollow_warden": {
     "id": "hollow_warden",
+    "boss": true,
+    "bossHint": "Guards the Hollow Barrows, reached through the cave mouth up in the northern grove. A first true boss — steady gear and a stock of food will see you through.",
     "name": "The Hollow Warden",
     "icon": "💀",
     "level": 38,
@@ -935,6 +939,8 @@ export const monsters: Record<string, MonsterStats> = {
   },
   "spine_warlord": {
     "id": "spine_warlord",
+    "boss": true,
+    "bossHint": "Waits at the bottom of the Spine Vault, broken open in the high northern pass. A hard fight — come well-fed and well-armed.",
     "name": "The Spine Warlord",
     "icon": "👹",
     "level": 60,
@@ -1005,6 +1011,8 @@ export const monsters: Record<string, MonsterStats> = {
   },
   "bog_warden": {
     "id": "bog_warden",
+    "boss": true,
+    "bossHint": "Holds the deep of the Bog Barrow, down in the western moor past the Heartmoor pools. Watch your footing and your health in the dark.",
     "name": "The Bog Warden",
     "icon": "🧟",
     "level": 42,
@@ -1199,6 +1207,8 @@ export const monsters: Record<string, MonsterStats> = {
     id: "ashen_wyrm", name: "Cindrath, the Ashen Wyrm", level: 90, hp: 620,
     acc: 360, def: 80, maxHit: 72, speed: 3000, xp: 3200, attackStyle: "crush",
     weakness: ["stab"],
+    boss: true,
+    bossHint: "Varath's deadliest. Cindrath nests in the ash flats south of the Heartmoor — Cindrath's Roost. Bring a stabbing weapon for its hide, and more food than you think you'll need.",
     desc: "The last great wyrm of Varath, coiled in the ash flats it burned to glass. Its scales run forge-hot and its patience is long gone. Bring a stabbing weapon and more food than you think you'll need.",
     mechanics: [
       // 1. Inferno Breath — a telegraphed, devastating breath every 4th swing.
@@ -1229,6 +1239,8 @@ export const monsters: Record<string, MonsterStats> = {
     id: "boneman", name: "The Boneman", level: 69, hp: 340,
     acc: 210, def: 58, maxHit: 30, speed: 3600, xp: 1400, attackStyle: "slash",
     weakness: ["crush"],
+    boss: true,
+    bossHint: "A serial killer who hunts Varath's quiet roads. Bone-cairns mark his trail, pointing into the deep western wood. The Ironvale watch will set you after him — bring a crushing weapon to shatter his bone armour.",
     desc: "A gaunt thing in a mask of stitched faces, dragging a long saw it never sets down. It has hunted the roads of Varath for years, taking the bones of those it kills and wearing them. Crushing weapons shatter its grisly armour best.",
     mechanics: [
       // 1. Bone Cleave — a wide, telegraphed saw stroke every 5th swing.

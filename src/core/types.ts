@@ -901,6 +901,10 @@ export interface MonsterStats {
   desc: string;
   /** Boss only: special moves that fire during combat. */
   mechanics?: BossMechanic[];
+  /** True for a named boss — listed in the Boss Log records page. */
+  boss?: boolean;
+  /** Boss Log hint: where to find this boss / how to take it on. */
+  bossHint?: string;
 }
 
 /** A boss's special move. Fires inside the monster's attack resolution. */
@@ -1143,6 +1147,8 @@ export interface Player {
   reputation: Record<FactionId, number>;
   /** Cumulative tallies for achievements. */
   stats: { goldEarned: number; monstersSlain: number };
+  /** Per-boss kill tally (keyed by monster id), shown in the Boss Log. */
+  bossKills: Record<string, number>;
   /** Total active play time in milliseconds (accumulated each tick). */
   playMs: number;
   /**
