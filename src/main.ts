@@ -32,7 +32,7 @@ import { Primer } from "./client/primer.ts";
 import { Game, type CoreBridge } from "./client/loop.ts";
 import { Hud } from "./client/hud.ts";
 import {
-  clearSave,
+  clearAllSaves,
   listAccounts,
   readSave,
   readSaveFor,
@@ -176,17 +176,21 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   // own `pagehide` would re-serialise the player and resurrect the cleared save.
   let wiped = false;
 
-  // Reset wipes this account's save (local AND cloud) and returns to login.
+  // Reset wipes the character for good — every local save on this device AND
+  // the cloud — then returns to the login screen. We clear ALL local slots (not
+  // just the active one) because cloud-save migration can leave an old copy that
+  // would otherwise be re-adopted on reload, silently undoing the reset.
   const resetProgress = (): void => {
     const ok = window.confirm(
       "Reset this character? This erases their skills, levels and pack for good.",
     );
     if (!ok) return;
     wiped = true;
-    clearSave();
+    clearAllSaves();
     const done = (): void => window.location.reload();
-    // Also clear the cloud, or the next load would restore the wiped character.
-    if (cloudReady && currentUser()) void deleteCloud().then(done, done);
+    // Delete the cloud copy too, or the next sign-in would restore it. Harmless
+    // if there's nothing there.
+    if (currentUser()) void deleteCloud().then(done, done);
     else done();
   };
 

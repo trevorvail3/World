@@ -121,3 +121,18 @@ export function clearSave(): void {
     /* nothing we can do; ignore */
   }
 }
+
+/** Wipe EVERY local save on this device (all accounts + the legacy slot).
+ *  A reset must use this: cloud saves migrate the old name-keyed character into
+ *  the account slot but leave the original copy behind, so clearing only the
+ *  active account lets that leftover be re-adopted on the next load — the wipe
+ *  would silently undo itself. */
+export function clearAllSaves(): void {
+  try {
+    for (const name of readIndex()) localStorage.removeItem(saveKey(name));
+    writeIndex([]);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    /* nothing we can do; ignore */
+  }
+}
