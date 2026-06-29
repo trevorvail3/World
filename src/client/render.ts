@@ -26,6 +26,10 @@ import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } f
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
 
+// Which way the player last faced (kept across idle / vertical-only movement, so
+// the figure doesn't snap back to the default when you walk straight up or down).
+let playerFaceLeft = false;
+
 export const TILE = 40; // pixels per tile
 
 const TILE_COLORS: Record<TileType, [string, string]> = {
@@ -816,10 +820,17 @@ export function drawWorld(
 
   // --- Player ---
   if (state.player.alive) {
+    const pl = state.player;
+    // Face the next step's horizontal direction; keep the last facing otherwise.
+    if (pl.path.length > 0) {
+      const dx = pl.path[0]!.x - pl.pos.x;
+      if (dx < -0.05) playerFaceLeft = true;
+      else if (dx > 0.05) playerFaceLeft = false;
+    }
     drawPlayer(
-      g, state.player.pos, cam, now, state.player.appearance,
-      state.player.path.length > 0, playerAction(state.player, content, now),
-      resolveGear(state.player.equipment, content),
+      g, pl.pos, cam, now, pl.appearance,
+      pl.path.length > 0, playerAction(pl, content, now),
+      resolveGear(pl.equipment, content), playerFaceLeft,
     );
   }
 
@@ -2823,11 +2834,12 @@ function drawPlayer(
   moving = false,
   action?: AvatarAnim["action"],
   gear: GearLook = {},
+  flip = false,
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
   shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain
-  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, ...(action ? { action } : {}) }, gear);
+  drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, flip, ...(action ? { action } : {}) }, gear);
 }
 
 // --- Another player, rendered as a faint, idle apparition with a name label. ---
@@ -2837,7 +2849,7 @@ function drawGhost(g: CanvasRenderingContext2D, gh: Ghost, cam: Camera, now: num
   shadow(g, cx, cy + TILE / 2 - 4, 8, 3);
   g.save();
   g.globalAlpha = 0.4; // translucent so it clearly reads as "not really here"
-  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: gh.moving }, gh.gear);
+  drawAvatar(g, cx, cy, 1, withDefaults(gh.look), { now, moving: gh.moving, flip: gh.faceLeft }, gh.gear);
   g.restore();
   label(g, gh.name, cx, cy - TILE / 2 - 2, "#a9d8e8"); // cool, spectral blue
 }

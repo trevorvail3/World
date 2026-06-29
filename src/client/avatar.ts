@@ -92,6 +92,8 @@ export interface AvatarAnim {
    * swing remains (1 just after a strike → 0 at the next strike).
    */
   action?: { kind: string; tool: string; frac: number };
+  /** Mirror the figure horizontally — used to face the way it's walking. */
+  flip?: boolean;
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -149,6 +151,10 @@ export function drawAvatar(
     g.beginPath();
     g.arc(cx + dx * s, cy + dy * s + bob, r * s, a0, a1, b);
   };
+
+  // Face the way we're walking by mirroring the whole figure around its centre.
+  const flip = anim.flip === true;
+  if (flip) { g.save(); g.translate(2 * cx, 0); g.scale(-1, 1); }
 
   // --- Shadow (planted) ---
   g.fillStyle = "rgba(0,0,0,0.32)";
@@ -320,6 +326,8 @@ export function drawAvatar(
     g.fillStyle = shade(gear.helmet.base, 0.32);
     Rb(-0.6, -17.6, 1.2, 5.2);           // a small crest/nasal ridge
   }
+
+  if (flip) g.restore();
 }
 
 /**

@@ -29,6 +29,8 @@ export interface Ghost {
   gear: GearLook;
   /** True while gliding between snapshots, so the figure shows a walk cycle. */
   moving: boolean;
+  /** True when the ghost is facing/moving left (mirror the figure). */
+  faceLeft: boolean;
 }
 
 /** What the game feeds us each beat: where the player is and how they look. */
@@ -46,6 +48,7 @@ interface Rec {
   name: string;
   look: Appearance;
   gear: GearLook;
+  face: boolean;                // last horizontal facing (true = left)
   fromX: number; fromY: number; // where the glide starts
   toX: number; toY: number;     // the latest snapshot (glide target)
   since: number;                // ms when this segment began
@@ -78,6 +81,7 @@ export function currentGhosts(): Ghost[] {
       x: r.fromX + (r.toX - r.fromX) * k,
       y: r.fromY + (r.toY - r.fromY) * k,
       moving: t < 1 && (Math.abs(r.toX - r.fromX) + Math.abs(r.toY - r.fromY)) > 0.15,
+      faceLeft: r.face,
     });
   }
   return out;
@@ -132,7 +136,7 @@ async function pull(): Promise<void> {
       const gear: GearLook = blob._gear ?? {};
       const prev = recs.get(id);
       if (!prev) {
-        recs.set(id, { id, name, look, gear, fromX: x, fromY: y, toX: x, toY: y, since: now });
+        recs.set(id, { id, name, look, gear, face: false, fromX: x, fromY: y, toX: x, toY: y, since: now });
         continue;
       }
       // Continue gliding from where the ghost VISUALLY is right now, toward the
@@ -144,6 +148,9 @@ async function pull(): Promise<void> {
       const jump = Math.abs(x - prev.toX) + Math.abs(y - prev.toY);
       const teleport = jump > TELEPORT_TILES;
       prev.name = name; prev.look = look; prev.gear = gear;
+      // Face the new target horizontally; keep the last facing if it's vertical.
+      if (x < curX - 0.05) prev.face = true;
+      else if (x > curX + 0.05) prev.face = false;
       prev.fromX = teleport ? x : curX;
       prev.fromY = teleport ? y : curY;
       prev.toX = x; prev.toY = y;
