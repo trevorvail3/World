@@ -3133,7 +3133,9 @@ function playerAction(
     const wepId = player.equipment.ranged ?? player.equipment.mainhand;
     const interval = (wepId && content.items[wepId]?.speed) || 2400; // COMBAT.playerMeleeSpeed
     if (player.equipment.ranged) return { kind: "ranged", tool: "bow", frac: swingFrac(interval) };
-    const type = (player.equipment.mainhand && content.items[player.equipment.mainhand]?.wepType) || "sword";
+    const main = player.equipment.mainhand;
+    // The Bonesaw swings as a sword but renders its own toothed-saw blade.
+    const type = main === "bonesaw" ? "saw" : ((main && content.items[main]?.wepType) || "sword");
     return { kind: "combat", tool: type, frac: swingFrac(interval) };
   }
   // Gathering / crafting: the action interval the engine is repeating on.

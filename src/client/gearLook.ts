@@ -174,7 +174,9 @@ export function resolveGear(
   const main = eq.mainhand ? content.items[eq.mainhand] : undefined;
   if (main && !main.tool) {
     const metal = uniqueLook(main.id) ?? metalOf(metalTier(main, "weapon", content));
-    out.weapon = { ...metal, type: main.wepType ?? "sword" };
+    // The Bonesaw is a sword in every system, but draws as a unique toothed saw.
+    const shape = main.id === "bonesaw" ? "saw" : (main.wepType ?? "sword");
+    out.weapon = { ...metal, type: shape };
   }
   return out;
 }

@@ -120,8 +120,8 @@ function classify(def: ItemDef): Shape {
   if (def.tool === "hatchet" || has("hatchet") || (has("axe") && !has("greataxe"))) return "hatchet";
   if (def.tool === "rod" || has("fishing rod") || id.startsWith("rod_")) return "rod";
 
-  // a saw-type weapon (the Bonesaw) gets its own toothed-blade icon
-  if (def.wepType === "saw" || has("bonesaw")) return "saw";
+  // The Bonesaw is a sword in every system, but gets its own toothed-blade icon.
+  if (has("bonesaw")) return "saw";
 
   // worn gear by slot (most reliable), with keyword refinements first
   if (slot === "ranged" || has("bow") || has("warbow")) return has("unstrung") ? "bowU" : "bow";
