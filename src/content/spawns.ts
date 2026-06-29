@@ -1012,6 +1012,88 @@ const newPois: WorldObjectDef[] = [
   { id: "wild_boar_w1", kind: "monster", monster: "wild_boar", x: 26, y: 55, name: "Wild Boar" },
   { id: "wild_boar_w2", kind: "monster", monster: "wild_boar", x: 106, y: 60, name: "Wild Boar" },
   { id: "wild_boar_w3", kind: "monster", monster: "wild_boar", x: 86, y: 118, name: "Wild Boar" },
+
+  // === FILLING THE OPEN COUNTRY — resource spreads + landmarks so there's no
+  // dead land between places. Gatherable nodes (trees/rock/forage) and examine
+  // landmarks (shrines), spread across the empty cells the map audit found. ====
+  // -- NW hills (city↔greyoak/spine) --
+  { id: "fz_tree_nw1", kind: "tree", x: 12, y: 12, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz_tree_nw2", kind: "tree", x: 15, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz_tree_nw3", kind: "tree", x: 31, y: 11, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fz_tree_nw4", kind: "tree", x: 33, y: 14, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fz_rock_nw1", kind: "rock", x: 13, y: 30, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz_rock_nw2", kind: "rock", x: 16, y: 32, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz_shrine_nw", kind: "shrine", x: 8, y: 54, name: "The Lonely Stone", lines: ["A standing stone on a bare knoll, older than the roads. Someone keeps a posy of moor-flowers at its foot. Nobody admits to it."] },
+  { id: "fz_forage_nw", kind: "forage_spot", x: 14, y: 54, name: "Hillside Fibreweed", resource: "surv_forage_fiber" },
+  // -- N gap (city↔spine) --
+  { id: "fz_rock_n1", kind: "rock", x: 90, y: 12, name: "Silica Deposit", resource: "mine_silica" },
+  { id: "fz_rock_n2", kind: "rock", x: 103, y: 18, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz_tree_n1", kind: "tree", x: 79, y: 7, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fz_shrine_n", kind: "shrine", x: 114, y: 18, name: "The Cairn of Hands", lines: ["A cairn of stones, each no bigger than a fist. Travellers add one for safe passage over the pass. The pile never stops growing."] },
+  // -- NE frontier (city↔marrow) --
+  { id: "fz_rock_ne1", kind: "rock", x: 115, y: 30, name: "Ashiron Vein", resource: "mine_ashiron" },
+  { id: "fz_rock_ne2", kind: "rock", x: 138, y: 42, name: "Rough Gem Rock", resource: "mine_rough_gem" },
+  { id: "fz_rock_ne3", kind: "rock", x: 150, y: 30, name: "Ashiron Vein", resource: "mine_ashiron" },
+  { id: "fz_shrine_ne", kind: "shrine", x: 150, y: 54, name: "The Watcher's Post", lines: ["A toppled watchtower, only its footings left. From the high stones you can see the whole eastern country — and whatever moves on it."] },
+  { id: "fz_lion_ne", kind: "monster", monster: "mountain_lion", x: 138, y: 66, name: "Mountain Lion" },
+  // -- E frontier (city↔redrun) --
+  { id: "fz_tree_e1", kind: "tree", x: 126, y: 66, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "fz_tree_e2", kind: "tree", x: 138, y: 78, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "fz_forage_e", kind: "forage_spot", x: 114, y: 78, name: "Roadside Fibreweed", resource: "surv_forage_fiber" },
+  { id: "fz_shrine_e", kind: "shrine", x: 150, y: 78, name: "The Drowned Bell", lines: ["A ship's bell, green with age, hung from a lone oak far from any water. On a still day, they say, you can hear the sea answer it."] },
+  { id: "fz_deer_e", kind: "monster", monster: "red_deer", x: 150, y: 90, name: "Red Deer" },
+  // -- SE (city↔ashfen/redrun south) --
+  { id: "fz_rock_se1", kind: "rock", x: 126, y: 102, name: "Embercite Seam", resource: "mine_embercite" },
+  { id: "fz_tree_se1", kind: "tree", x: 114, y: 114, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
+  { id: "fz_shrine_se", kind: "shrine", x: 114, y: 126, name: "The Gallows Oak", lines: ["A vast dead oak, its branches worn smooth where ropes once hung. The outlaws give it a wide berth. So should you, after dark."] },
+  { id: "fz_forage_se", kind: "forage_spot", x: 126, y: 126, name: "Scrubland Roots", resource: "surv_forage_fiber" },
+  { id: "fz_lion_se", kind: "monster", monster: "mountain_lion", x: 126, y: 138, name: "Mountain Lion" },
+  // -- S gap (city↔ashfen) --
+  { id: "fz_tree_s1", kind: "tree", x: 78, y: 126, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz_rock_s1", kind: "rock", x: 90, y: 126, name: "Embercite Seam", resource: "mine_embercite" },
+  { id: "fz_shrine_s", kind: "shrine", x: 102, y: 138, name: "The Warm Marker", lines: ["A boundary stone, warm to the touch though no fire's near it. The cult cut a spiral into its face. The hill-folk cut it back out."] },
+  { id: "fz_bear_s", kind: "monster", monster: "forest_bear", x: 66, y: 138, name: "Forest Bear" },
+  // -- SW (city↔heartmoor) --
+  { id: "fz_tree_sw1", kind: "tree", x: 6, y: 102, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz_tree_sw2", kind: "tree", x: 18, y: 104, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz_shrine_sw", kind: "shrine", x: 18, y: 114, name: "The Sinking Chapel", lines: ["A little shrine the moor is slowly swallowing — its roof now a low green mound. The door still opens, onto a foot of black water."] },
+  { id: "fz_forage_sw", kind: "forage_spot", x: 30, y: 126, name: "Moor-Edge Roots", resource: "surv_forage_fiber" },
+  { id: "fz_wolf_sw", kind: "monster", monster: "hill_wolf", x: 6, y: 126, name: "Hill Wolf" },
+  // -- Far frontiers (the map's wild edges) --
+  { id: "fz_shrine_w", kind: "shrine", x: 6, y: 66, name: "The Last Fencepost", lines: ["A single fencepost at the edge of the known country, the wire long gone. Past it the maps just say: the wood, and then nothing anyone came back from."] },
+  { id: "fz_shrine_far_s", kind: "shrine", x: 54, y: 150, name: "The Ashen Reach", lines: ["Where the warm ground gives out to cold ash and the wind never quite settles. Footprints lead south. None lead back."] },
+  { id: "fz_bear_far", kind: "monster", monster: "forest_bear", x: 150, y: 138, name: "Forest Bear" },
+  { id: "fz_deer_far1", kind: "monster", monster: "red_deer", x: 42, y: 150, name: "Red Deer" },
+  { id: "fz_deer_far2", kind: "monster", monster: "red_deer", x: 66, y: 150, name: "Red Deer" },
+
+  // -- Second pass: a node or landmark in each remaining traveled gap, so the
+  //    whole interior reads as lived-in country (frontier borders left wild). --
+  { id: "fz2_tree_1", kind: "tree", x: 18, y: 6, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fz2_rock_1", kind: "rock", x: 42, y: 6, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz2_tree_2", kind: "tree", x: 90, y: 6, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fz2_rock_2", kind: "rock", x: 102, y: 6, name: "Silica Deposit", resource: "mine_silica" },
+  { id: "fz2_shrine_1", kind: "shrine", x: 114, y: 6, name: "The Frostward Stone", lines: ["A boundary stone facing the high pass, its face scoured smooth by wind. Somebody recut a single word into it: REMEMBER. Nothing says what."] },
+  { id: "fz2_tree_3", kind: "tree", x: 78, y: 18, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_rock_3", kind: "rock", x: 90, y: 30, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz2_tree_4", kind: "tree", x: 102, y: 30, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_rock_4", kind: "rock", x: 18, y: 42, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz2_deer_1", kind: "monster", monster: "red_deer", x: 66, y: 54, name: "Red Deer" },
+  { id: "fz2_tree_5", kind: "tree", x: 18, y: 66, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_forage_1", kind: "forage_spot", x: 42, y: 78, name: "Hillside Fibreweed", resource: "surv_forage_fiber" },
+  { id: "fz2_deer_2", kind: "monster", monster: "red_deer", x: 138, y: 90, name: "Red Deer" },
+  { id: "fz2_tree_6", kind: "tree", x: 54, y: 114, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_rock_5", kind: "rock", x: 78, y: 114, name: "Embercite Seam", resource: "mine_embercite" },
+  { id: "fz2_tree_7", kind: "tree", x: 18, y: 126, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_rock_6", kind: "rock", x: 42, y: 126, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "fz2_forage_2", kind: "forage_spot", x: 42, y: 138, name: "Moor-Edge Roots", resource: "surv_forage_fiber" },
+  { id: "fz2_wolf_1", kind: "monster", monster: "hill_wolf", x: 54, y: 138, name: "Hill Wolf" },
+  { id: "fz2_rock_7", kind: "rock", x: 114, y: 138, name: "Embercite Seam", resource: "mine_embercite" },
+  { id: "fz2_deer_3", kind: "monster", monster: "red_deer", x: 138, y: 138, name: "Red Deer" },
+  { id: "fz2_tree_8", kind: "tree", x: 30, y: 150, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_forage_3", kind: "forage_spot", x: 102, y: 150, name: "Ashen Roots", resource: "surv_forage_fiber" },
+  { id: "fz2_tree_9", kind: "tree", x: 114, y: 150, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fz2_rock_8", kind: "rock", x: 126, y: 150, name: "Embercite Seam", resource: "mine_embercite" },
+  { id: "fz2_bear_1", kind: "monster", monster: "forest_bear", x: 138, y: 150, name: "Forest Bear" },
 ];
 
 /** The world's objects: every hand-authored spawn re-homed onto the doubled
