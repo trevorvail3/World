@@ -1583,7 +1583,31 @@ button.inv-slot {
   pointer-events: auto;
 }
 .shop-backdrop.hidden { display: none; }
+/* Long-press item info overlay (inside the shop modal). */
+.shop-info {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+.shop-info.hidden { display: none; }
+.shop-info-box {
+  position: relative; width: min(280px, 80vw);
+  background: var(--panel, #1c1812); border: 1px solid var(--gold);
+  border-radius: 10px; padding: 14px 14px 12px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.shop-info-x {
+  position: absolute; top: 6px; right: 8px;
+  background: transparent; border: 0; color: var(--ink-dim); font-size: 16px; cursor: pointer;
+}
+.shop-info-x:hover { color: var(--ember); }
+.shop-info-icon { width: 40px; height: 40px; margin: 2px auto 6px; }
+.shop-info-icon svg, .shop-info-icon img { width: 40px; height: 40px; }
+.shop-info-name { font-family: "Cinzel", serif; color: var(--gold); font-size: 14px; }
+.shop-info-desc { font-family: "EB Garamond", serif; color: var(--ink); font-size: 12px; margin: 5px 0 7px; line-height: 1.35; }
+.shop-info-stats { font-family: "EB Garamond", serif; color: var(--ember); font-size: 12px; }
 .shop-modal {
+  position: relative;
   width: min(380px, 92vw);
   max-height: 86vh;
   overflow-y: auto;

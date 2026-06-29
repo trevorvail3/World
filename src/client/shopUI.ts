@@ -10,6 +10,7 @@
 import type {
   Content,
   Intent,
+  ItemId,
   ShopDef,
   WorldState,
 } from "../core/types.ts";
@@ -44,7 +45,8 @@ export class ShopUI {
         <div class="shop-wares"></div>
         <div class="shop-label">Your Pack — tap to sell</div>
         <div class="shop-inv inv-grid"></div>
-      </div>`;
+      </div>
+      <div class="shop-info hidden"></div>`;
     this.head = this.backdrop.querySelector(".shop-title") as HTMLElement;
     this.goldEl = this.backdrop.querySelector(".shop-gold") as HTMLElement;
     this.waresEl = this.backdrop.querySelector(".shop-wares") as HTMLElement;
@@ -61,6 +63,55 @@ export class ShopUI {
     this.backdrop.addEventListener("pointerdown", (e) => {
       if (e.target === this.backdrop) this.close();
     });
+    this.infoEl = this.backdrop.querySelector(".shop-info") as HTMLElement;
+    // Tapping the info overlay (but not the box inside it) dismisses it.
+    this.infoEl.addEventListener("pointerdown", (e) => {
+      if (e.target === this.infoEl) this.hideInfo();
+    });
+  }
+
+  private infoEl!: HTMLElement;
+  private pressTimer = 0;
+
+  /** A long-press info box for a ware — what it is, what it heals, and its value. */
+  private showInfo(item: ItemId, buyPrice: number, qty: number): void {
+    const def = this.content.items[item];
+    if (!def) return;
+    const bundle = qty > 1 ? ` (×${qty})` : "";
+    const heal = def.heals ? ` · heals ${def.heals}` : "";
+    const sell = def.sell ? `Sells back for ${def.sell.toLocaleString()}g` : "Can't be sold back";
+    this.infoEl.innerHTML = `
+      <div class="shop-info-box">
+        <button class="shop-info-x" type="button">✕</button>
+        <div class="shop-info-icon">${itemIconSVG(def)}</div>
+        <div class="shop-info-name">${def.name}</div>
+        <div class="shop-info-desc">${def.description}${heal}</div>
+        <div class="shop-info-stats">Buy: ${buyPrice.toLocaleString()}g${bundle} · ${sell}</div>
+      </div>`;
+    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
+    );
+    this.infoEl.classList.remove("hidden");
+  }
+
+  private hideInfo(): void { this.infoEl.classList.add("hidden"); }
+
+  /** Fire `onHold` after a long press on `el` (cancelled by release or a drag). */
+  private onLongPress(el: HTMLElement, onHold: () => void): void {
+    let sx = 0, sy = 0;
+    const cancel = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
+    el.addEventListener("pointerdown", (e) => {
+      sx = e.clientX; sy = e.clientY;
+      cancel();
+      this.pressTimer = window.setTimeout(() => { this.pressTimer = 0; onHold(); }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) cancel();
+    });
+    el.addEventListener("pointerup", cancel);
+    el.addEventListener("pointercancel", cancel);
+    el.addEventListener("pointerleave", cancel);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   isOpen(): boolean {
@@ -102,6 +153,9 @@ export class ShopUI {
         <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${line.price.toLocaleString()}g</button>`;
       const btn = row.querySelector(".shop-buy") as HTMLElement;
       btn.title = def.description;
+      // Long-press the item (not the Buy button) to inspect what you're buying.
+      this.onLongPress(row.querySelector(".shop-swatch") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));
+      this.onLongPress(row.querySelector(".shop-row-name") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));
       if (afford) {
         btn.addEventListener("pointerdown", (e) => {
           e.stopPropagation();

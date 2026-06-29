@@ -110,6 +110,14 @@ export const objects: WorldObjectDef[] = [
   },
   { id: "cart_hespa", kind: "cart", x: 63, y: 42, name: "Quartermaster's Stall", lines: ["Hespa's stall — tools and sundries stacked to the awning."] },
   {
+    id: "food_vendor", kind: "npc", x: 62, y: 44, name: "Brenna, Cook",
+    lines: [
+      "Smell that? Fresh off the coals. A hot meal mends you faster than a cold one.",
+      "No time to fish or cook? Buy a meal here and eat it when the blows land.",
+    ],
+  },
+  { id: "cart_brenna", kind: "cart", x: 61, y: 44, name: "Cookhouse Stall", lines: ["A cook-stall hung with smoked fish and warm rations."] },
+  {
     id: "shop_armourer", kind: "npc", x: 70, y: 42, name: "Doran, Armourer",
     lines: [
       "You stand like someone who's been hit before. Good — means you'll buy mail and mean it.",

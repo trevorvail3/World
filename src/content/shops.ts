@@ -205,4 +205,16 @@ export const shops: ShopDef[] = [
       { item: "cape_max", price: 1000000, qty: 1 },
     ],
   },
+  {
+    id: "shop_food",
+    npc: "food_vendor",
+    name: "Brenna's Cookhouse",
+    greeting: "Hot off the fire — buy a meal for the road, no rod or pan required. Heals you when the fighting's done.",
+    stock: [
+      { item: "ashfin_cooked", price: 10, qty: 1 },
+      { item: "speckletrout_cooked", price: 23, qty: 1 },
+      { item: "greyfin_cooked", price: 46, qty: 1 },
+      { item: "ribperch_cooked", price: 78, qty: 1 },
+    ],
+  },
 ];
