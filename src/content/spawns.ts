@@ -1153,6 +1153,46 @@ const newPois: WorldObjectDef[] = [
   { id: "fz2_tree_9", kind: "tree", x: 114, y: 150, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
   { id: "fz2_rock_8", kind: "rock", x: 126, y: 150, name: "Embercite Seam", resource: "mine_embercite" },
   { id: "fz2_bear_1", kind: "monster", monster: "forest_bear", x: 138, y: 150, name: "Forest Bear" },
+
+  // -- The western wood: dense trees down the whole west, so the forest reads as
+  //    forest (gatherable Forestry; ids are fz* so they jitter + snap to land). --
+  { id: "fzf_tree_1", kind: "tree", x: 8, y: 46, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_2", kind: "tree", x: 16, y: 50, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_tree_3", kind: "tree", x: 6, y: 56, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fzf_tree_4", kind: "tree", x: 22, y: 58, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_5", kind: "tree", x: 12, y: 64, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_tree_6", kind: "tree", x: 30, y: 66, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_7", kind: "tree", x: 8, y: 72, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fzf_tree_8", kind: "tree", x: 24, y: 74, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_9", kind: "tree", x: 34, y: 78, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_tree_10", kind: "tree", x: 6, y: 90, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_11", kind: "tree", x: 18, y: 92, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fzf_tree_12", kind: "tree", x: 30, y: 96, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_13", kind: "tree", x: 10, y: 104, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_tree_14", kind: "tree", x: 24, y: 108, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_15", kind: "tree", x: 36, y: 110, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fzf_tree_16", kind: "tree", x: 8, y: 118, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_17", kind: "tree", x: 22, y: 122, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_tree_18", kind: "tree", x: 34, y: 126, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_19", kind: "tree", x: 12, y: 134, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
+  { id: "fzf_tree_20", kind: "tree", x: 28, y: 138, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_21", kind: "tree", x: 38, y: 56, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
+  { id: "fzf_tree_22", kind: "tree", x: 40, y: 96, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "fzf_bear_w1", kind: "monster", monster: "forest_bear", x: 14, y: 70, name: "Forest Bear" },
+  { id: "fzf_boar_w1", kind: "monster", monster: "wild_boar", x: 28, y: 100, name: "Wild Boar" },
+  { id: "fzf_deer_w1", kind: "monster", monster: "red_deer", x: 20, y: 128, name: "Red Deer" },
+  // -- The NE mining hills: ore veins between the river and the Marrow caves. --
+  { id: "fzm_ore_1", kind: "rock", x: 106, y: 36, name: "Ashiron Vein", resource: "mine_ashiron" },
+  { id: "fzm_ore_2", kind: "rock", x: 112, y: 40, name: "Gold Vein", resource: "mine_gold" },
+  { id: "fzm_ore_3", kind: "rock", x: 116, y: 46, name: "Ribstone Seam", resource: "mine_ribstone" },
+  { id: "fzm_ore_4", kind: "rock", x: 108, y: 50, name: "Rough Gem Rock", resource: "mine_rough_gem" },
+  { id: "fzm_ore_5", kind: "rock", x: 118, y: 34, name: "Ashiron Vein", resource: "mine_ashiron" },
+  { id: "fzm_lion_1", kind: "monster", monster: "mountain_lion", x: 112, y: 52, name: "Mountain Lion" },
+  // -- The northern range: high crag-mining and a hardy beast or two. --
+  { id: "fzn_ore_1", kind: "rock", x: 30, y: 18, name: "Silica Deposit", resource: "mine_silica" },
+  { id: "fzn_ore_2", kind: "rock", x: 100, y: 18, name: "Ashiron Vein", resource: "mine_ashiron" },
+  { id: "fzn_ore_3", kind: "rock", x: 130, y: 16, name: "Silica Deposit", resource: "mine_silica" },
+  { id: "fzn_lion_1", kind: "monster", monster: "mountain_lion", x: 20, y: 22, name: "Mountain Lion" },
 ];
 
 /** The world's objects: every hand-authored spawn re-homed onto the doubled

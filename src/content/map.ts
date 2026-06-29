@@ -234,6 +234,22 @@ function redrunTile(x: number, y: number): TileType {
   return noise(x, y) > 0.72 ? "dirt" : "grass";
 }
 
+// --- Expanded biome frontiers (painted over open heath in decode, so the map's
+// edges read as real mountains / forest / mining country rather than blank field).
+/** The northern range: snowy stone highland with clumped peaks (walkable lanes). */
+function northRangeTile(x: number, y: number): TileType {
+  if (clump(x, y) > 0.80) return "mountain";
+  return y < 16 ? "snow" : "stone";
+}
+/** The north-east mining hills: bare stone with the odd crag (walkable). */
+function mineHillTile(x: number, y: number): TileType {
+  return clump(x, y) > 0.84 ? "mountain" : "stone";
+}
+/** The western wood: a mossy forest floor, the odd trodden dirt patch. */
+function forestFloorTile(x: number, y: number): TileType {
+  return noise(x, y) > 0.82 ? "dirt" : "moss";
+}
+
 /**
  * Each wilderness region: its tile rule, the top-left of its ORIGINAL local
  * coordinate box, its size, and where that box now sits on the bigger canvas.
@@ -544,6 +560,25 @@ function decode(): WorldMap {
     if (y >= coastY(rx)) break; // it has reached the sea
     for (let x = rx - 1; x <= rx + 2; x++) set(x, y, "water");
   }
+
+  // 4f) Biome frontiers: repaint the OPEN HEATH (grass/moss only — so roads,
+  //     clearings, water, regions and settlements are untouched) at the map's
+  //     edges into real terrain — a northern mountain range, north-east mining
+  //     hills, and a great western wood. The central country stays as it is.
+  const HEATH = new Set<TileType>(["grass", "moss"]);
+  const paintBiome = (x0: number, y0: number, x1: number, y1: number, fn: (x: number, y: number) => TileType): void => {
+    for (let y = Math.max(0, y0); y <= Math.min(OVERWORLD_HEIGHT - 1, y1); y++) {
+      for (let x = Math.max(0, x0); x <= Math.min(WIDTH - 1, x1); x++) {
+        if (HEATH.has(tiles[y * WIDTH + x]!)) set(x, y, fn(x, y));
+      }
+    }
+  };
+  paintBiome(0, 0, WIDTH - 1, 30, northRangeTile);   // the northern range, spanning the top
+  paintBiome(102, 30, 120, 58, mineHillTile);        // NE mining hills (river ↔ Marrow)
+  paintBiome(0, 40, 42, 158, forestFloorTile);       // the western wood, down the whole west
+  // Keep the new blocking terrain traversable (open any walled-off pockets).
+  repairConnectivity(0, 0, WIDTH - 1, 30, (_x, y) => (y < 16 ? "snow" : "stone"));
+  repairConnectivity(102, 30, 120, 58, () => "stone");
 
   // 5) Long roads from the gates out to each far region (3 wide, walkable). The
   //    regions sit far from the centre now, so these are real journeys. Where a
