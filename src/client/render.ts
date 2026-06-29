@@ -1235,6 +1235,9 @@ function drawObject(
     case "cart":
       drawCart(g, cx, cy);
       break;
+    case "bone_cairn":
+      drawBoneCairn(g, cx, cy, def.id);
+      break;
     case "fountain":
       drawFountain(g, cx, cy, now);
       break;
@@ -2642,6 +2645,62 @@ function drawBoneman(g: CanvasRenderingContext2D, cx: number, cy: number, now: n
   g.strokeStyle = "#15110d"; g.lineWidth = 0.9;
   g.beginPath(); g.moveTo(hx - 2.6, hy + 3); g.lineTo(hx + 2.6, hy + 3); g.stroke();
   for (let sx = -2; sx <= 2; sx += 1.3) { g.beginPath(); g.moveTo(hx + sx, hy + 2.2); g.lineTo(hx + sx, hy + 3.8); g.stroke(); }
+}
+
+/** A small pale skull (front-facing): dome, two sockets, a nasal hollow. */
+function drawSkull(g: CanvasRenderingContext2D, x: number, y: number, r: number): void {
+  g.fillStyle = "#ece6d6";
+  g.beginPath(); g.ellipse(x, y, r, r * 1.06, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#d8d0bd"; // jaw shading
+  g.beginPath(); g.ellipse(x, y + r * 0.7, r * 0.62, r * 0.4, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#15110d"; // sockets
+  circle(g, x - r * 0.42, y - r * 0.1, r * 0.27);
+  circle(g, x + r * 0.42, y - r * 0.1, r * 0.27);
+  g.beginPath(); // nasal hollow
+  g.moveTo(x, y + r * 0.15); g.lineTo(x - r * 0.16, y + r * 0.5); g.lineTo(x + r * 0.16, y + r * 0.5);
+  g.closePath(); g.fill();
+}
+
+/** A cairn of bones and skulls — grim dressing for the Boneman's Bonefield.
+ *  Three variants (a bone-pile with a skull, a stack of skulls, a skull on a
+ *  stake), chosen deterministically from the object id so a row of them varies. */
+function drawBoneCairn(g: CanvasRenderingContext2D, cx: number, cy: number, id: string): void {
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  const variant = h % 3;
+  shadow(g, cx, cy + 10, 12, 4);
+  const bone = "#e2dcca", boneX = "#b9b09a";
+
+  if (variant === 0) {
+    // A heap of long bones, crossed, with a skull resting on top.
+    g.strokeStyle = bone; g.lineWidth = 2.6; g.lineCap = "round";
+    const limbs: [number, number, number, number][] = [
+      [-9, 9, 7, 4], [-6, 10, 9, 6], [-8, 6, 6, 9], [3, 10, 10, 5],
+    ];
+    for (const [x1, y1, x2, y2] of limbs) {
+      g.beginPath(); g.moveTo(cx + x1, cy + y1); g.lineTo(cx + x2, cy + y2); g.stroke();
+      g.fillStyle = bone; // knobbed ends
+      circle(g, cx + x1, cy + y1, 1.5); circle(g, cx + x2, cy + y2, 1.5);
+    }
+    g.strokeStyle = boneX; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(cx - 8, cy + 8); g.lineTo(cx + 6, cy + 5); g.stroke();
+    drawSkull(g, cx - 1, cy + 1, 4.5);
+  } else if (variant === 1) {
+    // A stacked cairn of skulls.
+    drawSkull(g, cx - 4, cy + 7, 3.4);
+    drawSkull(g, cx + 4, cy + 7, 3.4);
+    drawSkull(g, cx, cy + 8, 3.4);
+    drawSkull(g, cx - 0.5, cy + 1, 4.2);
+  } else {
+    // A skull mounted on a short stake, ringed by a few scattered bones.
+    g.strokeStyle = "#6a4a2e"; g.lineWidth = 2.2; g.lineCap = "round";
+    g.beginPath(); g.moveTo(cx, cy + 11); g.lineTo(cx, cy - 1); g.stroke();
+    g.strokeStyle = bone; g.lineWidth = 2.2;
+    g.beginPath(); g.moveTo(cx - 9, cy + 10); g.lineTo(cx - 3, cy + 11); g.stroke();
+    g.beginPath(); g.moveTo(cx + 3, cy + 11); g.lineTo(cx + 9, cy + 9); g.stroke();
+    g.fillStyle = bone;
+    circle(g, cx - 9, cy + 10, 1.4); circle(g, cx + 9, cy + 9, 1.4);
+    drawSkull(g, cx, cy - 4, 4.6);
+  }
 }
 
 // --- Serpent: a coiled, scaled body with a raised head ---

@@ -600,6 +600,14 @@ export const objects: WorldObjectDef[] = [
   // boneman_revealed flag). A crushing weapon shatters his bone armour best. ===
   { id: "bonefield_sign", kind: "signpost", x: 14, y: 62, name: "The Bonefield", requiresFlag: "boneman_revealed", lines: ["THE BONEFIELD — a clearing the wood grew around. Small cairns of stacked bone stand in rows, each one a person. Crushing weapons fare best against what made them."] },
   { id: "boneman_1", kind: "monster", x: 17, y: 62, name: "The Boneman", monster: "boneman", requiresFlag: "boneman_revealed" },
+  // Bone-cairns ringing the clearing — his trophies, one per victim.
+  { id: "bone_cairn_1", kind: "bone_cairn", x: 15, y: 60, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_2", kind: "bone_cairn", x: 19, y: 60, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_3", kind: "bone_cairn", x: 13, y: 64, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_4", kind: "bone_cairn", x: 20, y: 62, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_5", kind: "bone_cairn", x: 15, y: 64, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_6", kind: "bone_cairn", x: 19, y: 64, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
+  { id: "bone_cairn_7", kind: "bone_cairn", x: 16, y: 59, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
 
   // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
   // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---

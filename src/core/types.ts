@@ -783,6 +783,8 @@ export type ObjKind =
   | "lamppost"
   /** A directional signpost at a junction (examine for the way). */
   | "signpost"
+  /** A cairn of bones and skulls — grim dressing for the Boneman's lair. */
+  | "bone_cairn"
   /** A waystone: pay the Courier's toll to fast-travel between them. */
   | "waystone"
   /** An Agility obstacle: one leg of a training circuit (traverse for XP). */

@@ -214,6 +214,7 @@ const BLOCKING_KINDS = new Set([
   "sawmill",
   "lamppost",
   "signpost",
+  "bone_cairn",
   "waystone",
   "relic",
   "build_hotspot",
@@ -1667,6 +1668,7 @@ function startInteraction(
     case "critter":
     case "lamppost":
     case "signpost":
+    case "bone_cairn":
       // Examine-only landmark / city dressing / wildlife / signage.
       events.push({
         type: "LOG",
