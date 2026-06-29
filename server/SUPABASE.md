@@ -360,3 +360,42 @@ market will bear.
 - If sign-up says "check your email", your project has email confirmation on
   (Supabase default). Existing idle-game accounts just **sign in** — no
   confirmation needed.
+
+## Friends (run this for the Players panel)
+
+Lets players add each other as friends and see who's online. Names resolve via
+the presence table, so no extra profile table is needed. Paste and **Run**:
+
+```sql
+create table if not exists public.friendships (
+  id         bigint generated always as identity primary key,
+  requester  uuid not null references auth.users (id) on delete cascade,
+  addressee  uuid not null references auth.users (id) on delete cascade,
+  status     text not null default 'pending' check (status in ('pending','accepted')),
+  created_at timestamptz not null default now(),
+  unique (requester, addressee)
+);
+create index if not exists friendships_addressee on public.friendships (addressee);
+
+alter table public.friendships enable row level security;
+
+-- You can see any friendship you're part of.
+drop policy if exists friendships_read on public.friendships;
+create policy friendships_read on public.friendships for select
+  using (auth.uid() = requester or auth.uid() = addressee);
+
+-- You can send a request (as yourself, to someone else).
+drop policy if exists friendships_insert on public.friendships;
+create policy friendships_insert on public.friendships for insert
+  with check (auth.uid() = requester and requester <> addressee);
+
+-- The addressee can accept (update status).
+drop policy if exists friendships_update on public.friendships;
+create policy friendships_update on public.friendships for update
+  using (auth.uid() = addressee) with check (auth.uid() = addressee);
+
+-- Either side can remove/cancel the friendship.
+drop policy if exists friendships_delete on public.friendships;
+create policy friendships_delete on public.friendships for delete
+  using (auth.uid() = requester or auth.uid() = addressee);
+```

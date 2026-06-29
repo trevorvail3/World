@@ -30,6 +30,7 @@ import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
+import { PlayersUI } from "./playersUI.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -164,12 +165,14 @@ export class Hud {
     this.skillDetail = new SkillDetailModal(root, content);
     this.hiscores = new HiscoresUI(root, content);
     this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
+    this.players = new PlayersUI(root);
     this.build(root);
     this.buildSkillPicker(root);
   }
 
   private hiscores: HiscoresUI;
   private exchange: ExchangeUI;
+  private players: PlayersUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -446,6 +449,14 @@ export class Hud {
         ge.innerHTML = `<span class="world-hiscores-ic">${iconize("⚖️")}</span> Grand Exchange`;
         ge.addEventListener("click", () => { void this.exchange.show(); });
         p.appendChild(ge);
+
+        // --- Players: who's online + your friends. ---
+        const pl = document.createElement("button");
+        pl.type = "button";
+        pl.className = "world-hiscores world-players";
+        pl.innerHTML = `<span class="world-hiscores-ic">${iconize("👤")}</span> Players`;
+        pl.addEventListener("click", () => { void this.players.show(); });
+        p.appendChild(pl);
 
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));
