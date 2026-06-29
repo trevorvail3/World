@@ -4256,6 +4256,38 @@ export const items: Record<ItemId, ItemDef> = {
     "lore": "ashen_wyrm",
     "sell": 13000
   },
+  "serpent_scale": {
+    "id": "serpent_scale", "name": "Serpent Scale", "icon": "🐍", "cat": "Drops", "sell": 45,
+    "description": "A hard, iridescent scale prised from a swamp serpent. Leather-workers pay for these."
+  },
+  "spider_silk": {
+    "id": "spider_silk", "name": "Crawler Silk", "icon": "🕸️", "cat": "Drops", "sell": 55,
+    "description": "Tough, gluey strands from a cave crawler. Weavers and fletchers prize it."
+  },
+  "bat_wing": {
+    "id": "bat_wing", "name": "Bat Wing", "icon": "🦇", "cat": "Drops", "sell": 30,
+    "description": "A leathery wing membrane. Light, strong, and faintly foul-smelling."
+  },
+  "golem_dust": {
+    "id": "golem_dust", "name": "Golem Dust", "icon": "🪨", "cat": "Drops", "sell": 90,
+    "description": "Fine grit left where a stone thing crumbled. Masons bind it into mortar."
+  },
+  "wraith_fragment": {
+    "id": "wraith_fragment", "name": "Wraith Fragment", "icon": "💠", "cat": "Drops", "sell": 130,
+    "description": "A shard of something that was never quite solid. Cold, and dear to the curious."
+  },
+  "orc_tooth": {
+    "id": "orc_tooth", "name": "Orc Tooth", "icon": "🦷", "cat": "Drops", "sell": 70,
+    "description": "A heavy tooth from an old warrior of the deep. Carved into talismans and trophies."
+  },
+  "tarnished_ring": {
+    "id": "tarnished_ring", "name": "Tarnished Ring", "icon": "💍", "cat": "Drops", "sell": 18,
+    "description": "A stolen ring gone dull. Not worth wearing, but any fence will take it."
+  },
+  "marrow_shard": {
+    "id": "marrow_shard", "name": "Marrow Shard", "icon": "🦴", "cat": "Drops", "sell": 200,
+    "description": "A splinter of pale bone from the deep places. Cold to the touch, and dear to collectors."
+  },
   "seed_ashweed": {
     "id": "seed_ashweed",
     "name": "Ashweed Seed",

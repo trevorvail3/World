@@ -37,7 +37,6 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
-import { audio } from "./audio.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { resolveGear } from "./gearLook.ts";
@@ -179,7 +178,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   shrine: "A weathered standing stone, older than any road here.",
   plant_patch: "A bed of tilled soil, waiting for a seed.",
   tree_patch: "A cleared plot where a sapling could take root.",
-  portal: "A dark archway. Something waits on the other side.",
+  portal: "A dark cave mouth in the rock. It descends into the dark below.",
   trap: "A snare set among the runs and burrows. Patience catches game.",
   bounty_board: "A board of nailed-up notices — slaying contracts, paid in Hunt Marks.",
   housing_plot: "A vacant homestead yard. Claim it, and its house is yours to furnish.",
@@ -305,10 +304,6 @@ export class Game {
     }, { passive: false });
     // Suppress the browser's own right-click menu; we provide our own.
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-    // Browsers block audio until the first gesture — wake it on any input.
-    const wake = (): void => audio.resume();
-    window.addEventListener("pointerdown", wake);
-    window.addEventListener("keydown", wake);
   }
 
   start(): void {
@@ -483,7 +478,6 @@ export class Game {
           if (tp) this.sparks.push({ x: tp.x, y: tp.y, born: now, color: SPARK_COLOR[ev.skill] ?? "#caa05a", n: 5 });
           // A soft tick for gathering/production skills (combat has its own hits).
           if (SPARK_COLOR[ev.skill] && now - this.lastGatherSfx > 240) {
-            audio.play("gather");
             this.lastGatherSfx = now;
           }
           break;
@@ -492,7 +486,6 @@ export class Game {
           const name = this.bridge.content.skills[ev.skill].name;
           this.hud.log(`You reach ${name} level ${ev.level}!`);
           this.levelUp.show(ev.skill, ev.level); // the OSRS "ding"
-          audio.play("level");
           break;
         }
         case "INVENTORY_FULL":
@@ -503,7 +496,6 @@ export class Game {
           break;
         case "PLAYER_DIED":
           this.hud.log("You have been knocked out...");
-          audio.play("death");
           this.shake = { born: now, mag: 9, dur: 500 };
           break;
         case "PLAYER_RESPAWNED":
@@ -539,7 +531,6 @@ export class Game {
           this.openTravel(ev.objId);
           break;
         case "QUEST_COMPLETED": {
-          audio.play("quest");
           const p = this.bridge.state.player.pos;
           this.floats.push({
             x: p.x,
@@ -565,13 +556,11 @@ export class Game {
           break;
         }
         case "ACHIEVEMENT": {
-          audio.play("achievement");
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
         }
         case "HEALED": {
-          audio.play("eat");
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.3, text: `+${ev.amount}`, color: "#5fd06a", born: now, size: 15 });
           this.sparks.push({ x: p.x, y: p.y, born: now, color: "#5fd06a", n: 6 });
@@ -585,12 +574,9 @@ export class Game {
               this.hurtFlash = now;
               const frac = Math.min(1, ev.amount / Math.max(1, this.bridge.state.player.maxHp));
               this.shake = { born: now, mag: 2 + frac * 6, dur: 280 };
-              audio.play("hurt");
             } else {
-              audio.play("miss");
             }
           } else {
-            audio.play(ev.amount > 0 ? "hit" : "miss", ev.weak ? 1.3 : 1);
           }
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -1470,7 +1456,6 @@ export class Game {
     const near =
       Math.max(Math.abs(Math.round(player.pos.x) - tile.x), Math.abs(Math.round(player.pos.y) - tile.y)) <= 1;
     if (near) {
-      audio.play("pickup");
       const intent: Intent = { type: "PICKUP", x: tile.x, y: tile.y };
       if (opts?.id !== undefined) intent.id = opts.id;
       if (opts?.qty !== undefined) intent.qty = opts.qty;
@@ -1495,7 +1480,6 @@ export class Game {
     const p = this.bridge.state.player;
     const near = Math.max(Math.abs(Math.round(p.pos.x) - t.x), Math.abs(Math.round(p.pos.y) - t.y)) <= 1;
     if (near) {
-      audio.play("pickup");
       const intent: Intent = { type: "PICKUP", x: t.x, y: t.y };
       if (t.id !== undefined) intent.id = t.id;
       if (t.qty !== undefined) intent.qty = t.qty;

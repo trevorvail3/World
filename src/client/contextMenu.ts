@@ -6,8 +6,6 @@
  * core). The menu builds no game state of its own.
  */
 
-import { audio } from "./audio.ts";
-
 export interface MenuItem {
   /** The bold leading verb, e.g. "Chop" or "Walk here". */
   label: string;
@@ -83,7 +81,6 @@ export class ContextMenu {
       btn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        audio.play(item.tone === "locked" ? "error" : "click");
         this.close();
         item.onSelect();
       });

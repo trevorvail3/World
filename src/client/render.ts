@@ -1211,7 +1211,7 @@ function drawObject(
       drawAnvil(g, cx, cy);
       break;
     case "portal":
-      drawPortal(g, cx, cy, now);
+      drawPortal(g, cx, cy);
       break;
     case "trap":
       drawTrap(g, cx, cy, available);
@@ -1957,20 +1957,42 @@ function drawBountyBoard(g: CanvasRenderingContext2D, cx: number, cy: number): v
 }
 
 /** A boss-dungeon portal: a dark arch with a swirling ember glow. */
-function drawPortal(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
-  const pulse = 0.6 + 0.4 * Math.sin(now / 360);
-  g.fillStyle = "#1a1016";
+// A plain rock cave mouth — a dark opening in a stony mound. No magic; you
+// just walk down into the barrow/vault it fronts.
+function drawPortal(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 13, 17, 5);
+  // The rocky mound around the mouth.
+  g.fillStyle = "#544f48";
   g.beginPath();
-  g.ellipse(cx, cy, TILE * 0.32, TILE * 0.42, 0, 0, Math.PI * 2);
+  g.moveTo(cx - 16, cy + 13);
+  g.quadraticCurveTo(cx - 18, cy - 11, cx, cy - 15);
+  g.quadraticCurveTo(cx + 18, cy - 11, cx + 16, cy + 13);
+  g.closePath();
   g.fill();
-  g.strokeStyle = `rgba(210,116,44,${0.5 + 0.4 * pulse})`;
-  g.lineWidth = 3;
+  // Lit upper rock + a couple of boulders for texture.
+  g.fillStyle = "#6b655c";
+  g.beginPath(); g.ellipse(cx - 9, cy - 6, 5, 4, -0.3, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(cx + 9, cy - 5, 5, 4, 0.3, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#473f38";
+  g.beginPath(); g.ellipse(cx - 11, cy + 8, 4, 3, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(cx + 11, cy + 8, 4, 3, 0, 0, Math.PI * 2); g.fill();
+  // The dark arched opening you descend into.
+  g.fillStyle = "#0c0a09";
   g.beginPath();
-  g.ellipse(cx, cy, TILE * 0.32, TILE * 0.42, 0, 0, Math.PI * 2);
-  g.stroke();
-  g.fillStyle = `rgba(242,160,90,${0.35 * pulse})`;
+  g.moveTo(cx - 7, cy + 12);
+  g.lineTo(cx - 7, cy - 1);
+  g.quadraticCurveTo(cx, cy - 11, cx + 7, cy - 1);
+  g.lineTo(cx + 7, cy + 12);
+  g.closePath();
+  g.fill();
+  // A hint of depth at the throat of the cave.
+  g.fillStyle = "rgba(60,50,44,0.6)";
   g.beginPath();
-  g.ellipse(cx, cy, TILE * 0.18, TILE * 0.26, 0, 0, Math.PI * 2);
+  g.moveTo(cx - 4, cy + 12);
+  g.lineTo(cx - 4, cy + 2);
+  g.quadraticCurveTo(cx, cy - 5, cx + 4, cy + 2);
+  g.lineTo(cx + 4, cy + 12);
+  g.closePath();
   g.fill();
 }
 

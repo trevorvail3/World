@@ -25,7 +25,6 @@ import type {
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import { glyph, iconize } from "./glyph.ts";
-import { audio } from "./audio.ts";
 import { equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
@@ -583,50 +582,6 @@ export class Hud {
         this.zoomReadout = zoomReadout;
         p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
 
-        // --- Volume ---
-        const volRow = document.createElement("div");
-        volRow.className = "settings-zoom";
-        const volLabel = document.createElement("div");
-        volLabel.className = "settings-label";
-        const volReadout = document.createElement("span");
-        volReadout.className = "settings-zoom-value";
-        volLabel.append("Volume ", volReadout);
-        const volSlider = document.createElement("input");
-        volSlider.type = "range";
-        volSlider.className = "settings-slider";
-        volSlider.min = "0";
-        volSlider.max = "1";
-        volSlider.step = "0.05";
-        volSlider.value = String(audio.getVolume());
-        const syncVol = (): void => {
-          volReadout.textContent = `${Math.round(Number(volSlider.value) * 100)}%`;
-        };
-        syncVol();
-        volSlider.addEventListener("input", () => {
-          audio.setVolume(Number(volSlider.value));
-          syncVol();
-        });
-        // A click at the new level on release, so you can hear the volume.
-        volSlider.addEventListener("change", () => audio.play("click"));
-        volRow.append(volLabel, volSlider);
-        p.appendChild(volRow);
-
-        // --- Audio toggles ---
-        const mkToggle = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLElement => {
-          const row = document.createElement("label");
-          row.className = "settings-toggle";
-          const box = document.createElement("input");
-          box.type = "checkbox";
-          box.checked = get();
-          box.addEventListener("change", () => set(box.checked));
-          const span = document.createElement("span");
-          span.textContent = label;
-          row.append(box, span);
-          return row;
-        };
-        p.appendChild(mkToggle("Sound effects", () => audio.sfxEnabled(), (v) => audio.setSfx(v)));
-        p.appendChild(mkToggle("Ambient music", () => audio.ambientEnabled(), (v) => audio.setAmbient(v)));
-
         const help = document.createElement("button");
         help.type = "button";
         help.className = "settings-help";
@@ -654,7 +609,6 @@ export class Hud {
   }
 
   private setTab(id: TabId): void {
-    audio.play("click");
     // Tapping the already-open tab collapses the dock to just its tab column.
     if (id === this.activeTab && !this.collapsed) {
       this.collapsed = true;
