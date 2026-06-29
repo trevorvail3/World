@@ -616,6 +616,51 @@ function decode(): WorldMap {
   cc(61, 75, 64, 76, "path");   // The Drover's Rest, off the south road
   cc(58, 19, 60, 24, "path");   // The Fold, down to the grove
 
+  // 5c) Ecotone dither — feather the seams between open-wilderness biomes so
+  //     they roll into one another instead of cutting hard on the grid. Rather
+  //     than blurring colours (which just reads as out-of-focus), we keep every
+  //     tile crisp and scatter actual tiles of the neighbouring biome across a
+  //     ~3-tile band, thinning out with distance from the seam — the way pixel
+  //     terrain blends. Grassland speckles into the mountain foot, the forest
+  //     floor, the mine hills and the moor, and vice-versa. Only wild ground is
+  //     touched: designed areas (the regions, the city), roads and water are
+  //     left intact, and swaps stay within walkable ground so nothing is sealed.
+  {
+    const CONVERT = new Set<TileType>(["grass", "dirt", "moss", "bog", "ash", "snow"]);
+    const TARGET = new Set<TileType>(["grass", "dirt", "moss", "bog", "ash", "snow", "stone"]);
+    const ECO_R = 4;
+    const inDesigned = (x: number, y: number): boolean => {
+      if (x >= CITY.x0 - 1 && x <= CITY.x1 + 1 && y >= CITY.y0 - 1 && y <= CITY.y1 + 1) return true;
+      for (const r of REGIONS) {
+        if (x >= r.nx && x < r.nx + r.w && y >= r.ny && y < r.ny + r.h) return true;
+      }
+      return false;
+    };
+    const src = tiles.slice(); // snapshot so swaps don't cascade across the band
+    for (let y = 0; y < OVERWORLD_HEIGHT; y++) {
+      for (let x = 0; x < WIDTH; x++) {
+        const t = src[y * WIDTH + x]!;
+        if (!CONVERT.has(t) || inDesigned(x, y)) continue;
+        // Nearest differing target biome within the band (Manhattan distance).
+        let best: TileType | null = null;
+        let bestD = ECO_R + 1;
+        for (let dy = -ECO_R; dy <= ECO_R; dy++) {
+          for (let dx = -ECO_R; dx <= ECO_R; dx++) {
+            const d = Math.abs(dx) + Math.abs(dy);
+            if (d === 0 || d > ECO_R) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= WIDTH || ny >= OVERWORLD_HEIGHT) continue;
+            const nt = src[ny * WIDTH + nx]!;
+            if (nt !== t && TARGET.has(nt) && d < bestD) { bestD = d; best = nt; }
+          }
+        }
+        if (!best) continue;
+        const p = 0.62 * (1 - (bestD - 1) / ECO_R); // densest at the seam, fading out
+        if (noise(x * 1.93 + 11, y * 1.71 + 7) < p) set(x, y, best);
+      }
+    }
+  }
+
   // 6) Carve the four sealed boss arenas in the band below the overworld.
   for (const a of ARENAS) {
     for (let y = ARENA_TOP; y < ARENA_TOP + ARENA_H; y++) {
