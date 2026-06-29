@@ -150,6 +150,8 @@ export class Hud {
   private invData: (InventorySlot | null)[] = [];
   private zoomSlider: HTMLInputElement | null = null;
   private zoomReadout: HTMLElement | null = null;
+  private ddSlider: HTMLInputElement | null = null;
+  private ddReadout: HTMLElement | null = null;
 
   constructor(
     root: HTMLElement,
@@ -160,6 +162,7 @@ export class Hud {
     private zoom: { get(): number; set(z: number): void } = { get: () => 1, set: () => {} },
     private onHelp: () => void = () => {},
     private onSignOut: () => void = () => {},
+    private drawDist: { get(): number; set(d: number): void } = { get: () => 40, set: () => {} },
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -609,6 +612,38 @@ export class Hud {
         this.zoomReadout = zoomReadout;
         p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
 
+        // --- Draw distance: how far out the world is painted (a circle around
+        //     you, OSRS-style). Lower it if a wide screen runs slow. ---
+        const DD_MIN = 8, DD_MAX = 40; // tiles; DD_MAX = "Max" (unlimited)
+        const ddRow = document.createElement("div");
+        ddRow.className = "settings-zoom";
+        const ddLabel = document.createElement("div");
+        ddLabel.className = "settings-label";
+        const ddReadout = document.createElement("span");
+        ddReadout.className = "settings-zoom-value";
+        ddLabel.append("Draw distance ", ddReadout);
+        const ddSlider = document.createElement("input");
+        ddSlider.type = "range";
+        ddSlider.className = "settings-slider";
+        ddSlider.min = String(DD_MIN);
+        ddSlider.max = String(DD_MAX);
+        ddSlider.step = "1";
+        ddSlider.value = String(this.drawDist.get());
+        const syncDd = (): void => {
+          const v = Number(ddSlider.value);
+          ddReadout.textContent = v >= DD_MAX ? "Max" : `${v} tiles`;
+        };
+        syncDd();
+        ddSlider.addEventListener("input", () => {
+          this.drawDist.set(Number(ddSlider.value));
+          syncDd();
+        });
+        ddRow.append(ddLabel, ddSlider);
+        p.appendChild(ddRow);
+        this.ddSlider = ddSlider;
+        this.ddReadout = ddReadout;
+        p.appendChild(note("Lower the draw distance to render less of the map at once — a quick fix if the game feels laggy on a wide screen."));
+
         const help = document.createElement("button");
         help.type = "button";
         help.className = "settings-help";
@@ -929,6 +964,15 @@ export class Hud {
       if (Number(this.zoomSlider.value) !== z) {
         this.zoomSlider.value = String(z);
         if (this.zoomReadout) this.zoomReadout.textContent = `${Math.round(z * 100)}%`;
+      }
+    }
+    // Same for the draw-distance slider — it's built before the game exists, so
+    // sync it to the real stored value once that's available.
+    if (this.ddSlider && document.activeElement !== this.ddSlider) {
+      const d = this.drawDist.get();
+      if (Number(this.ddSlider.value) !== d) {
+        this.ddSlider.value = String(d);
+        if (this.ddReadout) this.ddReadout.textContent = d >= 40 ? "Max" : `${d} tiles`;
       }
     }
 

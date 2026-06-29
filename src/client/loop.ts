@@ -37,7 +37,7 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
-import { Camera, drawWorld, setCombatHits, TILE, type HitFx } from "./render.ts";
+import { Camera, drawWorld, setCombatHits, setDrawDistance, TILE, type HitFx } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
@@ -140,6 +140,17 @@ const clampZoom = (z: number): number => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z
 function readZoom(): number {
   const raw = Number(localStorage.getItem(ZOOM_KEY));
   return Number.isFinite(raw) && raw > 0 ? clampZoom(raw) : 1;
+}
+
+// Draw distance: how many tiles out from the player the world is painted. A
+// client display preference (helps wide screens / slower machines). The slider
+// runs DRAW_MIN..DRAW_MAX tiles; DRAW_MAX means "unlimited" (Infinity).
+export const DRAW_MIN = 8;
+export const DRAW_MAX = 40;
+const DRAW_KEY = "varath-drawdist";
+function readDrawDist(): number {
+  const raw = Number(localStorage.getItem(DRAW_KEY));
+  return Number.isFinite(raw) && raw >= DRAW_MIN && raw < DRAW_MAX ? raw : Infinity;
 }
 
 /** The verb shown for interacting with each kind of object. */
@@ -246,6 +257,8 @@ export class Game {
   private g: CanvasRenderingContext2D;
   private cam: Camera = { x: 0, y: 0 };
   private zoom = readZoom();
+  /** Draw distance in tiles (Infinity = unlimited). A display preference. */
+  private drawDist = readDrawDist();
   /** Device-pixel ratio baked into the backing store for crisp rendering. */
   private dpr = 1;
   /** Pending deferred re-measure (mobile rotation reports stale sizes). */
@@ -416,6 +429,7 @@ export class Game {
     // Hand the renderer the live hit effects (and forget stale ones).
     for (const [id, fx] of this.combatHits) if (now - fx.born > 240) this.combatHits.delete(id);
     setCombatHits(this.combatHits);
+    setDrawDistance(this.drawDist);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
       this.viewW, this.viewH, currentGhosts(),
@@ -490,6 +504,19 @@ export class Game {
   setZoom(z: number): void {
     this.zoom = clampZoom(z);
     try { localStorage.setItem(ZOOM_KEY, String(this.zoom)); } catch { /* ignore */ }
+  }
+
+  /** Current draw distance in tiles for the slider (DRAW_MAX = unlimited). */
+  getDrawDist(): number {
+    return this.drawDist === Infinity ? DRAW_MAX : this.drawDist;
+  }
+
+  /** Set the draw distance (tiles); DRAW_MAX (or more) means unlimited. */
+  setDrawDist(d: number): void {
+    this.drawDist = d >= DRAW_MAX ? Infinity : Math.max(DRAW_MIN, Math.round(d));
+    try {
+      localStorage.setItem(DRAW_KEY, String(this.drawDist === Infinity ? DRAW_MAX : this.drawDist));
+    } catch { /* ignore */ }
   }
 
   private handleEvents(events: WorldEvent[], now: number): void {

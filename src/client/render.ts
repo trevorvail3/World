@@ -36,6 +36,14 @@ let petWy = 0;
 
 export const TILE = 40; // pixels per tile
 
+/** Draw distance in TILES from the player — anything past this isn't painted, so
+ *  wide screens don't drag (OSRS-style circular view). Infinity = unlimited. Set
+ *  by the loop each frame from the player's Settings slider. */
+let drawDist = Infinity;
+export function setDrawDistance(tiles: number): void {
+  drawDist = tiles > 0 ? tiles : Infinity;
+}
+
 /** One entity's recent hit, driving a brief pop-and-recoil when it's struck. */
 export interface HitFx { born: number; dx: number; dy: number; crit: boolean }
 /** Per-entity hit effects (keyed by object id, or "player"), set by the loop
@@ -888,10 +896,20 @@ export function drawWorld(
   const maxX = Math.min(map.width - 1, Math.ceil((cam.x + w) / TILE));
   const maxY = Math.min(map.height - 1, Math.ceil((cam.y + h) / TILE));
 
+  // Draw distance: a circular cull around the player so a wide screen doesn't
+  // paint (and texture) hundreds of off-radius tiles. `dd2` is the squared
+  // radius; `outside()` is the per-tile/per-object test (always false when the
+  // distance is unlimited).
+  const pdx = ppos.x, pdy = ppos.y;
+  const dd2 = drawDist === Infinity ? Infinity : (drawDist + 0.5) * (drawDist + 0.5);
+  const outside = (x: number, y: number): boolean =>
+    dd2 !== Infinity && ((x - pdx) * (x - pdx) + (y - pdy) * (y - pdy)) > dd2;
+
   // --- Tiles ---
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       if (!inRegion(x, y)) continue; // mask everything outside the current instance
+      if (outside(x, y)) continue;   // past the draw distance — leave it void
       const tile = map.tiles[y * map.width + x]!;
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
@@ -908,6 +926,7 @@ export function drawWorld(
   // it's lying on the ground, not floating over heads.
   for (const gi of state.ground) {
     if (!inRegion(gi.x, gi.y)) continue;
+    if (outside(gi.x, gi.y)) continue; // past the draw distance
     const px = gi.x * TILE - cam.x;
     const py = gi.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
@@ -924,6 +943,7 @@ export function drawWorld(
     // Creatures render at their live (wandering) position; fixed objects at def.
     const p = objectPos(def, obj);
     if (!inRegion(Math.round(p.x), Math.round(p.y))) continue; // mask other instances
+    if (outside(p.x, p.y)) continue; // past the draw distance
     const px = p.x * TILE - cam.x;
     const py = p.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
@@ -1053,6 +1073,21 @@ export function drawWorld(
   // after dark (driven by the sun's night factor).
   if (outdoor) drawWeather(g, w, h, now, biome, sv.night);
   if (outdoor) drawAmbientLife(g, w, h, now, biome, sv.night);
+  // Draw-distance falloff: fade the last ring of the circle to the void colour so
+  // the culled edge reads as a soft horizon, not a hard pixel circle. Centred on
+  // the player (who isn't always screen-centre once the camera clamps at edges).
+  if (drawDist !== Infinity) {
+    const cxp = ppos.x * TILE - cam.x;
+    const cyp = ppos.y * TILE - cam.y;
+    const outer = (drawDist + 0.5) * TILE;
+    const inner = Math.max(0, outer - 2.2 * TILE);
+    const void0 = region ? "7,7,10" : "19,16,13";
+    const grd = g.createRadialGradient(cxp, cyp, inner, cxp, cyp, outer);
+    grd.addColorStop(0, `rgba(${void0},0)`);
+    grd.addColorStop(1, `rgba(${void0},1)`);
+    g.fillStyle = grd;
+    g.fillRect(0, 0, w, h);
+  }
   drawVignette(g, w, h);
 }
 

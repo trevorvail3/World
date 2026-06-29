@@ -224,7 +224,10 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
     get: () => game?.getZoom() ?? 1,
     set: (z) => game?.setZoom(z),
-  }, () => new Primer(app!, () => {}, true), signOutAndReturn);
+  }, () => new Primer(app!, () => {}, true), signOutAndReturn, {
+    get: () => game?.getDrawDist() ?? 40,
+    set: (d) => game?.setDrawDist(d),
+  });
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 
