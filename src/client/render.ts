@@ -447,11 +447,25 @@ function paintTile(
       g.globalAlpha = 1;
       if (tile === "cave_wall") {
         g.fillStyle = "rgba(255,255,255,0.05)"; g.fillRect(px, py, TILE, 2);
-        // A rare vein of glittering ore in the rock face.
+        // A rare vein of glittering ore in the rock face — slowly pulsing, with a
+        // soft glow halo so the lode catches the eye in the dark.
         if (hv > 0.84) {
-          g.fillStyle = hv > 0.93 ? "rgba(120,200,210,0.55)" : "rgba(150,130,90,0.5)";
-          g.fillRect(px + TILE * 0.3, py + TILE * (0.3 + 0.4 * hash(x, y + 9)), 3, 2);
-          g.fillRect(px + TILE * 0.3 + 3, py + TILE * (0.3 + 0.4 * hash(x, y + 9)) - 2, 2, 2);
+          const cyan = hv > 0.93;
+          const oy = py + TILE * (0.3 + 0.4 * hash(x, y + 9));
+          const ox = px + TILE * 0.3;
+          const pulse = 0.55 + 0.45 * Math.sin(now / 520 + x * 1.3 + y);
+          g.save();
+          g.globalCompositeOperation = "lighter";
+          const glow = cyan ? "120,205,215" : "210,170,90";
+          const grd = g.createRadialGradient(ox + 2, oy, 0, ox + 2, oy, 9);
+          grd.addColorStop(0, `rgba(${glow},${(0.40 * pulse).toFixed(2)})`);
+          grd.addColorStop(1, `rgba(${glow},0)`);
+          g.fillStyle = grd; g.beginPath(); g.arc(ox + 2, oy, 9, 0, Math.PI * 2); g.fill();
+          g.globalCompositeOperation = "source-over";
+          g.fillStyle = cyan ? `rgba(150,220,230,${(0.55 + 0.4 * pulse).toFixed(2)})` : `rgba(180,150,100,${(0.5 + 0.4 * pulse).toFixed(2)})`;
+          g.fillRect(ox, oy, 3, 2);
+          g.fillRect(ox + 3, oy - 2, 2, 2);
+          g.restore();
         }
       } else if (hv > 0.9) {
         // A faint mineral glint on the cave floor — a little life in the dark.
@@ -868,6 +882,7 @@ export function drawWorld(
   g.fillRect(0, 0, w, h);
 
   const { map } = state;
+  const sv = sunCast(); // sun position → directional shadows + night factor
   const minX = Math.max(0, Math.floor(cam.x / TILE));
   const minY = Math.max(0, Math.floor(cam.y / TILE));
   const maxX = Math.min(map.width - 1, Math.ceil((cam.x + w) / TILE));
@@ -926,6 +941,7 @@ export function drawWorld(
       // A soft contact shadow under living things (and not under a slain, mid-
       // respawn monster) so they sit on the ground and read against the terrain.
       if ((def.kind === "npc" || def.kind === "critter" || (def.kind === "monster" && obj.available))) {
+        castShadow(g, px + TILE / 2, py + TILE - 4, sv); // sun-cast shadow under the contact one
         shadow(g, px + TILE / 2, py + TILE - 4, 9, 3.5);
       }
       // A struck creature briefly squashes and recoils — the "thwack" of a hit.
@@ -975,6 +991,7 @@ export function drawWorld(
   }
 
   // --- Player ---
+  let playerGlow: [number, number] | null = null; // a carried light, added after bloom
   if (state.player.alive) {
     const pl = state.player;
     // Face the next step's horizontal direction; keep the last facing otherwise.
@@ -995,9 +1012,12 @@ export function drawWorld(
       petWy += (ty - petWy) * 0.16;
       drawCompanion(g, content, pl.equipment.companion, petWx - cam.x, petWy - cam.y, now, pl.path.length > 0);
     }
+    const plCx = pl.pos.x * TILE + TILE / 2 - cam.x;
+    const plCy = pl.pos.y * TILE + TILE / 2 - cam.y;
+    castShadow(g, plCx, pl.pos.y * TILE + TILE - 4 - cam.y, sv); // sun-cast shadow
     const php = hitPop("player", now);
     if (php) {
-      const cx = pl.pos.x * TILE + TILE / 2 - cam.x, cy = pl.pos.y * TILE + TILE * 0.6 - cam.y;
+      const cx = plCx, cy = pl.pos.y * TILE + TILE * 0.6 - cam.y;
       g.save();
       g.translate(php.ox, php.oy);
       g.translate(cx, cy); g.scale(php.s, php.s); g.translate(-cx, -cy);
@@ -1008,6 +1028,9 @@ export function drawWorld(
       resolveGear(pl.equipment, content), playerFaceLeft,
     );
     if (php) g.restore();
+    // A warm light the player carries — added after the bloom pass so it only
+    // punches a night pool (no daytime halo), via drawDaylight's light list.
+    if (!region) playerGlow = [plCx, plCy - 4];
   }
 
   // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;
@@ -1015,6 +1038,10 @@ export function drawWorld(
   //     arenas), which keep their own controlled look.
   const outdoor = !region;
   const biome = outdoor ? biomeAt(Math.round(ppos.x), Math.round(ppos.y)) : "city";
+  // A soft bloom over fires and lamps (before the player's carried light, so it
+  // never gets a daytime halo) — flames glow gently even by day.
+  drawLightBloom(g, lights, now);
+  if (playerGlow) lights.push(playerGlow); // the player's torch joins the night pools
   if (outdoor) drawBiomeGrade(g, w, h, biome);
 
   // --- Time of day: a slow tint cycle (skipped indoors — a home has its own
@@ -1022,8 +1049,9 @@ export function drawWorld(
   drawDaylight(g, w, h, lights, !!region);
 
   // Weather sits on top of the day/night veil so snow and embers read at night;
-  // the vignette is the very last layer.
-  if (outdoor) drawWeather(g, w, h, now, biome);
+  // the vignette is the very last layer. Fireflies and embers glow brighter
+  // after dark (driven by the sun's night factor).
+  if (outdoor) drawWeather(g, w, h, now, biome, sv.night);
   drawVignette(g, w, h);
 }
 
@@ -1172,8 +1200,9 @@ function drawBiomeGrade(g: CanvasRenderingContext2D, w: number, h: number, b: Bi
   g.fillRect(0, 0, w, h);
 }
 
-/** Per-biome ambient weather/particles, animated by wall-clock `now`. */
-function drawWeather(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome): void {
+/** Per-biome ambient weather/particles, animated by wall-clock `now`. `night`
+ *  (0 by day … 1 at midnight) makes glowing motes read brighter after dark. */
+function drawWeather(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome, night = 0): void {
   switch (b) {
     case "spine": { // drifting snow
       g.fillStyle = "rgba(240,247,255,0.85)";
@@ -1215,14 +1244,25 @@ function drawWeather(g: CanvasRenderingContext2D, w: number, h: number, now: num
       g.globalCompositeOperation = "source-over";
       break;
     }
-    case "greyoak": { // floating motes / fireflies among the trees
+    case "greyoak": { // floating motes by day, glowing fireflies after dark
+      const glow = 0.4 + 0.6 * night; // brighter, warmer once the sun is down
+      g.globalCompositeOperation = night > 0.3 ? "lighter" : "source-over";
       for (let i = 0; i < 34; i++) {
         const x = (frac(i * 11.3) * w + Math.sin(now / 1800 + i) * 18 + w) % w;
         const y = (frac(i * 6.7) * h + Math.cos(now / 2100 + i * 1.5) * 14 + h) % h;
         const tw = 0.5 + 0.5 * Math.sin(now / 500 + i * 3);
-        g.fillStyle = `rgba(220,228,150,${(0.10 + 0.32 * tw).toFixed(2)})`;
+        const a = (0.10 + 0.32 * tw) * glow;
+        // A warm firefly core with a soft halo at night.
+        if (night > 0.3) {
+          const grd = g.createRadialGradient(x, y, 0, x, y, 5);
+          grd.addColorStop(0, `rgba(240,236,140,${(a * 0.9).toFixed(2)})`);
+          grd.addColorStop(1, "rgba(240,236,140,0)");
+          g.fillStyle = grd; g.beginPath(); g.arc(x, y, 5, 0, Math.PI * 2); g.fill();
+        }
+        g.fillStyle = `rgba(235,238,${night > 0.3 ? 170 : 150},${a.toFixed(2)})`;
         g.beginPath(); g.arc(x, y, 1.4, 0, Math.PI * 2); g.fill();
       }
+      g.globalCompositeOperation = "source-over";
       break;
     }
     case "marrow": { // faint cyan glow motes drifting up in the dark
@@ -2336,6 +2376,51 @@ function drawFurnace(g: CanvasRenderingContext2D, cx: number, cy: number, now: n
 }
 
 /** A soft contact shadow under a sprite. */
+/** The sun's cast-shadow parameters for the current hour: which way and how far
+ *  shadows stretch, and how strong they read. Long and faint near dawn/dusk,
+ *  short and crisp at noon, gone at night. Shares the day cycle with the veil. */
+interface SunCast { night: number; ox: number; oy: number; len: number; alpha: number }
+function sunCast(): SunCast {
+  const phase = (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS;
+  const sun = Math.sin(phase * Math.PI * 2 - Math.PI / 2); // -1 midnight … +1 noon
+  const day = Math.max(0, sun);   // 0 by night, 1 at noon
+  const low = 1 - day;            // long shadows when the sun sits low
+  const side = phase < 0.5 ? -1 : 1; // mornings cast west, afternoons east
+  return { night: Math.max(0, -sun), ox: side * low * 11, oy: 3 + low * 4, len: 1 + low * 1.4, alpha: 0.10 + 0.26 * day };
+}
+
+/** A soft directional shadow cast from a thing's feet by the sun's position. */
+function castShadow(g: CanvasRenderingContext2D, cx: number, feetY: number, sv: SunCast): void {
+  if (sv.alpha < 0.02) return;
+  g.save();
+  g.translate(cx + sv.ox, feetY + sv.oy);
+  g.scale(sv.len, 0.42);
+  const grd = g.createRadialGradient(0, 0, 0, 0, 0, 9);
+  grd.addColorStop(0, `rgba(0,0,0,${sv.alpha.toFixed(3)})`);
+  grd.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grd;
+  g.beginPath(); g.arc(0, 0, 9, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+
+/** A gentle always-on bloom halo over fires and lamps, so flames glow softly by
+ *  day too (the big warm pools in drawDaylight take over after dark). */
+function drawLightBloom(g: CanvasRenderingContext2D, lights: Array<[number, number]>, now: number): void {
+  if (lights.length === 0) return;
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  const fl = 0.7 + 0.3 * Math.sin(now / 180);
+  for (const [lx, ly] of lights) {
+    const grd = g.createRadialGradient(lx, ly, 0, lx, ly, 26);
+    grd.addColorStop(0, `rgba(255,196,110,${(0.20 * fl).toFixed(3)})`);
+    grd.addColorStop(1, "rgba(255,196,110,0)");
+    g.fillStyle = grd;
+    g.beginPath(); g.arc(lx, ly, 26, 0, Math.PI * 2); g.fill();
+  }
+  g.globalCompositeOperation = "source-over";
+  g.restore();
+}
+
 function shadow(g: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number): void {
   // A soft, feathered contact shadow (radial falloff) so things sit in the
   // world instead of floating on a hard grey disc.
