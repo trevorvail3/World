@@ -42,6 +42,38 @@ function scatterFill(o: WorldObjectDef): WorldObjectDef {
   return { ...o, x: nx, y: ny };
 }
 
+function isWater(x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+  const t = map.tiles[y * map.width + x] as string;
+  return t === "water" || t === "deep";
+}
+/** Nearest tile matching `pred` within `max` rings, or null. */
+function nearestMatch(x: number, y: number, max: number, pred: (x: number, y: number) => boolean): { x: number; y: number } | null {
+  if (pred(x, y)) return { x, y };
+  for (let r = 1; r <= max; r++) {
+    for (let ax = -r; ax <= r; ax++) for (let ay = -r; ay <= r; ay++) {
+      if (Math.max(Math.abs(ax), Math.abs(ay)) !== r) continue;
+      if (pred(x + ax, y + ay)) return { x: x + ax, y: y + ay };
+    }
+  }
+  return null;
+}
+/** Catch-all keeping every spawn on the terrain it needs after the coastline and
+ *  cross-map Redrun were carved: fishing spots snap to the nearest WATER, all
+ *  other spawns snap off water/rock/wall to the nearest walkable LAND. The hidden
+ *  bands (arenas / home interiors) are left untouched. */
+function snapSpawn(o: WorldObjectDef): WorldObjectDef {
+  if (o.y >= map.height - 30) return o; // arena/interior band
+  if (o.kind === "fishing_spot") {
+    if (isWater(o.x, o.y)) return o;
+    const p = nearestMatch(o.x, o.y, 28, isWater);
+    return p ? { ...o, x: p.x, y: p.y } : o;
+  }
+  if (tileWalkable(o.x, o.y)) return o;
+  const p = nearestMatch(o.x, o.y, 20, tileWalkable);
+  return p ? { ...o, x: p.x, y: p.y } : o;
+}
+
 /** A few spawns sit where the legacy region bounding-boxes overlap the central
  *  Knuckle Hills, so remap() lands them on region rock/cave terrain that the
  *  doubled map paints there. These overrides nudge that handful onto the nearest
@@ -1130,7 +1162,7 @@ export const objects: WorldObjectDef[] = [
   ...rawObjects.map(remapObject),
   ...newPois.map(scatterFill),
   ...buildHousing(),
-];
+].map(snapSpawn);
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric
  *  and the knucklestone outcrop, so the opening quest is right at hand. */

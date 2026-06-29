@@ -228,12 +228,10 @@ function ashfenTile(x: number, y: number): TileType {
 }
 
 function redrunTile(x: number, y: number): TileType {
-  if (y >= 51) return "deep"; // the open Eyeless Sea to the south
-  const widen = Math.floor((y - 28) / 7);
-  const left = 54 - widen;
-  const right = 57 + widen;
-  if (x >= left && x <= right) return "water"; // the red river, widening
-  return noise(x, y) > 0.72 ? "dirt" : "grass"; // banks
+  // Coastal banks — the open sea and the Redrun's mouth are carved over this in
+  // decode() (the curved coastline + the cross-map river), so the region itself
+  // is just the grassy/sandy ground the water laps against.
+  return noise(x, y) > 0.72 ? "dirt" : "grass";
 }
 
 /**
@@ -525,8 +523,31 @@ function decode(): WorldMap {
     }
   }
 
+  // 4e) The waters: a curved coastline sweeping into the open Eyeless Sea in the
+  //     south-east corner, and the great Redrun — a wide river that crosses the
+  //     whole map from the northern heights down to the sea, east of the city.
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  // Coastline: for each column, the row where land gives way to sea (a curve
+  //   that opens the whole SE corner to ocean). A 2-tile shallow band, then deep.
+  const coastY = (x: number): number =>
+    clamp(Math.round(172 - (x - 96) * 1.02 + Math.sin(x * 0.30) * 3), 92, 165);
+  for (let x = 90; x < WIDTH; x++) {
+    const cyTop = coastY(x);
+    for (let y = cyTop; y < OVERWORLD_HEIGHT; y++) {
+      set(x, y, y <= cyTop + 1 ? "water" : "deep"); // shallows at the shore, deep beyond
+    }
+  }
+  // The Redrun: a meandering channel, kept east of the city, draining to the sea.
+  const riverX = (y: number): number => Math.round(101 + y * 0.26 + Math.sin(y * 0.055) * 10);
+  for (let y = 0; y < 146; y++) {
+    const rx = riverX(y);
+    if (y >= coastY(rx)) break; // it has reached the sea
+    for (let x = rx - 1; x <= rx + 2; x++) set(x, y, "water");
+  }
+
   // 5) Long roads from the gates out to each far region (3 wide, walkable). The
-  //    regions sit far from the centre now, so these are real journeys.
+  //    regions sit far from the centre now, so these are real journeys. Where a
+  //    road meets the Redrun it carves a ford (path) straight over the water.
   const greyoak = REGIONS.find((r) => r.key === "greyoak")!;
   const ashfen = REGIONS.find((r) => r.key === "ashfen")!;
   const heartmoor = REGIONS.find((r) => r.key === "heartmoor")!;
