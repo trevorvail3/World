@@ -87,6 +87,14 @@ interface Ring {
   color: string;
 }
 
+/** A little kick-up under the feet as you move — dust on land, a splash on water. */
+interface Puff {
+  x: number; // tile coords
+  y: number;
+  born: number;
+  kind: "dust" | "splash";
+}
+
 /** Impact-burst colour by the skill being trained (wood chips, stone, splash…). */
 const SPARK_COLOR: Record<string, string> = {
   forestry: "#9a7a4a",
@@ -248,6 +256,8 @@ export class Game {
   private floats: FloatText[] = [];
   private sparks: Spark[] = [];
   private rings: Ring[] = [];
+  private puffs: Puff[] = [];
+  private lastPuff = 0;
   /** Recent per-entity hits (id → when/direction), driving the hit-pop in render. */
   private combatHits: Map<string, HitFx> = new Map();
   private levelUp: LevelUp;
@@ -415,6 +425,8 @@ export class Game {
     this.drawActivityFeedback(now);
     this.drawTutorialArrow(now);
     this.drawQuestMarkers(now);
+    this.emitFootsteps(now);
+    this.drawPuffs(now);
     this.drawRings(now);
     this.drawSparks(now);
     this.drawFloats(now);
@@ -1314,6 +1326,53 @@ export class Game {
     g.font = `${px(15)}px "EB Garamond", serif`;
     g.fillText(secs > 0 ? `Waking in ${secs}…` : "Waking…", w / 2, h / 2 + px(22));
     g.restore();
+  }
+
+  /** Kick up a little dust (or a splash on water/bog) under the moving player. */
+  private emitFootsteps(now: number): void {
+    const pl = this.bridge.state.player;
+    if (!pl.alive || pl.path.length === 0) return; // only while actually walking
+    if (now - this.lastPuff < 150) return;
+    this.lastPuff = now;
+    const m = this.bridge.state.map;
+    const tx = Math.round(pl.pos.x), ty = Math.round(pl.pos.y);
+    const tile = (tx >= 0 && ty >= 0 && tx < m.width && ty < m.height) ? m.tiles[ty * m.width + tx] : "grass";
+    const wet = tile === "water" || tile === "deep" || tile === "bog";
+    this.puffs.push({ x: pl.pos.x, y: pl.pos.y + 0.32, born: now, kind: wet ? "splash" : "dust" });
+  }
+
+  /** Footstep puffs: a dust scuff that rises and fades, or a little splash. */
+  private drawPuffs(now: number): void {
+    const LIFE = 460;
+    this.puffs = this.puffs.filter((p) => now - p.born < LIFE);
+    const g = this.g;
+    for (const p of this.puffs) {
+      const t = (now - p.born) / LIFE;
+      const cx = p.x * TILE + TILE / 2 - this.cam.x;
+      const cy = p.y * TILE + TILE / 2 - this.cam.y;
+      if (p.kind === "dust") {
+        g.globalAlpha = (1 - t) * 0.5;
+        g.fillStyle = "#9c8a6a";
+        g.beginPath();
+        g.ellipse(cx, cy - t * 5, 3 + t * 6, 1.6 + t * 2.5, 0, 0, Math.PI * 2);
+        g.fill();
+      } else {
+        // A splash: an expanding ripple ring plus a couple of droplets arcing up.
+        g.globalAlpha = (1 - t) * 0.7;
+        g.strokeStyle = "rgba(170,205,225,0.9)";
+        g.lineWidth = 1.5;
+        g.beginPath(); g.ellipse(cx, cy, 3 + t * 9, 1.5 + t * 4, 0, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = "rgba(200,225,240,0.9)";
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI - Math.PI; // upper arc
+          const r = t * 11;
+          g.beginPath();
+          g.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r - t * 4, 1.4 * (1 - t), 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+      g.globalAlpha = 1;
+    }
   }
 
   /** Expanding shockwave rings — the death poof when a creature is slain. */
