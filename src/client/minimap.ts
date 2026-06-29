@@ -102,6 +102,45 @@ const MM_OBJ: Record<ObjKind, string> = {
   relic: "#e8d49a", // pale parchment — a found-lore marker, to draw the curious
 };
 
+/** Draw a resource marker with a shape that reads at a glance: a little tree
+ *  for woodcutting, a faceted diamond for ore, a ripple for fishing — anything
+ *  else falls back to a plain dot. `r` is the dot radius the dot would use. */
+function drawObjShape(
+  g: CanvasRenderingContext2D, kind: ObjKind, cx: number, cy: number, r: number, color: string,
+): void {
+  g.fillStyle = color;
+  g.strokeStyle = color;
+  if (kind === "tree" || kind === "tree_patch") {
+    // A tiny conifer: triangle crown over a stub trunk.
+    const h = r * 2.2, w = r * 1.7;
+    g.beginPath();
+    g.moveTo(cx, cy - h * 0.6);
+    g.lineTo(cx - w, cy + h * 0.4);
+    g.lineTo(cx + w, cy + h * 0.4);
+    g.closePath();
+    g.fill();
+  } else if (kind === "rock") {
+    // A faceted diamond for an ore seam.
+    const d = r * 1.7;
+    g.beginPath();
+    g.moveTo(cx, cy - d);
+    g.lineTo(cx + d, cy);
+    g.lineTo(cx, cy + d);
+    g.lineTo(cx - d, cy);
+    g.closePath();
+    g.fill();
+  } else if (kind === "fishing_spot") {
+    // A ripple: two small stacked arcs.
+    g.lineWidth = Math.max(0.8, r * 0.5);
+    g.beginPath(); g.arc(cx, cy + r * 0.3, r, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+    g.beginPath(); g.arc(cx, cy - r * 0.5, r * 0.7, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  } else {
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
 /** Draw the player as a dark-ringed gold dot at screen px,py. */
 function drawPlayerDot(g: CanvasRenderingContext2D, px: number, py: number): void {
   g.fillStyle = "#13100d";
@@ -230,10 +269,8 @@ export class Minimap {
       const p = objectPos(def, obj);
       if (p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) continue;
       if (!inRegion(Math.round(p.x), Math.round(p.y))) continue;
-      g.fillStyle = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
-      g.beginPath();
-      g.arc(sx(p.x + 0.5), sy(p.y + 0.5), Math.max(1.6, cell * 0.32), 0, Math.PI * 2);
-      g.fill();
+      const tint = obj && !obj.available ? "rgba(120,110,100,0.5)" : color;
+      drawObjShape(g, def.kind, sx(p.x + 0.5), sy(p.y + 0.5), Math.max(1.6, cell * 0.32), tint);
     }
 
     // Other players (ghosts), live, with their name above the dot.

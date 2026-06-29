@@ -396,11 +396,14 @@ function pickupGround(
   x: number,
   y: number,
   events: WorldEvent[],
+  onlyId?: number,
+  wantQty?: number,
 ): void {
   const player = state.player;
   const dist = Math.max(Math.abs(Math.round(player.pos.x) - x), Math.abs(Math.round(player.pos.y) - y));
   if (dist > 1) return; // not close enough yet
-  const here = state.ground.filter((g) => g.x === x && g.y === y);
+  // Either everything on the tile, or just the one pile the player asked for.
+  const here = state.ground.filter((g) => g.x === x && g.y === y && (onlyId === undefined || g.id === onlyId));
   if (here.length === 0) return;
   let anyFull = false;
   for (const g of here) {
@@ -408,7 +411,9 @@ function pickupGround(
     const cap = isStackable(g.item)
       ? (player.inventory.some((s) => s?.item === g.item) || hasEmpty ? g.qty : 0)
       : player.inventory.filter((s) => s === null).length;
-    const take = Math.min(g.qty, cap);
+    // Cap to the amount asked for (when taking part of a stack).
+    const want = wantQty !== undefined ? Math.min(g.qty, Math.max(0, Math.floor(wantQty))) : g.qty;
+    const take = Math.min(want, cap);
     if (take <= 0) { anyFull = true; continue; }
     addItem(player, g.item, take, events);
     g.qty -= take;
@@ -417,6 +422,40 @@ function pickupGround(
   }
   state.ground = state.ground.filter((g) => g.qty > 0); // drop empty piles
   if (anyFull) events.push({ type: "INVENTORY_FULL" });
+}
+
+/**
+ * Open a bird nest: consume it and roll a random farming seed. Lower-tier seeds
+ * are common; high-tier and tree seeds are rare — so a nest is a small, hopeful
+ * gamble toward better crops, OSRS-style.
+ */
+function openNest(
+  state: WorldState,
+  content: Content,
+  slot: number,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const player = state.player;
+  const held = player.inventory[slot];
+  if (!held || held.item !== "bird_nest") return;
+  // Weight each crop's seed: common at low level, scarce at high; tree seeds
+  // (valuable, slow growers) are rarer still.
+  const pool: { seed: ItemId; w: number }[] = [];
+  for (const c of Object.values(content.crops)) {
+    if (!content.items[c.seed]) continue;
+    const base = Math.max(1, 100 - c.levelReq);
+    pool.push({ seed: c.seed, w: c.type === "tree" ? Math.max(1, base * 0.18) : base });
+  }
+  if (pool.length === 0) return;
+  removeItems(player, "bird_nest", 1);
+  const total = pool.reduce((n, p) => n + p.w, 0);
+  let roll = ctx.rng() * total;
+  let pick = pool[0]!.seed;
+  for (const p of pool) { roll -= p.w; if (roll <= 0) { pick = p.seed; break; } }
+  const qty = ctx.rng() < 0.15 ? 3 : ctx.rng() < 0.5 ? 2 : 1;
+  addItem(player, pick, qty, events);
+  events.push({ type: "LOG", message: `You pick apart the nest and find ${qty}× ${content.items[pick].name}.` });
 }
 
 /**
@@ -920,7 +959,11 @@ export function applyIntent(
       break;
     }
     case "PICKUP": {
-      pickupGround(state, content, intent.x, intent.y, events);
+      pickupGround(state, content, intent.x, intent.y, events, intent.id, intent.qty);
+      break;
+    }
+    case "OPEN_NEST": {
+      openNest(state, content, intent.slot, ctx, events);
       break;
     }
     case "DROP": {

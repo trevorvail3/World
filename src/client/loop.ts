@@ -250,7 +250,7 @@ export class Game {
   private marker: Marker | null = null;
   private tapFlash: TapFlash | null = null;
   /** A loot tile the player is walking toward to pick up, polled each frame. */
-  private pickupTarget: Vec2 | null = null;
+  private pickupTarget: (Vec2 & { id?: number; qty?: number }) | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
   private hurtFlash = 0;
   /** Active screen-shake: when it started, how strong (px), and how long. */
@@ -1461,21 +1461,28 @@ export class Game {
     return this.bridge.state.ground.some((g) => g.x === tile.x && g.y === tile.y);
   }
 
-  /** Walk to the loot tile (if needed) and pick it up on arrival. */
-  private pickupAt(tile: Vec2): void {
+  /** Walk to the loot tile (if needed) and pick it up on arrival. `opts` can
+   *  target a single pile (by id) and a partial quantity; omitted = take all. */
+  private pickupAt(tile: Vec2, opts?: { id?: number; qty?: number }): void {
     const player = this.bridge.state.player;
     const near =
       Math.max(Math.abs(Math.round(player.pos.x) - tile.x), Math.abs(Math.round(player.pos.y) - tile.y)) <= 1;
     if (near) {
       audio.play("pickup");
-      this.dispatch({ type: "PICKUP", x: tile.x, y: tile.y });
+      const intent: Intent = { type: "PICKUP", x: tile.x, y: tile.y };
+      if (opts?.id !== undefined) intent.id = opts.id;
+      if (opts?.qty !== undefined) intent.qty = opts.qty;
+      this.dispatch(intent);
       this.pickupTarget = null;
       return;
     }
     const { path, reachable } = pathToAdjacent(this.bridge.walkable, player.pos, tile);
     if (!reachable) { this.hud.log("You can't reach that."); return; }
     this.setMarker(tile);
-    this.pickupTarget = { x: tile.x, y: tile.y };
+    const target: Vec2 & { id?: number; qty?: number } = { x: tile.x, y: tile.y };
+    if (opts?.id !== undefined) target.id = opts.id;
+    if (opts?.qty !== undefined) target.qty = opts.qty;
+    this.pickupTarget = target;
     if (path.length) this.dispatch({ type: "MOVE", path });
   }
 
@@ -1487,7 +1494,10 @@ export class Game {
     const near = Math.max(Math.abs(Math.round(p.pos.x) - t.x), Math.abs(Math.round(p.pos.y) - t.y)) <= 1;
     if (near) {
       audio.play("pickup");
-      this.dispatch({ type: "PICKUP", x: t.x, y: t.y });
+      const intent: Intent = { type: "PICKUP", x: t.x, y: t.y };
+      if (t.id !== undefined) intent.id = t.id;
+      if (t.qty !== undefined) intent.qty = t.qty;
+      this.dispatch(intent);
       this.pickupTarget = null;
     } else if (p.path.length === 0) {
       this.pickupTarget = null; // stopped short — give up
@@ -1537,14 +1547,33 @@ export class Game {
       }
     }
 
-    // Loot on the tile is always grabbable, listed first (even under a creature).
+    // Loot on the tile is grabbable, listed first (even under a creature). Each
+    // pile is its own entry so you can take just what you want; a stack asks how
+    // many. With more than one pile, a "Take all" entry tops the list.
     const loot = this.bridge.state.ground.filter((g) => g.x === tile.x && g.y === tile.y);
     if (loot.length) {
-      const first = this.bridge.content.items[loot[0]!.item].name;
-      const target = loot.length > 1
-        ? `${first} & more`
-        : loot[0]!.qty > 1 ? `${loot[0]!.qty}× ${first}` : first;
-      items.unshift({ label: "Pick up", target, tone: "action", onSelect: () => this.pickupAt(tile) });
+      const lootEntries: MenuItem[] = loot.map((g) => {
+        const name = this.bridge.content.items[g.item]?.name ?? g.item;
+        return {
+          label: "Take",
+          target: g.qty > 1 ? `${g.qty}× ${name}` : name,
+          tone: "action",
+          onSelect: () => {
+            if (g.qty > 1) {
+              const ans = window.prompt(`Take how many ${name}? (1–${g.qty})`, String(g.qty));
+              if (ans === null) return;
+              const n = Math.max(1, Math.min(g.qty, Math.floor(Number(ans)) || 0));
+              if (n > 0) this.pickupAt(tile, { id: g.id, qty: n });
+            } else {
+              this.pickupAt(tile, { id: g.id });
+            }
+          },
+        };
+      });
+      if (loot.length > 1) {
+        lootEntries.push({ label: "Take all", tone: "action", onSelect: () => this.pickupAt(tile) });
+      }
+      items.unshift(...lootEntries);
     }
 
     this.menu.show(screenX, screenY, title, items, description);

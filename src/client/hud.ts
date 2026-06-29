@@ -672,6 +672,12 @@ export class Hud {
   /** Reflect the current active-tab / collapsed state in the DOM. */
   private applyTabState(): void {
     this.dock.classList.toggle("collapsed", this.collapsed);
+    // Pack and Skills are fixed grids that fit the dock exactly — no scrolling,
+    // so the slots never shift under your finger. Other tabs may still scroll.
+    this.dock.classList.toggle(
+      "dock-fixed",
+      !this.collapsed && (this.activeTab === "inventory" || this.activeTab === "skills"),
+    );
     this.tabPanels.forEach((p, key) =>
       p.classList.toggle("active", key === this.activeTab && !this.collapsed),
     );
@@ -796,7 +802,9 @@ export class Hud {
     const data = this.invData[index];
     if (!data) return;
     const def = this.content.items[data.item];
-    if (def.heals || def.buff) {
+    if (data.item === "bird_nest") {
+      this.dispatch({ type: "OPEN_NEST", slot: index });
+    } else if (def.heals || def.buff) {
       this.dispatch({ type: "EAT", slot: index });
     } else if (def.slot && WEARABLE.has(def.slot)) {
       this.dispatch({ type: "EQUIP", slot: index });
@@ -811,6 +819,14 @@ export class Hud {
     if (!data || !this.menu) return;
     const def = this.content.items[data.item];
     const items: MenuItem[] = [];
+    if (data.item === "bird_nest") {
+      items.push({
+        label: "Open",
+        target: def.name,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "OPEN_NEST", slot: index }),
+      });
+    }
     if (def.heals || def.buff) {
       items.push({
         label: def.buff && !def.heals ? "Drink" : "Eat",

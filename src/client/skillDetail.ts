@@ -88,6 +88,20 @@ export class SkillDetailModal {
       activities.set(act, byLevel);
     }
 
+    // Farming has no actions — its ladder lives in the crops table. Build the
+    // same activity→level→names structure from crops so the panel matches the
+    // others: what you can plant, and the level each needs (OSRS-style).
+    if (skill === "farming") {
+      for (const c of Object.values(this.content.crops)) {
+        const act = c.type === "tree" ? "Trees" : "Crops";
+        const byLevel = activities.get(act) ?? new Map<number, string[]>();
+        const list = byLevel.get(c.levelReq) ?? [];
+        if (!list.includes(c.name)) list.push(c.name);
+        byLevel.set(c.levelReq, list);
+        activities.set(act, byLevel);
+      }
+    }
+
     if (activities.size === 0) {
       // Action-less skills (combat, agility…) have no recipe ladder — the blurb
       // above already explains how they train, so nothing more is needed here.

@@ -1384,6 +1384,16 @@ export interface PickupIntent {
   type: "PICKUP";
   x: number;
   y: number;
+  /** A specific ground pile to take (by its id). Omitted = everything here. */
+  id?: number;
+  /** How many of that pile to take (stackables). Omitted = the whole pile. */
+  qty?: number;
+}
+
+/** "Open this bird nest in my pack" — rolls a random farming seed. */
+export interface OpenNestIntent {
+  type: "OPEN_NEST";
+  slot: number;
 }
 
 /** "Drop this inventory slot onto the floor at my feet" (the whole stack). */
@@ -1429,7 +1439,8 @@ export type Intent =
   | DropIntent
   | ClaimDiaryIntent
   | GeMoveIntent
-  | TradeApplyIntent;
+  | TradeApplyIntent
+  | OpenNestIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
