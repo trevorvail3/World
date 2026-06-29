@@ -66,11 +66,17 @@ function hash(x: number, y: number): number {
   return n - Math.floor(n);
 }
 
+/** Small wild-flower colours — a little life against all the green. */
+const FLOWERS = ["#d9637a", "#e8d24a", "#cf6fc0", "#eae6ee", "#6f9ad6", "#e08a3a"];
+
 /**
- * Decorative, walk-through greenery scattered deterministically across wild
- * ground — bushes, ferns and the odd small tree — so the world reads lush, not
- * sparse. Purely cosmetic: these aren't objects and can't be chopped or
- * collided with (the choppable trees are real world objects, drawn separately).
+ * Decorative, walk-through groundcover scattered deterministically across wild
+ * ground, varied by terrain so each region reads like itself: flowers and tufts
+ * on grass, mushrooms/ferns/fallen logs on the forest floor, reeds in the moor,
+ * snowdrifts and bare twigs on snow, charred stumps and embers on the ash flats,
+ * and scattered pebbles/boulders on dirt and stone. Purely cosmetic — none of
+ * this is an object, can't be collided with or harvested (the real choppable
+ * trees and rocks are world objects drawn elsewhere).
  */
 function scatterVegetation(
   g: CanvasRenderingContext2D,
@@ -81,43 +87,161 @@ function scatterVegetation(
   y: number,
   now: number,
 ): void {
-  if (tile !== "grass" && tile !== "moss" && tile !== "bog") return;
+  const green = tile === "grass" || tile === "moss" || tile === "bog";
+  if (!green && tile !== "snow" && tile !== "ash" && tile !== "stone" && tile !== "dirt") return;
+
   const h = hash(x, y);
-  if (h > 0.34) return; // most tiles stay bare
+  // Per-terrain density: the forest floor is lush, the flats and screes sparse.
+  const density = tile === "moss" ? 0.42 : tile === "grass" ? 0.34
+    : tile === "bog" ? 0.40 : tile === "ash" ? 0.26
+    : tile === "snow" ? 0.24 : 0.20; // dirt / stone
+  if (h > density) return; // most tiles stay bare
+
   // Jittered position within the tile, from independent hashes.
   const jx = px + 6 + hash(x + 7, y) * (TILE - 12);
   const jy = py + 8 + hash(x, y + 13) * (TILE - 16);
-  const tint = tile === "bog" ? "#3c5436" : tile === "moss" ? "#46622f" : "#4f6e33";
-  const dark = tile === "bog" ? "#2c3f28" : "#374e25";
+  const h2 = hash(x * 2.7 + 19, y * 1.3 + 5); // picks the variant
   // A gentle breeze: tops sway, rooted bases stay put (phase varies per tile).
   const sway = Math.sin(now / 900 + x * 0.7 + y * 0.5) * 1.7;
 
-  if (h < 0.05) {
-    // A small decorative tree: a round canopy on a short trunk.
+  // --- Stone / scree: pebbles and the rare boulder. ---
+  if (tile === "stone" || tile === "dirt") {
+    if (h2 < 0.08) { // a boulder
+      g.fillStyle = "rgba(0,0,0,0.22)";
+      g.beginPath(); g.ellipse(jx, jy + 5, 9, 3.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#6a6b73";
+      g.beginPath(); g.ellipse(jx, jy + 1, 8, 6.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#838690";
+      g.beginPath(); g.ellipse(jx - 2, jy - 1, 4, 3, 0, 0, Math.PI * 2); g.fill();
+    } else { // a few pebbles
+      for (let i = 0; i < 3; i++) {
+        g.fillStyle = i % 2 ? "rgba(150,152,162,0.5)" : "rgba(0,0,0,0.18)";
+        g.beginPath();
+        g.ellipse(jx - 5 + i * 5 + hash(x + i, y) * 3, jy + (i % 2 ? 2 : 5), 2.4, 1.6, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    return;
+  }
+
+  // --- Snow: drifts and bare dead twigs. ---
+  if (tile === "snow") {
+    if (h2 < 0.4) { // a soft drift mound
+      g.fillStyle = "rgba(120,140,165,0.30)";
+      g.beginPath(); g.ellipse(jx, jy + 4, 9, 3, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.85)";
+      g.beginPath(); g.ellipse(jx, jy + 2, 7.5, 3.5, 0, 0, Math.PI * 2); g.fill();
+    } else { // a bare frosted twig
+      g.strokeStyle = "#7c7468"; g.lineWidth = 1.3;
+      g.beginPath();
+      g.moveTo(jx, jy + 5); g.lineTo(jx + sway * 0.4, jy - 4);
+      g.moveTo(jx + sway * 0.3, jy); g.lineTo(jx + 4, jy - 5);
+      g.moveTo(jx + sway * 0.3, jy); g.lineTo(jx - 4, jy - 4);
+      g.stroke();
+    }
+    return;
+  }
+
+  // --- Ash flats: charred stumps, ash mounds and the odd live ember. ---
+  if (tile === "ash") {
+    if (h2 < 0.18) { // a charred stump
+      g.fillStyle = "#241c19";
+      g.beginPath(); g.ellipse(jx, jy + 4, 5, 2.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillRect(jx - 3.5, jy - 4, 7, 9);
+      g.fillStyle = "rgba(224,138,58,0.5)"; // a faint ember still glowing in the heart
+      const pulse = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(now / 280 + x + y));
+      g.globalAlpha = pulse;
+      g.fillRect(jx - 1.5, jy - 1, 3, 3);
+      g.globalAlpha = 1;
+    } else { // a pale ash mound
+      g.fillStyle = "rgba(120,108,100,0.45)";
+      g.beginPath(); g.ellipse(jx, jy + 3, 7, 3, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(60,50,46,0.4)";
+      g.beginPath(); g.ellipse(jx + 2, jy + 4, 3, 1.4, 0, 0, Math.PI * 2); g.fill();
+    }
+    return;
+  }
+
+  // --- Bog / moor: reeds and cattails. ---
+  if (tile === "bog") {
+    g.strokeStyle = "#5a6a3c"; g.lineWidth = 1.4;
+    g.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const bx = jx - 4 + i * 2.4;
+      g.moveTo(bx, jy + 6);
+      g.lineTo(bx + (i % 2 ? 2 : -2) + sway, jy - 7);
+    }
+    g.stroke();
+    if (h2 < 0.4) { // a brown cattail head on one stalk
+      g.fillStyle = "#6e4a2c";
+      g.fillRect(jx - 0.5 + sway, jy - 9, 2, 5);
+    }
+    return;
+  }
+
+  // --- Forest floor (moss) & grassland: greenery, flowers, mushrooms, logs. ---
+  const tint = tile === "moss" ? "#46622f" : "#4f6e33";
+  const dark = tile === "moss" ? "#2f4422" : "#374e25";
+
+  if (tile === "moss" && h2 < 0.07) {
+    // A mossy fallen log lying across the forest floor.
+    g.fillStyle = "rgba(0,0,0,0.20)";
+    g.beginPath(); g.ellipse(jx, jy + 4, 12, 3, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#5a3f24";
+    g.beginPath(); g.ellipse(jx, jy, 12, 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#6b4a2c"; // lit top
+    g.beginPath(); g.ellipse(jx, jy - 1, 11, 2.4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#3f5a2a"; // moss on the bark
+    g.beginPath(); g.ellipse(jx - 4, jy - 1, 3, 1.5, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(jx + 5, jy, 2.5, 1.3, 0, 0, Math.PI * 2); g.fill();
+    return;
+  }
+  if (tile === "moss" && h2 < 0.22) {
+    // A little cluster of mushrooms.
+    const red = h2 < 0.14;
+    for (let i = 0; i < 2; i++) {
+      const mx = jx - 3 + i * 6, my = jy + i * 2;
+      g.fillStyle = "#d9cdb6"; g.fillRect(mx - 1, my - 1, 2.2, 5); // stem
+      g.fillStyle = red ? "#b5462f" : "#8a6a45"; // cap
+      g.beginPath(); g.ellipse(mx, my - 1, 3.2, 2.2, 0, Math.PI, 0); g.fill();
+      if (red) { g.fillStyle = "rgba(255,255,255,0.8)"; g.fillRect(mx - 1, my - 2, 1.2, 1.2); g.fillRect(mx + 1, my - 1.5, 1, 1); }
+    }
+    return;
+  }
+
+  if (h < 0.045) {
+    // A small decorative tree, casting a soft dapple of shade on the ground.
+    g.fillStyle = "rgba(0,0,0,0.16)";
+    g.beginPath(); g.ellipse(jx + 3, jy + 4, 11, 4, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = "#5a3f24";
     g.fillRect(jx - 1.5, jy, 3, 9);
     g.fillStyle = dark;
-    g.beginPath();
-    g.arc(jx + sway, jy - 2, 9, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.arc(jx + sway, jy - 2, 9, 0, Math.PI * 2); g.fill();
     g.fillStyle = tint;
-    g.beginPath();
-    g.arc(jx - 2 + sway, jy - 4, 6, 0, Math.PI * 2);
-    g.fill();
-  } else if (h < 0.16) {
+    g.beginPath(); g.arc(jx - 2 + sway, jy - 4, 6, 0, Math.PI * 2); g.fill();
+  } else if (h < 0.13) {
     // A leafy bush: two overlapping blobs.
     g.fillStyle = dark;
-    g.beginPath();
-    g.ellipse(jx, jy, 7, 5, 0, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.ellipse(jx, jy, 7, 5, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = tint;
-    g.beginPath();
-    g.ellipse(jx - 2 + sway * 0.5, jy - 1.5, 4.5, 3.5, 0, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.ellipse(jx - 2 + sway * 0.5, jy - 1.5, 4.5, 3.5, 0, 0, Math.PI * 2); g.fill();
+  } else if (tile === "grass" && h2 < 0.34) {
+    // A wild flower: a short stem and a little burst of petals.
+    const col = FLOWERS[Math.floor(hash(x + 3, y + 8) * FLOWERS.length)] ?? FLOWERS[0]!;
+    g.strokeStyle = "#3c5226"; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(jx, jy + 4); g.lineTo(jx + sway * 0.5, jy - 2); g.stroke();
+    g.fillStyle = col;
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      g.beginPath();
+      g.ellipse(jx + sway * 0.5 + Math.cos(a) * 2.2, jy - 2 + Math.sin(a) * 2.2, 1.5, 1.5, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = "#e8d24a";
+    g.beginPath(); g.ellipse(jx + sway * 0.5, jy - 2, 1.4, 1.4, 0, 0, Math.PI * 2); g.fill();
   } else {
     // Grass / fern tufts: a few upright blades that bend in the breeze.
-    g.strokeStyle = tint;
-    g.lineWidth = 1.4;
+    g.strokeStyle = tint; g.lineWidth = 1.4;
     g.beginPath();
     for (let i = 0; i < 4; i++) {
       const bx = jx - 4 + i * 2.6;
