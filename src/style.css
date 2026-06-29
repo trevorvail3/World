@@ -1856,6 +1856,7 @@ button.inv-slot {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0, 0, 0, 0.6);
+  pointer-events: auto; /* it lives under #hud (pointer-events:none) — re-enable */
 }
 .hiscores-backdrop.hidden { display: none; }
 .hiscores-modal {
@@ -1944,6 +1945,7 @@ button.inv-slot {
   position: fixed; inset: 0; z-index: 40;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto; /* it lives under #hud (pointer-events:none) — re-enable */
 }
 .ge-backdrop.hidden { display: none; }
 .ge-modal {
