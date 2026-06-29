@@ -609,6 +609,25 @@ export const objects: WorldObjectDef[] = [
   { id: "bone_cairn_6", kind: "bone_cairn", x: 19, y: 64, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
   { id: "bone_cairn_7", kind: "bone_cairn", x: 16, y: 59, name: "Bone Cairn", requiresFlag: "boneman_revealed" },
 
+  // === The Boneman's trail: skulls and bone-piles scattered the length of
+  // Varath. Always present (no flag) — breadcrumbs that foreshadow the killer
+  // and, examined, hint toward the deep western wood and the Ironvale watch. ===
+  { id: "trail_bone_1", kind: "bone_cairn", x: 44, y: 33, name: "Stacked Bones", lines: ["A traveller's bones, picked clean and stacked too neatly to be any animal's doing. Someone arranged these."] },
+  { id: "trail_bone_2", kind: "bone_cairn", x: 70, y: 22, name: "A Skull", lines: ["A skull wedged in the fork of a tree, facing the road. A marker, or a warning. Someone wants it found."] },
+  { id: "trail_bone_3", kind: "bone_cairn", x: 40, y: 44, name: "A Row of Bones", lines: ["Long bones laid out in a careful row at the wood's edge. No grave, no name — just the tidiness of a patient hand."] },
+  { id: "trail_bone_4", kind: "bone_cairn", x: 34, y: 68, name: "Bones by the Water", lines: ["Bones in the river shallows, the skull taken, the rest left. Whoever did this only wanted the head of it."] },
+  { id: "trail_bone_5", kind: "bone_cairn", x: 42, y: 82, name: "Disturbed Remains", lines: ["The bog gave back a body, and someone took its bones before it could be buried. Fresh tracks lead off to the west."] },
+  { id: "trail_bone_6", kind: "bone_cairn", x: 50, y: 72, name: "A Lone Cairn", lines: ["A cairn of stacked bone on the open ground, miles from any barrow. The quiet roads haven't been safe for years."] },
+  { id: "trail_bone_7", kind: "bone_cairn", x: 24, y: 72, name: "An Offering", lines: ["A skull set atop a cairn like an offering. The moor folk won't say who leaves them, only that they do."] },
+  { id: "trail_bone_8", kind: "bone_cairn", x: 33, y: 90, name: "More Bones", lines: ["More bones, more skulls. They turn up the length of Varath now — always the bones taken, never the rest."] },
+  { id: "trail_bone_9", kind: "bone_cairn", x: 12, y: 74, name: "Clean White Bone", lines: ["A heap of clean white bone. The hill-folk call the one who does this the Boneman, and say it like a prayer against him."] },
+  { id: "trail_bone_10", kind: "bone_cairn", x: 80, y: 72, name: "A Grinning Skull", lines: ["A skull grins up from the grass, far from any road. Whoever carried it here wasn't lost — they were hunting."] },
+  { id: "trail_bone_11", kind: "bone_cairn", x: 26, y: 40, name: "Bones Pointing West", lines: ["Bones stacked at the treeline, the long ones laid pointing into the deep wood to the west. As if to say: this way."] },
+  { id: "trail_bone_12", kind: "bone_cairn", x: 18, y: 70, name: "Cracked Marrow", lines: ["A traveller's remains, the marrow cracked from every bone. Someone fed here, and was in no hurry about it."] },
+  { id: "trail_bone_13", kind: "bone_cairn", x: 68, y: 88, name: "Skull in the Cinders", lines: ["Even the ash flats have them — a skull half-sunk in the cinders. The killer's range is the whole of Varath."] },
+  { id: "trail_bone_14", kind: "bone_cairn", x: 38, y: 58, name: "Arranged Bones", lines: ["Bones arranged in the grass near the wood. The Ironvale watch knows of it, off the record — ask the off-duty guard."] },
+  { id: "trail_bone_15", kind: "bone_cairn", x: 74, y: 30, name: "A Stack of Skulls", lines: ["A neat stack of skulls by the field path. Honest folk leave flowers for their dead. This is something else entirely."] },
+
   // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
   // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---
   { id: "fh_sign", kind: "signpost", x: 30, y: 58, name: "Forager's Hollow", lines: ["FORAGER'S HOLLOW — fibre and mushrooms to dawnspore, all of it grows wild here."] },

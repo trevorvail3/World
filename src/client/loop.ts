@@ -1593,7 +1593,7 @@ export class Game {
     if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
       return EXAMINE_TREE[obj.species]!;
     }
-    if (obj.kind === "shrine" && obj.lines?.[0]) return obj.lines[0];
+    if ((obj.kind === "shrine" || obj.kind === "bone_cairn") && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
     if (obj.kind === "fishing_spot" && obj.catches?.length) {
       const lvl = this.bridge.state.player.skills.fishing?.level ?? 1;
