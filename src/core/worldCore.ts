@@ -543,14 +543,13 @@ function bossPetItem(content: Content, bossId: string): ItemId | undefined {
   return undefined;
 }
 
-/** The milestone ladder for a boss: each tier is an XP lamp whose value scales
- *  with the boss's combat level and the kills needed, and the 100-kill tier also
- *  grants the boss's pet as a pity guarantee. */
+/** The milestone ladder for a boss: each tier is an XP lamp at a standard rate
+ *  (100 XP per kill needed, so the 250-kill tier caps at 25k), the same for
+ *  every boss; the 100-kill tier also grants the boss's pet as a pity guarantee. */
 export function bossMilestones(stats: MonsterStats, content: Content): BossMilestone[] {
   const petId = bossPetItem(content, stats.id);
   return BOSS_MILESTONE_KILLS.map((k) => {
-    const xp = Math.round((stats.level * k * 20) / 100) * 100; // level-scaled lamp, to nearest 100
-    const m: BossMilestone = { kills: k, xp };
+    const m: BossMilestone = { kills: k, xp: k * 100 }; // 1k / 2.5k / 5k / 10k / 25k
     if (k === 100 && petId) m.pet = petId;
     return m;
   });
