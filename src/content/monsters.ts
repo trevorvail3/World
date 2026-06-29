@@ -1226,7 +1226,7 @@ export const monsters: Record<string, MonsterStats> = {
   },
   // === The Boneman: a mid-tier quest boss — a serial killer's lair. ==========
   "boneman": {
-    id: "boneman", name: "The Boneman", level: 56, hp: 340,
+    id: "boneman", name: "The Boneman", level: 69, hp: 340,
     acc: 210, def: 58, maxHit: 30, speed: 3600, xp: 1400, attackStyle: "slash",
     weakness: ["crush"],
     desc: "A gaunt thing in a mask of stitched faces, dragging a long saw it never sets down. It has hunted the roads of Varath for years, taking the bones of those it kills and wearing them. Crushing weapons shatter its grisly armour best.",
