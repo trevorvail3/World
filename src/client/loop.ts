@@ -1439,6 +1439,11 @@ export class Game {
         this.shopkeeperMenu(obj, sx, sy);
         return;
       }
+      // A bounty guide offers Get-bounty or Talk.
+      if (obj.kind === "npc" && this.isBountyGuide(obj.id)) {
+        this.guideMenu(obj, sx, sy);
+        return;
+      }
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
@@ -1676,6 +1681,21 @@ export class Game {
     this.menu.show(sx, sy, obj.name, [
       { label: "Talk to", target: obj.name, tone: "action", onSelect: () => this.interactObject(obj.id, tile, "talk") },
       { label: "Shop with", target: obj.name, onSelect: () => this.interactObject(obj.id, tile, "shop") },
+      { label: "Walk here", onSelect: () => this.walkBeside(tile) },
+    ], this.examineObject(obj));
+  }
+
+  /** Is this NPC a bounty guide (so a tap offers Get-bounty vs Talk)? */
+  private isBountyGuide(id: string): boolean {
+    return !!this.bridge.content.objects.find((o) => o.id === id)?.bountyGuide;
+  }
+
+  /** The Bounty / Talk / Walk menu for a bounty guide, at screen (sx, sy). */
+  private guideMenu(obj: WorldObjectDef, sx: number, sy: number): void {
+    const tile = this.liveTile(obj);
+    this.menu.show(sx, sy, obj.name, [
+      { label: "Get a bounty from", target: obj.name, tone: "action", onSelect: () => this.interactObject(obj.id, tile) },
+      { label: "Talk to", target: obj.name, onSelect: () => this.interactObject(obj.id, tile, "talk") },
       { label: "Walk here", onSelect: () => this.walkBeside(tile) },
     ], this.examineObject(obj));
   }

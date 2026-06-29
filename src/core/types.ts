@@ -802,6 +802,9 @@ export interface WorldObjectDef {
   // --- Agility obstacles ---
   /** Which course this obstacle belongs to. */
   course?: string;
+  /** For an NPC who is a bounty guide: the bountyGuides id they hand out tasks
+   *  for. Talking gives dialogue; the default action opens their bounty panel. */
+  bountyGuide?: string;
   /** Position in the circuit (0 = the start; must be cleared in order). */
   order?: number;
   /** Where the player lands after traversing (the far side of the obstacle). */

@@ -158,8 +158,9 @@ export const objects: WorldObjectDef[] = [
   },
   { id: "cart_skritt", kind: "cart", x: 63, y: 63, name: "Skritt's Cart", lines: ["A goblin's cart, piled with things best not examined too closely."] },
 
-  // --- The bounty board, on the market square ---
-  { id: "bounty_board_1", kind: "bounty_board", x: 66, y: 49, name: "Bounty Board" },
+  // Bounties are no longer posted on a board — the three guides hand them out
+  // in their own zones: Rook in the Knuckle Hills, Serath at the Spine, Mourne
+  // at Redmouth (see their NPC entries below, tagged with `bountyGuide`).
 
   // --- The town square: a fountain at the crossroads ---
   { id: "fountain_1", kind: "fountain", x: 60, y: 52, name: "The Ironvale Fountain", lines: ["Bright water over green-stained stone. Children dare each other to drink from it; nobody knows where the spring beneath it rises."] },
@@ -313,7 +314,7 @@ export const objects: WorldObjectDef[] = [
   { id: "trap_bear_2", kind: "trap", x: 26, y: 58, name: "Bear Snare", resource: "hunt_bear" },
 
   // === THE SPINE (north) ====================================================
-  { id: "serath", kind: "npc", x: 42, y: 8, name: "Serath", lines: ["Far enough, for now. This is the Spine — Orun's backbone, the faithful say. Whatever it is, it does not forgive carelessness.","Ridge wolves on the low passes. Higher, the stone crawlers and the trolls. And the wraiths, where the wind never stops. Go up only as far as you can come down.","The Cut yields good metal — ashiron, and ribstone deeper. Bring a pick that can take the cold.","Two things you'll find and not understand: the Wind-Shrine, worn to the shape of a vertebra, and the Vault, shut from the inside. Measure them if you must. Don't pretend to read them."] },
+  { id: "serath", kind: "npc", bountyGuide: "serath", x: 42, y: 8, name: "Serath, the Spine Warden", lines: ["Far enough, for now. This is the Spine — Orun's backbone, the faithful say. Whatever it is, it does not forgive carelessness.","Ridge wolves on the low passes. Higher, the stone crawlers and the trolls. And the wraiths, where the wind never stops. Go up only as far as you can come down.","The Cut yields good metal — ashiron, and ribstone deeper. Bring a pick that can take the cold.","Two things you'll find and not understand: the Wind-Shrine, worn to the shape of a vertebra, and the Vault, shut from the inside. Measure them if you must. Don't pretend to read them."] },
   { id: "sp_rock_1", kind: "rock", x: 42, y: 13, name: "Ashiron Seam", resource: "mine_ashiron" },
   { id: "sp_rock_2", kind: "rock", x: 45, y: 17, name: "Ashiron Seam", resource: "mine_ashiron" },
   { id: "sp_rock_3", kind: "rock", x: 52, y: 24, name: "Ribstone Seam", resource: "mine_ribstone" },
@@ -384,7 +385,7 @@ export const objects: WorldObjectDef[] = [
 
   // --- The open Knuckle Hills (north-west country) ---
   {
-    id: "rook", kind: "npc", x: 11, y: 9, name: "Rook, the Fieldwarden",
+    id: "rook", kind: "npc", bountyGuide: "rook", x: 11, y: 9, name: "Rook, the Fieldwarden",
     lines: [
       "Cold firepit, warm welcome. Rook — I keep the watch over these hills, such as it is.",
       "I post the early bounties down at the Ironvale board. Small game, common prey. Everyone starts on a hill like this.",
@@ -650,7 +651,7 @@ export const objects: WorldObjectDef[] = [
   // --- REDMOUTH: a fisherfolk hamlet on the Redrun's east bank. Mourne the
   //     Deep Watcher keeps his bounty board here, at the river's grim last mile. ---
   {
-    id: "mourne", kind: "npc", x: 90, y: 60, name: "Mourne, the Deep Watcher",
+    id: "mourne", kind: "npc", bountyGuide: "mourne", x: 90, y: 60, name: "Mourne, the Deep Watcher",
     lines: [
       "You're loud. The river hears you coming. So does what's in it.",
       "Mourne. I watch the deep places — the Marrow's dark, and the Redrun's last mile down to the grey. When a thing climbs out that shouldn't, I write its name on the board, and I pay the one who unwrites it.",
@@ -671,7 +672,6 @@ export const objects: WorldObjectDef[] = [
       "My sister hawks our catch up in the Ironvale market — the fishwife by the square, you'll have heard her. She tells the city the red water's just the season. Out here we don't trouble to lie to ourselves about it.",
     ],
   },
-  { id: "bounty_board_redmouth", kind: "bounty_board", x: 88, y: 61, name: "The Watcher's Board" },
   { id: "fire_redmouth", kind: "fire", x: 86, y: 59, name: "Smokehouse Fire" },
   { id: "cart_redmouth", kind: "cart", x: 87, y: 61, name: "Fish Cart", lines: ["A handcart of greyfin and river-perch, salted down for the smoke."] },
   { id: "lamp_redmouth_1", kind: "lamppost", x: 82, y: 57, name: "Bank Lamp" },

@@ -1512,6 +1512,15 @@ function startInteraction(
     }
 
     case "npc": {
+      // A bounty guide is the board made flesh: the default action opens their
+      // contract panel (focused on them); "talk" still gives their dialogue, and
+      // a quest that needs them takes priority over the bounty panel.
+      if (def.bountyGuide && mode !== "talk" && !questStepTargets(player, content, def.id)) {
+        player.bounty.guideId = def.bountyGuide;
+        player.station = { kind: "bounty" };
+        events.push({ type: "OPEN_BOUNTY", objId });
+        break;
+      }
       // A shopkeeper can be talked to OR traded with. "shop" forces the trade
       // window; "talk" forces dialogue (and any quest); with no explicit mode,
       // the shop opens unless a quest step needs them right now.
