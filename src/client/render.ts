@@ -56,8 +56,6 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   plank: ["#6a4e30", "#79593a"],
 };
 
-const EMBER = "#d2742c";
-
 /** A cheap, stable pseudo-noise so tiles get a fixed bit of texture. */
 function hash(x: number, y: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
@@ -1182,7 +1180,7 @@ function drawObject(
       drawTree(g, cx, cy, available, def.species);
       break;
     case "rock":
-      drawRock(g, cx, cy, available);
+      drawRock(g, cx, cy, available, def.resource);
       break;
     case "fishing_spot":
       drawFishingSpot(g, cx, cy, now);
@@ -2097,24 +2095,36 @@ function drawTree(
   }
   if (species === "coldpine") return drawColdpine(g, cx, cy);
   if (species === "greyoak") return drawGreyoak(g, cx, cy);
-  drawAshwood(g, cx, cy);
+  drawBroadleaf(g, cx, cy, TREE_PAL[species ?? "ashwood"] ?? TREE_PAL["ashwood"]!);
 }
 
-// Ashwood: pale trunk, layered grey-green canopy.
-function drawAshwood(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+// A canopy palette per wood, so each tier reads at a glance (low → high tier:
+// pale grey-green → rust → silver → dark iron → deep teal → gold).
+interface TreePal { trunk: string; lit: string; dark: string; mid: string; light: string; hi: string }
+const TREE_PAL: Record<string, TreePal> = {
+  ashwood:   { trunk: "#8d7e60", lit: "#a99a78", dark: "#3f4d2a", mid: "#4e5f34", light: "#5d6e3e", hi: "rgba(184,192,150,0.5)" },
+  ruewood:   { trunk: "#6e4b3a", lit: "#8a6450", dark: "#5a2f2a", mid: "#7a3f30", light: "#9a5238", hi: "rgba(214,150,110,0.5)" },
+  stonewood: { trunk: "#8a8a82", lit: "#a8a89e", dark: "#46584a", mid: "#5f7060", light: "#7d8e78", hi: "rgba(206,214,200,0.5)" },
+  ironbark:  { trunk: "#4a4f57", lit: "#656c76", dark: "#26323a", mid: "#33434c", light: "#46585f", hi: "rgba(150,176,186,0.45)" },
+  deeproot:  { trunk: "#3f3a44", lit: "#574f5e", dark: "#123a32", mid: "#1d5046", light: "#2f6b5c", hi: "rgba(120,200,178,0.4)" },
+  heartoak:  { trunk: "#7a5a2e", lit: "#a07b3e", dark: "#5a4a14", mid: "#7d6a1e", light: "#a89030", hi: "rgba(242,216,120,0.55)" },
+};
+
+// A layered broadleaf canopy in the given palette.
+function drawBroadleaf(g: CanvasRenderingContext2D, cx: number, cy: number, p: TreePal): void {
   shadow(g, cx, cy + 12, 12, 4);
-  g.fillStyle = "#8d7e60";
+  g.fillStyle = p.trunk;
   g.fillRect(cx - 3, cy, 6, TILE / 2 - 2);
-  g.fillStyle = "#a99a78";
+  g.fillStyle = p.lit;
   g.fillRect(cx - 3, cy, 2, TILE / 2 - 2);
-  g.fillStyle = "#3f4d2a";
+  g.fillStyle = p.dark;
   circle(g, cx - 7, cy - 2, 9);
   circle(g, cx + 7, cy - 2, 9);
-  g.fillStyle = "#4e5f34";
+  g.fillStyle = p.mid;
   circle(g, cx, cy - 8, 12);
-  g.fillStyle = "#5d6e3e";
+  g.fillStyle = p.light;
   circle(g, cx - 3, cy - 11, 7);
-  g.fillStyle = "rgba(184,192,150,0.5)";
+  g.fillStyle = p.hi;
   circle(g, cx - 4, cy - 12, 3);
 }
 
@@ -2159,8 +2169,25 @@ function drawGreyoak(g: CanvasRenderingContext2D, cx: number, cy: number): void 
   circle(g, cx - 5, cy - 14, 3);
 }
 
-// --- Knucklestone: faceted grey-brown boulder with a warm fleck ---
-function drawRock(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+// Rock + ore-vein colours per mineable type, so a knucklestone rock reads
+// differently from a voidstone one at a glance.
+interface RockPal { base: string; lit: string; vein: string }
+const ROCK_PAL: Record<string, RockPal> = {
+  mine_knucklestone: { base: "#5c5650", lit: "#766e62", vein: "#8a8276" },
+  mine_embercite:    { base: "#3a3632", lit: "#56504a", vein: "#d2742c" },
+  mine_ashiron:      { base: "#585e66", lit: "#7c828c", vein: "#aeb4be" },
+  mine_ribstone:     { base: "#6a4a40", lit: "#8a6356", vein: "#b05a44" },
+  mine_silica:       { base: "#8a8470", lit: "#aaa488", vein: "#eef0e0" },
+  mine_gold:         { base: "#5e584c", lit: "#7c7460", vein: "#e6b53e" },
+  mine_bloodore:     { base: "#5a3a36", lit: "#7a4a44", vein: "#c63a2c" },
+  mine_voidstone:    { base: "#3e3550", lit: "#564a6e", vein: "#8a64e0" },
+};
+
+// --- Mineable rock: faceted boulder, coloured + veined by its ore ---
+function drawRock(
+  g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean, resource?: string,
+): void {
+  const p = ROCK_PAL[resource ?? "mine_knucklestone"] ?? ROCK_PAL["mine_knucklestone"]!;
   if (!available) {
     shadow(g, cx, cy + 8, 9, 3);
     g.fillStyle = "#4f4a44";
@@ -2170,7 +2197,7 @@ function drawRock(g: CanvasRenderingContext2D, cx: number, cy: number, available
     return;
   }
   shadow(g, cx, cy + 9, 13, 4);
-  g.fillStyle = "#5c5650";
+  g.fillStyle = p.base;
   g.beginPath();
   g.moveTo(cx - 13, cy + 6);
   g.lineTo(cx - 9, cy - 7);
@@ -2179,7 +2206,7 @@ function drawRock(g: CanvasRenderingContext2D, cx: number, cy: number, available
   g.lineTo(cx + 13, cy + 7);
   g.closePath();
   g.fill();
-  g.fillStyle = "#766e62"; // lit facet
+  g.fillStyle = p.lit; // lit facet
   g.beginPath();
   g.moveTo(cx - 9, cy - 7);
   g.lineTo(cx + 2, cy - 11);
@@ -2194,9 +2221,18 @@ function drawRock(g: CanvasRenderingContext2D, cx: number, cy: number, available
   g.lineTo(cx + 1, cy + 1);
   g.lineTo(cx + 9, cy + 5);
   g.stroke();
-  g.fillStyle = EMBER; // geothermal warmth
-  g.globalAlpha = 0.5;
-  circle(g, cx + 6, cy + 2, 1.6);
+  // Ore vein — flecks/streaks in the ore's own colour.
+  g.fillStyle = p.vein;
+  circle(g, cx + 6, cy + 1, 1.7);
+  circle(g, cx - 4, cy - 4, 1.3);
+  g.strokeStyle = p.vein;
+  g.lineWidth = 1;
+  g.globalAlpha = 0.8;
+  g.beginPath();
+  g.moveTo(cx - 6, cy + 3);
+  g.lineTo(cx - 2, cy - 3);
+  g.lineTo(cx + 4, cy - 6);
+  g.stroke();
   g.globalAlpha = 1;
 }
 
