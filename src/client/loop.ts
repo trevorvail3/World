@@ -37,7 +37,7 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
-import { Camera, drawWorld, TILE } from "./render.ts";
+import { Camera, drawWorld, setCombatHits, TILE, type HitFx } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
@@ -77,6 +77,14 @@ interface Spark {
   born: number;
   color: string;
   n: number; // number of shards
+}
+
+/** An expanding shockwave ring — a death poof when a creature is slain. */
+interface Ring {
+  x: number; // tile coords
+  y: number;
+  born: number;
+  color: string;
 }
 
 /** Impact-burst colour by the skill being trained (wood chips, stone, splash…). */
@@ -239,6 +247,9 @@ export class Game {
   private pinchDist = 0;
   private floats: FloatText[] = [];
   private sparks: Spark[] = [];
+  private rings: Ring[] = [];
+  /** Recent per-entity hits (id → when/direction), driving the hit-pop in render. */
+  private combatHits: Map<string, HitFx> = new Map();
   private levelUp: LevelUp;
   private camInitialised = false;
 
@@ -392,6 +403,9 @@ export class Game {
     const s = this.zoom * this.dpr;
     const [shx, shy] = this.shakeOffset(now);
     this.g.setTransform(s, 0, 0, s, shx, shy);
+    // Hand the renderer the live hit effects (and forget stale ones).
+    for (const [id, fx] of this.combatHits) if (now - fx.born > 240) this.combatHits.delete(id);
+    setCombatHits(this.combatHits);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
       this.viewW, this.viewH, currentGhosts(),
@@ -401,6 +415,7 @@ export class Game {
     this.drawActivityFeedback(now);
     this.drawTutorialArrow(now);
     this.drawQuestMarkers(now);
+    this.drawRings(now);
     this.drawSparks(now);
     this.drawFloats(now);
     this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
@@ -496,6 +511,16 @@ export class Game {
         case "DIALOGUE":
           this.dialogue.show(ev.npc, ev.lines);
           break;
+        case "MONSTER_KILLED": {
+          // A death poof: a shockwave ring and a scatter of dark debris.
+          const kp = this.positionOf(ev.objId);
+          if (kp) {
+            this.rings.push({ x: kp.x, y: kp.y, born: now, color: "rgba(226,72,58,0.7)" });
+            this.sparks.push({ x: kp.x, y: kp.y, born: now, color: "#b8453a", n: 10 });
+            this.sparks.push({ x: kp.x, y: kp.y, born: now + 40, color: "#5a4038", n: 7 });
+          }
+          break;
+        }
         case "PLAYER_DIED":
           this.hud.log("You have been knocked out...");
           this.shake = { born: now, mag: 9, dur: 500 };
@@ -599,6 +624,18 @@ export class Game {
               color: !hit ? "#7a808a" : ev.weak ? "#ffcf4a" : "#e2483a",
               n: !hit ? 3 : ev.weak ? 9 : 6,
             });
+            // A landed hit makes the struck thing squash and recoil away from its
+            // attacker (a creature recoils from the player; the player just pops).
+            if (hit) {
+              let dx = 0, dy = 0;
+              if (ev.targetId !== "player") {
+                const pp = this.bridge.state.player.pos;
+                dx = pos.x - pp.x; dy = pos.y - pp.y;
+                const len = Math.hypot(dx, dy) || 1;
+                dx /= len; dy /= len;
+              }
+              this.combatHits.set(ev.targetId, { born: now, dx, dy, crit: !!ev.weak });
+            }
           }
           break;
         }
@@ -1279,6 +1316,25 @@ export class Game {
     g.restore();
   }
 
+  /** Expanding shockwave rings — the death poof when a creature is slain. */
+  private drawRings(now: number): void {
+    const LIFE = 420;
+    this.rings = this.rings.filter((r) => now - r.born < LIFE && now >= r.born);
+    const g = this.g;
+    for (const r of this.rings) {
+      const t = (now - r.born) / LIFE;
+      const cx = r.x * TILE + TILE / 2 - this.cam.x;
+      const cy = r.y * TILE + TILE / 2 - this.cam.y;
+      g.globalAlpha = (1 - t) * 0.8;
+      g.strokeStyle = r.color;
+      g.lineWidth = 3 * (1 - t) + 1;
+      g.beginPath();
+      g.arc(cx, cy, 6 + t * 22, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+
   /** Short radiating impact bursts on the worked tile (chips, sparks, splash). */
   private drawSparks(now: number): void {
     const LIFE = 300;
@@ -1310,17 +1366,24 @@ export class Game {
     this.floats = this.floats.filter((f) => now - f.born < (f.life ?? LIFE));
     for (const f of this.floats) {
       const t = (now - f.born) / (f.life ?? LIFE);
+      const age = now - f.born;
       const px = f.x * TILE + TILE / 2 - this.cam.x;
       const py = f.y * TILE + TILE / 2 - this.cam.y - t * 22;
+      // A quick pop on spawn: overshoot to ~1.5× then settle over the first 130ms.
+      const pop = age < 130 ? 1 + 0.5 * (1 - age / 130) : 1;
+      this.g.save();
       this.g.globalAlpha = 1 - t;
       this.g.font = `bold ${f.size ?? 16}px 'Cinzel', serif`;
       this.g.textAlign = "center";
+      this.g.translate(px, py);
+      this.g.scale(pop, pop);
       this.g.fillStyle = "rgba(0,0,0,0.7)";
-      this.g.fillText(f.text, px + 1, py + 1);
+      this.g.fillText(f.text, 1, 1);
       this.g.fillStyle = f.color;
-      this.g.fillText(f.text, px, py);
-      this.g.globalAlpha = 1;
+      this.g.fillText(f.text, 0, 0);
+      this.g.restore();
     }
+    this.g.globalAlpha = 1;
     this.g.textAlign = "left";
   }
 

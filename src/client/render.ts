@@ -36,6 +36,26 @@ let petWy = 0;
 
 export const TILE = 40; // pixels per tile
 
+/** One entity's recent hit, driving a brief pop-and-recoil when it's struck. */
+export interface HitFx { born: number; dx: number; dy: number; crit: boolean }
+/** Per-entity hit effects (keyed by object id, or "player"), set by the loop
+ *  each frame before drawWorld. A small "thwack" of squash + knockback. */
+let combatHits: Map<string, HitFx> | null = null;
+export function setCombatHits(m: Map<string, HitFx>): void { combatHits = m; }
+const HIT_FX_DUR = 220; // ms a hit pop lasts
+
+/** The scale + pixel offset to apply to an entity sprite for a recent hit. */
+function hitPop(id: string, now: number): { s: number; ox: number; oy: number } | null {
+  const fx = combatHits?.get(id);
+  if (!fx) return null;
+  const phase = (now - fx.born) / HIT_FX_DUR;
+  if (phase < 0 || phase >= 1) return null;
+  const pulse = Math.sin(phase * Math.PI);          // 0 → 1 → 0
+  const s = 1 + (fx.crit ? 0.30 : 0.20) * pulse;     // squash bigger on a weakness hit
+  const kick = (fx.crit ? 6 : 4) * pulse;            // a little knockback in the hit's direction
+  return { s, ox: fx.dx * kick, oy: fx.dy * kick };
+}
+
 const TILE_COLORS: Record<TileType, [string, string]> = {
   // [base, accent] — accent is used for subtle per-tile speckle.
   grass: ["#3a4a35", "#45563f"],
@@ -908,7 +928,16 @@ export function drawWorld(
       if ((def.kind === "npc" || def.kind === "critter" || (def.kind === "monster" && obj.available))) {
         shadow(g, px + TILE / 2, py + TILE - 4, 9, 3.5);
       }
+      // A struck creature briefly squashes and recoils — the "thwack" of a hit.
+      const hp = obj.available ? hitPop(def.id, now) : null;
+      if (hp) {
+        const cx = px + TILE / 2, cy = py + TILE * 0.6;
+        g.save();
+        g.translate(hp.ox, hp.oy);
+        g.translate(cx, cy); g.scale(hp.s, hp.s); g.translate(-cx, -cy);
+      }
       drawObject(g, def, obj.available, px, py, now, !!obj.wanderTarget, monsterAttack(def, obj, state, content, now));
+      if (hp) g.restore();
     }
     if (def.kind === "fire" || def.kind === "furnace" || def.kind === "cauldron") {
       lights.push([px + TILE / 2, py + TILE / 2]);
@@ -966,11 +995,19 @@ export function drawWorld(
       petWy += (ty - petWy) * 0.16;
       drawCompanion(g, content, pl.equipment.companion, petWx - cam.x, petWy - cam.y, now, pl.path.length > 0);
     }
+    const php = hitPop("player", now);
+    if (php) {
+      const cx = pl.pos.x * TILE + TILE / 2 - cam.x, cy = pl.pos.y * TILE + TILE * 0.6 - cam.y;
+      g.save();
+      g.translate(php.ox, php.oy);
+      g.translate(cx, cy); g.scale(php.s, php.s); g.translate(-cx, -cy);
+    }
     drawPlayer(
       g, pl.pos, cam, now, pl.appearance,
       pl.path.length > 0, playerAction(pl, content, now),
       resolveGear(pl.equipment, content), playerFaceLeft,
     );
+    if (php) g.restore();
   }
 
   // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;
