@@ -569,8 +569,16 @@ export class Hud {
           const t = (e.target as HTMLElement).closest("[data-toggle],[data-comp],[data-claim-boss]") as HTMLElement | null;
           if (!t) return;
           if (t.dataset.claimBoss) {
-            this.dispatch({ type: "CLAIM_BOSS_MILESTONE", boss: t.dataset.claimBoss, kills: Number(t.dataset.claimKills) });
-            if (this.lastState) this.renderRecords(this.lastState.player, true);
+            const boss = t.dataset.claimBoss;
+            const kills = Number(t.dataset.claimKills);
+            const stats = this.content.monsters[boss];
+            const tier = stats ? bossMilestones(stats, this.content).find((x) => x.kills === kills) : undefined;
+            if (stats && tier) {
+              this.openSkillPicker(`${stats.name} · ${kills} kills`, tier.xp, (skill) => {
+                this.dispatch({ type: "CLAIM_BOSS_MILESTONE", boss, kills, skill });
+                if (this.lastState) this.renderRecords(this.lastState.player, true);
+              });
+            }
             return;
           }
           if (t.dataset.comp) { this.summonCompanion(t.dataset.comp as ItemId); return; }
@@ -1203,7 +1211,7 @@ export class Hud {
           : "An undiscovered companion. Keep training.";
         return `<button type="button" class="comp-cell ${owned ? "owned" : "locked"}${isActive ? " active" : ""}" title="${escapeHtml(title)}"${owned ? ` data-comp="${id}"` : ""}><span class="comp-ic">${owned ? itemIconSVG(def) : iconize("❓")}</span>${isActive ? `<span class="comp-star">★</span>` : ""}</button>`;
       }).join("")}</div>` +
-      `<div class="tab-note">Skilling pets turn up as you train; boss pets drop from their boss (or come from a kill milestone). Tap one to summon it — it'll follow you everywhere.</div>`;
+      `<div class="tab-note">Skilling pets turn up as you train; boss pets drop from their boss (or from its 100-kill milestone). Tap one to summon it — it'll follow you everywhere.</div>`;
 
     // A category sub-accordion shared by Achievements and Archive.
     const subSection = (key: string, label: string, count: string, rows: () => string): string => {
@@ -1261,7 +1269,7 @@ export class Hud {
       // still locked (greyed, showing the threshold + reward).
       const miles = bossMilestones(m, this.content).map((t) => {
         const key = `${m.id}:${t.kills}`;
-        const reward = `${t.gold.toLocaleString()}g${t.pet ? " + pet" : ""}`;
+        const reward = `${t.xp.toLocaleString()} XP${t.pet ? " + pet" : ""}`;
         if (player.bossMilestonesClaimed.includes(key)) {
           return `<span class="boss-mile done" title="${reward}">✓ ${t.kills}</span>`;
         }
@@ -1279,7 +1287,7 @@ export class Hud {
         + `<span class="boss-kills" title="Kills">${slain ? `☠ ${kills.toLocaleString()}` : "—"}</span>`
         + `</div>`;
     }).join("")
-      + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for gold — and a guaranteed pet at 100.</div>`;
+      + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for an XP lamp — pour it into any skill — with a guaranteed pet at 100.</div>`;
 
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {

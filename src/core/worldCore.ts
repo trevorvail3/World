@@ -528,7 +528,8 @@ export const BOSS_MILESTONE_KILLS = [10, 25, 50, 100, 250] as const;
 /** One milestone tier: the kills needed and what it pays out. */
 export interface BossMilestone {
   kills: number;
-  gold: number;
+  /** XP-lamp value — poured into a skill the player chooses on claim. */
+  xp: number;
   /** A pet granted at this tier (pity for the rare drop), if not already owned. */
   pet?: ItemId;
 }
@@ -542,13 +543,14 @@ function bossPetItem(content: Content, bossId: string): ItemId | undefined {
   return undefined;
 }
 
-/** The milestone ladder for a boss: gold scales with its combat level, and the
- *  100-kill tier also grants the boss's pet as a pity guarantee. */
+/** The milestone ladder for a boss: each tier is an XP lamp whose value scales
+ *  with the boss's combat level and the kills needed, and the 100-kill tier also
+ *  grants the boss's pet as a pity guarantee. */
 export function bossMilestones(stats: MonsterStats, content: Content): BossMilestone[] {
   const petId = bossPetItem(content, stats.id);
   return BOSS_MILESTONE_KILLS.map((k) => {
-    const gold = Math.round((stats.level * k * 5) / 10) * 10; // level-scaled, to nearest 10
-    const m: BossMilestone = { kills: k, gold };
+    const xp = Math.round((stats.level * k * 20) / 100) * 100; // level-scaled lamp, to nearest 100
+    const m: BossMilestone = { kills: k, xp };
     if (k === 100 && petId) m.pet = petId;
     return m;
   });
@@ -559,11 +561,16 @@ function claimBossMilestone(
   content: Content,
   bossId: string,
   kills: number,
+  skill: SkillId,
   events: WorldEvent[],
 ): void {
   const player = state.player;
   const stats = content.monsters[bossId];
   if (!stats || !stats.boss) return;
+  if (!player.skills[skill]) {
+    events.push({ type: "LOG", message: "You haven't unlocked that skill yet." });
+    return;
+  }
   const key = `${bossId}:${kills}`;
   if (player.bossMilestonesClaimed.includes(key)) {
     events.push({ type: "LOG", message: "You've already claimed that milestone." });
@@ -576,10 +583,6 @@ function claimBossMilestone(
   const tier = bossMilestones(stats, content).find((m) => m.kills === kills);
   if (!tier) return;
   player.bossMilestonesClaimed.push(key);
-  if (tier.gold > 0) {
-    player.gold += tier.gold;
-    player.stats.goldEarned += tier.gold;
-  }
   let petLine = "";
   if (tier.pet && !ownsItem(player, tier.pet)) {
     if (canAddItem(player, tier.pet)) {
@@ -590,9 +593,10 @@ function claimBossMilestone(
     }
     petLine = ` and ${content.items[tier.pet].name}`;
   }
+  grantXp(state, content, skill, tier.xp, events);
   events.push({
     type: "LOG",
-    message: `${stats.name}: ${kills} kills! You claim ${tier.gold.toLocaleString()}g${petLine}.`,
+    message: `${stats.name}: ${kills} kills! You pour ${tier.xp.toLocaleString()} XP into ${content.skills[skill].name}${petLine}.`,
   });
 }
 
@@ -1064,7 +1068,7 @@ export function applyIntent(
       break;
     }
     case "CLAIM_BOSS_MILESTONE": {
-      claimBossMilestone(state, content, intent.boss, intent.kills, events);
+      claimBossMilestone(state, content, intent.boss, intent.kills, intent.skill, events);
       break;
     }
     case "GE_MOVE": {

@@ -1460,11 +1460,12 @@ export interface ClaimDiaryIntent {
   skill: SkillId;
 }
 
-/** "Claim a reached boss kill-count milestone reward." */
+/** "Claim a reached boss kill-count milestone — an XP lamp poured into `skill`." */
 export interface ClaimBossMilestoneIntent {
   type: "CLAIM_BOSS_MILESTONE";
   boss: string;
   kills: number;
+  skill: SkillId;
 }
 
 export type Intent =
