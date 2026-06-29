@@ -223,6 +223,38 @@ export const objects: WorldObjectDef[] = [
   { id: "rock_2", kind: "rock", x: 87, y: 30, name: "Knucklestone Rock", resource: "mine_knucklestone" },
   { id: "rock_3", kind: "rock", x: 90, y: 34, name: "Knucklestone Rock", resource: "mine_knucklestone" },
 
+  // --- More Ashwood trees scattered through the early lands (Forestry) ---
+  { id: "tree_4", kind: "tree", x: 58, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_5", kind: "tree", x: 67, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_6", kind: "tree", x: 75, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_7", kind: "tree", x: 98, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_8", kind: "tree", x: 103, y: 14, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_9", kind: "tree", x: 48, y: 24, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_10", kind: "tree", x: 62, y: 23, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_11", kind: "tree", x: 67, y: 23, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_12", kind: "tree", x: 98, y: 23, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_13", kind: "tree", x: 103, y: 23, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_14", kind: "tree", x: 34, y: 32, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_15", kind: "tree", x: 67, y: 33, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_16", kind: "tree", x: 98, y: 32, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_17", kind: "tree", x: 103, y: 32, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_18", kind: "tree", x: 30, y: 41, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+  { id: "tree_19", kind: "tree", x: 97, y: 41, name: "Ashwood Tree", resource: "fell_ashwood", species: "ashwood" },
+
+  // --- More Knucklestone rocks scattered through the early lands (Mining) ---
+  { id: "rock_4", kind: "rock", x: 38, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_5", kind: "rock", x: 43, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_6", kind: "rock", x: 38, y: 23, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_7", kind: "rock", x: 44, y: 23, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_8", kind: "rock", x: 82, y: 28, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_9", kind: "rock", x: 90, y: 28, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_10", kind: "rock", x: 44, y: 32, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_11", kind: "rock", x: 50, y: 39, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_12", kind: "rock", x: 57, y: 39, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_13", kind: "rock", x: 82, y: 35, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_14", kind: "rock", x: 85, y: 37, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_15", kind: "rock", x: 45, y: 42, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+
   // --- Fishing on the lake, south-west of the city ---
   { id: "fish_1", kind: "fishing_spot", x: 37, y: 72, name: "Fishing Spot", resource: "fish_ashfin" },
   { id: "fish_2", kind: "fishing_spot", x: 37, y: 76, name: "Fishing Spot", resource: "fish_ashfin" },
@@ -240,7 +272,7 @@ export const objects: WorldObjectDef[] = [
   // --- Starter game on the hill grass, and hare snares (Hunter 1) ---
   { id: "rat_1", kind: "monster", monster: "moor_rat", x: 44, y: 30, name: "Moor Rat" },
   { id: "rat_2", kind: "monster", monster: "moor_rat", x: 47, y: 32, name: "Moor Rat" },
-  { id: "wolf_1", kind: "monster", monster: "hill_wolf", x: 76, y: 33, name: "Hill Wolf" },
+  { id: "wolf_1", kind: "monster", monster: "hill_wolf", x: 50, y: 13, name: "Hill Wolf" },
   { id: "trap_hare_1", kind: "trap", x: 52, y: 31, name: "Snare", resource: "hunt_hare" },
   { id: "trap_hare_2", kind: "trap", x: 74, y: 32, name: "Snare", resource: "hunt_hare" },
 

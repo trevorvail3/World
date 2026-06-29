@@ -58,13 +58,18 @@ const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost on top
 // bar — and Agility, which stretches it — actually matter.
 const SPRINT_MULT = 2.0;
 const ENERGY_MAX = 100;
-const ENERGY_DRAIN = 1.7; // energy spent per tile sprinted (~58 tiles on a full bar)
-const ENERGY_REGEN = 7; // energy recovered per second when not sprinting
+const ENERGY_DRAIN = 1.7; // base energy spent per tile sprinted
+const ENERGY_REGEN = 7; // base energy recovered per second when not sprinting
 const ENERGY_RECOVER = 20; // after running dry, you must regen this much before sprinting again
-// Agility trains by running and pays it back: at the level cap, drain is halved
-// (runs last ~2× longer) and regen is doubled (recovers ~2× faster).
-const AGILITY_DRAIN_REDUCTION = 0.5;
-const AGILITY_REGEN_BONUS = 1.0;
+// Agility now MATTERS: at level 1 a sprint is short and recovery slow (you run dry
+// fast, so there's a real reason to train), and it scales hard toward the cap.
+// Drain multiplier on ENERGY_DRAIN: 1.7×1.6≈2.7/tile (~37 tiles) at lvl 1 →
+// 1.7×0.4≈0.7/tile (~147 tiles) at the cap. Regen multiplier on ENERGY_REGEN:
+// 7×0.5=3.5/s (slow) at lvl 1 → 7×2.2≈15/s (fast) at the cap.
+const AGILITY_DRAIN_AT_1 = 1.6;
+const AGILITY_DRAIN_AT_CAP = 0.4;
+const AGILITY_REGEN_AT_1 = 0.5;
+const AGILITY_REGEN_AT_CAP = 2.2;
 // Agility is trained on obstacle courses; clearing a full lap pays a bonus equal
 // to this multiple of the course's total per-obstacle XP.
 const AGILITY_LAP_BONUS_MULT = 1.0;
@@ -313,6 +318,7 @@ export function createWorld(
     energy: ENERGY_MAX,
     winded: false,
     agilityLap: null,
+    agilityHop: null,
     quests: {},
     questsDone: [],
     lore: [],
@@ -1545,7 +1551,7 @@ function startInteraction(
       break;
 
     case "agility_obstacle":
-      traverseObstacle(state, content, def, events);
+      traverseObstacle(state, def, ctx, events);
       break;
 
     case "monster": {
@@ -2004,16 +2010,20 @@ function travelTo(
  * first (order 0) starts a lap, the last pays a lap-completion bonus. Each clear
  * grants Agility XP and hops the player to the obstacle's far side.
  */
+// How long (ms) it takes to climb/cross one obstacle — a beat, not instant.
+const OBSTACLE_MS = 1000;
+
 function traverseObstacle(
   state: WorldState,
-  content: Content,
   def: WorldObjectDef,
+  ctx: Ctx,
   events: WorldEvent[],
 ): void {
   const { player } = state;
   const course = def.course;
   const order = def.order ?? 0;
   if (!course) return;
+  if (player.agilityHop) return; // already mid-climb
 
   // Course-wide level gate (every obstacle carries the requirement).
   const req = def.levelReq ?? 1;
@@ -2030,20 +2040,34 @@ function traverseObstacle(
     return;
   }
 
-  // The obstacles of this course, to know where the lap ends.
+  // Begin the climb; it finishes a beat later (processed in tick).
+  player.path = [];
+  player.pendingInteractId = null;
+  player.agilityHop = { objId: def.id, at: ctx.now + OBSTACLE_MS };
+}
+
+/** Finish a started obstacle climb: grant XP, hop to the far side, advance lap. */
+function finishObstacle(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const course = def.course;
+  const order = def.order ?? 0;
+  if (!course) return;
+
   const legs = content.objects.filter((o) => o.kind === "agility_obstacle" && o.course === course);
   const lastOrder = legs.reduce((m, o) => Math.max(m, o.order ?? 0), 0);
 
   grantXp(state, content, "agility", def.xp ?? 10, events);
-  // Hop to the far side (and re-arm the run clock so a hop never feels stuck).
   if (def.exit) {
     player.pos = { x: def.exit.x, y: def.exit.y };
     player.path = [];
-    player.pendingInteractId = null;
   }
 
   if (order >= lastOrder) {
-    // Lap complete — pay the bonus and reset for another circuit.
     const total = legs.reduce((s, o) => s + (o.xp ?? 0), 0);
     const bonus = Math.round(total * AGILITY_LAP_BONUS_MULT);
     if (bonus > 0) grantXp(state, content, "agility", bonus, events);
@@ -2175,6 +2199,17 @@ export function tick(
       events.push({ type: "PLAYER_RESPAWNED" });
     }
   } else {
+    // 1b) Finish an in-progress obstacle climb once its beat has elapsed.
+    if (player.agilityHop) {
+      if (player.path.length > 0) {
+        player.agilityHop = null; // walked away — cancel the climb
+      } else if (ctx.now >= player.agilityHop.at) {
+        const odef = content.objects.find((o) => o.id === player.agilityHop!.objId);
+        player.agilityHop = null;
+        if (odef) finishObstacle(state, content, odef, events);
+      }
+    }
+
     // 2) Movement. Sprinting drains run energy; otherwise it recovers.
     const wasMoving = player.path.length > 0;
     const sprintTiles = wasMoving ? stepMovement(player, dt) : 0;
@@ -2381,16 +2416,18 @@ function randRange(ctx: Ctx, min: number, max: number): number {
   return min + Math.floor(ctx.rng() * (max - min + 1));
 }
 
-/** Higher Agility drains run energy more slowly (0..1 of full drain). */
+/** Higher Agility drains run energy more slowly (harsh at lvl 1 → light at cap). */
 function agilityDrainMult(player: Player): number {
   const lvl = player.skills.agility?.level ?? 1;
-  return 1 - AGILITY_DRAIN_REDUCTION * ((lvl - 1) / (LEVEL_CAP - 1));
+  const t = (lvl - 1) / (LEVEL_CAP - 1);
+  return AGILITY_DRAIN_AT_1 + (AGILITY_DRAIN_AT_CAP - AGILITY_DRAIN_AT_1) * t;
 }
 
-/** Higher Agility recovers run energy faster (1..1+bonus). */
+/** Higher Agility recovers run energy faster (slow at lvl 1 → fast at cap). */
 function agilityRegenMult(player: Player): number {
   const lvl = player.skills.agility?.level ?? 1;
-  return 1 + AGILITY_REGEN_BONUS * ((lvl - 1) / (LEVEL_CAP - 1));
+  const t = (lvl - 1) / (LEVEL_CAP - 1);
+  return AGILITY_REGEN_AT_1 + (AGILITY_REGEN_AT_CAP - AGILITY_REGEN_AT_1) * t;
 }
 
 /** Advance the player along their path; returns the tiles travelled while sprinting. */

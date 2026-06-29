@@ -774,7 +774,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Barely a meal, but warm. Better than nothing on a cold night.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 10,
+    "heals": 4,
     "sell": 8
   },
   "speckletrout_cooked": {

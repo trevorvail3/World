@@ -1073,6 +1073,11 @@ export interface Player {
    */
   agilityLap: { course: string; next: number } | null;
   /**
+   * Set while mid-traversal of an Agility obstacle: which obstacle, and when the
+   * climb finishes (a short delay so a hop "takes a second"). Transient.
+   */
+  agilityHop?: { objId: string; at: number } | null;
+  /**
    * Set when energy hits 0; forces walking until energy recovers a little, so
    * the player doesn't micro-stutter between sprint and walk on an empty bar.
    * Transient — derived from energy, not persisted.

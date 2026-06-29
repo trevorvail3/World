@@ -41,6 +41,7 @@ import { audio } from "./audio.ts";
 import { Camera, drawWorld, TILE } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { resolveGear } from "./gearLook.ts";
+import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { objectPos, travelFare } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent } from "./pathfinding.ts";
 
@@ -443,6 +444,12 @@ export class Game {
     } else {
       this.cam.x += (targetX - this.cam.x) * 0.12;
       this.cam.y += (targetY - this.cam.y) * 0.12;
+    }
+    // Outdoors, keep the hidden instance band (homes / arenas, south of the
+    // overworld) out of view by clamping the camera's bottom to the overworld.
+    if (p.y < OVERWORLD_HEIGHT) {
+      const maxY = OVERWORLD_HEIGHT * TILE - this.viewH;
+      if (this.cam.y > maxY) this.cam.y = Math.max(0, maxY);
     }
   }
 

@@ -209,6 +209,18 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
     else done();
   };
 
+  // Idle logout: after 5 minutes with no input, save and return to the login
+  // screen (handy on shared devices). Any tap/key/scroll resets the clock.
+  const IDLE_MS = 5 * 60 * 1000;
+  let lastActivity = Date.now();
+  const bumpActivity = (): void => { lastActivity = Date.now(); };
+  for (const ev of ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"]) {
+    window.addEventListener(ev, bumpActivity, { passive: true });
+  }
+  window.setInterval(() => {
+    if (!wiped && currentUser() && Date.now() - lastActivity >= IDLE_MS) signOutAndReturn();
+  }, 20000);
+
   const hud = new Hud(hudRoot!, content, resetProgress, menu, dispatch, {
     get: () => game?.getZoom() ?? 1,
     set: (z) => game?.setZoom(z),
