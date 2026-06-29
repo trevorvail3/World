@@ -367,6 +367,7 @@ export class Hud {
           this.invSlots.push(slot);
         }
         p.appendChild(grid);
+        p.appendChild(note("Long-press an item to inspect it; tap to use, eat, equip or drop."));
         break;
       }
       case "skills": {
@@ -392,6 +393,7 @@ export class Hud {
           grid.appendChild(cell);
         });
         p.appendChild(grid);
+        p.appendChild(note("Tap a skill to see what it unlocks and the level of your next milestone."));
         break;
       }
       case "character": {
@@ -399,11 +401,11 @@ export class Hud {
         sheet.className = "char-sheet";
         sheet.innerHTML = `
           <div class="char-name">Wanderer of Ironvale</div>
-          <div class="char-row"><span>Combat</span><span class="char-combat">1</span></div>
-          <div class="char-row"><span>Total level</span><span class="char-total">6</span></div>
-          <div class="char-row"><span>Skills at 99</span><span class="char-maxed">0 / 19</span></div>
-          <div class="char-row"><span>Hitpoints</span><span class="char-hp">10 / 10</span></div>
-          <div class="char-row"><span>Played</span><span class="char-played">0m</span></div>`;
+          <div class="char-row"><span>Combat</span><span class="char-combat">—</span></div>
+          <div class="char-row"><span>Total level</span><span class="char-total">—</span></div>
+          <div class="char-row"><span>Skills at 99</span><span class="char-maxed">—</span></div>
+          <div class="char-row"><span>Hitpoints</span><span class="char-hp">—</span></div>
+          <div class="char-row"><span>Played</span><span class="char-played">—</span></div>`;
         this.charName = sheet.querySelector(".char-name") as HTMLElement;
         this.charCombat = sheet.querySelector(".char-combat") as HTMLElement;
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
@@ -1124,7 +1126,7 @@ export class Hud {
     const parts: string[] = [];
 
     if (active.length) {
-      parts.push(`<div class="quest-h">Active</div>`);
+      parts.push(`<div class="quest-h">Active <span class="quest-h-count">${active.length}</span></div>`);
       for (const id of active) {
         const def = quests.find((q) => q.id === id);
         if (!def) continue;
@@ -1139,7 +1141,7 @@ export class Hud {
     }
 
     if (player.questsDone.length) {
-      parts.push(`<div class="quest-h">Completed</div>`);
+      parts.push(`<div class="quest-h">Completed <span class="quest-h-count">${player.questsDone.length}</span></div>`);
       for (const id of player.questsDone) {
         const def = quests.find((q) => q.id === id);
         if (def) parts.push(`<div class="quest-done">✓ ${escapeHtml(def.name)}</div>`);

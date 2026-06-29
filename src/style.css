@@ -432,6 +432,11 @@ body {
   margin: 8px 0 4px;
 }
 .quest-h:first-child { margin-top: 0; }
+.quest-h-count {
+  display: inline-block; margin-left: 4px; padding: 0 5px;
+  font-size: 10px; letter-spacing: 0; color: var(--gold);
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-edge); border-radius: 6px;
+}
 
 .quest-item {
   margin-bottom: 8px;
