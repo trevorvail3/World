@@ -2006,6 +2006,88 @@ button.inv-slot {
 }
 .log-chat-input:focus { outline: none; border-color: var(--gold); }
 .log-chat-input::placeholder { color: rgba(230, 220, 200, 0.38); }
+
+/* --- Players: a Trade button beside online players --- */
+.players-btn.trade {
+  background: var(--ember, #d2742c); color: #1a140f; border: 1px solid #f2cf6b;
+}
+.players-btn.trade:hover { background: #e08a3e; }
+
+/* --- Live trade window --- */
+.trade-backdrop {
+  position: fixed; inset: 0; z-index: 65; pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.trade-backdrop.hidden { display: none; }
+.trade-modal {
+  background: var(--panel, #1c1812); border: 1px solid var(--gold);
+  border-radius: 10px; padding: 12px 14px;
+  width: calc(100% - 32px); max-width: 460px; max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; gap: 8px;
+}
+.trade-head { display: flex; justify-content: space-between; align-items: center; }
+.trade-title { font-family: "Cinzel", serif; color: var(--gold); font-size: 15px; letter-spacing: 0.04em; }
+.trade-close { background: transparent; border: 0; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; }
+.trade-close:hover { color: var(--ember); }
+.trade-ask { font-family: "EB Garamond", serif; color: var(--ink); font-size: 14px; padding: 8px 2px; text-align: center; }
+.trade-toast { font-family: "Cinzel", serif; color: var(--gold); font-size: 16px; text-align: center; padding: 24px 8px; }
+.trade-actions { display: flex; gap: 8px; justify-content: center; }
+
+.trade-cols { display: flex; gap: 10px; }
+.trade-side { flex: 1 1 0; min-width: 0; border: 1px solid var(--panel-edge); border-radius: 8px; padding: 7px; }
+.trade-side-head {
+  font-family: "Cinzel", serif; font-size: 12px; color: var(--ink); margin-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center; gap: 4px;
+}
+.trade-ok { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); }
+.trade-ok.on { color: #7ec47e; font-weight: 600; }
+.trade-offer {
+  display: flex; flex-wrap: wrap; gap: 4px; min-height: 56px;
+  align-content: flex-start; padding: 2px; border-radius: 6px; background: rgba(0,0,0,0.18);
+}
+.trade-empty { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim); font-style: italic; padding: 4px; }
+.trade-chip {
+  position: relative; width: 38px; height: 38px; padding: 2px; cursor: default;
+  background: rgba(0,0,0,0.28); border: 1px solid var(--panel-edge); border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.trade-chip svg { width: 28px; height: 28px; }
+.trade-chip.rm, .trade-chip.pack { cursor: pointer; }
+.trade-chip.rm:hover { border-color: var(--ember); }
+.trade-chip.pack:hover { border-color: var(--gold); }
+.trade-chip-qty {
+  position: absolute; right: 1px; bottom: 0; font-size: 10px; color: #ffe9a8;
+  text-shadow: 0 1px 2px #000; font-family: "EB Garamond", serif;
+}
+.trade-gold-row { display: flex; align-items: center; gap: 5px; margin-top: 7px; }
+.trade-gold-coin { display: inline-flex; width: 16px; height: 16px; }
+.trade-gold-coin svg { width: 16px; height: 16px; }
+.trade-gold-input {
+  flex: 1 1 auto; min-width: 0; font-family: "EB Garamond", serif; font-size: 13px; color: var(--ink);
+  background: rgba(0,0,0,0.3); border: 1px solid var(--panel-edge); border-radius: 6px; padding: 3px 6px;
+}
+.trade-gold-input:focus { outline: none; border-color: var(--gold); }
+.trade-gold-row.static .trade-their-gold { font-family: "EB Garamond", serif; color: var(--ink); font-size: 13px; }
+.trade-gold-g { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim); }
+
+.trade-pack-head { font-family: "Cinzel", serif; font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+.trade-pack {
+  display: flex; flex-wrap: wrap; gap: 4px; max-height: 132px; overflow-y: auto;
+  padding: 4px; border: 1px solid var(--panel-edge); border-radius: 8px;
+}
+.trade-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.trade-status { font-family: "EB Garamond", serif; font-size: 12px; color: var(--ink-dim); flex: 1 1 auto; }
+.trade-btn {
+  font-family: "Cinzel", serif; font-size: 13px; cursor: pointer; white-space: nowrap;
+  color: #1a140f; background: var(--ember, #d2742c); border: 1px solid #f2cf6b;
+  border-radius: 8px; padding: 7px 14px;
+}
+.trade-btn:hover { background: #e08a3e; }
+.trade-btn.dim { background: transparent; color: var(--ink-dim); border-color: var(--panel-edge); }
+.trade-btn.dim:hover { color: var(--ember); background: transparent; }
+.trade-btn.accept-trade.on { background: #5a8a4a; border-color: #8fce7f; color: #0e1408; }
+
 /* --- Login gate (shown before character creation) --- */
 .login-backdrop {
   position: fixed; inset: 0; z-index: 50;

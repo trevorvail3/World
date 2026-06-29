@@ -64,6 +64,8 @@ export interface SavedProgress {
   achievements: string[];
   /** Claimed Area Diary ids. */
   diariesClaimed: string[];
+  /** Settled player-trade ids already applied (dupe guard). */
+  tradesApplied: number[];
   /** Name, cosmetic colours and body styles from the character creator. */
   appearance: Appearance;
   /** Bounty progression: Hunt Marks, chosen guide, the active task (if any). */
@@ -122,6 +124,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     playMs: player.playMs,
     achievements: [...player.achievements],
     diariesClaimed: [...player.diariesClaimed],
+    tradesApplied: [...player.tradesApplied],
     killsSinceShard: player.killsSinceShard,
     appearance: { ...player.appearance },
     bounty: {
@@ -290,6 +293,12 @@ export function hydratePlayer(
     player.diariesClaimed = savedDiaries.filter(
       (id): id is string => typeof id === "string" && content.diaries.some((d) => d.id === id),
     );
+  }
+  const savedTrades = raw["tradesApplied"];
+  if (Array.isArray(savedTrades)) {
+    player.tradesApplied = savedTrades
+      .filter((n): n is number => typeof n === "number" && Number.isFinite(n))
+      .slice(-200);
   }
   // Appearance (name + colours); only accept well-formed string fields.
   const savedApp = raw["appearance"];

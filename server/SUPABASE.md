@@ -428,3 +428,127 @@ create policy world_chat_insert on public.world_chat for insert
 
 (Optional housekeeping: in the dashboard you can later add a scheduled job to
 delete chat older than a few days — not required to play.)
+
+## Player trading (run this for the live trade window)
+
+Lets two players trade face-to-face: items + gold each way, gifts allowed, no
+fee. The row is just the meeting point — goods live in each player's own save
+(same trust model as the Exchange), so when both sides accept, each client
+applies its own half of the swap. All changes go through the functions below so
+each player can only touch their own side, and an accept can't sneak through
+after the offer changed (the `rev` guard). Paste and **Run**:
+
+```sql
+create table if not exists public.trades (
+  id         bigint generated always as identity primary key,
+  a_user     uuid not null references auth.users (id) on delete cascade,
+  b_user     uuid not null references auth.users (id) on delete cascade,
+  a_name     text,
+  b_name     text,
+  a_items    jsonb not null default '[]',
+  b_items    jsonb not null default '[]',
+  a_gold     bigint not null default 0,
+  b_gold     bigint not null default 0,
+  a_ok       boolean not null default false,
+  b_ok       boolean not null default false,
+  a_done     boolean not null default false,
+  b_done     boolean not null default false,
+  rev        bigint not null default 0,
+  status     text not null default 'offered'
+             check (status in ('offered','active','settled','cancelled')),
+  updated_at timestamptz not null default now()
+);
+create index if not exists trades_parties on public.trades (a_user, b_user, status);
+
+alter table public.trades enable row level security;
+
+-- You can read any trade you're part of.
+drop policy if exists trades_read on public.trades;
+create policy trades_read on public.trades for select
+  using (auth.uid() = a_user or auth.uid() = b_user);
+
+-- Ask someone to trade. Refuses if either of you is already mid-trade.
+create or replace function public.trade_request(p_to uuid, p_my_name text, p_their_name text)
+returns bigint language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); nid bigint;
+begin
+  if uid is null then raise exception 'not signed in'; end if;
+  if p_to = uid then raise exception 'cannot trade yourself'; end if;
+  if exists (select 1 from trades where status in ('offered','active')
+             and (a_user in (uid, p_to) or b_user in (uid, p_to))) then
+    raise exception 'already trading';
+  end if;
+  insert into trades(a_user, b_user, a_name, b_name)
+    values (uid, p_to, p_my_name, p_their_name) returning id into nid;
+  return nid;
+end $$;
+
+-- The asked player accepts (opens the window) or declines.
+create or replace function public.trade_respond(p_id bigint, p_accept boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid();
+begin
+  update trades set status = case when p_accept then 'active' else 'cancelled' end,
+                    updated_at = now()
+   where id = p_id and b_user = uid and status = 'offered';
+end $$;
+
+-- Replace my side's offer. Bumps the revision and clears BOTH accepts.
+create or replace function public.trade_offer(p_id bigint, p_items jsonb, p_gold bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); t trades;
+begin
+  select * into t from trades where id = p_id for update;
+  if t is null or t.status <> 'active' then raise exception 'not active'; end if;
+  if uid = t.a_user then
+    update trades set a_items = p_items, a_gold = greatest(0, p_gold),
+                      a_ok = false, b_ok = false, rev = rev + 1, updated_at = now()
+     where id = p_id;
+  elsif uid = t.b_user then
+    update trades set b_items = p_items, b_gold = greatest(0, p_gold),
+                      a_ok = false, b_ok = false, rev = rev + 1, updated_at = now()
+     where id = p_id;
+  else raise exception 'not your trade'; end if;
+end $$;
+
+-- Accept — but only against the revision I'm looking at. Settles when both agree.
+create or replace function public.trade_confirm(p_id bigint, p_rev bigint)
+returns text language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); t trades;
+begin
+  select * into t from trades where id = p_id for update;
+  if t is null or t.status <> 'active' then raise exception 'not active'; end if;
+  if p_rev <> t.rev then raise exception 'offer changed'; end if;
+  if uid = t.a_user then update trades set a_ok = true, updated_at = now() where id = p_id;
+  elsif uid = t.b_user then update trades set b_ok = true, updated_at = now() where id = p_id;
+  else raise exception 'not your trade'; end if;
+  select * into t from trades where id = p_id for update;
+  if t.a_ok and t.b_ok then
+    update trades set status = 'settled', updated_at = now() where id = p_id;
+    return 'settled';
+  end if;
+  return 'active';
+end $$;
+
+-- Back out (either side, any time before it settles).
+create or replace function public.trade_cancel(p_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid();
+begin
+  update trades set status = 'cancelled', updated_at = now()
+   where id = p_id and status in ('offered','active') and (a_user = uid or b_user = uid);
+end $$;
+
+-- I've applied my half of a settled swap. When both have, retire the row.
+create or replace function public.trade_ack(p_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); t trades;
+begin
+  select * into t from trades where id = p_id for update;
+  if t is null then return; end if;
+  if uid = t.a_user then update trades set a_done = true where id = p_id;
+  elsif uid = t.b_user then update trades set b_done = true where id = p_id;
+  end if;
+  delete from trades where id = p_id and a_done and b_done;
+end $$;
+```

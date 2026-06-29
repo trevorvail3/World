@@ -28,7 +28,7 @@ export class PlayersUI {
   private open = false;
   private tab: Tab = "online";
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, private onTrade: (id: string, name: string) => void = () => {}) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "players-backdrop hidden";
     this.backdrop.innerHTML = `
@@ -101,12 +101,26 @@ export class PlayersUI {
         <span class="players-dot on"></span>
         <span class="players-name">${escapeHtml(p.name)}</span>
         <span class="players-ago">${ago(p.agoMs)}</span>
-        <button class="players-btn add-friend" data-name="${escapeHtml(p.name)}" type="button">+ Friend</button>
+        <button class="players-btn trade" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" type="button">Trade</button>
+        <button class="players-btn dim add-friend" data-name="${escapeHtml(p.name)}" type="button">+</button>
       </div>`).join("");
     this.body.querySelectorAll(".add-friend").forEach((el) => {
       el.addEventListener("pointerdown", (e) => {
         e.stopPropagation();
         void this.doAdd((el as HTMLElement).dataset.name ?? "");
+      });
+    });
+    this.bindTrade();
+  }
+
+  /** Wire up every Trade button currently in the body. */
+  private bindTrade(): void {
+    this.body.querySelectorAll(".trade").forEach((el) => {
+      el.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const id = (el as HTMLElement).dataset.id ?? "";
+        const name = (el as HTMLElement).dataset.name ?? "";
+        if (id) { this.close(); this.onTrade(id, name); }
       });
     });
   }
@@ -119,6 +133,7 @@ export class PlayersUI {
       <div class="players-row">
         <span class="players-dot${f.online ? " on" : ""}"></span>
         <span class="players-name">${escapeHtml(f.name)}</span>
+        ${f.online && f.status === "accepted" ? `<button class="players-btn trade" data-id="${escapeHtml(f.id)}" data-name="${escapeHtml(f.name)}" type="button">Trade</button>` : ""}
         ${actions}
       </div>`;
     this.body.innerHTML = `
@@ -150,6 +165,7 @@ export class PlayersUI {
       e.stopPropagation();
       void removeFriend(Number((el as HTMLElement).dataset.id)).then(() => this.refresh());
     }));
+    this.bindTrade();
   }
 
   private async doAdd(name: string): Promise<void> {

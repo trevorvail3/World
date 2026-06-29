@@ -330,6 +330,7 @@ export function createWorld(
     killsSinceShard: 0,
     achievements: [],
     diariesClaimed: [],
+    tradesApplied: [],
     appearance: {
       name: "Wanderer", skin: "#e3bd92", hair: "#4a3320", tunic: "#6b6157",
       legColor: "#9a5a2a", shoeColor: "#3a2c20",
@@ -944,6 +945,29 @@ export function applyIntent(
           addItem(player, intent.item, amt, events);
         }
       }
+      break;
+    }
+    case "TRADE_APPLY": {
+      // Settle a confirmed player trade: hand over what we offered, take in what
+      // we were given. Keyed by tradeId so a re-poll (or a reload) can never
+      // apply the same swap twice.
+      if (player.tradesApplied.includes(intent.tradeId)) break;
+      player.tradesApplied.push(intent.tradeId);
+      if (player.tradesApplied.length > 200) player.tradesApplied.shift();
+      // Give first, so freed slots make room for what we receive.
+      const giveGold = Math.max(0, Math.floor(intent.give.gold));
+      if (giveGold > 0) player.gold -= Math.min(player.gold, giveGold);
+      for (const g of intent.give.items) {
+        const q = Math.floor(g.qty);
+        if (q > 0) removeItems(player, g.item, q);
+      }
+      const getGold = Math.max(0, Math.floor(intent.get.gold));
+      if (getGold > 0) player.gold += getGold;
+      for (const g of intent.get.items) {
+        const q = Math.floor(g.qty);
+        if (q > 0 && content.items[g.item]) addItem(player, g.item, q, events);
+      }
+      events.push({ type: "LOG", message: "Trade complete." });
       break;
     }
     case "DEPOSIT": {

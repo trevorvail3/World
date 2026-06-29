@@ -1116,6 +1116,8 @@ export interface Player {
   achievements: string[];
   /** Ids of Area Diaries whose XP-lamp reward has been claimed. */
   diariesClaimed: string[];
+  /** Ids of settled player trades already applied to the pack (dupe guard). */
+  tradesApplied: number[];
   /** The player's name, cosmetic colours and body styles (character creator). */
   appearance: Appearance;
   /** Bounty progression: Hunt Marks, chosen guide, active slay-task. */
@@ -1243,6 +1245,15 @@ export interface GeMoveIntent {
   kind: "gold" | "item";
   item?: ItemId;
   amount: number;
+}
+
+/** Apply the agreed swap of a settled player trade. Idempotent: the core
+ *  ignores a tradeId it has already applied, so polling can't double-pay. */
+export interface TradeApplyIntent {
+  type: "TRADE_APPLY";
+  tradeId: number;
+  give: { gold: number; items: { item: ItemId; qty: number }[] };
+  get: { gold: number; items: { item: ItemId; qty: number }[] };
 }
 
 /** "Wear the gear in this inventory slot" (swapping out anything already worn). */
@@ -1415,7 +1426,8 @@ export type Intent =
   | PickupIntent
   | DropIntent
   | ClaimDiaryIntent
-  | GeMoveIntent;
+  | GeMoveIntent
+  | TradeApplyIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.

@@ -31,6 +31,8 @@ import { SkillDetailModal } from "./skillDetail.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
 import { PlayersUI } from "./playersUI.ts";
+import { TradeUI, registerStackables } from "./tradeUI.ts";
+import { currentTrade, requestTrade } from "./trade.ts";
 import { recentChat, sendChat } from "./chat.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
@@ -169,15 +171,21 @@ export class Hud {
     this.skillDetail = new SkillDetailModal(root, content);
     this.hiscores = new HiscoresUI(root, content);
     this.exchange = new ExchangeUI(root, content, dispatch, () => this.lastState);
-    this.players = new PlayersUI(root);
+    this.players = new PlayersUI(root, (id, name) => void this.startTrade(id, name));
+    registerStackables(content);
+    this.trade = new TradeUI(
+      root, content, () => this.lastState?.player ?? null, dispatch, () => this.pollTrade(),
+    );
     this.build(root);
     this.buildSkillPicker(root);
     this.startChatFeed();
+    this.startTradeFeed();
   }
 
   private hiscores: HiscoresUI;
   private exchange: ExchangeUI;
   private players: PlayersUI;
+  private trade: TradeUI;
 
   // --- Skill picker (XP-lamp reward: choose where the XP goes) ---
   private skillPicker!: HTMLElement;
@@ -726,6 +734,31 @@ export class Hud {
         this.chatLine(m.name, m.body, m.you);
         this.chatLastId = m.id;
       }
+    }
+  }
+
+  /** Poll for the trade I'm in (so a request pops even with no window open). */
+  private startTradeFeed(): void {
+    void this.pollTrade();
+    window.setInterval(() => void this.pollTrade(), 1500);
+  }
+
+  private async pollTrade(): Promise<void> {
+    let row;
+    try { row = await currentTrade(); }
+    catch { return; }
+    this.trade.sync(row);
+  }
+
+  /** Ask an online player to trade (from the Players panel). */
+  private async startTrade(id: string, name: string): Promise<void> {
+    const myName = this.lastState?.player.appearance?.name ?? "Wanderer";
+    try {
+      await requestTrade(id, myName, name);
+      this.players.close();
+      await this.pollTrade();
+    } catch (e) {
+      this.log(`Couldn't start trade: ${e instanceof Error ? e.message : "error"}`);
     }
   }
 
