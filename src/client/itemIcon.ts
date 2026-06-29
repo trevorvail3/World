@@ -101,7 +101,7 @@ const MATS: ReadonlyArray<readonly [string, string]> = [
 // ── shape classification ────────────────────────────────────────────────────
 type Shape =
   | "ore" | "ingot" | "log" | "board" | "shaft" | "pickaxe" | "hatchet" | "rod"
-  | "sword" | "dagger" | "claymore" | "spear" | "hammer" | "bow" | "bowU"
+  | "sword" | "dagger" | "claymore" | "spear" | "hammer" | "saw" | "bow" | "bowU"
   | "arrow" | "arrowhead" | "shield" | "helm" | "body" | "legs" | "boot" | "cape"
   | "ring" | "amulet" | "gem" | "bead" | "vial" | "herb" | "seed" | "mushroom"
   | "fish" | "meat" | "bowl" | "bread" | "hide" | "pet" | "mount" | "coin"
@@ -119,6 +119,9 @@ function classify(def: ItemDef): Shape {
   if (def.tool === "pickaxe" || has("pickaxe")) return "pickaxe";
   if (def.tool === "hatchet" || has("hatchet") || (has("axe") && !has("greataxe"))) return "hatchet";
   if (def.tool === "rod" || has("fishing rod") || id.startsWith("rod_")) return "rod";
+
+  // a saw-type weapon (the Bonesaw) gets its own toothed-blade icon
+  if (def.wepType === "saw" || has("bonesaw")) return "saw";
 
   // worn gear by slot (most reliable), with keyword refinements first
   if (slot === "ranged" || has("bow") || has("warbow")) return has("unstrung") ? "bowU" : "bow";
@@ -216,6 +219,9 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
   const name = (def.name ?? "").toLowerCase();
   const s = id + " " + name;
 
+  // 0) The Boneman's set is bone-white throughout (helm, body, legs, shield, saw).
+  if (def.lore === "boneman") return shadeFrom("#e9e3d3", "#cfc7b2");
+
   // 1) shared material lines (metals, woods, leathers) — keeps a tier consistent,
   //    but nudged per-item so a plank and a beam of the same wood still differ.
   for (const [k, hex] of MATS) {
@@ -288,6 +294,19 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "claymore": return `<polygon points="16,3 19,8 19,21 13,21 13,8" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="5" x2="16" y2="20" stroke="${p.light}" stroke-width="1" opacity="0.6"/><rect x="8" y="21" width="16" height="2.8" rx="1" fill="#caa24a"/><rect x="15" y="23" width="2" height="6" fill="${WOOD}"/><circle cx="16" cy="29" r="1.7" fill="#caa24a"/>`;
     case "spear": return `<rect x="15" y="6" width="2" height="22" fill="${WOOD}"/><path d="M16,2 L20,9 Q16,12 12,9 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`;
     case "hammer": return `<rect x="14.8" y="10" width="2.6" height="17" rx="1" fill="${WOOD}"/><rect x="9" y="6" width="14" height="8" rx="1.5" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><rect x="10" y="7" width="12" height="2" fill="${p.light}" opacity="0.6"/>`;
+    case "saw": {
+      // a long pale blade with saw-teeth down one edge and a wrapped grip
+      const teeth = Array.from({ length: 8 }, (_, i) => {
+        const ty = 7 + i * 1.75;
+        return `<polygon points="18,${ty} 21.5,${ty + 0.8} 18,${ty + 1.75}" fill="${p.dark}"/>`;
+      }).join("");
+      return `<rect x="12.5" y="21" width="7" height="6.5" rx="1.6" fill="${WOOD}" stroke="${WOODX}" stroke-width="0.8"/>`
+        + `<rect x="13.4" y="22.4" width="5.2" height="0.8" fill="${WOODX}" opacity="0.7"/>`
+        + `<rect x="13.4" y="24.4" width="5.2" height="0.8" fill="${WOODX}" opacity="0.7"/>`
+        + `<polygon points="12.8,6 18,6 18,21 12.8,21" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<line x1="14.2" y1="7" x2="14.2" y2="20" stroke="${p.light}" stroke-width="0.9" opacity="0.7"/>`
+        + teeth;
+    }
     case "bow": return `<path d="M11,5 Q24,16 11,27" fill="none" stroke="${p.base}" stroke-width="2.4" stroke-linecap="round"/><line x1="11" y1="5" x2="11" y2="27" stroke="#d8cdb0" stroke-width="0.8"/>`;
     case "bowU": return `<path d="M12,5 Q23,16 12,27" fill="none" stroke="${p.base}" stroke-width="2.6" stroke-linecap="round"/>`;
     case "arrow": return `<line x1="7" y1="25" x2="24" y2="8" stroke="${WOOD}" stroke-width="1.6"/><polygon points="25,7 20,8 23,12" fill="${p.base}" stroke="${p.edge}" stroke-width="0.6"/><polygon points="7,25 11,22 11,27 7,28" fill="#b5564a"/>`;

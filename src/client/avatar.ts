@@ -416,6 +416,17 @@ export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal): void {
       g.fillStyle = iron; g.fillRect(-1.8 * s, 6.4 * s, 3.6 * s, 1 * s);
       g.fillStyle = steel; g.fillRect(-0.8 * s, 7.2 * s, 1.6 * s, 4.5 * s);
       break;
+    case "saw":
+      // The Bonesaw: a hide-wrapped grip and a long bone-white toothed blade.
+      g.fillStyle = "#4a3527"; g.fillRect(-0.9 * s, 5 * s, 1.8 * s, 2.4 * s); // grip
+      g.fillStyle = "#cfc7b2"; g.fillRect(-2.2 * s, 7 * s, 4.4 * s, 1 * s);   // bone guard
+      g.fillStyle = "#e9e3d3"; g.fillRect(-1 * s, 8 * s, 2 * s, 8.5 * s);     // blade
+      g.fillStyle = "#cbc3ad"; // teeth down the leading edge
+      for (let i = 0; i < 6; i++) {
+        const ty = (8.4 + i * 1.35) * s;
+        g.beginPath(); g.moveTo(1 * s, ty); g.lineTo(2.5 * s, ty + 0.7 * s); g.lineTo(1 * s, ty + 1.35 * s); g.closePath(); g.fill();
+      }
+      break;
     case "spear":
       g.fillStyle = handle; g.fillRect(-0.5 * s, 5 * s, 1 * s, 12 * s);
       g.fillStyle = steel; g.beginPath();

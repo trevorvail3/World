@@ -4319,7 +4319,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 24,
     "speed": 2600,
     "attackStyle": "slash",
-    "wepType": "sword",
+    "wepType": "saw",
     "equipLevel": 60,
     "rarity": "rare",
     "lore": "boneman",
