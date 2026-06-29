@@ -135,6 +135,7 @@ const VERB: Record<ObjKind, string> = {
   npc: "Talk to",
   monster: "Attack",
   bank: "Open",
+  grand_exchange: "Trade at",
   fire: "Cook at",
   furnace: "Smelt at",
   anvil: "Forge at",
@@ -169,6 +170,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   npc: "Someone met on the road.",
   monster: "A wild thing of the hills.",
   bank: "A sturdy iron-bound chest. Your goods are safe in it.",
+  grand_exchange: "The Grand Exchange booth — post buy and sell offers to traders across all of Varath.",
   fire: "A steady cooking fire. Raw catch goes in; a meal comes out.",
   furnace: "A small stone furnace, hot enough to render ore to bar.",
   anvil: "A pitted iron anvil. Bring bars and a hammer to beat out gear.",
@@ -507,6 +509,9 @@ export class Game {
           break;
         case "OPEN_BANK":
           this.bank.show(this.bridge.state);
+          break;
+        case "OPEN_EXCHANGE":
+          void this.hud.openExchange();
           break;
         case "OPEN_SHOP": {
           const shopDef = this.bridge.content.shops.find((s) => s.id === ev.shop);

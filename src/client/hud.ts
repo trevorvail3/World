@@ -466,14 +466,6 @@ export class Hud {
         });
         p.appendChild(hs);
 
-        // --- Grand Exchange: the player-driven marketplace. ---
-        const ge = document.createElement("button");
-        ge.type = "button";
-        ge.className = "world-hiscores world-ge";
-        ge.innerHTML = `<span class="world-hiscores-ic">${iconize("⚖️")}</span> Grand Exchange`;
-        ge.addEventListener("click", () => { void this.exchange.show(); });
-        p.appendChild(ge);
-
         // --- Players: who's online + your friends. ---
         const pl = document.createElement("button");
         pl.type = "button";
@@ -736,6 +728,9 @@ export class Hud {
       }
     }
   }
+
+  /** Open the Grand Exchange (called when the player uses its market booth). */
+  openExchange(): Promise<void> { return this.exchange.show(); }
 
   /** Poll for the trade I'm in (so a request pops even with no window open). */
   private startTradeFeed(): void {

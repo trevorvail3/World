@@ -1198,6 +1198,9 @@ function drawObject(
     case "bank":
       drawBank(g, cx, cy);
       break;
+    case "grand_exchange":
+      drawGrandExchange(g, cx, cy);
+      break;
     case "fire":
       drawFire(g, cx, cy, now);
       break;
@@ -2001,6 +2004,36 @@ function drawBank(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   g.fillRect(cx - 2, cy - 10, 4, 22);
   g.fillStyle = "#c9a24a"; // lock
   g.fillRect(cx - 2, cy + 1, 4, 4);
+}
+
+/** The Grand Exchange booth: a clerk's counter under a striped awning, a set
+ *  of brass scales on top and a bid/ask chalkboard behind. */
+function drawGrandExchange(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 12, 16, 5);
+  // Chalkboard backboard (the bid/ask listing).
+  g.fillStyle = "#2b2620"; g.fillRect(cx - 13, cy - 16, 26, 9);
+  g.strokeStyle = "#6e5331"; g.lineWidth = 2; g.strokeRect(cx - 13, cy - 16, 26, 9);
+  g.strokeStyle = "#9fb89f"; g.lineWidth = 1; // chalk lines
+  for (let i = 0; i < 3; i++) { const yy = cy - 14 + i * 3; g.beginPath(); g.moveTo(cx - 10, yy); g.lineTo(cx + (i % 2 ? 4 : 9), yy); g.stroke(); }
+  // Counter.
+  g.fillStyle = "#6e5331"; g.fillRect(cx - 14, cy - 6, 28, 14);
+  g.fillStyle = "#5a4327"; g.fillRect(cx - 14, cy + 4, 28, 4); // base shadow band
+  g.fillStyle = "#7a5532"; g.fillRect(cx - 14, cy - 6, 28, 2); // countertop edge
+  // Striped awning over the counter.
+  const stripe = ["#b23b2e", "#e8dcc0"];
+  for (let i = 0; i < 7; i++) {
+    g.fillStyle = stripe[i % 2]!;
+    g.fillRect(cx - 14 + i * 4, cy - 11, 4, 5);
+  }
+  g.fillStyle = "#3a2c20"; g.fillRect(cx - 15, cy - 12, 30, 2); // awning rail
+  // Brass scales of trade on the counter.
+  g.strokeStyle = "#c9a24a"; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(cx, cy - 6); g.lineTo(cx, cy - 1); // post
+  g.moveTo(cx - 5, cy - 5); g.lineTo(cx + 5, cy - 5); // beam
+  g.stroke();
+  g.fillStyle = "#e2c061";
+  g.beginPath(); g.arc(cx - 5, cy - 3, 2, 0, Math.PI); g.fill(); // left pan
+  g.beginPath(); g.arc(cx + 5, cy - 3, 2, 0, Math.PI); g.fill(); // right pan
 }
 
 // --- Cooking fire: logs with animated flame ---

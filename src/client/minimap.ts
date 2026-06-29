@@ -74,6 +74,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   npc: "#c9a24a",
   monster: "#cc4a3a",
   bank: "#caa05a",
+  grand_exchange: "#e2c061", // a bright brass marker for the market booth
   fire: "#e08a3a",
   furnace: "#b06a48",
   anvil: "#7a7d86",

@@ -732,6 +732,8 @@ export type ObjKind =
   | "trap"
   /** A Bounty board: take a slay-task, claim it for Hunt Marks + Bounty XP. */
   | "bounty_board"
+  /** The Grand Exchange clerk's booth: trade on the world market here. */
+  | "grand_exchange"
   /** A claimable homestead yard at a hamlet — the anchor of player housing. */
   | "housing_plot"
   /** A furniture footing inside a claimed plot: build/replace a piece here. */
@@ -1143,7 +1145,7 @@ export interface Player {
    * while it matches — so the core, not just the UI, enforces "be at the
    * counter". Transient; never persisted.
    */
-  station: { kind: "shop" | "bank" | "bounty"; id?: string } | null;
+  station: { kind: "shop" | "bank" | "bounty" | "exchange"; id?: string } | null;
   alive: boolean;
   /** Time (ms) at which a dead player respawns. */
   respawnAt: number;
@@ -1451,6 +1453,8 @@ export type WorldEvent =
   | { type: "PLAYER_DIED" }
   | { type: "PLAYER_RESPAWNED" }
   | { type: "OPEN_BANK" }
+  /** Open the Grand Exchange (the world market) at its booth. */
+  | { type: "OPEN_EXCHANGE" }
   /** Open a shopkeeper's trade window. */
   | { type: "OPEN_SHOP"; shop: string }
   /** Open the seed-choice menu for an empty farming patch. */

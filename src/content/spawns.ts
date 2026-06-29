@@ -180,6 +180,10 @@ export const objects: WorldObjectDef[] = [
   // --- The town square: a fountain at the crossroads ---
   { id: "fountain_1", kind: "fountain", x: 60, y: 52, name: "The Ironvale Fountain", lines: ["Bright water over green-stained stone. Children dare each other to drink from it; nobody knows where the spring beneath it rises."] },
 
+  // --- The Grand Exchange: a clerk's booth in the heart of the market. Trade
+  //     on the world order book here (no longer a menu in the World tab). ---
+  { id: "grand_exchange_1", kind: "grand_exchange", x: 66, y: 47, name: "Grand Exchange", lines: ["A clerk's booth ringed with chalkboards of bids and asks — the honest heart of Varath's market."] },
+
   // --- The Carpenter's sawmill, in the artisans' yard (Woodcraft) ---
   { id: "sawmill_1", kind: "sawmill", x: 49, y: 57, name: "Carpenter's Sawmill" },
 

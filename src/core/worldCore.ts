@@ -203,6 +203,7 @@ const BLOCKING_KINDS = new Set([
   "portal",
   "trap",
   "bounty_board",
+  "grand_exchange",
   "cauldron",
   "workbench",
   "crafting_table",
@@ -1611,6 +1612,11 @@ function startInteraction(
     case "bank":
       player.station = { kind: "bank" };
       events.push({ type: "OPEN_BANK" });
+      break;
+
+    case "grand_exchange":
+      player.station = { kind: "exchange" };
+      events.push({ type: "OPEN_EXCHANGE" });
       break;
 
     // The processing stations open a recipe menu; the client lists what the
