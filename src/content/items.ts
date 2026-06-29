@@ -1438,6 +1438,30 @@ export const items: Record<ItemId, ItemDef> = {
       "petBoss": "marrow_keeper"
     }
   },
+  "pet_ashen_wyrm": {
+    "id": "pet_ashen_wyrm",
+    "name": "Emberling",
+    "description": "A hatchling wyrm no bigger than a cat, scales still forge-warm. It imprinted on whoever felled its parent — you.",
+    "icon": "🐉",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "ashen_wyrm"
+    }
+  },
+  "pet_boneman": {
+    "id": "pet_boneman",
+    "name": "Little Marrow",
+    "description": "A knee-high figure of stitched bone that took up the Boneman's habits — and his shadow. It follows you now, saw and all.",
+    "icon": "💀",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "boneman"
+    }
+  },
   "ribstone_arrow": {
     "id": "ribstone_arrow",
     "name": "Ribstone Arrow",

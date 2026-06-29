@@ -1221,6 +1221,8 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "scaleguard", reduce: 0.4 },
     ],
     drops: [
+      // A hatchling that imprints on its parent's killer — the rarest drop.
+      { item: "pet_ashen_wyrm", chance: 0.004, tier: "legendary" },
       // The Wyrmscale set + Wyrmfang: equal, high rates (Barrows-style).
       { item: "wyrm_helm", chance: 0.12, tier: "legendary" },
       { item: "wyrm_body", chance: 0.12, tier: "legendary" },
@@ -1249,6 +1251,8 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "selfheal", below: 0.45, amount: 80, tell: "The Boneman cracks a bone and sucks the marrow — his wounds knit shut!" },
     ],
     drops: [
+      // A grim little echo of him that follows the victor — the rarest drop.
+      { item: "pet_boneman", chance: 0.004, tier: "legendary" },
       // The Bonewrought set + the Bonesaw, equal Barrows-style rates.
       { item: "bone_helm", chance: 0.13, tier: "rare" },
       { item: "bone_body", chance: 0.13, tier: "rare" },

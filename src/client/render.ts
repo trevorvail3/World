@@ -29,6 +29,10 @@ import { type GearLook, resolveGear } from "./gearLook.ts";
 // Which way the player last faced (kept across idle / vertical-only movement, so
 // the figure doesn't snap back to the default when you walk straight up or down).
 let playerFaceLeft = false;
+// A summoned companion trails the player with a little lag — its smoothed world
+// position (in pixels) is eased toward a point just behind the player each frame.
+let petWx: number | null = null;
+let petWy = 0;
 
 export const TILE = 40; // pixels per tile
 
@@ -825,6 +829,18 @@ export function drawWorld(
       const dx = pl.path[0]!.x - pl.pos.x;
       if (dx < -0.05) playerFaceLeft = true;
       else if (dx > 0.05) playerFaceLeft = false;
+    }
+    // A summoned companion trails a half-step behind the player (boss pets show
+    // as a mini version of their boss). Drawn before the player so it sits behind.
+    if (pl.equipment.companion) {
+      const pwx = pl.pos.x * TILE + TILE / 2;
+      const pwy = pl.pos.y * TILE + TILE / 2;
+      const tx = pwx + (playerFaceLeft ? 13 : -13); // hang back, opposite the facing
+      const ty = pwy + 8;
+      if (petWx === null) { petWx = tx; petWy = ty; }
+      petWx += (tx - petWx) * 0.16;
+      petWy += (ty - petWy) * 0.16;
+      drawCompanion(g, content, pl.equipment.companion, petWx - cam.x, petWy - cam.y, now, pl.path.length > 0);
     }
     drawPlayer(
       g, pl.pos, cam, now, pl.appearance,
@@ -1716,6 +1732,22 @@ function drawCritter(
   }
 }
 
+/** A summoned companion at screen (sx,sy): a boss pet shows as a mini version
+ *  of its boss (the scaled-down boss sprite); any other pet shows as a small
+ *  critter. Half-scale keeps it clearly a hanger-on, not a second fighter. */
+function drawCompanion(
+  g: CanvasRenderingContext2D, content: Content, id: ItemId,
+  sx: number, sy: number, now: number, moving: boolean,
+): void {
+  const boss = content.items[id]?.meta?.["petBoss"];
+  g.save();
+  g.translate(sx, sy);
+  g.scale(0.5, 0.5);
+  if (typeof boss === "string") drawMonsterBody(g, boss, 0, 0, now, moving);
+  else drawCritter(g, undefined, 0, 0, now);
+  g.restore();
+}
+
 /** A town fountain: a round stone basin with a bright, jetting plume. */
 function drawFountain(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
   shadow(g, cx, cy + 11, 15, 5);
@@ -2480,6 +2512,14 @@ function drawMonsterBody(
       return drawDragon(g, cx, cy, now);
     case "boneman":
       return drawBoneman(g, cx, cy, now);
+    case "hollow_warden":
+      return H("#6c7077", "#8b9099"); // pale grey revenant
+    case "spine_warlord":
+      return H("#46434e", "#615c6e"); // dark spine-plate
+    case "bog_warden":
+      return H("#3f5346", "#526c58"); // bog green-grey
+    case "marrow_keeper":
+      return H("#cfc7b2", "#e7dfca"); // pale bone-robed keeper
     case "bog_knight":
       return H("#5b6470", "#7a8492"); // grey armour
     case "redrun_brigand":

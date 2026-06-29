@@ -240,6 +240,8 @@ export type ItemId =
   | "pet_bog_warden"
   | "pet_spine_warlord"
   | "pet_marrow_keeper"
+  | "pet_ashen_wyrm"
+  | "pet_boneman"
   | "ribstone_arrow"
   | "bloodore_arrow"
   | "voidstone_arrow"
