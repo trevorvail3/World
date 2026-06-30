@@ -372,9 +372,17 @@ const GROUND_TTL = 90_000;
 
 // --- Shop stock: each listing has a finite number of units; buying depletes it
 //     and it tops back up on a timer, so a shop can't be bought out in one go. ---
-const SHOP_MAX_STOCK = 10;       // units per listing when fully stocked
-const SHOP_RESTOCK_MS = 90_000;  // how often the keeper restocks
-const SHOP_RESTOCK_AMT = 4;      // units added per listing each restock
+const SHOP_RESTOCK_MS = 12 * 60_000; // a full restock about every 12 minutes
+
+/** A listing's full stock, scaled by price: cheap staples sit deep (50), premium
+ *  goods are scarce (20). Generous enough to carry a long play session between
+ *  the ~12-minute restocks, while still gating a one-sitting buy-out. */
+function shopMaxStock(price: number): number {
+  if (price <= 50) return 50;
+  if (price <= 200) return 40;
+  if (price <= 800) return 30;
+  return 20;
+}
 
 /** Lazily seed (and time-restock) per-shop stock. Runtime only — resets on a
  *  fresh session, which is fine; within a session it gates rapid buy-outs. */
@@ -383,18 +391,17 @@ function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
     state.shopStock = {};
     for (const shop of content.shops) {
       const m: Record<string, number> = {};
-      for (const line of shop.stock) m[line.item] = SHOP_MAX_STOCK;
+      for (const line of shop.stock) m[line.item] = shopMaxStock(line.price);
       state.shopStock[shop.id] = m;
     }
     state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
     return;
   }
   if ((state.shopRestockAt ?? 0) <= ctx.now) {
+    // Full refresh on the timer — every shelf back to its max.
     for (const shop of content.shops) {
       const m = state.shopStock[shop.id] ?? (state.shopStock[shop.id] = {});
-      for (const line of shop.stock) {
-        m[line.item] = Math.min(SHOP_MAX_STOCK, (m[line.item] ?? 0) + SHOP_RESTOCK_AMT);
-      }
+      for (const line of shop.stock) m[line.item] = shopMaxStock(line.price);
     }
     state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
   }
@@ -402,7 +409,8 @@ function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
 
 /** Units of a listing currently on the shelf (full if stock hasn't seeded yet). */
 export function shopStockLeft(state: WorldState, shopId: string, item: string): number {
-  return state.shopStock?.[shopId]?.[item] ?? SHOP_MAX_STOCK;
+  const v = state.shopStock?.[shopId]?.[item];
+  return v ?? 50; // unseeded window before the first tick — treat as well-stocked
 }
 
 /** Drop a pile of loot on the ground at a tile (a kill's spoils). */
