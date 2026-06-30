@@ -19,6 +19,7 @@ export class ContextMenu {
   private backdrop: HTMLElement;
   private menu: HTMLElement;
   private open = false;
+  private openedAt = 0;
 
   constructor(root: HTMLElement) {
     this.backdrop = document.createElement("div");
@@ -27,7 +28,10 @@ export class ContextMenu {
     // inside it (title, description, padding) keeps it open. Action buttons and
     // the X close it explicitly.
     this.backdrop.addEventListener("pointerdown", (e) => {
-      if (e.target === this.backdrop) {
+      // Off-click dismiss — but ignore one that lands in the first moment after
+      // opening, so the very press/right-click that summoned the menu (or a
+      // touch's trailing tap) can't instantly close it again.
+      if (e.target === this.backdrop && performance.now() - this.openedAt > 180) {
         e.preventDefault();
         this.close();
       }
@@ -95,6 +99,7 @@ export class ContextMenu {
     // Position, then nudge back on-screen if it would overflow.
     this.backdrop.classList.remove("hidden");
     this.open = true;
+    this.openedAt = performance.now();
     this.menu.style.left = `${screenX}px`;
     this.menu.style.top = `${screenY}px`;
     const rect = this.menu.getBoundingClientRect();

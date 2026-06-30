@@ -1141,6 +1141,21 @@ body {
 .ctx-menu::-webkit-scrollbar { width: 6px; }
 .ctx-menu::-webkit-scrollbar-thumb { background: rgba(120, 100, 70, 0.5); border-radius: 3px; }
 
+/* --- Menu / pop-up entrance polish ----------------------------------------
+   Backdrops toggle display:none, which re-triggers these animations every time
+   the panel is shown, so menus ease in instead of snapping. */
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.ctx-backdrop:not(.hidden) { animation: ui-fade-in 0.1s ease; }
+.ctx-menu { animation: ui-pop-in 0.13s cubic-bezier(0.2, 0.9, 0.3, 1.25); transform-origin: top left; }
+.bank-backdrop:not(.hidden),
+.shop-backdrop:not(.hidden),
+.worldmap-backdrop:not(.hidden) { animation: ui-fade-in 0.14s ease; }
+.bank-modal, .shop-modal, .bounty-modal { animation: ui-pop-in 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+
 /* Recipes above your level: dimmed, with their level requirement shown. */
 .ctx-item.ctx-locked { opacity: 0.5; }
 .ctx-item.ctx-locked .ctx-verb { color: var(--ink-dim); }

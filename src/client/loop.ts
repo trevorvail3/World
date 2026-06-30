@@ -342,6 +342,14 @@ export class Game {
     canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     window.addEventListener("pointermove", (e) => this.onPointerMove(e));
     window.addEventListener("pointerup", (e) => this.onPointerUp(e));
+    // Escape closes the top-most open menu / pop-up (and only that one), so the
+    // keyboard dismisses them deliberately rather than relying on an off-click.
+    window.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      for (const ui of [this.menu, this.dialogue, this.worldMap, this.bank, this.shop, this.bounty]) {
+        if (ui.isOpen()) { ui.close(); break; }
+      }
+    });
     window.addEventListener("pointercancel", (e) => this.pointers.delete(e.pointerId));
     // Mouse-wheel zoom.
     canvas.addEventListener("wheel", (e) => {
