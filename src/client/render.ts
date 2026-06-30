@@ -48,6 +48,18 @@ export function setDrawDistance(tiles: number): void {
 let lootLabels = true;
 export function setLootLabels(on: boolean): void { lootLabels = on; }
 
+/** How long the actual strike motion plays (ms). The rest of a weapon's interval
+ *  is spent resting in a ready pose, so a swing reads as a quick chop + a pause
+ *  rather than one slow continuous wind-up across the whole interval. */
+const STRIKE_MS = 460;
+/** Map "time until the blow lands" to the swing fraction (1 = rest → 0 = strike),
+ *  holding at the ready pose until the final STRIKE_MS window. */
+function snapStrike(untilSwing: number, interval: number): number {
+  const win = Math.min(STRIKE_MS, interval);
+  if (untilSwing > win) return 1; // resting between swings
+  return Math.max(0, Math.min(1, untilSwing / win)); // quick strike
+}
+
 /** One entity's recent hit, driving a brief pop-and-recoil when it's struck. */
 export interface HitFx { born: number; dx: number; dy: number; crit: boolean }
 /** Per-entity hit effects (keyed by object id, or "player"), set by the loop
@@ -3641,25 +3653,31 @@ function playerAction(
 ): AvatarAnim["action"] | undefined {
   const act = player.activity;
   if (act.kind === "idle") return undefined;
-  const swingFrac = (interval: number) => Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
-  // Combat: swing the worn weapon (or draw a bow at range). The swing interval is
-  // taken from the *current* weapon's speed, so the cadence always matches the
-  // weapon actually in hand — a dagger (1600ms) visibly faster than a hammer.
+  // A swing should look like a strike, not slow-motion: hold a ready pose for most
+  // of the weapon's interval, then snap the full wind-up→strike→follow-through
+  // through STRIKE_MS right before the blow lands. The cadence (rests between
+  // swings) still tracks weapon speed — a fast dagger barely pauses, a slow hammer
+  // pauses long. Continuous motions (a bow's aim, a fishing sway) stay linear.
+  const linearFrac = (interval: number) => Math.max(0, Math.min(1, (act.nextActionAt - now) / interval));
+  const strikeFrac = (interval: number) => snapStrike(act.nextActionAt - now, interval);
   if (act.kind === "combat") {
     const main = player.equipment.mainhand;
     const interval = (main && content.items[main]?.speed) || 2400; // COMBAT.playerMeleeSpeed
     // A bow now lives in the mainhand — draw it at range instead of swinging.
-    if (main && content.items[main]?.ranged) return { kind: "ranged", tool: "bow", frac: swingFrac(interval) };
+    if (main && content.items[main]?.ranged) return { kind: "ranged", tool: "bow", frac: linearFrac(interval) };
     // The Bonesaw swings as a sword but renders its own toothed-saw blade.
     const type = main === "bonesaw" ? "saw" : ((main && content.items[main]?.wepType) || "sword");
-    return { kind: "combat", tool: type, frac: swingFrac(interval) };
+    return { kind: "combat", tool: type, frac: strikeFrac(interval) };
   }
   // Gathering / crafting: the action interval the engine is repeating on.
   const TOOL: Record<string, string> = {
     mining: "pickaxe", woodcutting: "axe", fishing: "rod", crafting: "", trapping: "",
   };
   if (!(act.kind in TOOL)) return undefined;
-  return { kind: act.kind, tool: TOOL[act.kind]!, frac: swingFrac(act.actionInterval || 600) };
+  // Pick/axe chops snap like a strike; fishing/crafting/trapping keep their sway.
+  const overhead = act.kind === "mining" || act.kind === "woodcutting";
+  const f = overhead ? strikeFrac : linearFrac;
+  return { kind: act.kind, tool: TOOL[act.kind]!, frac: f(act.actionInterval || 600) };
 }
 
 /** The human-type monsters that swing a weapon; the rest are animals that lunge. */
@@ -3688,7 +3706,9 @@ function monsterAttack(
   const stats = content.monsters[def.monster];
   if (!stats) return undefined;
   const interval = stats.speed || 3000; // COMBAT.monsterSpeed
-  const frac = Math.max(0, Math.min(1, (obj.nextAttackAt - now) / interval));
+  // Snap the swing/lunge into a quick strike with a rest between (matches the
+  // player), so enemies don't fight in slow motion either.
+  const frac = snapStrike(obj.nextAttackAt - now, interval);
   // Direction from the creature toward the player, for an animal's lunge.
   const mp = objectPos(def, obj);
   const pp = state.player.pos;
