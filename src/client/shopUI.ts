@@ -15,6 +15,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { shopStockLeft } from "../core/worldCore.ts";
 
 export class ShopUI {
   private backdrop: HTMLElement;
@@ -143,16 +144,24 @@ export class ShopUI {
     for (const line of this.shop.stock) {
       const def = this.content.items[line.item];
       if (!def) continue;
-      const afford = player.gold >= line.price;
+      // Capes are earned one-offs — never stock-limited; everything else shows
+      // how many are on the shelf and greys out when the keeper's sold out.
+      const stocked = def.cat !== "Capes";
+      const left = stocked ? shopStockLeft(this.state, this.shop.id, line.item) : Infinity;
+      const inStock = left > 0;
+      const afford = player.gold >= line.price && inStock;
       const row = document.createElement("div");
       row.className = "shop-row";
       const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
+      const stockTag = stocked
+        ? `<span class="shop-stock${inStock ? "" : " out"}">${inStock ? `${left} left` : "Sold out"}</span>`
+        : "";
       row.innerHTML = `
         <span class="shop-swatch">${itemIconSVG(def)}</span>
-        <span class="shop-row-name">${def.name}${bundle}</span>
+        <span class="shop-row-name">${def.name}${bundle}${stockTag}</span>
         <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${line.price.toLocaleString()}g</button>`;
       const btn = row.querySelector(".shop-buy") as HTMLElement;
-      btn.title = def.description;
+      btn.title = inStock ? def.description : "Out of stock — the keeper will restock soon.";
       // Long-press the item (not the Buy button) to inspect what you're buying.
       this.onLongPress(row.querySelector(".shop-swatch") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));
       this.onLongPress(row.querySelector(".shop-row-name") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));

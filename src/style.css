@@ -102,6 +102,9 @@ body {
   right: 10px;
   width: 124px;
 }
+/* HP bar + run orb share one row under the minimap. */
+.vitals-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.vitals-row .hp-bar { flex: 1; margin-top: 0; }
 
 /* --- Buffs strip (top-left; the corner is otherwise free now) --- */
 .hud-topleft {
@@ -1746,6 +1749,8 @@ button.inv-slot {
   flex: 0 0 auto;
 }
 .shop-row-name { flex: 1; font-size: 13px; color: var(--ink); }
+.shop-stock { margin-left: 6px; font-size: 11px; color: #8aa06a; }
+.shop-stock.out { color: #c0603a; }
 .shop-buy {
   font-family: "Cinzel", serif;
   font-size: 12px;
@@ -3002,18 +3007,17 @@ button.inv-slot {
    No bar: the boot sits in a square ring that depletes with energy (driven by
    the --e custom property, 0–100), and the orb tints by state. ───────────── */
 .run-control {
-  position: absolute;
-  top: 12px; /* aligned with the minimap's top */
-  right: 118px; /* just left of the ~104px-wide minimap */
-  z-index: 6; /* always above the minimap, never covered by it */
+  /* Now inline in the vitals row, beside the HP bar (under the minimap). */
+  flex: 0 0 auto;
   pointer-events: auto;
 }
 .run-toggle {
   --e: 100;
   --ring: #b6d24a;
-  width: 40px;
-  height: 40px;
-  padding: 3px; /* ring thickness */
+  width: 26px;
+  height: 26px;
+  padding: 2.5px; /* ring thickness */
+  display: block;
   border: 0;
   border-radius: 8px;
   cursor: pointer;

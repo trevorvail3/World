@@ -37,8 +37,11 @@ import { recentChat, sendChat } from "./chat.ts";
 import { getTrackedQuest, setTrackedQuest } from "./questTrack.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
-// The panel itself shows ~7 at a time; older lines stay available above.
-const MAX_LOG_LINES = 100;
+// The panel itself shows ~7 at a time; older lines stay available above. Game
+// and world-chat lines keep SEPARATE caps so a busy world chat can never evict
+// your game history (and vice-versa), regardless of which filter is showing.
+const MAX_GAME_LINES = 80;
+const MAX_CHAT_LINES = 80;
 
 type TabId =
   | "inventory" | "skills" | "character"
@@ -110,7 +113,7 @@ export class Hud {
   private buffStrip!: HTMLElement;
   private skillFills = new Map<SkillId, HTMLElement>();
   private logEl!: HTMLElement;
-  private logLines: string[] = [];
+  private logLines: { type: "game" | "chat"; html: string }[] = [];
   private chatInput!: HTMLInputElement;
   private chatLastId = -1;
   private chatSeeded = false;
@@ -237,28 +240,27 @@ export class Hud {
 
   private build(root: HTMLElement): void {
     // --- Always-on Hitpoints (top-right, under the minimap) ---
+    // The HP bar sits under the minimap with the run-energy orb beside it, in one
+    // compact row, so both fit neatly under the minimap's width.
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
-      <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="vitals-name">Hitpoints</span> <span class="hp-text">10 / 10</span></div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>`;
+      <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span></div>
+      <div class="vitals-row">
+        <div class="hp-bar"><div class="hp-fill"></div></div>
+        <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
+      </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
     this.vitals = vitals;
-    root.appendChild(vitals);
-
-    // --- Run/walk orb (top-right): a boot whose ring drains as energy spends,
-    //     the orb itself tinting by state. No separate bar. ---
-    const runCtl = document.createElement("div");
-    runCtl.className = "hud-control run-control";
-    runCtl.innerHTML =
-      `<button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button>`;
+    // The boot orb: a ring that drains as energy spends; click toggles run/walk.
+    const runCtl = vitals.querySelector(".run-control") as HTMLElement;
     this.runToggle = runCtl.querySelector(".run-toggle") as HTMLElement;
     this.runToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       this.dispatch({ type: "TOGGLE_RUN" });
     });
     this.runControl = runCtl;
-    root.appendChild(runCtl);
+    root.appendChild(vitals);
 
     // --- Active buff chips (top-left) ---
     const topLeft = document.createElement("div");
@@ -731,25 +733,31 @@ export class Hud {
   }
 
   log(message: string): void {
-    this.pushLine(`<div class="log-line">${escapeHtml(message)}</div>`);
+    this.pushLine(`<div class="log-line">${escapeHtml(message)}</div>`, "game");
   }
 
   /** A world-chat line in the same scrollback (sender highlighted). */
   private chatLine(name: string, body: string, you: boolean): void {
     this.pushLine(
       `<div class="log-line chat${you ? " you" : ""}"><span class="chat-from">${escapeHtml(name)}:</span> ${escapeHtml(body)}</div>`,
+      "chat",
     );
   }
 
-  /** Append one pre-rendered line, trim history, and keep the view pinned. */
-  private pushLine(html: string): void {
-    this.logLines.push(html);
-    if (this.logLines.length > MAX_LOG_LINES) this.logLines.shift();
-    // Stay pinned to the newest line *unless* the player has scrolled up to
-    // read history — then leave their scroll position alone.
+  /** Append one pre-rendered line, trim history (per stream, so game and chat
+   *  never push each other out), and keep the view pinned. */
+  private pushLine(html: string, type: "game" | "chat"): void {
+    this.logLines.push({ type, html });
+    // Trim the OLDEST line of this stream once it exceeds its own cap.
+    const cap = type === "chat" ? MAX_CHAT_LINES : MAX_GAME_LINES;
+    let count = 0;
+    for (let i = this.logLines.length - 1; i >= 0; i--) {
+      if (this.logLines[i]!.type !== type) continue;
+      if (++count > cap) { this.logLines.splice(i, 1); break; }
+    }
     const el = this.logEl;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-    el.innerHTML = this.logLines.join("");
+    el.innerHTML = this.logLines.map((l) => l.html).join("");
     if (nearBottom) el.scrollTop = el.scrollHeight;
   }
 

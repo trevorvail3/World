@@ -370,6 +370,41 @@ export function createWorld(
 /** How long loot lingers on the floor before vanishing (ms). */
 const GROUND_TTL = 90_000;
 
+// --- Shop stock: each listing has a finite number of units; buying depletes it
+//     and it tops back up on a timer, so a shop can't be bought out in one go. ---
+const SHOP_MAX_STOCK = 10;       // units per listing when fully stocked
+const SHOP_RESTOCK_MS = 90_000;  // how often the keeper restocks
+const SHOP_RESTOCK_AMT = 4;      // units added per listing each restock
+
+/** Lazily seed (and time-restock) per-shop stock. Runtime only — resets on a
+ *  fresh session, which is fine; within a session it gates rapid buy-outs. */
+function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
+  if (!state.shopStock) {
+    state.shopStock = {};
+    for (const shop of content.shops) {
+      const m: Record<string, number> = {};
+      for (const line of shop.stock) m[line.item] = SHOP_MAX_STOCK;
+      state.shopStock[shop.id] = m;
+    }
+    state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+    return;
+  }
+  if ((state.shopRestockAt ?? 0) <= ctx.now) {
+    for (const shop of content.shops) {
+      const m = state.shopStock[shop.id] ?? (state.shopStock[shop.id] = {});
+      for (const line of shop.stock) {
+        m[line.item] = Math.min(SHOP_MAX_STOCK, (m[line.item] ?? 0) + SHOP_RESTOCK_AMT);
+      }
+    }
+    state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+  }
+}
+
+/** Units of a listing currently on the shelf (full if stock hasn't seeded yet). */
+export function shopStockLeft(state: WorldState, shopId: string, item: string): number {
+  return state.shopStock?.[shopId]?.[item] ?? SHOP_MAX_STOCK;
+}
+
 /** Drop a pile of loot on the ground at a tile (a kill's spoils). */
 function dropToGround(
   state: WorldState,
@@ -378,14 +413,19 @@ function dropToGround(
   x: number,
   y: number,
   ctx: Ctx,
+  merge = true,
 ): void {
-  // OSRS-style: identical loot on the same tile merges into one stack instead of
-  // littering the tile with overlapping piles. Refresh the despawn timer too.
-  const existing = state.ground.find((g) => g.x === x && g.y === y && g.item === item);
-  if (existing) {
-    existing.qty += qty;
-    existing.despawnAt = ctx.now + GROUND_TTL;
-    return;
+  // When `merge` (the player dropping items), identical loot on the same tile
+  // stacks instead of littering. Kill loot passes merge=false so EACH kill keeps
+  // its own pile — fighting wave after wave on the same tile no longer folds
+  // every drop onto one ever-growing heap.
+  if (merge) {
+    const existing = state.ground.find((g) => g.x === x && g.y === y && g.item === item);
+    if (existing) {
+      existing.qty += qty;
+      existing.despawnAt = ctx.now + GROUND_TTL;
+      return;
+    }
   }
   state.ground.push({ id: state.groundSeq++, item, qty, x, y, despawnAt: ctx.now + GROUND_TTL });
 }
@@ -853,18 +893,30 @@ function canAddItem(player: Player, item: ItemId): boolean {
   return player.inventory.some((slot) => slot === null);
 }
 
-/** Buy one listing (its whole bundle) from a shop — needs gold and pack room. */
+/** Buy one listing (its whole bundle) from a shop — needs gold and pack room.
+ *  Stocked listings deplete by a unit per purchase and refuse when empty. */
 function buyFromShop(
+  state: WorldState,
   player: Player,
   content: Content,
   shopId: string,
   item: ItemId,
   events: WorldEvent[],
+  ctx: Ctx,
 ): void {
   const shop = content.shops.find((s) => s.id === shopId);
   const line = shop?.stock.find((s) => s.item === item);
   if (!line) return;
   const def = content.items[item];
+  // Capes are earned one-offs (level-gated below), so they're never stock-limited.
+  const stocked = def.cat !== "Capes";
+  if (stocked) {
+    ensureShopStock(state, content, ctx);
+    if (shopStockLeft(state, shopId, item) <= 0) {
+      events.push({ type: "LOG", message: `${def.name} is out of stock — the keeper will have more before long.` });
+      return;
+    }
+  }
   // Skill capes are earned, not just bought: each needs level 99 in its skill,
   // and the Cape of Varath needs every skill at 99.
   const capeSkill = def.cat === "Capes" ? def.meta?.skill : undefined;
@@ -888,6 +940,9 @@ function buyFromShop(
   }
   player.gold -= line.price;
   addItem(player, item, line.qty, events);
+  if (stocked && state.shopStock?.[shopId]) {
+    state.shopStock[shopId]![item] = Math.max(0, shopStockLeft(state, shopId, item) - 1);
+  }
   const name = content.items[item].name;
   const bundle = line.qty > 1 ? `${line.qty}× ` : "";
   events.push({ type: "LOG", message: `Bought ${bundle}${name} for ${line.price}g.` });
@@ -1141,7 +1196,7 @@ export function applyIntent(
         events.push({ type: "LOG", message: "You need to be at that shop to buy." });
         break;
       }
-      buyFromShop(player, content, intent.shop, intent.item, events);
+      buyFromShop(state, player, content, intent.shop, intent.item, events, ctx);
       break;
     }
     case "TRAVEL": {
@@ -2397,6 +2452,9 @@ export function tick(
     state.ground = state.ground.filter((g) => g.despawnAt > ctx.now);
   }
 
+  // Shops top their shelves back up on a timer.
+  ensureShopStock(state, content, ctx);
+
   const { player } = state;
 
   // 0) Keep max HP in step with the Vitality level (leveling up heals you).
@@ -2599,7 +2657,10 @@ function baseWalkable(content: Content): (x: number, y: number) => boolean {
   if (fn) return fn;
   const blocked = new Set<string>();
   for (const obj of content.objects) {
-    if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
+    // Wandering creatures also steer clear of agility obstacles — those tiles are
+    // the player's to use, and an NPC standing on a log/net looks broken. (The
+    // player's own walkability is separate, so they can still step on to use it.)
+    if (BLOCKING_KINDS.has(obj.kind) || obj.kind === "agility_obstacle") blocked.add(`${obj.x},${obj.y}`);
   }
   const { map } = content;
   fn = (x: number, y: number): boolean => {
@@ -3650,7 +3711,7 @@ function rollDrops(
     const min = drop.min ?? 1;
     const max = drop.max ?? min;
     const qty = min + Math.floor(ctx.rng() * (max - min + 1));
-    dropToGround(state, drop.item, qty, x, y, ctx);
+    dropToGround(state, drop.item, qty, x, y, ctx, false); // each kill = its own pile
     if (drop.item === "shard_of_orun") {
       state.player.killsSinceShard = 0; // a natural drop re-arms the pity timer
       events.push({

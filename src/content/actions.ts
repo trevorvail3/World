@@ -1903,7 +1903,7 @@ export const actions: SkillAction[] = [
     "id": "cook_meat",
     "skill": "cooking",
     "name": "Meat (+26 HP)",
-    "levelReq": 15,
+    "levelReq": 1,
     "xp": 70,
     "requires": {
       "raw_meat": 1

@@ -1224,6 +1224,11 @@ export interface WorldState {
   ground: GroundItem[];
   /** Incrementing id for ground piles. */
   groundSeq: number;
+  /** Per-shop remaining stock (shopId → item → units left). Time-gated so a shop
+   *  can't be bought out instantly. Runtime/session only — not persisted. */
+  shopStock?: Record<string, Record<string, number>>;
+  /** When the shops next top up their stock (ms, wall-clock via Ctx). */
+  shopRestockAt?: number;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the
