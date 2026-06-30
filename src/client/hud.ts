@@ -34,6 +34,7 @@ import { PlayersUI } from "./playersUI.ts";
 import { TradeUI, registerStackables } from "./tradeUI.ts";
 import { currentTrade, requestTrade } from "./trade.ts";
 import { recentChat, sendChat } from "./chat.ts";
+import { getTrackedQuest, setTrackedQuest } from "./questTrack.ts";
 
 // How many lines of history the log keeps (you can scroll back through them).
 // The panel itself shows ~7 at a time; older lines stay available above.
@@ -486,6 +487,15 @@ export class Hud {
         const list = document.createElement("div");
         list.className = "quest-list";
         this.questList = list;
+        // Tap an active quest to track it (a gold marker then guides you to its
+        // objective); tap the tracked one again to clear it.
+        list.addEventListener("click", (e) => {
+          const row = (e.target as HTMLElement).closest("[data-track]") as HTMLElement | null;
+          if (!row) return;
+          const id = row.dataset.track!;
+          setTrackedQuest(getTrackedQuest() === id ? null : id);
+          if (this.lastState) this.renderQuests(this.lastState.player);
+        });
         p.appendChild(list);
         break;
       }
@@ -1171,6 +1181,7 @@ export class Hud {
 
     if (active.length) {
       parts.push(`<div class="quest-h">Active <span class="quest-h-count">${active.length}</span></div>`);
+      const tracked = getTrackedQuest();
       for (const id of active) {
         const def = quests.find((q) => q.id === id);
         if (!def) continue;
@@ -1178,8 +1189,11 @@ export class Hud {
         const obj = def.steps[st.step];
         let line = obj ? escapeHtml(obj.text) : "";
         if (obj && obj.type === "kill") line += ` <span class="quest-prog">(${st.killCount}/${obj.count})</span>`;
+        const on = tracked === id;
         parts.push(
-          `<div class="quest-item"><div class="quest-name">${escapeHtml(def.name)}</div><div class="quest-obj">▸ ${line}</div></div>`,
+          `<div class="quest-item${on ? " tracked" : ""}" data-track="${id}" title="${on ? "Tracked — tap to clear" : "Tap to track this quest"}">` +
+            `<div class="quest-name"><span class="quest-star">${on ? "★" : "☆"}</span> ${escapeHtml(def.name)}</div>` +
+            `<div class="quest-obj">▸ ${line}</div></div>`,
         );
       }
     }

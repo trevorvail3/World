@@ -441,7 +441,18 @@ body {
 
 .quest-item {
   margin-bottom: 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 3px 5px;
+  border: 1px solid transparent;
 }
+.quest-item:hover { background: rgba(201, 162, 74, 0.08); }
+.quest-item.tracked {
+  background: rgba(201, 162, 74, 0.12);
+  border-color: rgba(201, 162, 74, 0.4);
+}
+.quest-star { color: var(--gold); font-size: 12px; }
+.quest-item.tracked .quest-star { color: #f2cf6b; }
 
 .quest-name {
   color: var(--ink);

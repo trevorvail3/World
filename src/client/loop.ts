@@ -39,6 +39,7 @@ import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { Camera, drawWorld, setCombatHits, setDrawDistance, TILE, type HitFx } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
+import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { objectPos, objectHidden, travelFare } from "../core/worldCore.ts";
@@ -1300,6 +1301,45 @@ export class Game {
       this.g.fillText(mark, cx, my);
     }
     this.g.textAlign = "left";
+
+    // --- Tracked quest: a persistent gold guide toward the chosen objective. If
+    //     its target NPC is on-screen, a bobbing chevron sits over them; if it's
+    //     off-screen, a gold arrow pins to the screen edge pointing the way. ---
+    const tid = getTrackedQuest();
+    const tst = tid ? player.quests[tid] : undefined;
+    if (tid && tst) {
+      const def = quests.find((q) => q.id === tid);
+      const step = def?.steps[tst.step] as { npc?: string; from?: string } | undefined;
+      const targetId = step?.npc ?? step?.from;
+      const tobj = targetId ? this.bridge.content.objects.find((o) => o.id === targetId) : undefined;
+      if (tobj) {
+        const tp = objectPos(tobj, this.bridge.state.objects[tobj.id]);
+        const { x: sx, y: sy } = this.toScreen(tp.x, tp.y);
+        const W = this.viewW, H = this.viewH, pad = 26;
+        const g = this.g;
+        g.save();
+        g.fillStyle = "#f2cf6b";
+        g.strokeStyle = "rgba(0,0,0,0.6)";
+        g.lineWidth = 2;
+        if (sx >= 0 && sx <= W && sy >= -TILE && sy <= H) {
+          // On-screen: a bobbing chevron just above the target.
+          const by = sy - TILE * 0.95 + Math.sin(now / 240) * 3;
+          g.beginPath();
+          g.moveTo(sx, by + 8); g.lineTo(sx - 7, by - 4); g.lineTo(sx + 7, by - 4);
+          g.closePath(); g.stroke(); g.fill();
+        } else {
+          // Off-screen: clamp to the edge and point an arrow toward it.
+          const cxp = Math.max(pad, Math.min(W - pad, sx));
+          const cyp = Math.max(pad, Math.min(H - pad, sy));
+          const ang = Math.atan2(sy - cyp, sx - cxp);
+          g.translate(cxp, cyp); g.rotate(ang);
+          g.beginPath();
+          g.moveTo(12, 0); g.lineTo(-6, -7); g.lineTo(-6, 7);
+          g.closePath(); g.stroke(); g.fill();
+        }
+        g.restore();
+      }
+    }
   }
 
   /**
