@@ -576,8 +576,21 @@ body {
   pointer-events: auto;
 }
 
-/* Filter row above the log: All / Game / Chat. */
-.log-filter { display: flex; gap: 4px; margin-bottom: 4px; }
+/* Filter row above the log: All / Game / Chat, plus a minimize toggle. */
+.log-filter { display: flex; gap: 4px; margin-bottom: 4px; align-items: center; }
+/* Minimize toggle, pushed to the right edge of the filter row. */
+.log-min-btn {
+  margin-left: auto;
+  font-family: "Cinzel", serif; font-size: 11px; line-height: 1;
+  background: transparent; border: 1px solid rgba(201,162,74,0.25); border-radius: 4px;
+  color: var(--ink-dim); width: 20px; height: 18px; cursor: pointer; padding: 0;
+}
+.log-min-btn:hover { color: var(--ember); border-color: var(--ember); }
+/* Collapsed: hide the scrollback and the chat input, leaving just the bar. */
+.hud-log.collapsed .log-lines,
+.hud-log.collapsed .log-chat { display: none; }
+.hud-log.collapsed { padding-bottom: 4px; }
+.hud-log.collapsed .log-filter { margin-bottom: 0; }
 .log-filter-btn {
   font-family: "Cinzel", serif; font-size: 10px; letter-spacing: 0.04em;
   background: transparent; border: 1px solid rgba(201,162,74,0.25); border-radius: 4px;
@@ -866,19 +879,32 @@ body {
 .worldmap-close:hover {
   color: var(--ember);
 }
-.worldmap-canvas {
-  display: block;
-  /* Fit inside the modal in BOTH dimensions (header + legend take vertical room),
-     preserving aspect — otherwise a tall map spilled past the border. */
+/* The scrollable viewport: the map fits inside it at zoom 1, scrolls when zoomed. */
+.worldmap-viewport {
   max-width: 88vw;
   max-height: 68vh;
-  width: auto;
-  height: auto;
+  overflow: auto;
+  border-radius: 5px;
+  margin: 0 auto;
+  touch-action: pan-x pan-y;
+}
+.worldmap-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: 5px;
   border: 1px solid rgba(74, 61, 44, 0.6);
   image-rendering: pixelated;
   cursor: pointer;
 }
+/* Zoom buttons in the map header. */
+.worldmap-zoom { display: flex; gap: 4px; margin-left: auto; margin-right: 10px; }
+.wm-zoom-btn {
+  width: 24px; height: 22px; line-height: 1;
+  background: transparent; border: 1px solid rgba(201,162,74,0.35); border-radius: 4px;
+  color: var(--gold); font-size: 15px; cursor: pointer; padding: 0;
+}
+.wm-zoom-btn:hover { color: var(--ember); border-color: var(--ember); }
 .worldmap-hint {
   margin-top: 8px;
   text-align: center;
@@ -890,9 +916,7 @@ body {
 /* --- World map: DOM overlay of labels + POI markers, and a filter legend --- */
 .worldmap-stage {
   position: relative;
-  width: fit-content;
-  max-width: 88vw;
-  margin: 0 auto;
+  /* width/height are set in JS (fit-to-viewport × zoom); it grows to scroll. */
 }
 .worldmap-overlay {
   position: absolute;

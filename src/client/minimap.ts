@@ -28,7 +28,11 @@ const MAP_CATS: { id: string; label: string; icon: string; kinds: ObjKind[]; on:
   { id: "people", label: "People", icon: "👤", kinds: ["npc"], on: true },
   { id: "bounty", label: "Bounty", icon: "🎯", kinds: ["bounty_board"], on: true },
   { id: "home", label: "Homestead", icon: "🏠", kinds: ["housing_plot"], on: true },
-  { id: "resource", label: "Resources", icon: "⛏️", kinds: ["tree", "rock", "fishing_spot", "plant_patch", "tree_patch", "trap"], on: false },
+  // Resources split by kind so each reads with its own icon (and its own toggle).
+  { id: "trees", label: "Trees", icon: "🌲", kinds: ["tree", "tree_patch"], on: false },
+  { id: "mining", label: "Mining", icon: "⛏️", kinds: ["rock"], on: false },
+  { id: "fishing", label: "Fishing", icon: "🎣", kinds: ["fishing_spot"], on: false },
+  { id: "foraging", label: "Foraging", icon: "🌿", kinds: ["plant_patch", "forage_spot", "trap"], on: false },
   { id: "agility", label: "Agility", icon: "👟", kinds: ["agility_obstacle"], on: false },
 ];
 
@@ -323,6 +327,12 @@ export class WorldMapModal {
   private labelsOn = true;
   private labelEls: HTMLElement[] = [];
 
+  private stage!: HTMLElement;
+  private viewport!: HTMLElement;
+  private mapZoom = 1;
+  private baseW = 0;
+  private baseH = 0;
+
   constructor(root: HTMLElement, content: Content, onWalk: (tile: Vec2) => void) {
     const m = content.map;
     const cell = Math.max(4, Math.floor(620 / m.width));
@@ -333,27 +343,45 @@ export class WorldMapModal {
       <div class="worldmap-modal">
         <div class="worldmap-head">
           <span class="worldmap-title">Varath — World Map</span>
+          <div class="worldmap-zoom">
+            <button class="wm-zoom-btn" data-zoom="out" type="button" title="Zoom out">−</button>
+            <button class="wm-zoom-btn" data-zoom="in" type="button" title="Zoom in">+</button>
+          </div>
           <button class="worldmap-close" type="button">✕</button>
         </div>
-        <div class="worldmap-stage">
-          <canvas class="worldmap-canvas" width="${m.width * cell}" height="${mapH * cell}"></canvas>
-          <div class="worldmap-overlay"></div>
+        <div class="worldmap-viewport">
+          <div class="worldmap-stage">
+            <canvas class="worldmap-canvas" width="${m.width * cell}" height="${mapH * cell}"></canvas>
+            <div class="worldmap-overlay"></div>
+          </div>
         </div>
         <div class="worldmap-legend"></div>
-        <div class="worldmap-hint">Tap the map to walk there · tap a legend chip to filter.</div>
+        <div class="worldmap-hint">Tap the map to walk there · scroll or ± to zoom · drag to pan · tap a chip to filter.</div>
       </div>`;
     const canvas = this.backdrop.querySelector(".worldmap-canvas") as HTMLCanvasElement;
     this.markerLayer = this.backdrop.querySelector(".worldmap-overlay") as HTMLElement;
     this.legend = this.backdrop.querySelector(".worldmap-legend") as HTMLElement;
+    this.stage = this.backdrop.querySelector(".worldmap-stage") as HTMLElement;
+    this.viewport = this.backdrop.querySelector(".worldmap-viewport") as HTMLElement;
     root.appendChild(this.backdrop);
     const g = canvas.getContext("2d");
     if (!g) throw new Error("Could not get a 2D context for the world map.");
     this.g = g;
 
-    // Tap the map to walk there (then close so you can watch the journey). The
-    // overlay is pointer-events:none, so taps land on the canvas underneath.
+    // Tap the map to walk there (then close so you can watch the journey). Only a
+    // genuine tap walks — a drag pans the (overflow) viewport instead, so zooming
+    // and panning don't accidentally fling the player across the world.
+    let downX = 0, downY = 0, dragged = false;
     canvas.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
+      downX = e.clientX; downY = e.clientY; dragged = false;
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 6) dragged = true;
+    });
+    canvas.addEventListener("pointerup", (e) => {
+      e.stopPropagation();
+      if (dragged) return; // it was a pan, not a tap
       const r = canvas.getBoundingClientRect();
       onWalk({
         x: Math.floor(((e.clientX - r.left) / r.width) * m.width),
@@ -361,6 +389,18 @@ export class WorldMapModal {
       });
       this.close();
     });
+    // Wheel zoom, centred roughly on the cursor.
+    this.viewport.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      this.setMapZoom(this.mapZoom * (e.deltaY < 0 ? 1.2 : 1 / 1.2));
+    }, { passive: false });
+    for (const b of this.backdrop.querySelectorAll(".wm-zoom-btn")) {
+      b.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const dir = (b as HTMLElement).dataset.zoom === "in" ? 1.25 : 1 / 1.25;
+        this.setMapZoom(this.mapZoom * dir);
+      });
+    }
 
     (this.backdrop.querySelector(".worldmap-close") as HTMLElement).addEventListener(
       "pointerdown", (e) => { e.stopPropagation(); this.close(); },
@@ -371,6 +411,35 @@ export class WorldMapModal {
 
     this.buildOverlay(content, m.width, mapH);
     this.buildLegend(content);
+  }
+
+  /** Fit the map to the viewport at zoom 1, then apply the current zoom. Called
+   *  when the map opens (window size may have changed) and on every zoom step. */
+  private layout(): void {
+    const cv = this.backdrop.querySelector(".worldmap-canvas") as HTMLCanvasElement;
+    const iw = cv.width, ih = cv.height; // intrinsic pixel size
+    const boxW = Math.min(window.innerWidth * 0.86, 820);
+    const boxH = Math.min(window.innerHeight * 0.66, 660);
+    const fit = Math.min(boxW / iw, boxH / ih, 1);
+    this.baseW = iw * fit;
+    this.baseH = ih * fit;
+    const w = Math.round(this.baseW * this.mapZoom);
+    const h = Math.round(this.baseH * this.mapZoom);
+    this.stage.style.width = `${w}px`;
+    this.stage.style.height = `${h}px`;
+  }
+
+  private setMapZoom(z: number): void {
+    const next = Math.max(1, Math.min(4, z));
+    if (next === this.mapZoom) return;
+    // Keep the view roughly centred as you zoom.
+    const vp = this.viewport;
+    const cx = (vp.scrollLeft + vp.clientWidth / 2) / Math.max(1, this.stage.offsetWidth);
+    const cy = (vp.scrollTop + vp.clientHeight / 2) / Math.max(1, this.stage.offsetHeight);
+    this.mapZoom = next;
+    this.layout();
+    vp.scrollLeft = cx * this.stage.offsetWidth - vp.clientWidth / 2;
+    vp.scrollTop = cy * this.stage.offsetHeight - vp.clientHeight / 2;
   }
 
   /** Place the named-place labels + a POI marker for every catalogued object. */
@@ -479,7 +548,7 @@ export class WorldMapModal {
   }
 
   isOpen(): boolean { return this.open; }
-  show(): void { this.open = true; this.backdrop.classList.remove("hidden"); }
+  show(): void { this.open = true; this.backdrop.classList.remove("hidden"); this.layout(); }
   close(): void { this.open = false; this.backdrop.classList.add("hidden"); }
 
   /** Repaint terrain + player + view-rect each frame; markers are static DOM. */

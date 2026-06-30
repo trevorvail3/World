@@ -295,6 +295,23 @@ export class Hud {
       });
       filterRow.appendChild(b);
     }
+    // Minimize toggle (pushed to the right) — collapses the log to just this bar.
+    const minBtn = document.createElement("button");
+    minBtn.type = "button";
+    minBtn.className = "log-min-btn";
+    const minimized = (): boolean => localStorage.getItem("varath-log-min") === "1";
+    const applyMin = (): void => {
+      const on = minimized();
+      logPanel.classList.toggle("collapsed", on);
+      minBtn.textContent = on ? "▢" : "—";
+      minBtn.title = on ? "Show messages" : "Minimize messages";
+    };
+    minBtn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      try { localStorage.setItem("varath-log-min", minimized() ? "0" : "1"); } catch { /* ignore */ }
+      applyMin();
+    });
+    filterRow.appendChild(minBtn);
     logPanel.appendChild(filterRow);
     logPanel.appendChild(this.logEl);
     const chatForm = document.createElement("form");
@@ -307,6 +324,7 @@ export class Hud {
     // Keep keystrokes out of any game-side key handling while typing.
     this.chatInput.addEventListener("keydown", (e) => e.stopPropagation());
     logPanel.appendChild(chatForm);
+    applyMin(); // restore the minimized state from last session
     root.appendChild(logPanel);
 
     // --- Tabbed dock (bottom-right); tab column up the left side ---
