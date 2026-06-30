@@ -930,7 +930,11 @@ export function drawWorld(
     const px = gi.x * TILE - cam.x;
     const py = gi.y * TILE - cam.y;
     if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
-    drawGroundItem(g, px + TILE / 2, py + TILE / 2, now, gi.qty);
+    // Fan separate piles on the same tile out a little (by stable id) so each
+    // kill's loot reads as its own pile rather than one merged heap.
+    const ox = ((gi.id % 3) - 1) * 7;
+    const oy = ((Math.floor(gi.id / 3) % 3) - 1) * 6;
+    drawGroundItem(g, px + TILE / 2 + ox, py + TILE / 2 + oy, now, gi.qty);
   }
 
   // --- Objects ---
