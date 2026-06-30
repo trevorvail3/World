@@ -723,9 +723,9 @@ const rawObjects: WorldObjectDef[] = [
   { id: "ar_fish_13", kind: "fishing_spot", x: 101, y: 75, name: "Deepscale Shoal", resource: "fish_deepscale" },
   { id: "ar_fish_14", kind: "fishing_spot", x: 101, y: 78, name: "Eyeless Pike Shoal", resource: "fish_eyeless_pike" },
 
-  // === The Ashen Wyrm: Varath's flagship boss, nesting in the ash flats. =====
-  { id: "wyrm_sign", kind: "signpost", x: 59, y: 91, name: "Cindrath's Roost", lines: ["CINDRATH'S ROOST — turn back unless you've come to kill a dragon. Bring a stabbing weapon."] },
-  { id: "ashen_wyrm_1", kind: "monster", x: 62, y: 90, name: "Cindrath, the Ashen Wyrm", monster: "ashen_wyrm" },
+  // === The Ashen Wyrm: Varath's flagship boss, lairing deep in the Marrow Deeps. =
+  { id: "wyrm_sign", kind: "signpost", x: 95, y: 13, name: "Cindrath's Roost", lines: ["CINDRATH'S ROOST — the deep gallery ahead is where the wyrm sleeps. Turn back unless you've come to kill a dragon. Bring a stabbing weapon."] },
+  { id: "ashen_wyrm_1", kind: "monster", x: 97, y: 13, name: "Cindrath, the Ashen Wyrm", monster: "ashen_wyrm" },
 
   // === The Boneman: a mid-tier quest boss in a hidden hollow of the old wood.
   // Hidden until the Bone Collector quest tracks the killer to his lair (the

@@ -1253,8 +1253,8 @@ export const monsters: Record<string, MonsterStats> = {
     acc: 360, def: 80, maxHit: 72, speed: 3000, xp: 3200, attackStyle: "crush",
     weakness: ["stab"],
     boss: true,
-    bossHint: "Varath's deadliest. Cindrath nests in the ash flats south of the Heartmoor — Cindrath's Roost. Bring a stabbing weapon for its hide, and more food than you think you'll need.",
-    desc: "The last great wyrm of Varath, coiled in the ash flats it burned to glass. Its scales run forge-hot and its patience is long gone. Bring a stabbing weapon and more food than you think you'll need.",
+    bossHint: "Varath's deadliest. Cindrath lairs in the deepest gallery of the Marrow Deeps, the cave country far in the northeast — Cindrath's Roost. Bring a stabbing weapon for its hide, and more food than you think you'll need.",
+    desc: "The last great wyrm of Varath, coiled in the black heat of the Marrow Deeps where it long ago burrowed away from the sky. Its scales run forge-hot and its patience is long gone. Bring a stabbing weapon and more food than you think you'll need.",
     mechanics: [
       // 1. Inferno Breath — a telegraphed, devastating breath every 4th swing.
       { type: "heavy", every: 4, mult: 2.4, tell: "Cindrath rears back, throat glowing — INFERNO BREATH!" },
