@@ -895,15 +895,18 @@ export class Hud {
       tone: "danger",
       onSelect: () => this.dispatch({ type: "DROP", slot: index }),
     });
-    // Show the item's value in the info box (and the stack's total if many).
-    let desc = this.gearDesc(data.item);
+    // The item's value rides as a gold chip right next to the name (prominent);
+    // the stack total, if any, stays in the info line below.
+    const desc = this.gearDesc(data.item);
+    let valueChip: string | undefined;
+    let descWithTotal = desc;
     if (def.sell) {
-      const each = def.sell.toLocaleString();
-      desc += data.qty > 1
-        ? ` · Worth ${each}g each (${(def.sell * data.qty).toLocaleString()}g total)`
-        : ` · Worth ${each}g`;
+      valueChip = `${def.sell.toLocaleString()}g`;
+      if (data.qty > 1) {
+        descWithTotal += ` · ${(def.sell * data.qty).toLocaleString()}g for ${data.qty}`;
+      }
     }
-    this.menu.show(screenX, screenY, def.name, items, desc);
+    this.menu.show(screenX, screenY, def.name, items, descWithTotal, valueChip);
   }
 
   /** Gear tooltip: stat line plus any level requirement to wield it. */

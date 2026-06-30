@@ -1161,6 +1161,21 @@ body {
   border-bottom: 1px solid rgba(201, 162, 74, 0.25);
   margin-bottom: 3px;
 }
+/* The gold value chip sits right after the item name; margin-right:auto pushes
+   the close button back out to the far edge. */
+.ctx-title-value {
+  margin-right: auto;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #f4d98b;
+  background: rgba(201, 162, 74, 0.16);
+  border: 1px solid rgba(201, 162, 74, 0.4);
+  border-radius: 9px;
+  padding: 1px 7px;
+  text-transform: none;
+  white-space: nowrap;
+}
 .ctx-close {
   background: transparent; border: 0; color: var(--ink-dim);
   font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px;

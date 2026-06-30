@@ -49,13 +49,18 @@ export class ContextMenu {
     title: string,
     items: MenuItem[],
     description?: string,
+    /** Optional value chip shown right next to the name (e.g. "120g"). */
+    titleValue?: string,
   ): void {
     this.menu.innerHTML = "";
 
     const head = document.createElement("div");
     head.className = "ctx-title";
-    head.innerHTML = `<span class="ctx-title-text"></span><button class="ctx-close" type="button">✕</button>`;
+    head.innerHTML = `<span class="ctx-title-text"></span><span class="ctx-title-value"></span><button class="ctx-close" type="button">✕</button>`;
     (head.querySelector(".ctx-title-text") as HTMLElement).textContent = title;
+    const valEl = head.querySelector(".ctx-title-value") as HTMLElement;
+    if (titleValue) valEl.textContent = titleValue;
+    else valEl.remove();
     (head.querySelector(".ctx-close") as HTMLElement).addEventListener("pointerdown", (e) => {
       e.preventDefault();
       e.stopPropagation();

@@ -339,8 +339,14 @@ export class Game {
       e.preventDefault();
       this.setZoom(this.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
     }, { passive: false });
-    // Suppress the browser's own right-click menu; we provide our own.
-    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    // Suppress the browser's own right-click menu game-wide — we provide our own
+    // OSRS-style menu, and a stray desktop context menu over the HUD or page
+    // margins breaks the illusion. Text fields keep it so copy/paste still works.
+    window.addEventListener("contextmenu", (e) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      e.preventDefault();
+    });
   }
 
   start(): void {
