@@ -204,11 +204,19 @@ export function hydratePlayer(
   const savedEquip = raw["equipment"];
   if (isRecord(savedEquip)) {
     const equipment: Player["equipment"] = {};
+    let legacyBow: ItemId | null = null;
     for (const slot of Object.keys(savedEquip)) {
       const id = savedEquip[slot];
       if (typeof id !== "string" || !(id in content.items)) continue;
       const def = content.items[id as ItemId];
       if (def.slot === slot) equipment[slot as EquipSlot] = id as ItemId;
+      // Bows used to live in their own "ranged" slot; they're mainhand weapons
+      // now. Re-home a saved bow so it isn't silently dropped on load.
+      else if (slot === "ranged" && def.ranged) legacyBow = id as ItemId;
+    }
+    if (legacyBow) {
+      if (!equipment.mainhand) equipment.mainhand = legacyBow;
+      else player.bank[legacyBow] = (player.bank[legacyBow] ?? 0) + 1;
     }
     player.equipment = equipment;
   }

@@ -73,7 +73,6 @@ function standing(rep: number): { word: string; tone: string } {
 const EQUIP_SLOTS: { slot: EquipSlot; name: string }[] = [
   { slot: "mainhand", name: "Weapon" },
   { slot: "offhand", name: "Shield" },
-  { slot: "ranged", name: "Bow" },
   { slot: "ammo", name: "Arrows" },
   { slot: "helmet", name: "Helm" },
   { slot: "armor", name: "Body" },

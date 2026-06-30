@@ -79,7 +79,7 @@ const AGILITY_LAP_BONUS_MULT = 1.0;
 const AGGRESSIVE = new Set<string>([
   "hill_wolf", "ridge_wolf", "heartmoor_hound", "wild_boar", "greymane_boar",
   "forest_bear", "stone_crawler", "cave_crawler", "mountain_troll", "deep_golem",
-  "spine_wraith", "marrow_wraith", "mire_serpent",
+  "spine_wraith", "marrow_wraith", "mire_serpent", "outlaw_archer",
   "hollow_warden", "bog_warden", "spine_warlord", "marrow_keeper",
 ]);
 const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
@@ -174,6 +174,8 @@ const COMBAT = {
   styleBonus: 3,
   /** How long a slain monster stays down before respawning (ms). */
   respawn: 9000,
+  /** Tiles a player with a bow can loose an arrow across (Chebyshev). */
+  rangedReach: 5,
 };
 
 /** Base max HP before the Vitality level is added. */
@@ -1053,9 +1055,12 @@ function equipStat(
   let total = 0;
   for (const [slot, id] of Object.entries(player.equipment)) {
     if (!id) continue;
-    // The bow and arrows feed ranged math only — never melee accuracy/damage.
-    if (slot === "ranged" || slot === "ammo") continue;
+    // Arrows feed ranged math only — never melee accuracy/damage.
+    if (slot === "ammo") continue;
     const idef = content.items[id];
+    // A bow in the mainhand is a ranged weapon: its acc/dmg belong to the Draw
+    // math (rangedAccuracy/rangedMaxHit), so it must not pad the melee sums.
+    if (slot === "mainhand" && idef.ranged && (field === "acc" || field === "dmg")) continue;
     total += idef[field] ?? 0;
     // Skill capes are best-in-slot defensive gear — their worn benefit. The
     // Cape of Varath (and its prestige reskin) gives the most.
@@ -1400,7 +1405,8 @@ export function equipRequirement(
     const level = TOOL_TIER_REQS[def.tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
-  const gearSkill = def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined;
+  // A bow sits in the mainhand but is a ranged weapon — it gates on Draw, not Edge.
+  const gearSkill = def.ranged ? "draw" : (def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined);
   if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
   // An explicit equipLevel (uniques like the dragon set) overrides the tier
   // table; otherwise the level comes from the material tier.
@@ -2423,7 +2429,10 @@ function checkAggro(
     const obj = state.objects[def.id];
     if (!obj || !obj.available || obj.hp === undefined) continue;
     const mp = obj.pos ?? { x: def.x, y: def.y };
-    if (Math.hypot(mp.x - player.pos.x, mp.y - player.pos.y) > AGGRO_RANGE) continue;
+    // A melee brute only lunges when you're right beside it; an archer/caster
+    // opens fire the moment you stray into its (longer) attack range.
+    const reach = Math.max(AGGRO_RANGE, monsterFor(content, def)?.attackRange ?? 0);
+    if (Math.hypot(mp.x - player.pos.x, mp.y - player.pos.y) > reach) continue;
     const pSpeed = playerSpeed(player, content);
     const mSpeed = monsterFor(content, def)?.speed ?? COMBAT.monsterSpeed;
     player.path = [];
@@ -2610,6 +2619,33 @@ function wanderCreatures(
     const here = { x: Math.round(obj.pos.x), y: Math.round(obj.pos.y) };
     const engaged = player.activity.kind === "combat" && player.activity.targetId === def.id;
     const playerBeside = Math.max(Math.abs(here.x - pTile.x), Math.abs(here.y - pTile.y)) <= 1;
+
+    // An engaged monster that can't yet reach the player closes the distance,
+    // instead of standing still to be shot. A melee brute (reach 1) walks right
+    // up; an archer/caster (reach >1) only advances until it's within bow-shot,
+    // then holds and looses. Leashed a little past its wander radius so a bow-
+    // kiting player can't trivially outrange it forever.
+    if (engaged && !isCritter) {
+      const mReach = monsterFor(content, def)?.attackRange ?? 1;
+      const cheb = Math.max(Math.abs(here.x - pTile.x), Math.abs(here.y - pTile.y));
+      if (cheb > mReach) {
+        const leash = WANDER.radius + COMBAT.rangedReach + 2;
+        const sx = Math.sign(pTile.x - here.x);
+        const sy = Math.sign(pTile.y - here.y);
+        for (const [nx, ny] of [[here.x + sx, here.y + sy], [here.x + sx, here.y], [here.x, here.y + sy]] as const) {
+          if (nx === here.x && ny === here.y) continue;
+          if (Math.max(Math.abs(nx - def.x), Math.abs(ny - def.y)) > leash) continue;
+          if (!walk(nx, ny) || (nx === pTile.x && ny === pTile.y)) continue;
+          if (occupied.has(`${nx},${ny}`)) continue;
+          obj.wanderTarget = { x: nx, y: ny };
+          occupied.add(`${nx},${ny}`);
+          break;
+        }
+      } else {
+        obj.nextWanderAt = ctx.now + WANDER.pauseMin; // in range — hold and swing
+      }
+      continue;
+    }
     if (engaged || playerBeside) {
       // A startled critter bolts a step away instead of freezing.
       if (isCritter && playerBeside && !engaged) {
@@ -3434,14 +3470,20 @@ function playerMaxHit(player: Player, content: Content): number {
   return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus + buffVal(player, "melee_dmg");
 }
 
-/** Is the player set to fight at range? (a bow worn in the ranged slot). */
-function isRanged(player: Player): boolean {
-  return !!player.equipment.ranged;
+/** The bow the player is wielding, if any — a ranged weapon worn in the mainhand. */
+function equippedBow(player: Player, content: Content): ItemId | undefined {
+  const id = player.equipment.mainhand;
+  return id && content.items[id]?.ranged ? id : undefined;
+}
+
+/** Is the player set to fight at range? (a bow wielded in the mainhand). */
+function isRanged(player: Player, content: Content): boolean {
+  return !!equippedBow(player, content);
 }
 
 /** Ranged accuracy: Draw + bow + arrow accuracy + any ranged-accuracy buff. */
 function rangedAccuracy(player: Player, content: Content): number {
-  const bow = player.equipment.ranged;
+  const bow = equippedBow(player, content);
   const ammo = player.equipment.ammo;
   const ba = bow ? content.items[bow].acc ?? 0 : 0;
   const aa = ammo ? content.items[ammo].acc ?? 0 : 0;
@@ -3450,7 +3492,7 @@ function rangedAccuracy(player: Player, content: Content): number {
 
 /** Ranged max hit: Draw + bow + arrow damage + any ranged-damage buff. */
 function rangedMaxHit(player: Player, content: Content): number {
-  const bow = player.equipment.ranged;
+  const bow = equippedBow(player, content);
   const ammo = player.equipment.ammo;
   const bd = bow ? content.items[bow].dmg ?? 0 : 0;
   const ad = ammo ? content.items[ammo].dmg ?? 0 : 0;
@@ -3464,7 +3506,7 @@ function playerDefence(player: Player, content: Content): number {
 
 /** The player's swing interval (ms): the active weapon's speed, or default. */
 function playerSpeed(player: Player, content: Content): number {
-  const id = isRanged(player) ? player.equipment.ranged : player.equipment.mainhand;
+  const id = player.equipment.mainhand;
   const speed = id ? content.items[id].speed : undefined;
   return speed || COMBAT.playerMeleeSpeed;
 }
@@ -3509,6 +3551,20 @@ function resolveCombat(
   }
   if (!obj.nextAttackAt) obj.nextAttackAt = ctx.now + (stats.speed ?? COMBAT.monsterSpeed);
 
+  // Each side can only land a blow within its own reach: melee is 1 tile, a bow
+  // reaches `rangedReach`, and an archer/caster monster reaches its attackRange.
+  // Out of reach, the clock still ticks (so neither side stockpiles free swings)
+  // but the swing is skipped — closing the gap is the wander logic's job.
+  const playerReach = isRanged(player, content) ? COMBAT.rangedReach : 1;
+  const monsterReach = stats.attackRange ?? 1;
+  const tileDist = () => {
+    const mt = objectPos(def, obj);
+    return Math.max(
+      Math.abs(Math.round(player.pos.x) - Math.round(mt.x)),
+      Math.abs(Math.round(player.pos.y) - Math.round(mt.y)),
+    );
+  };
+
   // Bounded loop: at most a handful of swings can come due in one 250ms tick.
   let guard = 0;
   while (
@@ -3523,12 +3579,13 @@ function resolveCombat(
     const doPlayer =
       playerDue && (!monsterDue || player.activity.nextActionAt <= obj.nextAttackAt);
 
+    const dist = tileDist();
     if (doPlayer) {
       player.activity.nextActionAt += playerSpeed(player, content);
-      playerSwing(state, content, def, obj, stats, ctx, events);
+      if (dist <= playerReach) playerSwing(state, content, def, obj, stats, ctx, events);
     } else {
       obj.nextAttackAt += stats.speed ?? COMBAT.monsterSpeed;
-      monsterSwing(state, content, def, obj, stats, ctx, events);
+      if (dist <= monsterReach) monsterSwing(state, content, def, obj, stats, ctx, events);
     }
   }
 }
@@ -3545,7 +3602,7 @@ function playerSwing(
   const { player } = state;
   if (obj.hp === undefined) return;
 
-  const ranged = isRanged(player);
+  const ranged = isRanged(player, content);
 
   // Ranged fighting spends one arrow per loosed shot; with an empty quiver the
   // attack simply can't continue.

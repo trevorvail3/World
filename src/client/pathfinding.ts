@@ -171,3 +171,32 @@ export function pathToAdjacent(
   if (best === null) return { path: [], reachable: false, alreadyAdjacent: false };
   return { path: best, reachable: true, alreadyAdjacent: false };
 }
+
+/**
+ * Path toward `target` but stop as soon as the player is within `reach` tiles
+ * (Chebyshev) of it — how an archer closes only to bow-shot, not melee. Reuses
+ * the route to an adjacent tile and truncates it at the first waypoint in range,
+ * so the player walks the minimum needed to loose an arrow.
+ */
+export function pathToWithin(
+  walkable: Walkable,
+  from: Vec2,
+  target: Vec2,
+  reach: number,
+): { path: Vec2[]; reachable: boolean; alreadyInRange: boolean } {
+  const fx = Math.round(from.x);
+  const fy = Math.round(from.y);
+  if (Math.max(Math.abs(fx - target.x), Math.abs(fy - target.y)) <= reach) {
+    return { path: [], reachable: true, alreadyInRange: true };
+  }
+  const { path, reachable } = pathToAdjacent(walkable, from, target);
+  if (!reachable) return { path: [], reachable: false, alreadyInRange: false };
+  // Walk only until the first step that brings us within bow-shot.
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i]!;
+    if (Math.max(Math.abs(p.x - target.x), Math.abs(p.y - target.y)) <= reach) {
+      return { path: path.slice(0, i + 1), reachable: true, alreadyInRange: false };
+    }
+  }
+  return { path, reachable: true, alreadyInRange: false };
+}

@@ -3624,10 +3624,10 @@ function playerAction(
   // taken from the *current* weapon's speed, so the cadence always matches the
   // weapon actually in hand — a dagger (1600ms) visibly faster than a hammer.
   if (act.kind === "combat") {
-    const wepId = player.equipment.ranged ?? player.equipment.mainhand;
-    const interval = (wepId && content.items[wepId]?.speed) || 2400; // COMBAT.playerMeleeSpeed
-    if (player.equipment.ranged) return { kind: "ranged", tool: "bow", frac: swingFrac(interval) };
     const main = player.equipment.mainhand;
+    const interval = (main && content.items[main]?.speed) || 2400; // COMBAT.playerMeleeSpeed
+    // A bow now lives in the mainhand — draw it at range instead of swinging.
+    if (main && content.items[main]?.ranged) return { kind: "ranged", tool: "bow", frac: swingFrac(interval) };
     // The Bonesaw swings as a sword but renders its own toothed-saw blade.
     const type = main === "bonesaw" ? "saw" : ((main && content.items[main]?.wepType) || "sword");
     return { kind: "combat", tool: type, frac: swingFrac(interval) };

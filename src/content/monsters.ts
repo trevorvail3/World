@@ -365,13 +365,14 @@ export const monsters: Record<string, MonsterStats> = {
     "def": 10,
     "maxHit": 24,
     "speed": 1800,
+    "attackRange": 4,
     "xp": 155,
-    "attackStyle": "slash",
+    "attackStyle": "ranged",
     "weakness": [
       "slash",
       "ranged"
     ],
-    "desc": "A fast, barely-visible thing that moves between rocks. Believed to be a remnant of something older.",
+    "desc": "A fast, barely-visible thing that moves between rocks. It flings shards of cold from afar — close the gap or answer it with a bow.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 6, max: 18, tier: "common" },
       { item: "wraith_fragment", chance: 0.3, tier: "uncommon" },
@@ -564,13 +565,14 @@ export const monsters: Record<string, MonsterStats> = {
     "def": 20,
     "maxHit": 55,
     "speed": 2200,
+    "attackRange": 4,
     "xp": 425,
-    "attackStyle": "slash",
+    "attackStyle": "ranged",
     "weakness": [
       "crush",
       "ranged"
     ],
-    "desc": "A remnant that has absorbed the minerals of the deep. Bone without flesh.",
+    "desc": "A remnant that has absorbed the minerals of the deep. Bone without flesh — it hurls splinters of itself from a distance.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 14, max: 36, tier: "common" },
       { item: "wraith_fragment", chance: 0.32, tier: "uncommon" },
@@ -1183,7 +1185,7 @@ export const monsters: Record<string, MonsterStats> = {
   },
   "outlaw_archer": {
     id: "outlaw_archer", name: "Outlaw Archer", icon: "🏹", level: 26, hp: 56,
-    acc: 51, def: 18, maxHit: 11, speed: 2300, xp: 150, attackStyle: "stab",
+    acc: 51, def: 18, maxHit: 11, speed: 2300, attackRange: 4, xp: 150, attackStyle: "ranged",
     weakness: ["crush"],
     desc: "A marksman gone over to the road gangs. Picks off the careless from cover.",
     drops: [

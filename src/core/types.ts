@@ -674,6 +674,8 @@ export interface ItemDef {
   wepType?: string;
   /** Whether the weapon occupies both hands (no shield). */
   twoHand?: boolean;
+  /** A bow: worn in the mainhand but fired at range (uses Draw + the quiver). */
+  ranged?: boolean;
   /** Crafting tier for leather armour (1–4). */
   craftTier?: number;
   /** Rarity label, e.g. "legendary". */
@@ -896,6 +898,9 @@ export interface MonsterStats {
   maxHit: number;
   /** Attack interval in ms. */
   speed?: number;
+  /** Tiles this monster can strike from. 1 (default) = melee; higher = an archer
+   *  / caster that looses from afar and holds its distance instead of closing. */
+  attackRange?: number;
   /** Combat XP granted (to each combat skill) on a kill. */
   xp: number;
   /** Attack style: "slash" | "stab" | "crush". */

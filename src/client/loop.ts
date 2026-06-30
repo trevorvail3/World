@@ -43,7 +43,7 @@ import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { objectPos, objectHidden, travelFare } from "../core/worldCore.ts";
-import { findPath, pathToAdjacent } from "./pathfinding.ts";
+import { findPath, pathToAdjacent, pathToWithin } from "./pathfinding.ts";
 
 /**
  * The bridge to the core. main.ts builds this so the loop never imports the
@@ -1882,6 +1882,17 @@ export class Game {
 
   private interactObject(objId: string, tile: Vec2, mode?: "talk" | "shop"): void {
     const player = this.bridge.state.player;
+    // Fighting a monster with a bow? Close only to bow-shot, not melee range.
+    const obj = this.bridge.content.objects.find((o) => o.id === objId);
+    const reach = obj?.kind === "monster" ? this.bowReach() : 0;
+    if (reach > 0) {
+      const { path, reachable } = pathToWithin(this.bridge.walkable, player.pos, tile, reach);
+      if (!reachable) { this.hud.log("You can't reach that."); return; }
+      this.setMarker(tile);
+      this.tapFlash = { objId, born: performance.now() };
+      this.dispatch({ type: "INTERACT", objId, path });
+      return;
+    }
     const { path, reachable } = pathToAdjacent(
       this.bridge.walkable,
       player.pos,
@@ -1894,6 +1905,13 @@ export class Game {
     this.setMarker(tile);
     this.tapFlash = { objId, born: performance.now() };
     this.dispatch({ type: "INTERACT", objId, path, ...(mode ? { mode } : {}) });
+  }
+
+  /** Tiles the player can engage from with their wielded bow (0 if not ranged).
+   *  Mirrors COMBAT.rangedReach in the core. */
+  private bowReach(): number {
+    const main = this.bridge.state.player.equipment.mainhand;
+    return main && this.bridge.content.items[main]?.ranged ? 5 : 0;
   }
 
   /** Is this NPC a shopkeeper (so a tap offers Talk vs Shop)? */
