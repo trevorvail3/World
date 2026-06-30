@@ -646,6 +646,16 @@ export class Game {
           const p = this.bridge.state.player.pos;
           const label = ev.rank > 0 ? `${ev.species} — #${ev.rank}!` : `${ev.species} ${ev.weight.toFixed(1)}kg`;
           this.floats.push({ x: p.x, y: p.y, text: label, color: ev.rank > 0 ? "#f4d98b" : "#9fd0d8", born: now });
+          // Topping the board is a big moment — a level-up-style fanfare. If the
+          // champion doesn't yet hold the Golden Rod, point them to Jacob.
+          if (ev.rank === 1) {
+            const pl = this.bridge.state.player;
+            const ownsRod = pl.equipment.mainhand === "rod_gold"
+              || pl.inventory.some((s) => s?.item === "rod_gold")
+              || (pl.bank["rod_gold"] ?? 0) > 0;
+            this.levelUp.champion(ev.species, ev.weight, !ownsRod);
+            audio.play("levelup");
+          }
           break;
         }
         case "OPEN_CRAFT":

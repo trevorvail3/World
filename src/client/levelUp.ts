@@ -10,9 +10,13 @@
 import type { Content, SkillId } from "../core/types.ts";
 import { iconize } from "./glyph.ts";
 
+type Celebration =
+  | { kind: "level"; skill: SkillId; level: number }
+  | { kind: "champion"; species: string; weight: number; needsPrize: boolean };
+
 export class LevelUp {
   private el: HTMLElement;
-  private queue: Array<{ skill: SkillId; level: number }> = [];
+  private queue: Celebration[] = [];
   private showing = false;
   private timer: number | null = null;
 
@@ -25,7 +29,14 @@ export class LevelUp {
 
   /** Queue a level-up to celebrate. */
   show(skill: SkillId, level: number): void {
-    this.queue.push({ skill, level });
+    this.queue.push({ kind: "level", skill, level });
+    if (!this.showing) this.next();
+  }
+
+  /** Queue the big "you topped the pier" announcement (a record-breaking catch).
+   *  `needsPrize` adds the call-to-action to collect the Golden Rod from Jacob. */
+  champion(species: string, weight: number, needsPrize: boolean): void {
+    this.queue.push({ kind: "champion", species, weight, needsPrize });
     if (!this.showing) this.next();
   }
 
@@ -33,25 +44,40 @@ export class LevelUp {
     const item = this.queue.shift();
     if (!item) { this.showing = false; return; }
     this.showing = true;
-    const meta = this.content.skills[item.skill];
-    const unlock = this.unlockedAt(item.skill, item.level);
-    this.el.innerHTML = `
-      <div class="levelup-eyebrow">✦ Level Up ✦</div>
-      <div class="levelup-row">
-        <span class="levelup-icon">${iconize(meta.icon)}</span>
-        <div>
-          <div class="levelup-skill">${meta.name}</div>
-          <div class="levelup-level">Level ${item.level}</div>
+    if (item.kind === "champion") {
+      this.el.classList.add("levelup-champion");
+      this.el.innerHTML = `
+        <div class="levelup-eyebrow">★ Pier Record ★</div>
+        <div class="levelup-row">
+          <span class="levelup-icon">${iconize("🏆")}</span>
+          <div>
+            <div class="levelup-skill">${esc(item.species)}</div>
+            <div class="levelup-level">${item.weight.toFixed(1)} kg — the pier's heaviest catch!</div>
+          </div>
         </div>
-      </div>
-      ${unlock ? `<div class="levelup-unlock">${unlock}</div>` : ""}`;
+        ${item.needsPrize ? `<div class="levelup-unlock">See <b>Jacob</b> at the pier to claim the <b>Golden Rod of Varath</b>.</div>` : ""}`;
+    } else {
+      this.el.classList.remove("levelup-champion");
+      const meta = this.content.skills[item.skill];
+      const unlock = this.unlockedAt(item.skill, item.level);
+      this.el.innerHTML = `
+        <div class="levelup-eyebrow">✦ Level Up ✦</div>
+        <div class="levelup-row">
+          <span class="levelup-icon">${iconize(meta.icon)}</span>
+          <div>
+            <div class="levelup-skill">${meta.name}</div>
+            <div class="levelup-level">Level ${item.level}</div>
+          </div>
+        </div>
+        ${unlock ? `<div class="levelup-unlock">${unlock}</div>` : ""}`;
+    }
     this.el.classList.remove("hidden");
     // restart the entry animation
     this.el.classList.remove("show");
     void this.el.offsetWidth;
     this.el.classList.add("show");
     if (this.timer !== null) window.clearTimeout(this.timer);
-    this.timer = window.setTimeout(() => this.dismiss(), 3000);
+    this.timer = window.setTimeout(() => this.dismiss(), item.kind === "champion" ? 5200 : 3000);
   }
 
   private dismiss(): void {
@@ -73,4 +99,8 @@ export class LevelUp {
     }
     return null;
   }
+}
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

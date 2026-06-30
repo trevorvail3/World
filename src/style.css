@@ -2960,6 +2960,25 @@ button.inv-slot {
 }
 .levelup-unlock b { color: var(--gold); font-weight: 600; }
 
+/* The pier-record fanfare: a grander, gold-lit version of the level-up card. */
+.levelup-champion {
+  min-width: 256px;
+  padding: 16px 24px 17px;
+  background: linear-gradient(180deg, rgba(58, 44, 18, 0.98), rgba(28, 20, 10, 0.98));
+  border-color: #f3cf52;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(243, 207, 82, 0.22);
+  animation: champion-glow 1.6s ease-in-out infinite;
+}
+.levelup-champion .levelup-eyebrow { color: #f3cf52; letter-spacing: 0.3em; font-size: 11px; text-shadow: 0 0 12px rgba(243, 207, 82, 0.7); }
+.levelup-champion .levelup-icon { font-size: 32px; filter: drop-shadow(0 0 10px rgba(243, 207, 82, 0.8)); }
+.levelup-champion .levelup-skill { font-size: 18px; color: #f6e6b8; }
+.levelup-champion .levelup-level { color: #e0b54a; }
+.levelup-champion .levelup-unlock { color: #d8cba6; border-top-color: rgba(243, 207, 82, 0.35); }
+@keyframes champion-glow {
+  0%, 100% { box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(243, 207, 82, 0.18); }
+  50% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 38px rgba(243, 207, 82, 0.34); }
+}
+
 /* ── Procedural UI glyphs (replace emoji across the chrome) ───────────────────
    One inline SVG style; size set per context, colour inherited via currentColor
    so each spot tints its own glyph (gold skill icons, ink tabs, etc.). */
