@@ -1010,6 +1010,13 @@ export class Hud {
       moved = false;
       fired = false;
       clear();
+      // Right mouse button = the long-hold inspect, fired at once (desktop). Mark
+      // it fired so the following pointerup doesn't also run the tap action.
+      if (e.button === 2) {
+        fired = true;
+        onLong(e.clientX, e.clientY);
+        return;
+      }
       timer = window.setTimeout(() => {
         if (!moved) {
           fired = true;
@@ -1028,12 +1035,9 @@ export class Hud {
       if (!fired && !moved && onTap) onTap(e.clientX, e.clientY);
     });
     el.addEventListener("pointercancel", clear);
-    // Right-click inspects immediately (desktop).
-    el.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      clear();
-      onLong(e.clientX, e.clientY);
-    });
+    // The right-click inspect is handled on pointerdown above; just stop the
+    // browser's own context menu here (pointerdown fires before contextmenu).
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   update(state: WorldState): void {
