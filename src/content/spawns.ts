@@ -135,6 +135,19 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   trail_bone_5: { x: 61, y: 109 },
   cr_sheep1: { x: 58, y: 36 },
   out_cutthroat_hollow_2: { x: 53, y: 103 },
+  // Push the Redrun estuary's heavy hitters out of the Drowned Pier's fishing
+  // loop (ashfin shoals ~135–137,117–122; warden 146,118). With wander radius 2
+  // and aggro 1.5, ~9 tiles of clearance means neither can ever reach a fisher —
+  // the pier stays a calm spot, the wild country around it stays wild. (The lvl
+  // 22 Forest Bear nearby is harmless at that range, and is a scatter-POI the
+  // fixup table doesn't reach, so it's left where it is.)
+  rd_orc_1: { x: 128, y: 126 },      // Ancient Orc (lvl 94) → SW wilds
+  rd_serpent_1: { x: 130, y: 108 },  // River Serpent (lvl 86) → up the Redrun
+  // The Smuggler's Landing outlaws (lvl 26–40) sat close enough to plink a fisher
+  // at the northern shoal — shift the camp NW toward the Landing, clear of the loop.
+  out_smugglers_landing_0: { x: 130, y: 110 },
+  out_smugglers_landing_1: { x: 131, y: 110 },
+  out_smugglers_landing_2: { x: 130, y: 109 },
 };
 
 /** Re-home a legacy-coordinate object (and its teleport target) onto the new,
