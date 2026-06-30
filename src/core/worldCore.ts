@@ -150,29 +150,34 @@ function ownsGoldRod(player: Player): boolean {
   return (player.bank[GOLD_ROD] ?? 0) > 0;
 }
 
-/**
- * Keep the Golden Rod with whoever tops the pier's records board. Grant it the
- * moment the player takes #1; strip it (it "passes to the new champion") if they
- * ever lose the top spot. Called after a catch updates the board. Cosmetic only:
- * the rod is mechanically identical to the finest normal rod.
- */
-function syncGoldenRod(player: Player, content: Content, events: WorldEvent[]): void {
-  if (!content.items[GOLD_ROD]) return;
-  const leader = player.fishingRecords.length > 0 &&
+/** True if the player currently tops the pier's records board. */
+function isPierLeader(player: Player): boolean {
+  return player.fishingRecords.length > 0 &&
     player.fishingRecords[0]!.angler === player.appearance.name;
-  const has = ownsGoldRod(player);
-  if (leader && !has) {
-    if (canAddItem(player, GOLD_ROD)) addItem(player, GOLD_ROD, 1, events);
-    else player.bank[GOLD_ROD] = (player.bank[GOLD_ROD] ?? 0) + 1;
-    events.push({ type: "LOG", message: "You hold the pier's heaviest catch — the Warden presents you the Golden Rod of Varath!" });
-  } else if (!leader && has) {
-    if (player.equipment.mainhand === GOLD_ROD) delete player.equipment.mainhand;
-    for (let i = 0; i < player.inventory.length; i++) {
-      if (player.inventory[i]?.item === GOLD_ROD) player.inventory[i] = null;
-    }
-    delete player.bank[GOLD_ROD];
-    events.push({ type: "LOG", message: "Your pier record has fallen — the Golden Rod passes to the new champion." });
+}
+
+/** Hand the Golden Rod to the player (pack, or bank if full). */
+function grantGoldRod(player: Player, content: Content, events: WorldEvent[]): void {
+  if (!content.items[GOLD_ROD]) return;
+  if (canAddItem(player, GOLD_ROD)) addItem(player, GOLD_ROD, 1, events);
+  else player.bank[GOLD_ROD] = (player.bank[GOLD_ROD] ?? 0) + 1;
+}
+
+/**
+ * The Golden Rod is the pier champion's trophy, so it can't outlive their reign:
+ * if the player no longer tops the board, it "passes to the new champion" and is
+ * stripped from hand, pack and bank. Called after a catch updates the records.
+ * (Granting it is done in person — you collect it from the warden; see
+ * handleNpcTalk.)
+ */
+function revokeGoldRodIfDethroned(player: Player, content: Content, events: WorldEvent[]): void {
+  if (!content.items[GOLD_ROD] || !ownsGoldRod(player) || isPierLeader(player)) return;
+  if (player.equipment.mainhand === GOLD_ROD) delete player.equipment.mainhand;
+  for (let i = 0; i < player.inventory.length; i++) {
+    if (player.inventory[i]?.item === GOLD_ROD) player.inventory[i] = null;
   }
+  delete player.bank[GOLD_ROD];
+  events.push({ type: "LOG", message: "Your pier record has fallen — the Golden Rod passes to the new champion." });
 }
 
 /** True if the player wears a cape that masters fishing (the Angler's Cape, or a
@@ -1325,8 +1330,9 @@ export function applyIntent(
       if (rank > 0) {
         events.push({ type: "LOG", message: `A pier record! It takes #${rank} on the board.` });
       }
-      // The Golden Rod follows whoever now tops the board.
-      syncGoldenRod(player, content, events);
+      // If this catch knocked the player off the top spot, the rod passes on.
+      // (Claiming it when you DO top the board is done in person — talk to Jacob.)
+      revokeGoldRodIfDethroned(player, content, events);
       break;
     }
     case "DROP": {
@@ -2015,7 +2021,7 @@ function startInteraction(
     }
 
     case "pier_gate": {
-      events.push({ type: "LOG", message: "A rope bars the planks. Halloran the Pier-Warden hasn't given you leave — speak with him first." });
+      events.push({ type: "LOG", message: "A rope bars the planks. Jacob the Pier-Warden hasn't given you leave — speak with him first." });
       break;
     }
 
@@ -3352,6 +3358,17 @@ function handleNpcTalk(
     events.push({ type: "QUEST_STARTED", quest: offer.id });
     events.push({ type: "LOG", message: `Quest started: ${offer.name}.` });
     return offer.intro;
+  }
+
+  // 3b) Jacob hands the Golden Rod to whoever now tops the pier's records board —
+  //     in person, and only while they still hold the record. (Losing the top
+  //     spot strips it automatically; see revokeGoldRodIfDethroned.)
+  if (npcId === "pier_warden" && isPierLeader(player) && !ownsGoldRod(player)) {
+    grantGoldRod(player, content, events);
+    return [
+      "Word came down the coast — your catch tops the board. The heaviest the Drowned Pier has ever weighed.",
+      "Then this is yours: the Golden Rod of Varath. Hold the record and you hold the rod; lose it, and it passes to whoever beats you. Wear it well, champion.",
+    ];
   }
 
   // 4) Otherwise, ordinary chatter.

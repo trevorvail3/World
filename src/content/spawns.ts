@@ -1273,7 +1273,7 @@ const newPois: WorldObjectDef[] = [
 //     PIER so the planks, the gate-neck and the cast tile always line up. ---
 const pierObjects: WorldObjectDef[] = [
   {
-    id: "pier_warden", kind: "npc", x: PIER.warden.x, y: PIER.warden.y, name: "Halloran, the Pier-Warden",
+    id: "pier_warden", kind: "npc", x: PIER.warden.x, y: PIER.warden.y, name: "Jacob, the Pier-Warden",
     lines: [
       "Storms took the old pier years back. I've been re-laying the boards plank by plank — slow work, for old hands.",
       "There's deep water off the end where the real fish run. Not estuary tiddlers — Eyeless Bass, Greatpike, things with weight to them.",

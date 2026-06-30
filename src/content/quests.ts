@@ -1446,8 +1446,8 @@ export const quests: QuestDef[] = [
       "Land me eight ashfin from the estuary shallows. Show me your hands know a rod, and the end of the pier is yours. The deep water keeps the big ones.",
     ],
     steps: [
-      { type: "deliver", npc: "pier_warden", item: "ashfin_raw", count: 8, text: "Bring Halloran 8 raw ashfin" },
-      { type: "talk", npc: "pier_warden", text: "Return to Halloran at the pier" },
+      { type: "deliver", npc: "pier_warden", item: "ashfin_raw", count: 8, text: "Bring Jacob 8 raw ashfin" },
+      { type: "talk", npc: "pier_warden", text: "Return to Jacob at the pier" },
     ],
     outro: [
       "Eight clean ashfin — and you didn't snap a line bringing them. The deck'll hold for you.",
