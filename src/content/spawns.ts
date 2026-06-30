@@ -532,7 +532,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "rd_brigand_1", kind: "monster", monster: "redrun_brigand", x: 92, y: 68, name: "Redrun Brigand" },
   { id: "rd_serpent_1", kind: "monster", monster: "river_serpent", x: 93, y: 76, name: "River Serpent" },
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 93, y: 80, name: "Ancient Orc" },
-  { id: "rd_ferryman", kind: "monster", monster: "dread_ferryman", x: 93, y: 77, name: "The Dread Ferryman" },
+  { id: "portal_ferryman", kind: "portal", x: 109, y: 59, name: "The Ferryman's Cave", dungeon: "ferryman_cave", target: { x: 72, y: 114 }, lines: ["A black slot in the rock, in the lonely hills north of the Redrun crossings. Cold river-air breathes up out of it, and far below something shifts its weight. You climb down."] },
 
   // === NAMED LANDMARKS — the gazetteer (discovery layer) ====================
   // Drawn from the World Bible §X. Examine-only places that give each area
@@ -826,6 +826,11 @@ const rawObjects: WorldObjectDef[] = [
   { id: "boss_marrow", kind: "monster", monster: "marrow_keeper", x: 56, y: 115, name: "The Marrow Keeper" },
   { id: "marrow_add1", kind: "monster", monster: "cave_crawler", x: 53, y: 117, name: "Deep Crawler" },
   { id: "marrow_add2", kind: "monster", monster: "marrow_wraith", x: 59, y: 117, name: "Vault Wraith" },
+  // The Dread Ferryman's flooded cave (arena slot x=66). You climb down to him.
+  { id: "ret_ferryman", kind: "portal", x: 72, y: 117, name: "Cave Mouth", target: { x: 109, y: 60 }, lines: ["You climb back up to the daylight and the cold hills."] },
+  { id: "boss_ferryman", kind: "monster", monster: "dread_ferryman", x: 72, y: 113, name: "The Dread Ferryman" },
+  { id: "ferryman_add1", kind: "monster", monster: "river_serpent", x: 69, y: 115, name: "Drowned Serpent" },
+  { id: "ferryman_add2", kind: "monster", monster: "redrun_brigand", x: 75, y: 115, name: "Stranded Brigand" },
 
   // --- Audit fix: gathering nodes the action graph assumed but never spawned ---
   // (gold + silica ore, and the high-tier Forestry trees above Greyoak). Tiles

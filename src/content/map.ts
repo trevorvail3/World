@@ -72,7 +72,7 @@ export function remap(x: number, y: number): { x: number; y: number } {
 }
 
 /**
- * The four boss arenas, isolated in the hidden band below the overworld (you can
+ * The five boss arenas, isolated in the hidden band below the overworld (you can
  * only reach them by a portal that teleports you in). Each is a walled room with
  * a floor tile of its own. x is the left column; the room is ARENA_W × ARENA_H.
  */
@@ -84,6 +84,7 @@ export const ARENAS: { dungeon: string; x: number; floor: TileType }[] = [
   { dungeon: "bog_barrow", x: 18, floor: "bog" },
   { dungeon: "spine_vault", x: 34, floor: "stone" },
   { dungeon: "marrow_vault", x: 50, floor: "cave" },
+  { dungeon: "ferryman_cave", x: 66, floor: "cave" },
 ];
 
 /**
@@ -661,7 +662,7 @@ function decode(): WorldMap {
     }
   }
 
-  // 6) Carve the four sealed boss arenas in the band below the overworld.
+  // 6) Carve the sealed boss arenas in the band below the overworld.
   for (const a of ARENAS) {
     for (let y = ARENA_TOP; y < ARENA_TOP + ARENA_H; y++) {
       for (let x = a.x; x < a.x + ARENA_W; x++) {

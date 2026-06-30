@@ -783,7 +783,9 @@ export const monsters: Record<string, MonsterStats> = {
         "chance": 0.02,
         "tier": "legendary"
       }
-    ]
+    ],
+    "boss": true,
+    "bossHint": "Climb down into the Ferryman's Cave — a black slot in the lonely hills NORTH of the Redrun crossings, well off the road. He fights you alone in the flooded dark; come well-fed, and bring stab or crush."
   },
   "aelveth_white_wolf": {
     "id": "aelveth_white_wolf",
