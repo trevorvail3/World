@@ -119,6 +119,16 @@ const WANDER = {
 const WOODCUTTING = { interval: 1400, success: 0.5, xp: 25, respawn: 7000, deplete: 0.25 };
 const MINING = { interval: 1500, success: 0.52, xp: 30, respawn: 7000, deplete: 0.25 };
 const FISHING = { interval: 1300, success: 0.55, xp: 20 };
+// Fishing reels in on a per-catch timer instead of a fast fixed tick: a low fish
+// (ashfin, lvl 1) lands in ~2-4s; richer fish take longer the higher their level
+// requirement, so a tier-9 catch is a patient ~5-9s. Each reel is randomised in
+// that band so the rhythm isn't metronomic. (Fishing always lands a catch on the
+// timer — the wait IS the cost, so there's no separate miss roll.)
+function fishCatchInterval(levelReq: number, ctx: Ctx): number {
+  const lo = 2000 + levelReq * 40;
+  const hi = 4000 + levelReq * 70;
+  return Math.round(lo + ctx.rng() * (hi - lo));
+}
 // Hunter: a snare you set and check. A catch "springs" the trap (it depletes),
 // then the game wanders back and the trap resets after a short wait. It has no
 // tool to speed it, so the constants carry the whole buff.
@@ -747,13 +757,17 @@ function beginGather(
   }
   // A gathering tincture speeds every gather (fishing has no tool but still buffs).
   speedMult *= 1 - Math.min(0.6, buffVal(player, "gather_speed"));
-  const stepInterval = Math.round(interval * speedMult);
+  // Fishing reels on its own tier-scaled timer (so even the first catch waits the
+  // right beat); the gather tincture still trims it.
+  const baseInterval = kind === "fishing"
+    ? Math.round(fishCatchInterval(action.levelReq, ctx) * speedMult)
+    : Math.round(interval * speedMult);
   player.activity = {
     kind,
     targetId: objId,
     actionId: action.id,
-    nextActionAt: ctx.now + stepInterval,
-    actionInterval: stepInterval,
+    nextActionAt: ctx.now + baseInterval,
+    actionInterval: baseInterval,
   };
   return true;
 }
@@ -2578,10 +2592,66 @@ export function tick(
   // 5) Idle wandering: npcs + monsters amble within reach of their spawn.
   wanderCreatures(state, content, ctx, dt);
 
+  // 5b) Fishing spots drift along the shoreline (OSRS-style) — they move on
+  // every so often, so you follow them rather than stand on one tile forever.
+  moveFishingSpots(state, content, ctx, events);
+
   // 6) Light up any newly-earned achievements.
   checkAchievements(state, content, events);
 
   return events;
+}
+
+/** OSRS-style: fishing spots periodically relocate to a nearby shore tile, near
+ *  their anchor, ending any fishing on a spot that swims off. */
+const FISH_MOVE_MIN = 22_000, FISH_MOVE_MAX = 48_000; // ms between relocations
+function moveFishingSpots(
+  state: WorldState,
+  content: Content,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { map } = content;
+  const blocked = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return true;
+    const t = map.tiles[y * map.width + x];
+    return t === "mountain" || t === "cave_wall" || t === "wall" || t === "plank";
+  };
+  const isWater = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+    const t = map.tiles[y * map.width + x];
+    return t === "water" || t === "deep";
+  };
+  // A castable shore tile: open water you can stand beside (a walkable land edge).
+  const shore = (x: number, y: number): boolean =>
+    isWater(x, y) && (
+      (!blocked(x, y - 1) && !isWater(x, y - 1)) || (!blocked(x, y + 1) && !isWater(x, y + 1)) ||
+      (!blocked(x - 1, y) && !isWater(x - 1, y)) || (!blocked(x + 1, y) && !isWater(x + 1, y))
+    );
+  for (const def of content.objects) {
+    if (def.kind !== "fishing_spot") continue;
+    const obj = state.objects[def.id];
+    if (!obj || !obj.available) continue;
+    if (!obj.nextWanderAt) { obj.nextWanderAt = ctx.now + randRange(ctx, FISH_MOVE_MIN, FISH_MOVE_MAX); continue; }
+    if (ctx.now < obj.nextWanderAt) continue;
+    // Gather candidate shore tiles within a small radius of the anchor (def), not
+    // the current spot, so a spot drifts around its home rather than wandering off.
+    const cands: Vec2[] = [];
+    const cur = obj.pos ?? { x: def.x, y: def.y };
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+      const x = def.x + dx, y = def.y + dy;
+      if ((x === Math.round(cur.x) && y === Math.round(cur.y)) || !shore(x, y)) continue;
+      cands.push({ x, y });
+    }
+    obj.nextWanderAt = ctx.now + randRange(ctx, FISH_MOVE_MIN, FISH_MOVE_MAX);
+    if (cands.length === 0) continue;
+    obj.pos = cands[Math.floor(ctx.rng() * cands.length)]!;
+    // If the player was fishing this spot, it swam off — stop and tell them.
+    if (state.player.activity.kind === "fishing" && state.player.activity.targetId === def.id) {
+      clearActivity(state.player);
+      events.push({ type: "LOG", message: `The ${def.name} moves off down the shore.` });
+    }
+  }
 }
 
 /**
@@ -2909,7 +2979,10 @@ function gatherStep(
     clearActivity(player);
     return;
   }
-  if (ctx.rng() < beh.success) {
+  // Fishing lands a catch every (tier-scaled) reel; everything else rolls a
+  // success chance on a fixed tick.
+  const fishing = action.skill === "fishing";
+  if (fishing || ctx.rng() < beh.success) {
     // A fishing spot with a catch pool rolls one fish you meet the level for
     // (weighted) on each catch — OSRS-style mixed spots. Other nodes (and spots
     // with no pool) just yield their single action.
@@ -2944,8 +3017,11 @@ function gatherStep(
       return;
     }
   }
-  // Use the activity's interval (already adjusted for tool tier), not the base.
-  act.nextActionAt = ctx.now + (act.actionInterval || beh.interval);
+  // Fishing reels on a per-catch timer scaled to the spot's fish; other skills
+  // use the activity interval (already adjusted for tool tier).
+  act.nextActionAt = ctx.now + (fishing
+    ? fishCatchInterval(action.levelReq ?? 1, ctx)
+    : (act.actionInterval || beh.interval));
 }
 
 /**
