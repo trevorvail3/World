@@ -153,7 +153,9 @@ body {
   /* Flexible columns so the three skills-per-row stretch to fill the dock,
      leaving no dead space on the right (matches the Pack grid). */
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 48px;
+  /* Flat, short rows (icon + level side by side) so every skill fits the dock
+     without scrolling. */
+  grid-auto-rows: 30px;
   gap: 4px;
 }
 
@@ -166,11 +168,11 @@ body {
   border: 1px solid var(--panel-edge);
   border-radius: 4px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding-bottom: 5px; /* keep the level number clear of the bottom XP bar */
+  gap: 5px;
+  padding: 0 5px 4px; /* keep the level clear of the bottom XP bar */
   cursor: pointer;
   color: var(--ink);
   font-family: inherit;
@@ -181,7 +183,7 @@ body {
 }
 
 .sc-icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
@@ -1629,7 +1631,7 @@ button.inv-slot {
   }
   .skill-grid {
     grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: 46px;
+    grid-auto-rows: 30px;
   }
   .dialogue-text {
     font-size: 14px;

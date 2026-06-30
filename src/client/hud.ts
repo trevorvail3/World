@@ -127,8 +127,6 @@ export class Hud {
   private charName!: HTMLElement;
   private charCombat!: HTMLElement;
   private charTotal!: HTMLElement;
-  private charMaxed!: HTMLElement;
-  private charHp!: HTMLElement;
   private charPlayed!: HTMLElement;
   private styleButtons = new Map<CombatStyle, HTMLElement>();
   private questList?: HTMLElement;
@@ -246,8 +244,8 @@ export class Hud {
     vitals.innerHTML = `
       <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span></div>
       <div class="vitals-row">
-        <div class="hp-bar"><div class="hp-fill"></div></div>
         <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
+        <div class="hp-bar"><div class="hp-fill"></div></div>
       </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
@@ -424,14 +422,10 @@ export class Hud {
           <div class="char-name">Wanderer of Ironvale</div>
           <div class="char-row"><span>Combat</span><span class="char-combat">—</span></div>
           <div class="char-row"><span>Total level</span><span class="char-total">—</span></div>
-          <div class="char-row"><span>Skills at 99</span><span class="char-maxed">—</span></div>
-          <div class="char-row"><span>Hitpoints</span><span class="char-hp">—</span></div>
           <div class="char-row"><span>Played</span><span class="char-played">—</span></div>`;
         this.charName = sheet.querySelector(".char-name") as HTMLElement;
         this.charCombat = sheet.querySelector(".char-combat") as HTMLElement;
         this.charTotal = sheet.querySelector(".char-total") as HTMLElement;
-        this.charMaxed = sheet.querySelector(".char-maxed") as HTMLElement;
-        this.charHp = sheet.querySelector(".char-hp") as HTMLElement;
         this.charPlayed = sheet.querySelector(".char-played") as HTMLElement;
         p.appendChild(sheet);
         // (Cape of Varath progress now lives in the Records tab, as an achievement.)
@@ -1116,11 +1110,8 @@ export class Hud {
         player.skills.vigour.level) /
         3,
     );
-    const maxed = ids.filter((id) => player.skills[id].level >= 99).length;
     this.charCombat.textContent = String(combat);
     this.charTotal.textContent = String(total);
-    this.charMaxed.textContent = `${maxed} / ${ids.length}`;
-    this.charHp.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
     this.charPlayed.textContent = formatPlaytime(player.playMs);
     const cname = player.appearance?.name?.trim();
     this.charName.textContent = cname ? `${cname} of Ironvale` : "Wanderer of Ironvale";

@@ -858,12 +858,13 @@ const rawObjects: WorldObjectDef[] = [
   { id: "course_scramble_4", kind: "agility_obstacle", x: 15, y: 23, name: "Knuckle Hills Scramble: Stepping Stones", course: "course_scramble", order: 4, exit: { x: 16, y: 23 }, xp: 100, levelReq: 20, obstacle: "stones" },
   // A third, mid-tier course in Greyoak Wood (Agility 40+) — fills the long gap
   // above the Knuckle scramble. Tiles validated reachable with reachable exits.
-  // Shifted north-east, clear of the Lodgehold steading it used to overlap.
-  { id: "course_greyoak_0", kind: "agility_obstacle", x: 26, y: 47, name: "Greyoak Run: Balance Log", course: "course_greyoak", order: 0, exit: { x: 27, y: 47 }, xp: 200, levelReq: 40, obstacle: "log" },
-  { id: "course_greyoak_1", kind: "agility_obstacle", x: 29, y: 47, name: "Greyoak Run: Climbing Net", course: "course_greyoak", order: 1, exit: { x: 29, y: 48 }, xp: 200, levelReq: 40, obstacle: "net" },
-  { id: "course_greyoak_2", kind: "agility_obstacle", x: 31, y: 49, name: "Greyoak Run: Rope Swing", course: "course_greyoak", order: 2, exit: { x: 31, y: 50 }, xp: 200, levelReq: 40, obstacle: "rope" },
-  { id: "course_greyoak_3", kind: "agility_obstacle", x: 28, y: 51, name: "Greyoak Run: Wall Scramble", course: "course_greyoak", order: 3, exit: { x: 27, y: 51 }, xp: 200, levelReq: 40, obstacle: "wall" },
-  { id: "course_greyoak_4", kind: "agility_obstacle", x: 26, y: 52, name: "Greyoak Run: Stepping Stones", course: "course_greyoak", order: 4, exit: { x: 26, y: 51 }, xp: 200, levelReq: 40, obstacle: "stones" },
+  // Shifted to the south-east of the wood — clear of both the Lodgehold steading
+  // (to the west) and the coldpine/ironbark stands (to the north) it overlapped.
+  { id: "course_greyoak_0", kind: "agility_obstacle", x: 28, y: 53, name: "Greyoak Run: Balance Log", course: "course_greyoak", order: 0, exit: { x: 29, y: 53 }, xp: 200, levelReq: 40, obstacle: "log" },
+  { id: "course_greyoak_1", kind: "agility_obstacle", x: 31, y: 53, name: "Greyoak Run: Climbing Net", course: "course_greyoak", order: 1, exit: { x: 31, y: 54 }, xp: 200, levelReq: 40, obstacle: "net" },
+  { id: "course_greyoak_2", kind: "agility_obstacle", x: 33, y: 55, name: "Greyoak Run: Rope Swing", course: "course_greyoak", order: 2, exit: { x: 33, y: 56 }, xp: 200, levelReq: 40, obstacle: "rope" },
+  { id: "course_greyoak_3", kind: "agility_obstacle", x: 30, y: 57, name: "Greyoak Run: Wall Scramble", course: "course_greyoak", order: 3, exit: { x: 29, y: 57 }, xp: 200, levelReq: 40, obstacle: "wall" },
+  { id: "course_greyoak_4", kind: "agility_obstacle", x: 28, y: 58, name: "Greyoak Run: Stepping Stones", course: "course_greyoak", order: 4, exit: { x: 28, y: 57 }, xp: 200, levelReq: 40, obstacle: "stones" },
 
   // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===
   // Each sits beside a landmark whose mystery it deepens; tiles chosen by the
