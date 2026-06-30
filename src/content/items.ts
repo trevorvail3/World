@@ -1754,6 +1754,17 @@ export const items: Record<ItemId, ItemDef> = {
     "def": 36,
     "sell": 1100
   },
+  "bounty_helm": {
+    "id": "bounty_helm",
+    "name": "Bounty Helm",
+    "description": "A hunter's helm strung with old trophies. +10% damage against the creature your active bounty names. Bought with Hunt Marks.",
+    "icon": "🪖",
+    "cat": "Armour",
+    "slot": "helmet",
+    "tier": 6,
+    "def": 22,
+    "sell": 0
+  },
   "legs_1": {
     "id": "legs_1",
     "name": "Knucklestone Leg Plate",

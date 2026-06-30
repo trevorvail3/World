@@ -1786,7 +1786,9 @@ function startInteraction(
       // contract panel (focused on them); "talk" still gives their dialogue, and
       // a quest that needs them takes priority over the bounty panel.
       if (def.bountyGuide && mode !== "talk" && !questStepTargets(player, content, def.id)) {
-        player.bounty.guideId = def.bountyGuide;
+        // Opening a guide's board highlights them — but never while a task is
+        // live, or the contract would appear to belong to the wrong guide.
+        if (!player.bounty.task) player.bounty.guideId = def.bountyGuide;
         player.station = { kind: "bounty" };
         events.push({ type: "OPEN_BOUNTY", objId });
         break;
@@ -3262,11 +3264,14 @@ function takeBountyTask(
   events: WorldEvent[],
 ): void {
   const { player } = state;
-  player.bounty.guideId = guideId;
+  // Don't reassign the active guide while a task is live — the contract stays
+  // pinned to whoever issued it, so switching the highlighted guide (or walking
+  // up to a different guide's NPC) can never orphan an in-progress bounty.
   if (player.bounty.task) {
     events.push({ type: "LOG", message: "Finish or abandon your current task first." });
     return;
   }
+  player.bounty.guideId = guideId;
   const guide = content.bountyGuides.find((g) => g.id === guideId);
   if (!guide) return;
   const level = skillLvl(player, "bounty");
@@ -3573,6 +3578,14 @@ function playerSwing(
     const guard = mechs.find((m) => m.type === "scaleguard");
     if (guard && guard.type === "scaleguard" && !exploits) {
       dmg = Math.max(1, Math.round(dmg * (1 - guard.reduce)));
+    }
+    // Bounty Helm: a tracker's edge. While worn it adds +10% damage against the
+    // exact creature your active bounty names — so it speeds the task you're on.
+    if (
+      player.equipment.helmet === "bounty_helm" &&
+      player.bounty.task?.monster === stats.id
+    ) {
+      dmg = Math.round(dmg * 1.1);
     }
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });

@@ -487,6 +487,7 @@ export type ItemId =
   | "wyrm_legs"
   | "wyrm_shield"
   | "wyrm_blade"
+  | "bounty_helm"
   | "bone_helm"
   | "bone_body"
   | "bone_legs"

@@ -1813,7 +1813,8 @@ button.inv-slot {
   border-radius: 6px;
   padding: 10px 12px;
 }
-.bounty-task-name { font-size: 14px; color: var(--ink); margin-bottom: 6px; }
+.bounty-task-name { font-size: 14px; color: var(--ink); margin-bottom: 2px; }
+.bounty-task-from { font-size: 10px; color: #8a8472; margin-bottom: 6px; }
 .bounty-empty { font-size: 13px; color: var(--ink-dim); font-style: italic; margin-bottom: 8px; }
 .bounty-progress {
   height: 7px;

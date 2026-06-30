@@ -76,8 +76,16 @@ function nearestMatch(x: number, y: number, max: number, pred: (x: number, y: nu
 function snapSpawn(o: WorldObjectDef): WorldObjectDef {
   if (o.y >= map.height - 30) return o; // arena/interior band
   if (o.kind === "fishing_spot") {
-    if (isWater(o.x, o.y)) return o;
-    const p = nearestMatch(o.x, o.y, 28, isWater);
+    // A spot is only usable if the player can stand beside it — water in the dead
+    // centre of a pond is unreachable, so it reads as a "broken" fishing spot.
+    // Snap to the nearest SHORE tile (water with a walkable land neighbour);
+    // only fall back to open water if no shore is anywhere close.
+    const shore = (x: number, y: number) =>
+      isWater(x, y) &&
+      (tileWalkable(x, y - 1) || tileWalkable(x, y + 1) ||
+        tileWalkable(x - 1, y) || tileWalkable(x + 1, y));
+    if (shore(o.x, o.y)) return o;
+    const p = nearestMatch(o.x, o.y, 28, shore) ?? nearestMatch(o.x, o.y, 28, isWater);
     return p ? { ...o, x: p.x, y: p.y } : o;
   }
   // Banks need elbow room: a chest wedged into a one-tile gap can be sealed off
@@ -514,8 +522,8 @@ const rawObjects: WorldObjectDef[] = [
   { id: "portal_marrow", kind: "portal", x: 92, y: 14, name: "The Marrow Vault", dungeon: "marrow_vault", target: { x: 56, y: 118 }, lines: ["The vault door lets you pass."] },
 
   // === THE REDRUN & THE EYELESS SEA (east) =================================
-  { id: "rd_rock_1", kind: "rock", x: 92, y: 64, name: "Bloodore Vein", resource: "mine_bloodore" },
-  { id: "rd_rock_2", kind: "rock", x: 93, y: 72, name: "Bloodore Vein", resource: "mine_bloodore" },
+  { id: "rd_rock_1", kind: "rock", x: 98, y: 63, name: "Bloodore Vein", resource: "mine_bloodore" },
+  { id: "rd_rock_2", kind: "rock", x: 92, y: 72, name: "Bloodore Vein", resource: "mine_bloodore" },
   { id: "rd_fish_greyfin", kind: "fishing_spot", x: 96, y: 66, name: "Greyfin Pool", resource: "fish_greyfin" },
   { id: "rd_fish_1", kind: "fishing_spot", x: 96, y: 65, name: "Ribvault Shallows", resource: "fish_ribperch" },
   { id: "rd_fish_2", kind: "fishing_spot", x: 100, y: 73, name: "The Estuary", resource: "fish_redgill" },
@@ -823,11 +831,11 @@ const rawObjects: WorldObjectDef[] = [
   // (gold + silica ore, and the high-tier Forestry trees above Greyoak). Tiles
   // chosen by the placement finder: each sits on land with a reachable adjacent
   // walkable tile, validated against buildWalkability + a spawn-reachability BFS.
-  { id: "silica_1", kind: "rock", x: 91, y: 63, name: "Silica Sands", resource: "mine_silica" },
-  { id: "silica_2", kind: "rock", x: 92, y: 63, name: "Silica Sands", resource: "mine_silica" },
-  { id: "silica_3", kind: "rock", x: 93, y: 63, name: "Silica Sands", resource: "mine_silica" },
+  { id: "silica_1", kind: "rock", x: 91, y: 61, name: "Silica Sands", resource: "mine_silica" },
+  { id: "silica_2", kind: "rock", x: 95, y: 60, name: "Silica Sands", resource: "mine_silica" },
+  { id: "silica_3", kind: "rock", x: 94, y: 66, name: "Silica Sands", resource: "mine_silica" },
   { id: "gold_1", kind: "rock", x: 44, y: 16, name: "Gold Vein", resource: "mine_gold" },
-  { id: "gold_2", kind: "rock", x: 45, y: 16, name: "Gold Vein", resource: "mine_gold" },
+  { id: "gold_2", kind: "rock", x: 48, y: 18, name: "Gold Vein", resource: "mine_gold" },
   { id: "gold_3", kind: "rock", x: 46, y: 16, name: "Gold Vein", resource: "mine_gold" },
   { id: "tree_stonewood_1", kind: "tree", x: 10, y: 46, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },
   { id: "tree_stonewood_2", kind: "tree", x: 11, y: 46, name: "Stonewood", resource: "fell_stonewood", species: "stonewood" },

@@ -78,7 +78,10 @@ export class BountyUI {
     (this.backdrop.querySelector(".bounty-marks") as HTMLElement).innerHTML =
       `${b.marks.toLocaleString()} <span class="mark-ic">${iconize("🎯")}</span>`;
 
-    const guide = this.content.bountyGuides.find((g) => g.id === b.guideId)
+    // While a task is live the active guide is whoever issued it — never a guide
+    // the player merely walked past — so the contract can't look misattributed.
+    const activeGuideId = b.task?.guideId ?? b.guideId;
+    const guide = this.content.bountyGuides.find((g) => g.id === activeGuideId)
       ?? this.content.bountyGuides[0];
 
     // --- 1) Guide picker ---
@@ -106,6 +109,7 @@ export class BountyUI {
       html += `
         <div class="bounty-contract">
           <div class="bounty-task-name">Slay ${t.required} ${this.monsterName(t.monster)}</div>
+          <div class="bounty-task-from">Issued by ${guide?.name ?? "your guide"} · claimable at any board</div>
           <div class="bounty-progress"><div class="bounty-progress-fill" style="width:${pct}%"></div></div>
           <div class="bounty-task-count">${t.progress} / ${t.required}${done ? " — ready to claim" : ""}</div>
           <div class="bounty-task-rewards">Reward: +${t.marks} Hunt Marks · +${t.xp.toLocaleString()} Bounty XP</div>

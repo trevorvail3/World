@@ -104,9 +104,11 @@ export const bountyTasks: Record<string, BountyTaskDef[]> = {
 
 /** The Bounty board's Hunt-Marks shop (ported subset that exists in our items). */
 export const bountyShop: BountyShopListing[] = [
+  // The signature reward first — a hunter's helm that rewards staying on-task.
+  { item: "bounty_helm", cost: 450, qty: 1, label: "Bounty Helm", desc: "+10% damage against the creature your active bounty names. A serious edge on long tasks." },
+  { item: "hunters_kit", cost: 150, qty: 1, label: "Hunter's Kit", desc: "Hold one when you claim a task: +50% Bounty XP, consumed on claim." },
   { item: "battle_ration", cost: 60, qty: 1, label: "Battle Ration", desc: "Field food — heals on the spot, no cooking needed." },
   { item: "health_elixir", cost: 40, qty: 1, label: "Health Elixir", desc: "Restores health instantly." },
-  { item: "hunters_kit", cost: 150, qty: 1, label: "Hunter's Kit", desc: "Hold one when you claim a task: +50% Bounty XP, consumed on claim." },
   { item: "arrow_ashiron", cost: 25, qty: 15, label: "Ashiron Arrows ×15", desc: "A bundle of fifteen ashiron-tipped arrows." },
   { item: "bloodore_arrow", cost: 60, qty: 15, label: "Bloodore Arrows ×15", desc: "A bundle of fifteen bloodore arrows." },
 ];
