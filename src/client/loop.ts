@@ -31,6 +31,8 @@ import type {
 import { BankUI } from "./bankUI.ts";
 import { ShopUI } from "./shopUI.ts";
 import { BountyUI } from "./bountyUI.ts";
+import { RecordsUI } from "./recordsUI.ts";
+import { TensionUI } from "./tensionUI.ts";
 import { LevelUp } from "./levelUp.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
@@ -197,6 +199,9 @@ const VERB: Record<ObjKind, string> = {
   waystone: "Travel from",
   agility_obstacle: "Traverse",
   relic: "Read",
+  pier_spot: "Cast at",
+  record_board: "Read",
+  pier_gate: "Examine",
 };
 
 const EXAMINE_OBJECT: Record<ObjKind, string> = {
@@ -234,6 +239,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   waystone: "A Courier waystone. Pay the toll and a rider will see you to another.",
   agility_obstacle: "Part of a training circuit. Clear each leg in turn to build your Agility.",
   relic: "Something was left here to be found — a page, a rubbing, a mark. Read it.",
+  pier_spot: "Open deep water at the pier's end, where the big fish run. Cast, then hold the line.",
+  record_board: "A weathered board at the pier head, every great catch chalked up with its angler's name.",
+  pier_gate: "A rope strung across the planks. The pier-warden hasn't given you leave to pass.",
 };
 
 const EXAMINE_TILE: Record<TileType, string> = {
@@ -292,6 +300,8 @@ export class Game {
   private bank: BankUI;
   private shop: ShopUI;
   private bounty: BountyUI;
+  private records: RecordsUI;
+  private tension: TensionUI;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -327,6 +337,8 @@ export class Game {
     this.bank = new BankUI(uiRoot, bridge.content, (intent) => this.dispatch(intent), menu);
     this.shop = new ShopUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
     this.bounty = new BountyUI(uiRoot, bridge.content, (intent) => this.dispatch(intent));
+    this.records = new RecordsUI(uiRoot, () => this.bridge.state.player.appearance.name);
+    this.tension = new TensionUI(uiRoot, (success) => this.dispatch({ type: "LAND_FISH", success }));
     this.levelUp = new LevelUp(uiRoot, bridge.content);
 
     this.resize();
@@ -346,7 +358,7 @@ export class Game {
     // keyboard dismisses them deliberately rather than relying on an off-click.
     window.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      for (const ui of [this.menu, this.dialogue, this.worldMap, this.bank, this.shop, this.bounty]) {
+      for (const ui of [this.menu, this.dialogue, this.tension, this.records, this.worldMap, this.bank, this.shop, this.bounty]) {
         if (ui.isOpen()) { ui.close(); break; }
       }
     });
@@ -623,6 +635,19 @@ export class Game {
         case "OPEN_BOUNTY":
           this.bounty.show(this.bridge.state);
           break;
+        case "OPEN_RECORDS":
+          this.records.show(this.bridge.state);
+          break;
+        case "HOOKED_FISH":
+          this.tension.start({ species: ev.species, weight: ev.weight, length: ev.length, strength: ev.strength });
+          break;
+        case "FISH_LANDED": {
+          // A rising banner over the player; the core already logs the weigh-in.
+          const p = this.bridge.state.player.pos;
+          const label = ev.rank > 0 ? `${ev.species} — #${ev.rank}!` : `${ev.species} ${ev.weight.toFixed(1)}kg`;
+          this.floats.push({ x: p.x, y: p.y, text: label, color: ev.rank > 0 ? "#f4d98b" : "#9fd0d8", born: now });
+          break;
+        }
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
@@ -1595,7 +1620,7 @@ export class Game {
       this.dialogue.advance();
       return;
     }
-    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen() || this.bounty.isOpen() || this.worldMap.isOpen()) return;
+    if (this.menu.isOpen() || this.bank.isOpen() || this.shop.isOpen() || this.bounty.isOpen() || this.worldMap.isOpen() || this.records.isOpen() || this.tension.isOpen()) return;
 
     const tile = this.tileAtScreen(e.clientX, e.clientY);
     this.press = {

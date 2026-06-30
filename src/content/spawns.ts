@@ -13,7 +13,7 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, homeLayout, remap, map, CITY } from "./map.ts";
+import { HOMES, homeLayout, remap, map, CITY, PIER } from "./map.ts";
 
 const SCATTER_BLOCKED = new Set(["water", "mountain", "cave_wall", "deep", "wall", "plank"]);
 function tileWalkable(x: number, y: number): boolean {
@@ -75,6 +75,9 @@ function nearestMatch(x: number, y: number, max: number, pred: (x: number, y: nu
  *  bands (arenas / home interiors) are left untouched. */
 function snapSpawn(o: WorldObjectDef): WorldObjectDef {
   if (o.y >= map.height - 30) return o; // arena/interior band
+  // The Drowned Pier is hand-placed on exact tiles (the cast point deliberately
+  // sits on open deep water, the gate on a plank neck) — leave it where it is.
+  if (o.kind === "pier_spot" || o.kind === "record_board" || o.kind === "pier_gate") return o;
   if (o.kind === "fishing_spot") {
     // A spot is only usable if the player can stand beside it — water in the dead
     // centre of a pond is unreachable, so it reads as a "broken" fishing spot.
@@ -1251,10 +1254,43 @@ const newPois: WorldObjectDef[] = [
 /** The world's objects: every hand-authored spawn re-homed onto the doubled
  *  canvas via remap(), the new open-country POIs (new coords, not re-mapped),
  *  plus the player-home interiors (authored in the new band by buildHousing()). */
+// --- The Drowned Pier off the Redrun estuary (canvas coords, NOT remapped).
+//     The warden gives the unlock quest; once done, the gate vanishes and the
+//     cast point + records board appear. Coords are shared with the map carve via
+//     PIER so the planks, the gate-neck and the cast tile always line up. ---
+const pierObjects: WorldObjectDef[] = [
+  {
+    id: "pier_warden", kind: "npc", x: PIER.warden.x, y: PIER.warden.y, name: "Halloran, the Pier-Warden",
+    lines: [
+      "Storms took the old pier years back. I've been re-laying the boards plank by plank — slow work, for old hands.",
+      "There's deep water off the end where the real fish run. Not estuary tiddlers — Eyeless Bass, Greatpike, things with weight to them.",
+      "Help me prove the deck'll hold and I'll let you fish it. And mind the board at the head — every great catch goes up on it, with the angler's name.",
+    ],
+  },
+  {
+    id: "pier_sign", kind: "signpost", x: PIER.sign.x, y: PIER.sign.y, name: "The Drowned Pier",
+    lines: ["THE DROWNED PIER — re-laid over the deep where the Redrun meets the Eyeless Sea. Hold the line: ease off when it runs, haul when it tires."],
+  },
+  {
+    id: "pier_gate", kind: "pier_gate", x: PIER.gate.x, y: PIER.gate.y, name: "Roped Barrier",
+    hiddenByFlag: "pier_access",
+    lines: ["A rope strung across the planks. The warden hasn't given you leave to pass."],
+  },
+  {
+    id: "pier_spot", kind: "pier_spot", x: PIER.cast.x, y: PIER.cast.y, name: "Deep-Water Cast",
+    requiresFlag: "pier_access",
+  },
+  {
+    id: "pier_board", kind: "record_board", x: PIER.board.x, y: PIER.board.y, name: "Pier Records Board",
+    requiresFlag: "pier_access",
+  },
+];
+
 export const objects: WorldObjectDef[] = [
   ...rawObjects.map(remapObject),
   ...newPois.map(scatterFill),
   ...buildHousing(),
+  ...pierObjects,
 ].map(snapSpawn);
 
 /** Where the player first appears — a clearing in the Knuckle Hills, by Aldric

@@ -801,7 +801,15 @@ export type ObjKind =
    * it the first time reveals a lore fragment (recorded in the Archive) and
    * gives a small finder's reward. Its text lives in Content.lore (by loreId).
    */
-  | "relic";
+  | "relic"
+  /** The deep-water cast point at the end of the quest-gated pier: interacting
+   *  hooks a fish and opens the tension minigame. */
+  | "pier_spot"
+  /** The pier's records board: examine to see the top five catches by weight. */
+  | "record_board"
+  /** A roped-off barrier at the pier's landward end, present only until the
+   *  pier-warden's quest grants access (an inverse `hiddenByFlag` gate). */
+  | "pier_gate";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -823,6 +831,10 @@ export interface WorldObjectDef {
    *  the player has this flag set. Used to keep a quest boss hidden until the
    *  quest that unlocks it has revealed its lair. */
   requiresFlag?: string;
+  /** Inverse story gate: the object is present UNTIL the player owns this flag,
+   *  then vanishes. Used for a barrier that a quest removes (e.g. the pier gate
+   *  that disappears once access is granted). */
+  hiddenByFlag?: string;
   /**
    * Resource nodes (tree/rock/fishing_spot) only: the SkillAction id this node
    * yields (e.g. "fell_coldpine"). Determines the item, XP and level required.
@@ -1200,7 +1212,14 @@ export interface Player {
    * while it matches — so the core, not just the UI, enforces "be at the
    * counter". Transient; never persisted.
    */
-  station: { kind: "shop" | "bank" | "bounty" | "exchange"; id?: string } | null;
+  station: { kind: "shop" | "bank" | "bounty" | "exchange" | "records"; id?: string } | null;
+  /** The fish currently on the line at the pier, while the tension minigame is
+   *  in progress. Rolled when the cast hooks; committed on a land, discarded on
+   *  a snap or when the player does anything else. Transient — never persisted. */
+  hooked: HookedFish | null;
+  /** The pier's hall of fame: the player's (and seeded rivals') best catches,
+   *  kept sorted by weight, longest first, capped at five. Persisted. */
+  fishingRecords: FishRecord[];
   alive: boolean;
   /** Time (ms) at which a dead player respawns. */
   respawnAt: number;
@@ -1460,6 +1479,16 @@ export interface OpenNestIntent {
   slot: number;
 }
 
+/** "Resolve the pier tension minigame": land the hooked fish (success) or let
+ *  the line go slack / snap (failure). Success commits the rolled catch; failure
+ *  discards it. The core trusts the client's skill outcome — single-player, the
+ *  fish itself was already rolled server-side at the hook, so weight can't be
+ *  faked, only whether you kept it. */
+export interface LandFishIntent {
+  type: "LAND_FISH";
+  success: boolean;
+}
+
 /** "Drop this inventory slot onto the floor at my feet" (the whole stack). */
 export interface DropIntent {
   type: "DROP";
@@ -1513,7 +1542,8 @@ export type Intent =
   | ClaimBossMilestoneIntent
   | GeMoveIntent
   | TradeApplyIntent
-  | OpenNestIntent;
+  | OpenNestIntent
+  | LandFishIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.
@@ -1547,6 +1577,14 @@ export type WorldEvent =
   | { type: "OPEN_BOUNTY"; objId: string }
   /** Open the fast-travel menu at a waystone. */
   | { type: "OPEN_TRAVEL"; objId: string }
+  /** Open the pier's records board (top five catches by weight). */
+  | { type: "OPEN_RECORDS"; objId: string }
+  /** A fish is on the line at the pier — the client opens the tension minigame.
+   *  `strength` (0..1) drives how hard it fights. */
+  | { type: "HOOKED_FISH"; species: string; weight: number; length: number; strength: number }
+  /** A pier fish was landed: its stats, and the board rank it took (1..5, or 0
+   *  if it didn't make the board). */
+  | { type: "FISH_LANDED"; species: string; weight: number; length: number; rank: number }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   /** Open the furniture build/replace menu for a housing hotspot. */
@@ -1829,6 +1867,53 @@ export interface FurnitureDef {
   station?: string;
 }
 
+/** A species catchable from the deep-water pier minigame. Each landed fish rolls
+ *  a weight (kg) and length (cm) within these ranges — biased toward the top of
+ *  the range by the player's Fishing level and rod tier, so progress earns
+ *  bigger fish. Rarer (lower `rarity`) species need a higher Fishing level. */
+export interface PierFishDef {
+  id: string;
+  name: string;
+  /** Relative chance of being the one on the line (higher = more common). */
+  rarity: number;
+  /** Minimum Fishing level before this species can be hooked at all. */
+  minLevel: number;
+  /** Weight range in kilograms, [min, max]. */
+  weight: [number, number];
+  /** Length range in centimetres, [min, max]. */
+  length: [number, number];
+  /** Fishing XP awarded per kilogram landed. */
+  xpPerKg: number;
+  /** Coins the warden pays per kilogram. */
+  goldPerKg: number;
+}
+
+/** A catch worth recording on the pier's board — the top five by weight. */
+export interface FishRecord {
+  /** The species' display name. */
+  species: string;
+  /** Weight in kilograms (one decimal). */
+  weight: number;
+  /** Length in centimetres (whole). */
+  length: number;
+  /** Who landed it — the player's name, or a seeded rival angler. */
+  angler: string;
+}
+
+/** The fish on the line during the tension minigame. Rolled at the hook,
+ *  committed on a land, discarded on a snap. Transient — never persisted. */
+export interface HookedFish {
+  species: string;
+  weight: number;
+  length: number;
+  /** 0..1 — how hard it fights, driving the minigame's tension dynamics. */
+  strength: number;
+  /** Fishing XP this catch is worth if landed. */
+  xp: number;
+  /** Coins this catch is worth if landed. */
+  gold: number;
+}
+
 export interface Content {
   map: WorldMap;
   /** Default respawn tile after death — the safe city hub (a home bed overrides
@@ -1862,6 +1947,10 @@ export interface Content {
   bountyTasks: Record<string, BountyTaskDef[]>;
   /** What the Bounty board sells for Hunt Marks (data). */
   bountyShop: BountyShopListing[];
+  /** The species catchable from the deep-water pier minigame (data). */
+  pierFish: PierFishDef[];
+  /** Seed entries for the pier's records board — rival anglers to beat. */
+  pierRecords: FishRecord[];
   /** XP needed to *reach* each level. xpForLevel[1] = 0, etc. */
   xpForLevel: number[];
   /** Player-facing skill metadata (display name, icon glyph, explainer blurb). */

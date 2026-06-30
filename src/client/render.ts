@@ -1629,7 +1629,69 @@ function drawObject(
     case "house_door":
       drawHouseDoor(g, cx, cy);
       break;
+    case "pier_spot":
+      drawPierSpot(g, cx, cy, now);
+      break;
+    case "record_board":
+      drawRecordBoard(g, cx, cy);
+      break;
+    case "pier_gate":
+      drawPierGate(g, cx, cy);
+      break;
   }
+}
+
+/** The deep-water cast point at the pier's end: a moored buoy bobbing over wide,
+ *  dark ripples — visibly different from a shallow fishing spot. */
+function drawPierSpot(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const t = now / 1000;
+  g.strokeStyle = "rgba(120,170,200,0.5)";
+  g.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    const r = 5 + ((t * 7 + i * 5) % 13);
+    g.globalAlpha = Math.max(0, 1 - r / 14) * 0.7;
+    g.beginPath();
+    g.ellipse(cx, cy + 2, r, r * 0.5, 0, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+  const bob = Math.sin(t * 2) * 1.5;
+  // A red-and-white marker buoy.
+  g.fillStyle = "#c64a3a";
+  g.beginPath(); g.arc(cx, cy + bob, 4, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#e8e2d0";
+  g.fillRect(cx - 4, cy - 0.5 + bob, 8, 1.6);
+  g.strokeStyle = "#2a2622"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx, cy + bob - 4); g.lineTo(cx, cy + bob - 8); g.stroke();
+}
+
+/** The pier's records board: a planked board on posts with a chalked top line. */
+function drawRecordBoard(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  g.fillStyle = "#4a3a2a";
+  g.fillRect(cx - 9, cy - 4, 2, 14); // posts
+  g.fillRect(cx + 7, cy - 4, 2, 14);
+  g.fillStyle = "#7a5a36"; // the board
+  g.fillRect(cx - 10, cy - 11, 20, 13);
+  g.strokeStyle = "#3a2c1e"; g.lineWidth = 1; g.strokeRect(cx - 10, cy - 11, 20, 13);
+  g.fillStyle = "#caa05a"; // a brass trophy mark + chalk lines
+  g.beginPath(); g.arc(cx, cy - 8, 1.8, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(230,226,208,0.7)"; g.lineWidth = 1;
+  for (const yy of [-4, -1.5, 1]) { g.beginPath(); g.moveTo(cx - 7, cy + yy); g.lineTo(cx + 7, cy + yy); g.stroke(); }
+}
+
+/** The roped barrier at the pier's neck (gone once the warden's quest is done). */
+function drawPierGate(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  g.fillStyle = "#5a4632"; // two posts
+  g.fillRect(cx - 10, cy - 8, 3, 18);
+  g.fillRect(cx + 7, cy - 8, 3, 18);
+  g.fillStyle = "#caa05a"; g.beginPath(); g.arc(cx - 8.5, cy - 8, 2, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(cx + 8.5, cy - 8, 2, 0, Math.PI * 2); g.fill();
+  // A sagging rope between them.
+  g.strokeStyle = "#b89a6a"; g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(cx - 8, cy - 5);
+  g.quadraticCurveTo(cx, cy + 4, cx + 8, cy - 5);
+  g.stroke();
 }
 
 /** An unbuilt add-on doorway: a boarded-up wall opening, awaiting its extension. */

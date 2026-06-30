@@ -686,8 +686,37 @@ function decode(): WorldMap {
     for (const d of plan.doorways) set(d.x, d.y, "plank"); // openings (incl. the sealed wing doorway)
   }
 
+  // 8) The Drowned Pier: a plank jetty off the Redrun estuary, reaching from the
+  //    SE shore out over the deep. A single-tile neck (its only land approach is
+  //    from the north, water on both sides) lets one barrier gate the whole pier
+  //    until the warden's quest is done. The cast point at (148,124) is left as
+  //    open deep water; the player fishes it from the plank end. (Canvas coords.)
+  for (const [px, py] of PIER.planks) set(px, py, "plank");
+
   return { name: "Varath", width: WIDTH, height: HEIGHT, tiles };
 }
+
+/** The Drowned Pier off the Redrun estuary — fixed canvas coords shared by the
+ *  map carve (the plank jetty), the spawns (warden, gate, cast point, board) and
+ *  the renderer. The cast point sits on open deep water just past the plank end;
+ *  the gate sits on the single-tile neck so it bars the whole pier until the
+ *  warden's quest is done. */
+export const PIER = {
+  /** Water/deep tiles carved to walkable plank decking. */
+  planks: [[148, 120], [148, 121], [148, 122], [148, 123], [147, 123], [149, 123]] as [number, number][],
+  /** The neck tile (only land approach is from the north) — the barrier sits here. */
+  gate: { x: 148, y: 120 },
+  /** The plank tile the player stands on to fish + read the board. */
+  stand: { x: 148, y: 123 },
+  /** Open deep water just past the deck — the cast point (left un-carved). */
+  cast: { x: 148, y: 124 },
+  /** The records board, on a plank arm of the platform. */
+  board: { x: 147, y: 123 },
+  /** The pier-warden NPC, on the shore by the neck. */
+  warden: { x: 146, y: 118 },
+  /** A signpost at the pier head. */
+  sign: { x: 147, y: 119 },
+} as const;
 
 export const map: WorldMap = decode();
 

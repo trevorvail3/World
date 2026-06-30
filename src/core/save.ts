@@ -16,6 +16,7 @@ import type {
   Appearance,
   Content,
   EquipSlot,
+  FishRecord,
   ItemId,
   Player,
   SkillId,
@@ -83,6 +84,8 @@ export interface SavedProgress {
   /** Player housing: claimed plot ids + built furniture (hotspot id -> piece id). */
   housing: { plots: string[]; furniture: Record<string, string> };
   hp: number;
+  /** The pier's top-five catches by weight (the records board). */
+  fishingRecords?: FishRecord[];
   /** Where the player respawns (moved to a homestead once a bed is built). */
   spawn: { x: number; y: number };
   pos: { x: number; y: number };
@@ -139,6 +142,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
       task: player.bounty.task ? { ...player.bounty.task } : null,
     },
     hp: player.hp,
+    fishingRecords: player.fishingRecords.map((r) => ({ ...r })),
     pos: { x: Math.round(player.pos.x), y: Math.round(player.pos.y) },
   };
 }
@@ -426,6 +430,32 @@ export function hydratePlayer(
       }
     }
     player.quests = quests;
+  }
+
+  // --- Pier records board: keep the saved top-five (heaviest first). A save
+  //     from before the pier existed has none, so the createWorld seed stands. ---
+  const savedRecords = raw["fishingRecords"];
+  if (Array.isArray(savedRecords)) {
+    const clean: FishRecord[] = [];
+    for (const r of savedRecords) {
+      if (
+        isRecord(r) &&
+        typeof r["species"] === "string" &&
+        finiteNum(r["weight"]) && r["weight"] > 0 &&
+        finiteNum(r["length"]) && r["length"] > 0 &&
+        typeof r["angler"] === "string"
+      ) {
+        clean.push({
+          species: r["species"].slice(0, 40),
+          weight: Math.round(r["weight"] * 10) / 10,
+          length: Math.round(r["length"]),
+          angler: r["angler"].slice(0, 24),
+        });
+      }
+    }
+    clean.sort((a, b) => b.weight - a.weight);
+    if (clean.length > 5) clean.length = 5;
+    if (clean.length > 0) player.fishingRecords = clean;
   }
 
   // --- Max HP follows the loaded Vitality level, then HP clamps to it ---

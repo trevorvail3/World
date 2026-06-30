@@ -23,6 +23,7 @@ import { bountyGuides, bountyShop, bountyTasks } from "./bounty.ts";
 import { objects, playerSpawn } from "./spawns.ts";
 import { skills } from "./skills.ts";
 import { xpForLevel } from "./xpCurve.ts";
+import { PIER_FISH, PIER_RECORDS } from "./pier.ts";
 
 export const content: Content = {
   map,
@@ -42,6 +43,8 @@ export const content: Content = {
   bountyGuides,
   bountyTasks,
   bountyShop,
+  pierFish: PIER_FISH,
+  pierRecords: PIER_RECORDS,
   xpForLevel,
   skills,
 };

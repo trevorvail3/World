@@ -106,6 +106,9 @@ const MM_OBJ: Record<ObjKind, string> = {
   waystone: "#d2742c",
   agility_obstacle: "#b6d24a",
   relic: "#e8d49a", // pale parchment — a found-lore marker, to draw the curious
+  pier_spot: "#6fa0c0", // a deep-water cast point, like a fishing spot
+  record_board: "#c8a24a", // a board, like the bounty board
+  pier_gate: "", // the barrier itself isn't marked
 };
 
 /** Draw a resource marker with a shape that reads at a glance: a little tree

@@ -26,6 +26,8 @@ import type {
   CropDef,
   Ctx,
   EquipSlot,
+  FishRecord,
+  HookedFish,
   Intent,
   ItemDef,
   ItemId,
@@ -128,6 +130,59 @@ function fishCatchInterval(levelReq: number, ctx: Ctx): number {
   const lo = 2000 + levelReq * 40;
   const hi = 4000 + levelReq * 70;
   return Math.round(lo + ctx.rng() * (hi - lo));
+}
+
+/**
+ * Roll the fish on the line at the Drowned Pier. Species are weighted by their
+ * rarity and filtered by Fishing level (the rarer, bigger ones only bite once
+ * you're skilled enough). Within a species, the size fraction is biased toward
+ * the top of the range by a blend of Fishing level and rod tier — so progress
+ * and a finer rod genuinely land heavier fish. Heavier fish fight harder
+ * (`strength` drives the client's tension minigame).
+ */
+function rollPierFish(player: Player, content: Content, rodTier: number, ctx: Ctx): HookedFish {
+  const level = skillLvl(player, "fishing");
+  const skillFrac = Math.min(1, (level / 99) * 0.6 + (rodTier / 10) * 0.4);
+  const pool = content.pierFish.filter((f) => level >= f.minLevel);
+  const avail = pool.length > 0 ? pool : [content.pierFish[0]!];
+
+  // Weighted pick by rarity.
+  const total = avail.reduce((s, f) => s + f.rarity, 0);
+  let roll = ctx.rng() * total;
+  let pick = avail[0]!;
+  for (const f of avail) { roll -= f.rarity; if (roll <= 0) { pick = f; break; } }
+
+  // Size fraction in [0,1], skewed high with skill (exponent < 1 → bigger).
+  const frac = Math.pow(ctx.rng(), 1 / (1 + skillFrac * 2));
+  const weight = Math.round((pick.weight[0] + (pick.weight[1] - pick.weight[0]) * frac) * 10) / 10;
+  const length = Math.round(pick.length[0] + (pick.length[1] - pick.length[0]) * (frac * 0.85 + ctx.rng() * 0.15));
+  // Absolute-weight difficulty: a 1kg saltgill is gentle, a 50kg leviathan brutal.
+  const strength = Math.max(0.2, Math.min(0.95, 0.2 + weight / 60));
+  return {
+    species: pick.name,
+    weight,
+    length,
+    strength,
+    xp: Math.round(weight * pick.xpPerKg),
+    gold: Math.round(weight * pick.goldPerKg),
+  };
+}
+
+/** Insert a landed catch into the pier's top-five board (heaviest first) and
+ *  return the rank it took (1..5), or 0 if it didn't make the board. */
+function recordCatch(player: Player, f: HookedFish): number {
+  const entry: FishRecord = {
+    species: f.species,
+    weight: f.weight,
+    length: f.length,
+    angler: player.appearance.name,
+  };
+  const list = player.fishingRecords;
+  list.push(entry);
+  list.sort((a, b) => b.weight - a.weight);
+  if (list.length > 5) list.length = 5;
+  const rank = list.indexOf(entry);
+  return rank >= 0 ? rank + 1 : 0;
 }
 // Hunter: a snare you set and check. A catch "springs" the trap (it depletes),
 // then the game wanders back and the trap resets after a short wait. It has no
@@ -244,6 +299,8 @@ const BLOCKING_KINDS = new Set([
   "relic",
   "build_hotspot",
   "house_door",
+  "record_board",
+  "pier_gate",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -377,6 +434,10 @@ export function createWorld(
     pendingInteractId: null,
     pendingInteractMode: null,
     station: null,
+    hooked: null,
+    // The pier records board starts seeded with rival anglers to beat; the
+    // player's heavier catches push them off, smallest first.
+    fishingRecords: content.pierRecords.map((r) => ({ ...r })),
     alive: true,
     respawnAt: 0,
   };
@@ -691,7 +752,11 @@ function findObjectDef(content: Content, id: string): WorldObjectDef | undefined
  * un-attackable — until its quest reveals the lair.
  */
 export function objectHidden(def: WorldObjectDef, player: Player): boolean {
-  return !!def.requiresFlag && !player.flags.includes(def.requiresFlag);
+  if (def.requiresFlag && !player.flags.includes(def.requiresFlag)) return true;
+  // Inverse gate: a barrier that a quest REMOVES (e.g. the pier's roped gate,
+  // gone once access is granted).
+  if (def.hiddenByFlag && player.flags.includes(def.hiddenByFlag)) return true;
+  return false;
 }
 
 /** The combat stats for a monster object, or undefined for non-monsters. */
@@ -1191,6 +1256,29 @@ export function applyIntent(
     }
     case "OPEN_NEST": {
       openNest(state, content, intent.slot, ctx, events);
+      break;
+    }
+    case "LAND_FISH": {
+      // Resolve the pier tension minigame. The fish was rolled at the hook, so
+      // only WHETHER it's kept is decided here.
+      const f = player.hooked;
+      player.hooked = null;
+      if (!f) break;
+      if (!intent.success) {
+        events.push({ type: "LOG", message: `The line snaps — the ${f.species} is gone. The deep keeps its own.` });
+        break;
+      }
+      grantXp(state, content, "fishing", f.xp, events);
+      if (f.gold > 0) { player.gold += f.gold; player.stats.goldEarned += f.gold; }
+      const rank = recordCatch(player, f);
+      events.push({ type: "FISH_LANDED", species: f.species, weight: f.weight, length: f.length, rank });
+      events.push({
+        type: "LOG",
+        message: `Landed a ${f.species} — ${f.weight.toFixed(1)}kg, ${f.length}cm! The warden weighs it and pays ${f.gold}g.`,
+      });
+      if (rank > 0) {
+        events.push({ type: "LOG", message: `A pier record! It takes #${rank} on the board.` });
+      }
       break;
     }
     case "DROP": {
@@ -1790,6 +1878,9 @@ function startInteraction(
   const mode = player.pendingInteractMode;
   player.pendingInteractId = null;
   player.pendingInteractMode = null;
+  // Any fresh interaction abandons a fish still on the line at the pier (the
+  // minigame normally resolves it; this guards walking off mid-fight).
+  if (player.hooked && def.kind !== "pier_spot") player.hooked = null;
 
   switch (def.kind) {
     case "tree": {
@@ -1851,6 +1942,32 @@ function startInteraction(
     case "bounty_board": {
       player.station = { kind: "bounty" };
       events.push({ type: "OPEN_BOUNTY", objId });
+      break;
+    }
+
+    case "pier_spot": {
+      // Cast into the deep: auto-wield a rod (better tier → bigger fish), roll
+      // the catch, and hand the fight to the client's tension minigame.
+      const tier = wieldGatherTool(player, content, "rod", events);
+      if (tier === null) {
+        events.push({ type: "LOG", message: "You need a fishing rod to cast into the deep." });
+        return;
+      }
+      player.hooked = rollPierFish(player, content, tier, ctx);
+      const f = player.hooked;
+      events.push({ type: "LOG", message: "You cast far into the deep water… something heavy takes the hook!" });
+      events.push({ type: "HOOKED_FISH", species: f.species, weight: f.weight, length: f.length, strength: f.strength });
+      break;
+    }
+
+    case "record_board": {
+      player.station = { kind: "records" };
+      events.push({ type: "OPEN_RECORDS", objId });
+      break;
+    }
+
+    case "pier_gate": {
+      events.push({ type: "LOG", message: "A rope bars the planks. Halloran the Pier-Warden hasn't given you leave — speak with him first." });
       break;
     }
 
