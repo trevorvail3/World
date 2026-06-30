@@ -990,6 +990,35 @@ function buyFromShop(
 }
 
 /** Sell up to `qty` of an item from the pack at the market for its gold value. */
+/** The lowest price any shop charges to BUY each item — cached per content.
+ *  Used to stop shop arbitrage: you can never sell an item back for more than
+ *  you could buy it for, so there's no buy-low-sell-high free gold. */
+const shopFloorCache = new WeakMap<Content, Map<string, number>>();
+function shopFloor(content: Content): Map<string, number> {
+  let m = shopFloorCache.get(content);
+  if (!m) {
+    m = new Map();
+    for (const shop of content.shops) {
+      for (const line of shop.stock) {
+        // Per-UNIT buy price — shops sell bundles (e.g. 50 arrows for 6g), so the
+        // per-item cost is what an arbitrage compares against, not the bundle price.
+        const per = line.price / Math.max(1, line.qty);
+        const prev = m.get(line.item);
+        if (prev === undefined || per < prev) m.set(line.item, per);
+      }
+    }
+    shopFloorCache.set(content, m);
+  }
+  return m;
+}
+/** Gold the market pays for an item: its sell value, but never above the
+ *  cheapest shop buy price (so a stocked item can't be flipped for profit). */
+function marketValue(content: Content, item: ItemId): number {
+  const base = content.items[item]?.sell ?? 0;
+  const floor = shopFloor(content).get(item);
+  return floor !== undefined ? Math.min(base, floor) : base;
+}
+
 function sellToMarket(
   player: Player,
   content: Content,
@@ -998,18 +1027,25 @@ function sellToMarket(
   events: WorldEvent[],
 ): void {
   const def = content.items[item];
-  const value = def?.sell ?? 0;
+  const value = marketValue(content, item);
   if (value <= 0) {
     events.push({ type: "LOG", message: `No one will buy the ${def?.name ?? "item"}.` });
     return;
   }
   const toSell = Math.min(Math.max(0, Math.floor(qty)), countItem(player, item));
   if (toSell <= 0) return;
+  // Floor the TOTAL (the per-item value may be fractional once capped to a
+  // bundle's per-unit buy price), so selling can never out-earn buying.
+  const total = Math.floor(value * toSell);
+  if (total <= 0) {
+    events.push({ type: "LOG", message: `No one will pay for the ${def.name}.` });
+    return;
+  }
   for (let i = 0; i < toSell; i++) removeOneItem(player, item);
-  player.gold += value * toSell;
-  player.stats.goldEarned += value * toSell;
+  player.gold += total;
+  player.stats.goldEarned += total;
   const bundle = toSell > 1 ? `${toSell}× ` : "";
-  events.push({ type: "LOG", message: `Sold ${bundle}${def.name} for ${value * toSell}g.` });
+  events.push({ type: "LOG", message: `Sold ${bundle}${def.name} for ${total}g.` });
 }
 
 /** Does the player hold everything a recipe needs (requires + requiresAny)? */
@@ -3744,10 +3780,11 @@ function playerSwing(
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });
     // OSRS-style combat XP, earned per point of damage dealt (not on the kill):
-    // 4 xp to the attack skill (Draw for ranged, the chosen melee style else),
-    // and 1.33 (4/3) xp to Vitality — the Hitpoints model, ranged included.
-    grantXp(state, content, ranged ? "draw" : player.combatStyle, dmg * 4, events);
-    grantXp(state, content, "vitality", Math.round((dmg * 4) / 3), events);
+    // 3 xp to the attack skill (Draw for ranged, the chosen melee style else),
+    // and 1 xp to Vitality. Trimmed from 4 + 1.33 so combat XP/hr sits nearer the
+    // gathering skills instead of being far and away the fastest route to 99.
+    grantXp(state, content, ranged ? "draw" : player.combatStyle, dmg * 3, events);
+    grantXp(state, content, "vitality", dmg, events);
     // Searing hide (recoil): a melee blow burns you back. Never lethal on its
     // own — it can't drop you below 1 — but it forces you to keep healing.
     if (!ranged) {
