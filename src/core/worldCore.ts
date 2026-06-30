@@ -176,6 +176,19 @@ const COMBAT = {
   respawn: 9000,
   /** Tiles a player with a bow can loose an arrow across (Chebyshev). */
   rangedReach: 5,
+  // --- Damage feel (combat rebalance) -------------------------------------
+  /** How much a combat level adds to max hit. Below 1 so max hit grows slower
+   *  than the skill, killing the early one-shots (a level-12 hit can't erase a
+   *  near-level foe in one blow) and leaving room for gear to matter. */
+  dmgSkillScale: 0.6,
+  /** Damage floor as a fraction of max hit: a landed blow rolls in
+   *  [dmgMinFrac·max, max], not [1, max]. Tightens the swing so hits feel
+   *  consistent instead of "whiff for 1 or crit for everything". */
+  dmgMinFrac: 0.4,
+  /** Non-boss monsters hit this much harder, so an even fight actually costs HP
+   *  and you have to eat / play the weakness triangle. Bosses keep their own
+   *  hand-tuned damage (they're excluded). */
+  monsterDmgMult: 1.4,
 };
 
 /** Base max HP before the Vitality level is added. */
@@ -3467,7 +3480,8 @@ function playerAccuracy(player: Player, content: Content): number {
 /** Player max hit: Vigour + summed gear dmg (weapon, amulet) + Vigour bonus. */
 function playerMaxHit(player: Player, content: Content): number {
   const styleBonus = player.combatStyle === "vigour" ? COMBAT.styleBonus : 0;
-  return skillLvl(player, "vigour") + equipStat(player, content, "dmg") + styleBonus + buffVal(player, "melee_dmg");
+  const str = Math.round(skillLvl(player, "vigour") * COMBAT.dmgSkillScale);
+  return str + equipStat(player, content, "dmg") + styleBonus + buffVal(player, "melee_dmg");
 }
 
 /** The bow the player is wielding, if any — a ranged weapon worn in the mainhand. */
@@ -3496,7 +3510,8 @@ function rangedMaxHit(player: Player, content: Content): number {
   const ammo = player.equipment.ammo;
   const bd = bow ? content.items[bow].dmg ?? 0 : 0;
   const ad = ammo ? content.items[ammo].dmg ?? 0 : 0;
-  return skillLvl(player, "draw") + bd + ad + buffVal(player, "ranged_dmg");
+  const str = Math.round(skillLvl(player, "draw") * COMBAT.dmgSkillScale);
+  return str + bd + ad + buffVal(player, "ranged_dmg");
 }
 
 /** Player defence rating: Ward + summed armour defence (+ any Defence buff). */
@@ -3628,7 +3643,9 @@ function playerSwing(
 
   const mechs = stats.mechanics ?? [];
   if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
-    const base = randInt(ctx, 1, Math.max(1, maxHit));
+    const top = Math.max(1, maxHit);
+    const floor = Math.max(1, Math.round(top * COMBAT.dmgMinFrac));
+    const base = randInt(ctx, Math.min(floor, top), top);
     let dmg = exploits ? Math.ceil(base * COMBAT.weaknessDmg) : base;
     // Thick hide (scaleguard): melee shrugs off most of the blow UNLESS the hit
     // exploits the boss's weakness — so bringing the right style really matters.
@@ -3738,7 +3755,10 @@ function monsterSwing(
   if (ctx.rng() < hitChance(stats.acc ?? 0, playerDefence(player, content))) {
     const raw = randInt(ctx, 1, stats.maxHit);
     const soak = Math.floor(playerDefence(player, content) / COMBAT.wardDivisor);
-    const dmg = Math.max(1, Math.round((raw - soak) * dmgMult));
+    // Ordinary monsters hit harder now (so an even fight bites); bosses keep
+    // their own hand-tuned damage and are exempt from the global bump.
+    const offense = stats.boss ? 1 : COMBAT.monsterDmgMult;
+    const dmg = Math.max(1, Math.round((raw - soak) * dmgMult * offense));
     const before = player.hp;
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
