@@ -38,6 +38,7 @@ import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
+import { audio } from "./audio.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
@@ -561,6 +562,7 @@ export class Game {
           // A soft tick for gathering/production skills (combat has its own hits).
           if (SPARK_COLOR[ev.skill] && now - this.lastGatherSfx > 240) {
             this.lastGatherSfx = now;
+            audio.play("gather");
           }
           break;
         }
@@ -568,6 +570,7 @@ export class Game {
           const name = this.bridge.content.skills[ev.skill].name;
           this.hud.log(`You reach ${name} level ${ev.level}!`);
           this.levelUp.show(ev.skill, ev.level); // the OSRS "ding"
+          audio.play("levelup");
           break;
         }
         case "INVENTORY_FULL":
@@ -584,11 +587,13 @@ export class Game {
             this.sparks.push({ x: kp.x, y: kp.y, born: now, color: "#b8453a", n: 10 });
             this.sparks.push({ x: kp.x, y: kp.y, born: now + 40, color: "#5a4038", n: 7 });
           }
+          audio.play("kill");
           break;
         }
         case "PLAYER_DIED":
           this.hud.log("You have been knocked out...");
           this.shake = { born: now, mag: 9, dur: 500 };
+          audio.play("death");
           break;
         case "PLAYER_RESPAWNED":
           this.hud.log("You wake up, dazed but alive.");
@@ -652,10 +657,19 @@ export class Game {
           this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
         }
+        case "ITEM_GAINED": {
+          // A soft pickup blip — but skip it while gathering/crafting, where the
+          // per-tick "gather" tap already sounds (so it isn't a double-hit).
+          const k = this.bridge.state.player.activity.kind;
+          const busy = k === "mining" || k === "woodcutting" || k === "fishing" || k === "foraging" || k === "trapping" || k === "crafting";
+          if (!busy && now - this.lastGatherSfx > 120) { this.lastGatherSfx = now; audio.play("pickup"); }
+          break;
+        }
         case "HEALED": {
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.3, text: `+${ev.amount}`, color: "#5fd06a", born: now, size: 15 });
           this.sparks.push({ x: p.x, y: p.y, born: now, color: "#5fd06a", n: 6 });
+          audio.play("heal");
           break;
         }
         case "DAMAGE": {
@@ -666,9 +680,14 @@ export class Game {
               this.hurtFlash = now;
               const frac = Math.min(1, ev.amount / Math.max(1, this.bridge.state.player.maxHp));
               this.shake = { born: now, mag: 2 + frac * 6, dur: 280 };
-            } else {
+              audio.play("hurt");
             }
           } else {
+            // A blow we landed on something: a bow looses, a blade thuds, a miss
+            // whiffs. (The bow is read from the wielded mainhand.)
+            const main = this.bridge.state.player.equipment.mainhand;
+            const ranged = !!(main && this.bridge.content.items[main]?.ranged);
+            audio.play(ev.amount > 0 ? (ranged ? "bow" : "hit") : "miss");
           }
           const pos = this.positionOf(ev.targetId);
           if (pos) {

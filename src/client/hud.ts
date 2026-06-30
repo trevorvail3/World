@@ -25,6 +25,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { audio } from "./audio.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { bossMilestones, equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
@@ -679,6 +680,38 @@ export class Hud {
         llText.textContent = "Show loot names on the ground";
         llRow.append(llBox, llText);
         p.appendChild(llRow);
+
+        // --- Audio: master volume + mute for the procedural dark-ambient score. ---
+        const volRow = document.createElement("div");
+        volRow.className = "settings-zoom";
+        const volLabel = document.createElement("div");
+        volLabel.className = "settings-label";
+        const volReadout = document.createElement("span");
+        volReadout.className = "settings-zoom-value";
+        volLabel.append("Sound ", volReadout);
+        const volSlider = document.createElement("input");
+        volSlider.type = "range"; volSlider.className = "settings-slider";
+        volSlider.min = "0"; volSlider.max = "100"; volSlider.step = "1";
+        volSlider.value = String(Math.round(audio.getVolume() * 100));
+        const syncVol = (): void => { volReadout.textContent = audio.getMuted() ? "Muted" : `${volSlider.value}%`; };
+        syncVol();
+        volSlider.addEventListener("input", () => {
+          audio.setVolume(Number(volSlider.value) / 100);
+          if (audio.getMuted() && Number(volSlider.value) > 0) audio.setMuted(false);
+          syncVol();
+        });
+        volRow.append(volLabel, volSlider);
+        p.appendChild(volRow);
+        const muteRow = document.createElement("label");
+        muteRow.className = "settings-toggle";
+        const muteBox = document.createElement("input");
+        muteBox.type = "checkbox";
+        muteBox.checked = audio.getMuted();
+        muteBox.addEventListener("change", () => { audio.setMuted(muteBox.checked); syncVol(); });
+        const muteText = document.createElement("span");
+        muteText.textContent = "Mute all sound";
+        muteRow.append(muteBox, muteText);
+        p.appendChild(muteRow);
 
         const help = document.createElement("button");
         help.type = "button";
