@@ -9,7 +9,7 @@
 import type { Content } from "../core/types.ts";
 import { actions } from "./actions.ts";
 import { items } from "./items.ts";
-import { map } from "./map.ts";
+import { map, CITY_SPAWN } from "./map.ts";
 import { monsters } from "./monsters.ts";
 import { quests } from "./quests.ts";
 import { lore } from "./lore.ts";
@@ -26,6 +26,7 @@ import { xpForLevel } from "./xpCurve.ts";
 
 export const content: Content = {
   map,
+  respawnPoint: CITY_SPAWN,
   objects,
   items,
   monsters,

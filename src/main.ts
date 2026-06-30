@@ -227,6 +227,9 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   }, () => new Primer(app!, () => {}, true), signOutAndReturn, {
     get: () => game?.getDrawDist() ?? 40,
     set: (d) => game?.setDrawDist(d),
+  }, {
+    get: () => game?.getLootLabels() ?? true,
+    set: (v) => game?.setLootLabels(v),
   });
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);

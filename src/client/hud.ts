@@ -164,6 +164,7 @@ export class Hud {
     private onHelp: () => void = () => {},
     private onSignOut: () => void = () => {},
     private drawDist: { get(): number; set(d: number): void } = { get: () => 40, set: () => {} },
+    private lootLabels: { get(): boolean; set(v: boolean): void } = { get: () => true, set: () => {} },
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -666,6 +667,18 @@ export class Hud {
         this.ddSlider = ddSlider;
         this.ddReadout = ddReadout;
         p.appendChild(note("Lower the draw distance to render less of the map at once — a quick fix if the game feels laggy on a wide screen."));
+
+        // --- Floor-loot labels: show each dropped item's name above its pile. ---
+        const llRow = document.createElement("label");
+        llRow.className = "settings-toggle";
+        const llBox = document.createElement("input");
+        llBox.type = "checkbox";
+        llBox.checked = this.lootLabels.get();
+        llBox.addEventListener("change", () => this.lootLabels.set(llBox.checked));
+        const llText = document.createElement("span");
+        llText.textContent = "Show loot names on the ground";
+        llRow.append(llBox, llText);
+        p.appendChild(llRow);
 
         const help = document.createElement("button");
         help.type = "button";

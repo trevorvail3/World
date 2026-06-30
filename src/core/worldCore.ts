@@ -318,12 +318,16 @@ export function createWorld(
   });
 
   const maxHp = BASE_MAX_HP + (skills.vitality?.level ?? 1);
+  // You START at the opening spawn (the tutorial corner by Aldric) but RESPAWN at
+  // the city hub — death sends you to town, not back to the tutorial. Building a
+  // home bed later moves this respawn to the homestead.
+  const respawn = content.respawnPoint ?? spawn;
   const player: Player = {
     pos: { x: spawn.x, y: spawn.y },
     path: [],
     hp: maxHp,
     maxHp,
-    spawn: { x: spawn.x, y: spawn.y },
+    spawn: { x: respawn.x, y: respawn.y },
     skills,
     inventory: new Array<Player["inventory"][number]>(INVENTORY_SIZE).fill(null),
     bank: {},

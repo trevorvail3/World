@@ -44,6 +44,10 @@ export function setDrawDistance(tiles: number): void {
   drawDist = tiles > 0 ? tiles : Infinity;
 }
 
+/** OSRS-style floor-loot labels: show each pile's item name above it. Toggleable. */
+let lootLabels = true;
+export function setLootLabels(on: boolean): void { lootLabels = on; }
+
 /** One entity's recent hit, driving a brief pop-and-recoil when it's struck. */
 export interface HitFx { born: number; dx: number; dy: number; crit: boolean }
 /** Per-entity hit effects (keyed by object id, or "player"), set by the loop
@@ -935,6 +939,24 @@ export function drawWorld(
     const ox = ((gi.id % 3) - 1) * 7;
     const oy = ((Math.floor(gi.id / 3) % 3) - 1) * 6;
     drawGroundItem(g, px + TILE / 2 + ox, py + TILE / 2 + oy, now, gi.qty);
+  }
+
+  // OSRS-style floor-loot name labels, drawn in a second pass so they sit ON TOP
+  // of every pile. High-value drops glow gold so they catch the eye. Toggleable.
+  if (lootLabels) {
+    for (const gi of state.ground) {
+      if (!inRegion(gi.x, gi.y) || outside(gi.x, gi.y)) continue;
+      const px = gi.x * TILE - cam.x;
+      const py = gi.y * TILE - cam.y;
+      if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+      const ox = ((gi.id % 3) - 1) * 7;
+      const oy = ((Math.floor(gi.id / 3) % 3) - 1) * 6;
+      const def = content.items[gi.item];
+      if (!def) continue;
+      const name = gi.qty > 1 ? `${def.name} (${gi.qty})` : def.name;
+      const valuable = (def.sell ?? 0) * gi.qty >= 1000;
+      label(g, name, px + TILE / 2 + ox, py + oy - 2, valuable ? "#f4d98b" : "#e8e2d0");
+    }
   }
 
   // --- Objects ---

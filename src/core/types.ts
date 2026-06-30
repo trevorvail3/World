@@ -1831,6 +1831,9 @@ export interface FurnitureDef {
 
 export interface Content {
   map: WorldMap;
+  /** Default respawn tile after death — the safe city hub (a home bed overrides
+   *  it per-player). Decoupled from the opening spawn so death sends you to town. */
+  respawnPoint: Vec2;
   objects: WorldObjectDef[];
   items: Record<ItemId, ItemDef>;
   /** Monster combat stats + loot, keyed by MonsterStats id. */

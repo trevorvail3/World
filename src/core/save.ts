@@ -450,13 +450,20 @@ export function hydratePlayer(
   }
 
   // Respawn point (set to a homestead once a bed is built). Validate like pos.
+  // Migration: respawns are the city hub now, not the old tutorial corner. A
+  // saved OVERWORLD spawn is that legacy default, so snap it to the current
+  // respawn point; a home spawn (down in the hidden interior band) is kept.
   const sp = raw["spawn"];
+  const bandTop = state.map.height - 30; // arenas + home interiors live below this
   if (isRecord(sp) && typeof sp["x"] === "number" && typeof sp["y"] === "number") {
     const x = Math.round(sp["x"]);
     const y = Math.round(sp["y"]);
     const m = state.map;
-    if (x >= 0 && y >= 0 && x < m.width && y < m.height && m.tiles[y * m.width + x] !== "water") {
-      player.spawn = { x, y };
+    const valid = x >= 0 && y >= 0 && x < m.width && y < m.height && m.tiles[y * m.width + x] !== "water";
+    if (valid && y >= bandTop) {
+      player.spawn = { x, y }; // a homestead respawn — keep it
+    } else {
+      player.spawn = { x: content.respawnPoint.x, y: content.respawnPoint.y };
     }
   }
 

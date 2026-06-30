@@ -37,7 +37,7 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
-import { Camera, drawWorld, setCombatHits, setDrawDistance, TILE, type HitFx } from "./render.ts";
+import { Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
@@ -154,6 +154,12 @@ function readDrawDist(): number {
   return Number.isFinite(raw) && raw >= DRAW_MIN && raw < DRAW_MAX ? raw : Infinity;
 }
 
+// Floor-loot name labels (OSRS-style). On by default; a client display preference.
+const LOOT_KEY = "varath-loot-labels";
+function readLootLabels(): boolean {
+  return localStorage.getItem(LOOT_KEY) !== "0";
+}
+
 /** The verb shown for interacting with each kind of object. */
 const VERB: Record<ObjKind, string> = {
   tree: "Chop",
@@ -260,6 +266,8 @@ export class Game {
   private zoom = readZoom();
   /** Draw distance in tiles (Infinity = unlimited). A display preference. */
   private drawDist = readDrawDist();
+  /** Whether floor-loot piles show their item name (OSRS-style). */
+  private lootLabels = readLootLabels();
   /** Device-pixel ratio baked into the backing store for crisp rendering. */
   private dpr = 1;
   /** Pending deferred re-measure (mobile rotation reports stale sizes). */
@@ -437,6 +445,7 @@ export class Game {
     for (const [id, fx] of this.combatHits) if (now - fx.born > 240) this.combatHits.delete(id);
     setCombatHits(this.combatHits);
     setDrawDistance(this.drawDist);
+    setLootLabels(this.lootLabels);
     drawWorld(
       this.g, this.canvas, this.bridge.state, this.bridge.content, this.cam, now,
       this.viewW, this.viewH, currentGhosts(),
@@ -524,6 +533,16 @@ export class Game {
     try {
       localStorage.setItem(DRAW_KEY, String(this.drawDist === Infinity ? DRAW_MAX : this.drawDist));
     } catch { /* ignore */ }
+  }
+
+  /** Whether floor-loot name labels are shown. */
+  getLootLabels(): boolean { return this.lootLabels; }
+
+  /** Toggle floor-loot name labels (persisted). */
+  setLootLabels(on: boolean): void {
+    this.lootLabels = on;
+    setLootLabels(on);
+    try { localStorage.setItem(LOOT_KEY, on ? "1" : "0"); } catch { /* ignore */ }
   }
 
   private handleEvents(events: WorldEvent[], now: number): void {
