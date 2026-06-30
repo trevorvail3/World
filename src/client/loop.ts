@@ -43,7 +43,7 @@ import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
-import { objectPos, objectHidden, travelFare } from "../core/worldCore.ts";
+import { objectPos, objectHidden, travelFare, equipRequirement } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent, pathToWithin } from "./pathfinding.ts";
 
 /**
@@ -1836,18 +1836,54 @@ export class Game {
     }
     if ((obj.kind === "shrine" || obj.kind === "bone_cairn") && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
-    if (obj.kind === "fishing_spot" && obj.catches?.length) {
+    if (obj.kind === "fishing_spot") {
       const lvl = this.bridge.state.player.skills.fishing?.level ?? 1;
-      const list = obj.catches.map((c) => {
-        const a = this.bridge.content.actions.find((x) => x.id === c.action);
+      // Single-fish spots carry just a `resource`; mixed pools carry `catches`.
+      // List whichever it is, so EVERY spot tells you what's in the water.
+      const ids = obj.catches?.length
+        ? obj.catches.map((c) => c.action)
+        : [obj.resource ?? "fish_ashfin"];
+      const list = ids.map((id) => {
+        const a = this.bridge.content.actions.find((x) => x.id === id);
         if (!a) return null;
         const req = a.levelReq ?? 1;
-        const fish = (a.produces && this.bridge.content.items[a.produces]?.name) || a.name;
-        return `${fish} (lvl ${req})${lvl >= req ? "" : " ✗"}`;
+        return `${a.name} (lvl ${req})${lvl >= req ? "" : " ✗"}`;
       }).filter(Boolean);
-      return `Catch here: ${list.join(", ")}.`;
+      const rod = this.rodNote();
+      return `Catch here: ${list.join(", ")}.${rod ? ` ${rod}` : ""}`;
     }
     return EXAMINE_OBJECT[obj.kind];
+  }
+
+  /** A nudge about the player's fishing rod: which one the game will reel with
+   *  here (a better rod lands fish faster), and — if they own a finer rod they
+   *  can't wield yet — the Fishing level that unlocks it. Empty if they carry no
+   *  rod at all (the catch attempt itself warns about that). */
+  private rodNote(): string {
+    const { content } = this.bridge;
+    const player = this.bridge.state.player;
+    const fl = player.skills.fishing?.level ?? 1;
+    const owned: ItemId[] = [];
+    if (player.equipment.mainhand) owned.push(player.equipment.mainhand);
+    for (const s of player.inventory) if (s) owned.push(s.item);
+    const rods = owned
+      .map((id) => content.items[id])
+      .filter((d): d is NonNullable<typeof d> => !!d && d.tool === "rod");
+    if (rods.length === 0) return "";
+
+    const reqOf = (id: ItemId): number => equipRequirement(content, id)?.level ?? 1;
+    const usable = rods.filter((d) => fl >= reqOf(d.id));
+    const best = usable.sort((a, b) => (b.tier ?? 1) - (a.tier ?? 1))[0];
+    // A finer rod the player owns but can't yet wield — name what unlocks it.
+    const locked = rods
+      .filter((d) => fl < reqOf(d.id) && (d.tier ?? 1) > (best?.tier ?? 0))
+      .sort((a, b) => (a.tier ?? 1) - (b.tier ?? 1))[0];
+
+    if (!best) {
+      return locked ? `Your ${locked.name} unlocks at Fishing ${reqOf(locked.id)}.` : "";
+    }
+    const head = `Reeling with your ${best.name}.`;
+    return locked ? `${head} Your ${locked.name} unlocks at Fishing ${reqOf(locked.id)}.` : head;
   }
 
   /** A plain-English line telling the player what a monster is weak to. */

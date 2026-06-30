@@ -677,7 +677,7 @@ export class Hud {
         llBox.checked = this.lootLabels.get();
         llBox.addEventListener("change", () => this.lootLabels.set(llBox.checked));
         const llText = document.createElement("span");
-        llText.textContent = "Show loot names on the ground";
+        llText.textContent = "Show loot & fishing-spot names";
         llRow.append(llBox, llText);
         p.appendChild(llRow);
 

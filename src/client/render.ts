@@ -13,6 +13,7 @@ import type {
   FurnitureDef,
   ItemDef,
   ItemId,
+  SkillAction,
   TileType,
   Vec2,
   WorldMap,
@@ -1028,6 +1029,14 @@ export function drawWorld(
       const lvl = def.kind === "monster" && def.monster ? content.monsters[def.monster]?.level : undefined;
       const text = lvl !== undefined ? `${def.name} (lvl ${lvl})` : def.name;
       label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
+    }
+    // Fishing spots name their catch above the water (OSRS-style), so you know
+    // what's there without trying it. Shares the loot-labels toggle. Greyed with
+    // the level it needs when you're not yet skilled enough to land it.
+    if (lootLabels && def.kind === "fishing_spot") {
+      const fl = state.player.skills.fishing?.level ?? 1;
+      const hl = fishingHeadline(content, def, fl);
+      if (hl) label(g, hl.text, px + TILE / 2, py - 6, hl.locked ? "#b9968f" : "#9fd0d8");
     }
   }
 
@@ -3730,6 +3739,28 @@ function circle(g: CanvasRenderingContext2D, x: number, y: number, r: number): v
   g.beginPath();
   g.arc(x, y, r, 0, Math.PI * 2);
   g.fill();
+}
+
+/** What a fishing spot advertises above the water: the best fish here you can
+ *  currently land (highest level you meet), or — if none yet — the easiest one
+ *  and the Fishing level it needs (shown greyed). Null if the spot has no fish. */
+function fishingHeadline(
+  content: Content,
+  def: WorldObjectDef,
+  level: number,
+): { text: string; locked: boolean } | null {
+  const ids = def.catches?.length
+    ? def.catches.map((c) => c.action)
+    : [def.resource ?? "fish_ashfin"];
+  const fish = ids
+    .map((id) => content.actions.find((a) => a.id === id))
+    .filter((a): a is SkillAction => !!a)
+    .sort((a, b) => (a.levelReq ?? 1) - (b.levelReq ?? 1));
+  if (fish.length === 0) return null;
+  const catchable = fish.filter((a) => level >= (a.levelReq ?? 1));
+  if (catchable.length) return { text: catchable[catchable.length - 1]!.name, locked: false };
+  const next = fish[0]!;
+  return { text: `${next.name} · Fishing ${next.levelReq ?? 1}`, locked: true };
 }
 
 function label(
