@@ -26,7 +26,7 @@ export interface GearLook {
   legs?: Metal;
   boots?: Metal;
   shield?: Metal;
-  weapon?: Metal & { type: string };
+  weapon?: Metal & { type: string; tier?: number };
   cape?: { color: string };
 }
 
@@ -173,10 +173,11 @@ export function resolveGear(
   if (cape) out.cape = { color: capeColor(cape) };
   const main = eq.mainhand ? content.items[eq.mainhand] : undefined;
   if (main && !main.tool) {
-    const metal = uniqueLook(main.id) ?? metalOf(metalTier(main, "weapon", content));
+    const tier = metalTier(main, "weapon", content);
+    const metal = uniqueLook(main.id) ?? metalOf(tier);
     // The Bonesaw is a sword in every system, but draws as a unique toothed saw.
     const shape = main.id === "bonesaw" ? "saw" : (main.wepType ?? "sword");
-    out.weapon = { ...metal, type: shape };
+    out.weapon = { ...metal, type: shape, tier };
   }
   return out;
 }

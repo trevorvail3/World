@@ -379,7 +379,7 @@ export function actionArmAngle(frac: number, kind: string): number {
 
 /** A tool/weapon in the hand, drawn in the arm's local frame (points "down").
  *  `metal` tints weapon blades/heads by material tier; gathering tools ignore it. */
-export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal): void {
+export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal & { tier?: number }): void {
   const handle = "#6a4a2e";
   const steel = metal?.edge ?? "#bcc2cc"; // bright face / blade
   const iron = metal?.base ?? "#8c93a0";  // darker fittings / guard
@@ -446,6 +446,16 @@ export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal): void {
       break;
     default:
       break;
+  }
+  // Higher-tier melee weapons carry a glowing pommel jewel, so a top-tier blade
+  // reads as ornate in the hand — not just a recoloured stock sword.
+  const tier = metal?.tier ?? 0;
+  const melee = tool === "sword" || tool === "dagger" || tool === "claymore" || tool === "spear" || tool === "hammer";
+  if (melee && tier >= 4) {
+    const gem = tier >= 10 ? "#ffd06a" : tier >= 8 ? "#b98cff" : tier >= 6 ? "#ff7a6a" : "#7fe0e0";
+    const r = (tier >= 8 ? 1.3 : 1.0) * s;
+    g.fillStyle = gem;
+    g.beginPath(); g.arc(0, 5.6 * s, r, 0, Math.PI * 2); g.fill();
   }
 }
 

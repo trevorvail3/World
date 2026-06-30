@@ -343,6 +343,50 @@ function draw(shape: Shape, p: Pal, id: string): string {
   }
 }
 
+// ── tier accents ─────────────────────────────────────────────────────────────
+// Colour by name already separates the metals; on TOP of that, higher tiers get
+// a visible flourish — a hilt/centre jewel that appears mid-ladder and a bright
+// edge sheen near the top — so a tier-1 piece reads as plain and a tier-10 one
+// as ornate at a glance, not just a different shade of the same silhouette.
+const TIER_SHAPES = new Set<Shape>([
+  "sword", "dagger", "claymore", "spear", "hammer", "saw",
+  "helm", "body", "legs", "boot", "shield",
+]);
+function itemTier(def: ItemDef): number {
+  if (typeof def.tier === "number") return def.tier;
+  const m = /_(\d+)$/.exec(def.id);
+  return m ? Number(m[1]) : 0;
+}
+/** A jewel colour for a tier band (none below 4). */
+function tierGem(tier: number): string | null {
+  if (tier >= 10) return "#ffd06a";       // fiery gold — best in slot
+  if (tier >= 8) return "#b98cff";         // violet
+  if (tier >= 6) return "#ff7a6a";         // crimson
+  if (tier >= 4) return "#7fe0e0";         // cyan
+  return null;
+}
+/** Overlay flourishes for higher-tier weapons/armour (gem + edge sheen). */
+function tierAccent(shape: Shape, tier: number): string {
+  const gem = tierGem(tier);
+  if (!gem) return "";
+  // Where the jewel sits, by shape family.
+  const weapon = shape === "sword" || shape === "dagger" || shape === "claymore" || shape === "spear" || shape === "hammer" || shape === "saw";
+  const cxcy: [number, number] = shape === "helm" ? [16, 11]
+    : shape === "shield" ? [16, 17]
+    : shape === "body" ? [16, 14]
+    : shape === "legs" ? [16, 11]
+    : shape === "boot" ? [18, 22]
+    : weapon ? [16, 21]   // on the hilt / guard
+    : [16, 16];
+  const gx = cxcy[0], gy = cxcy[1];
+  const rad = tier >= 9 ? 2.5 : tier >= 7 ? 2.1 : 1.7;
+  let out = `<circle cx="${gx}" cy="${gy}" r="${rad}" fill="${gem}" stroke="#1a140f" stroke-width="0.5"/>`;
+  out += `<circle cx="${gx - rad * 0.35}" cy="${gy - rad * 0.35}" r="${rad * 0.35}" fill="#ffffff" opacity="0.7"/>`;
+  // A faint outer glow for the very top tiers.
+  if (tier >= 8) out += `<circle cx="${gx}" cy="${gy}" r="${rad + 1.6}" fill="${gem}" opacity="0.18"/>`;
+  return out;
+}
+
 // ── public API ──────────────────────────────────────────────────────────────
 const cache = new Map<string, string>();
 
@@ -352,9 +396,10 @@ export function itemIconSVG(def: ItemDef): string {
   if (hit) return hit;
   const shape = classify(def);
   const pal = paletteFor(def, shape);
+  const accent = TIER_SHAPES.has(shape) ? tierAccent(shape, itemTier(def)) : "";
   const svg =
     `<svg viewBox="0 0 32 32" class="item-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">` +
-    draw(shape, pal, def.id) +
+    draw(shape, pal, def.id) + accent +
     `</svg>`;
   cache.set(def.id, svg);
   return svg;
