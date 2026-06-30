@@ -71,7 +71,18 @@ if (!canvas || !hudRoot || !app) {
 //     in localStorage, so returning visitors skip straight past the login. ---
 function start(): void {
   if (currentUser()) { void afterLogin(); return; }
-  new LoginUI(app!, () => void afterLogin());
+  new LoginUI(app!, () => void afterLogin(), playOffline);
+}
+
+// --- Offline play: a purely local character (its own save slot, never synced).
+//     Lets the downloadable single-file build — or anyone without an account —
+//     play with progress kept in this browser. cloudReady=false so boot never
+//     touches the cloud. ---
+const OFFLINE_ACCOUNT = "__offline__";
+function playOffline(): void {
+  setCurrentAccount(OFFLINE_ACCOUNT);
+  if (readSave()) { boot(null, false); return; }
+  new CharacterCreator(app!, { takenNames: [], onCreate: (c) => boot(c, false) });
 }
 
 // --- Cloud-first load: a character follows the account to any device.

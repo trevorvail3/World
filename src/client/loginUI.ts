@@ -6,8 +6,10 @@
  * project, so one identity spans both. Only once you're signed in does the game
  * continue to character creation (new) or load your character (returning).
  *
- * Signing in is required, so there's no skip; the only way past is a valid
- * session.
+ * Signing in syncs your character to the cloud (same account as the idle game).
+ * You can also "Play offline" for a purely local character saved in this
+ * browser — handy for the downloadable single-file build or playing without an
+ * account; that character never touches the cloud.
  */
 
 import { signIn, signUp } from "./supabase.ts";
@@ -15,7 +17,7 @@ import { signIn, signUp } from "./supabase.ts";
 export class LoginUI {
   private backdrop: HTMLElement;
 
-  constructor(root: HTMLElement, private onDone: () => void) {
+  constructor(root: HTMLElement, private onDone: () => void, private onOffline?: () => void) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "login-backdrop";
     this.backdrop.innerHTML = `
@@ -31,7 +33,8 @@ export class LoginUI {
           <button class="login-create" type="button">Create account</button>
           <div class="login-msg"></div>
         </form>
-        <div class="login-foot">Same account as the idle game.</div>
+        <button class="login-offline" type="button">Play offline</button>
+        <div class="login-foot">Same account as the idle game. Offline play saves only in this browser.</div>
       </div>`;
     root.appendChild(this.backdrop);
 
@@ -68,6 +71,13 @@ export class LoginUI {
         })
         .catch((ex) => { say(ex?.message ?? "Sign-up failed"); busy(false); });
     });
+
+    const offline = this.backdrop.querySelector(".login-offline") as HTMLButtonElement;
+    if (this.onOffline) {
+      offline.addEventListener("click", () => { this.backdrop.remove(); this.onOffline!(); });
+    } else {
+      offline.remove();
+    }
   }
 
   private finish(): void {
