@@ -394,6 +394,21 @@ const cache = new Map<string, string>();
 export function itemIconSVG(def: ItemDef): string {
   const hit = cache.get(def.id);
   if (hit) return hit;
+  // The Golden Rod of Varath: a unique solid-gold rod with a faint sheen + glint,
+  // so the pier champion's trophy reads at a glance.
+  if (def.id === "rod_gold") {
+    const svg =
+      `<svg viewBox="0 0 32 32" class="item-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">` +
+      `<line x1="8" y1="26" x2="24" y2="6" stroke="#8a6a1e" stroke-width="3" stroke-linecap="round"/>` +
+      `<line x1="8" y1="26" x2="24" y2="6" stroke="#f3cf52" stroke-width="1.8" stroke-linecap="round"/>` +
+      `<line x1="11" y1="22" x2="22" y2="8.5" stroke="#fff1b0" stroke-width="0.7" opacity="0.85"/>` +
+      `<line x1="24" y1="6" x2="19" y2="21" stroke="#e6c34a" stroke-width="0.8"/>` +
+      `<circle cx="19" cy="22.4" r="1.7" fill="none" stroke="#f3cf52" stroke-width="1.1"/>` +
+      `<path d="M24,4.5 l0.7,1.6 1.6,0.7 -1.6,0.7 -0.7,1.6 -0.7,-1.6 -1.6,-0.7 1.6,-0.7 Z" fill="#fff4c2"/>` +
+      `</svg>`;
+    cache.set(def.id, svg);
+    return svg;
+  }
   const shape = classify(def);
   const pal = paletteFor(def, shape);
   const accent = TIER_SHAPES.has(shape) ? tierAccent(shape, itemTier(def)) : "";

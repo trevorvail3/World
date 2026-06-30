@@ -140,6 +140,49 @@ function fishCatchInterval(levelReq: number, ctx: Ctx): number {
  * and a finer rod genuinely land heavier fish. Heavier fish fight harder
  * (`strength` drives the client's tension minigame).
  */
+/** The Golden Rod of Varath — the cosmetic trophy for the pier's record-holder. */
+const GOLD_ROD = "rod_gold" as ItemId;
+
+/** Does the player own the Golden Rod anywhere (hand, pack or bank)? */
+function ownsGoldRod(player: Player): boolean {
+  if (player.equipment.mainhand === GOLD_ROD) return true;
+  if (player.inventory.some((s) => s?.item === GOLD_ROD)) return true;
+  return (player.bank[GOLD_ROD] ?? 0) > 0;
+}
+
+/**
+ * Keep the Golden Rod with whoever tops the pier's records board. Grant it the
+ * moment the player takes #1; strip it (it "passes to the new champion") if they
+ * ever lose the top spot. Called after a catch updates the board. Cosmetic only:
+ * the rod is mechanically identical to the finest normal rod.
+ */
+function syncGoldenRod(player: Player, content: Content, events: WorldEvent[]): void {
+  if (!content.items[GOLD_ROD]) return;
+  const leader = player.fishingRecords.length > 0 &&
+    player.fishingRecords[0]!.angler === player.appearance.name;
+  const has = ownsGoldRod(player);
+  if (leader && !has) {
+    if (canAddItem(player, GOLD_ROD)) addItem(player, GOLD_ROD, 1, events);
+    else player.bank[GOLD_ROD] = (player.bank[GOLD_ROD] ?? 0) + 1;
+    events.push({ type: "LOG", message: "You hold the pier's heaviest catch — the Warden presents you the Golden Rod of Varath!" });
+  } else if (!leader && has) {
+    if (player.equipment.mainhand === GOLD_ROD) delete player.equipment.mainhand;
+    for (let i = 0; i < player.inventory.length; i++) {
+      if (player.inventory[i]?.item === GOLD_ROD) player.inventory[i] = null;
+    }
+    delete player.bank[GOLD_ROD];
+    events.push({ type: "LOG", message: "Your pier record has fallen — the Golden Rod passes to the new champion." });
+  }
+}
+
+/** True if the player wears a cape that masters fishing (the Angler's Cape, or a
+ *  max / Cape of Varath). It lends a small edge to the size of pier catches. */
+function fishingCapeWorn(player: Player, content: Content): boolean {
+  const cape = player.equipment.cape ? content.items[player.equipment.cape] : undefined;
+  const skill = cape?.cat === "Capes" ? cape.meta?.skill : undefined;
+  return skill === "fishing" || skill === "max" || skill === "ironvale";
+}
+
 function rollPierFish(player: Player, content: Content, rodTier: number, ctx: Ctx): HookedFish {
   const level = skillLvl(player, "fishing");
   const skillFrac = Math.min(1, (level / 99) * 0.6 + (rodTier / 10) * 0.4);
@@ -152,8 +195,11 @@ function rollPierFish(player: Player, content: Content, rodTier: number, ctx: Ct
   let pick = avail[0]!;
   for (const f of avail) { roll -= f.rarity; if (roll <= 0) { pick = f; break; } }
 
-  // Size fraction in [0,1], skewed high with skill (exponent < 1 → bigger).
-  const frac = Math.pow(ctx.rng(), 1 / (1 + skillFrac * 2));
+  // Size fraction in [0,1], skewed high with skill (exponent < 1 → bigger). The
+  // Angler's Cape adds a small flat nudge toward the top of the range — a bonus
+  // that still bites even when level + rod already max the skew.
+  const capeBonus = fishingCapeWorn(player, content) ? 0.06 : 0;
+  const frac = Math.min(1, Math.pow(ctx.rng(), 1 / (1 + skillFrac * 2)) + capeBonus);
   const weight = Math.round((pick.weight[0] + (pick.weight[1] - pick.weight[0]) * frac) * 10) / 10;
   const length = Math.round(pick.length[0] + (pick.length[1] - pick.length[0]) * (frac * 0.85 + ctx.rng() * 0.15));
   // Absolute-weight difficulty: a 1kg saltgill is gentle, a 50kg leviathan brutal.
@@ -1279,6 +1325,8 @@ export function applyIntent(
       if (rank > 0) {
         events.push({ type: "LOG", message: `A pier record! It takes #${rank} on the board.` });
       }
+      // The Golden Rod follows whoever now tops the board.
+      syncGoldenRod(player, content, events);
       break;
     }
     case "DROP": {

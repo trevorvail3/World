@@ -331,6 +331,17 @@ export const items: Record<ItemId, ItemDef> = {
     "tier": 10,
     "sell": 1800
   },
+  "rod_gold": {
+    "id": "rod_gold",
+    "name": "Golden Rod of Varath",
+    "description": "Solid gold, awarded to whoever holds the Drowned Pier's heaviest catch. It fishes no better than the finest rod — but everyone knows whose hands it belongs in. Lose your record and it passes to the new champion.",
+    "icon": "🎣",
+    "cat": "Tools",
+    "slot": "mainhand",
+    "tool": "rod",
+    "tier": 10,
+    "sell": 0
+  },
   "plank_ashwood": {
     "id": "plank_ashwood",
     "name": "Ashwood Plank",

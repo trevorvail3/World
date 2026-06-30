@@ -3748,7 +3748,10 @@ function playerAction(
   // Pick/axe chops snap like a strike; fishing/crafting/trapping keep their sway.
   const overhead = act.kind === "mining" || act.kind === "woodcutting";
   const f = overhead ? strikeFrac : linearFrac;
-  return { kind: act.kind, tool: TOOL[act.kind]!, frac: f(act.actionInterval || 600) };
+  // The pier champion wields a golden rod — draw it gold when fishing with it.
+  let tool = TOOL[act.kind]!;
+  if (act.kind === "fishing" && player.equipment.mainhand === "rod_gold") tool = "rod_gold";
+  return { kind: act.kind, tool, frac: f(act.actionInterval || 600) };
 }
 
 /** The human-type monsters that swing a weapon; the rest are animals that lunge. */

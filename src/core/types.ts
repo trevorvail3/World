@@ -124,6 +124,7 @@ export type ItemId =
   | "rod_4"
   | "rod_5"
   | "rod_6"
+  | "rod_gold"
   | "plank_ashwood"
   | "plank_briarwood"
   | "plank_coldpine"

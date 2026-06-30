@@ -407,6 +407,14 @@ export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal & { tier
       g.strokeStyle = "rgba(220,224,235,0.55)"; g.lineWidth = 0.5 * s;
       g.beginPath(); g.moveTo(0, 19 * s); g.lineTo(2.5 * s, 23 * s); g.stroke();
       break;
+    case "rod_gold":
+      g.strokeStyle = "#8a6a1e"; g.lineWidth = 1.4 * s;
+      g.beginPath(); g.moveTo(0, 6 * s); g.lineTo(0, 19 * s); g.stroke();
+      g.strokeStyle = "#f3cf52"; g.lineWidth = 0.8 * s;
+      g.beginPath(); g.moveTo(0, 6 * s); g.lineTo(0, 19 * s); g.stroke();
+      g.strokeStyle = "rgba(255,241,176,0.7)"; g.lineWidth = 0.5 * s;
+      g.beginPath(); g.moveTo(0, 19 * s); g.lineTo(2.5 * s, 23 * s); g.stroke();
+      break;
     case "sword":
       g.fillStyle = "#3a2c1e"; g.fillRect(-0.8 * s, 5 * s, 1.6 * s, 2 * s); // grip
       g.fillStyle = iron; g.fillRect(-2.5 * s, 6.6 * s, 5 * s, 1.2 * s); // crossguard
