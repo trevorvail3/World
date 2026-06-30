@@ -98,7 +98,7 @@ body {
 
 /* --- Hitpoints (top-right, tucked under the minimap so it's always in view) --- */
 .hud-vitals {
-  top: 118px; /* below the minimap (top 10 + ~104 tall) */
+  top: 138px; /* below the minimap (top 10 + 116 canvas + frame) */
   right: 10px;
   width: 124px;
 }
@@ -868,7 +868,11 @@ body {
 }
 .worldmap-canvas {
   display: block;
-  max-width: 92vw;
+  /* Fit inside the modal in BOTH dimensions (header + legend take vertical room),
+     preserving aspect — otherwise a tall map spilled past the border. */
+  max-width: 88vw;
+  max-height: 68vh;
+  width: auto;
   height: auto;
   border-radius: 5px;
   border: 1px solid rgba(74, 61, 44, 0.6);
@@ -886,8 +890,8 @@ body {
 /* --- World map: DOM overlay of labels + POI markers, and a filter legend --- */
 .worldmap-stage {
   position: relative;
-  width: max-content;
-  max-width: 92vw;
+  width: fit-content;
+  max-width: 88vw;
   margin: 0 auto;
 }
 .worldmap-overlay {

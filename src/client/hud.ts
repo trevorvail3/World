@@ -866,7 +866,15 @@ export class Hud {
       tone: "danger",
       onSelect: () => this.dispatch({ type: "DROP", slot: index }),
     });
-    this.menu.show(screenX, screenY, def.name, items, this.gearDesc(data.item));
+    // Show the item's value in the info box (and the stack's total if many).
+    let desc = this.gearDesc(data.item);
+    if (def.sell) {
+      const each = def.sell.toLocaleString();
+      desc += data.qty > 1
+        ? ` · Worth ${each}g each (${(def.sell * data.qty).toLocaleString()}g total)`
+        : ` · Worth ${each}g`;
+    }
+    this.menu.show(screenX, screenY, def.name, items, desc);
   }
 
   /** Gear tooltip: stat line plus any level requirement to wield it. */

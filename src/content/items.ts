@@ -1155,7 +1155,8 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "An old, eroded coin. The face on it is not a denomination anyone recognises. Old Varath mintage — or something older.",
     "icon": "🪙",
     "cat": "Drops",
-    "sell": 75
+    "sell": 75,
+    "stackable": true
   },
   "wolf_fang": {
     "id": "wolf_fang",

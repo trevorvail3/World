@@ -1072,7 +1072,7 @@ export function drawWorld(
   // the vignette is the very last layer. Fireflies and embers glow brighter
   // after dark (driven by the sun's night factor).
   if (outdoor) drawWeather(g, w, h, now, biome, sv.night);
-  if (outdoor) drawAmbientLife(g, w, h, now, biome, sv.night);
+  if (outdoor) drawAmbientLife(g, w, h, now, biome, sv.night, cam);
   // Draw-distance falloff: fade the last ring of the circle to the void colour so
   // the culled edge reads as a soft horizon, not a hard pixel circle. Centred on
   // the player (who isn't always screen-centre once the camera clamps at edges).
@@ -1335,7 +1335,7 @@ const BUTTERFLY = ["#e8d24a", "#e07a3a", "#d9637a", "#cf6fc0", "#6f9ad6"];
  * the open sky, and butterflies fluttering low over the meadows by day. Pure
  * screen-space dressing — deterministic from the clock, no objects involved.
  */
-function drawAmbientLife(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome, night: number): void {
+function drawAmbientLife(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome, night: number, cam: Camera): void {
   // --- Birds: a small flock that glides across every so often (not underground). ---
   if (b !== "marrow") {
     const period = 15000; // a flock crosses roughly every 15s
@@ -1361,24 +1361,33 @@ function drawAmbientLife(g: CanvasRenderingContext2D, w: number, h: number, now:
     }
   }
 
-  // --- Butterflies: a few fluttering over grassy country by day. ---
+  // --- Butterflies: fluttering over grassy country by day. Anchored to the WORLD
+  //     (per coarse cell), not the screen, so they stay put as you walk past
+  //     instead of sliding with the camera. Each wanders within its own cell. ---
   const day = 1 - night;
   if (day > 0.2 && (b === "hills" || b === "greyoak" || b === "heartmoor" || b === "city")) {
-    for (let i = 0; i < 7; i++) {
-      // A drifting base path plus a quick wing-flutter wobble.
-      const t = now / 1000;
-      const x = (frac(i * 7.3) * w + Math.sin(t * 0.6 + i * 2) * 40 + Math.sin(t * 5 + i) * 4 + w) % w;
-      const y = h * (0.45 + 0.5 * frac(i * 4.1)) + Math.cos(t * 0.8 + i * 3) * 22 + Math.sin(t * 6 + i) * 3;
-      const open = 0.4 + 0.6 * Math.abs(Math.sin(t * 7 + i * 2)); // wings beating
-      const col = BUTTERFLY[i % BUTTERFLY.length]!;
-      g.fillStyle = col;
-      g.globalAlpha = 0.7 * day;
-      g.beginPath(); g.ellipse(x - 2, y, 2.4 * open, 2.0, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.ellipse(x + 2, y, 2.4 * open, 2.0, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "rgba(30,24,20,0.8)";
-      g.fillRect(x - 0.5, y - 2, 1, 4); // body
+    const t = now / 1000;
+    const c0x = Math.floor(cam.x / TILE), c1x = Math.ceil((cam.x + w) / TILE);
+    const c0y = Math.floor(cam.y / TILE), c1y = Math.ceil((cam.y + h) / TILE);
+    g.save();
+    g.globalAlpha = 0.7 * day;
+    for (let cy = c0y; cy <= c1y; cy += 3) {
+      for (let cx = c0x; cx <= c1x; cx += 3) {
+        const seed = frac(cx * 1.73 + cy * 3.11);
+        if (seed > 0.16) continue; // sparse — only a few cells host one
+        // World position: cell origin + a fixed in-cell offset + a slow wander.
+        const wx = cx * TILE + frac(cx * 5 + cy) * TILE * 2.5 + Math.sin(t * 0.7 + seed * 40) * 16;
+        const wy = cy * TILE + frac(cy * 5 + cx) * TILE * 2.5 + Math.cos(t * 0.9 + seed * 30) * 13;
+        const x = wx - cam.x, y = wy - cam.y;
+        const open = 0.4 + 0.6 * Math.abs(Math.sin(t * 7 + seed * 25)); // wings beating
+        g.fillStyle = BUTTERFLY[Math.floor(seed * 100) % BUTTERFLY.length]!;
+        g.beginPath(); g.ellipse(x - 2, y, 2.4 * open, 2.0, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(x + 2, y, 2.4 * open, 2.0, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "rgba(30,24,20,0.8)";
+        g.fillRect(x - 0.5, y - 2, 1, 4); // body
+      }
     }
-    g.globalAlpha = 1;
+    g.restore();
   }
 }
 

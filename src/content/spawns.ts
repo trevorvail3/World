@@ -13,7 +13,7 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, homeLayout, remap, map } from "./map.ts";
+import { HOMES, homeLayout, remap, map, CITY } from "./map.ts";
 
 const SCATTER_BLOCKED = new Set(["water", "mountain", "cave_wall", "deep", "wall", "plank"]);
 function tileWalkable(x: number, y: number): boolean {
@@ -93,12 +93,15 @@ function snapSpawn(o: WorldObjectDef): WorldObjectDef {
       ?? (tileWalkable(o.x, o.y) ? { x: o.x, y: o.y } : nearestMatch(o.x, o.y, 20, tileWalkable));
     return p ? { ...o, x: p.x, y: p.y } : o;
   }
-  // Resources/props must sit on walkable, NON-road ground so the network stays
-  // clear (no ore in the middle of a road, no campfire on the highway).
+  // Resources/props must sit on walkable, NON-road ground that ISN'T inside the
+  // Ironvale walls — no ore in the middle of a road, no campfire on the highway,
+  // no mining seam in the middle of the paved city.
   if (OFF_ROAD_KINDS.has(o.kind)) {
-    const ok = (x: number, y: number) => tileWalkable(x, y) && !isPath(x, y);
+    const inCity = (x: number, y: number) =>
+      x >= CITY.x0 && x <= CITY.x1 && y >= CITY.y0 && y <= CITY.y1;
+    const ok = (x: number, y: number) => tileWalkable(x, y) && !isPath(x, y) && !inCity(x, y);
     if (ok(o.x, o.y)) return o;
-    const p = nearestMatch(o.x, o.y, 20, ok);
+    const p = nearestMatch(o.x, o.y, 24, ok);
     return p ? { ...o, x: p.x, y: p.y } : o;
   }
   if (tileWalkable(o.x, o.y)) return o;
