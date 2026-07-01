@@ -1125,6 +1125,15 @@ export class Hud {
         });
       }
     }
+    // Light a fire — offered on logs when you're carrying flint & steel.
+    if (def.cat === "Logs" && this.invData.some((s) => s?.item === "flint")) {
+      items.push({
+        label: "Light fire",
+        target: def.name,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "LIGHT_FIRE", slot: index }),
+      });
+    }
     if (def.slot && WEARABLE.has(def.slot)) {
       items.push({
         label: "Equip",

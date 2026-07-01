@@ -55,6 +55,7 @@ export type SkillId =
   | "hunter"
   | "fishing"
   | "cooking"
+  | "firemaking"
   | "farming"
   | "survivalist"
   | "herblore"
@@ -155,6 +156,7 @@ export type ItemId =
   | "deeproot_log"
   | "ironbark_log"
   | "heartoak_log"
+  | "flint"
   | "ashwood_shaft"
   | "coldpine_shaft"
   | "greyoak_shaft"
@@ -1437,6 +1439,9 @@ export interface WorldState {
   /** Per-line restock clocks for rationed listings (key "shopId:item" → next
    *  top-up ms). Runtime/session only. Used by the Devotion Potion (one/15min). */
   shopLineRestockAt?: Record<string, number>;
+  /** A player-lit campfire (Firemaking): burns for a while as a cooking source,
+   *  then goes out. One at a time; runtime/session only — not persisted. */
+  campfire?: { x: number; y: number; expiresAt: number } | null;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the
@@ -1580,6 +1585,13 @@ export interface BuryIntent {
 /** "Crush the bones in this slot into bonemeal" (needs a pestle in the pack). */
 export interface GrindIntent {
   type: "GRIND";
+  slot: number;
+}
+
+/** "Strike this log with flint and light a campfire" (needs flint in the pack).
+ *  Spawns a transient `state.campfire` you can cook at, OSRS-style. */
+export interface LightFireIntent {
+  type: "LIGHT_FIRE";
   slot: number;
 }
 
@@ -1778,6 +1790,7 @@ export type Intent =
   | SetAutocastIntent
   | BuryIntent
   | GrindIntent
+  | LightFireIntent
   | ToggleRunIntent
   | ChooseIntent
   | SpendXpLampIntent

@@ -1180,6 +1180,18 @@ export function drawWorld(
     }
   }
 
+  // A player-lit campfire (Firemaking): a transient cooking source that isn't a
+  // world object, so it's drawn here from live state, culled like everything else.
+  const fire = state.campfire;
+  if (fire && inRegion(fire.x, fire.y) && !outside(fire.x, fire.y)) {
+    const fpx = fire.x * TILE - cam.x;
+    const fpy = fire.y * TILE - cam.y;
+    if (fpx >= -TILE && fpy >= -TILE && fpx <= w + TILE && fpy <= h + TILE) {
+      drawFire(g, fpx + TILE / 2, fpy + TILE / 2, now);
+      lights.push([fpx + TILE / 2, fpy + TILE / 2]);
+    }
+  }
+
   // Fishing-spot labels, de-cluttered: the ones you can fish come first, then the
   // nearest, and each is skipped if it would overlap a label already placed — so a
   // packed estuary shows a handful of clean labels rather than a bleeding stack.

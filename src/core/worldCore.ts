@@ -417,6 +417,8 @@ export function buildWalkability(
     const seal = seals.get(key);
     if (seal && !state.objects[seal]?.owned) return false; // wing not built yet
     if (state.creatureTiles.has(key)) return false;
+    // A lit campfire occupies its tile — you cook beside it, not on it.
+    if (state.campfire && state.campfire.x === x && state.campfire.y === y) return false;
     return true;
   };
 }
@@ -1652,6 +1654,11 @@ export function applyIntent(
     case "GRIND": {
       if (notedGuard(player, intent.slot, events)) break;
       grindBones(state, content, intent.slot, events);
+      break;
+    }
+    case "LIGHT_FIRE": {
+      if (notedGuard(player, intent.slot, events)) break;
+      lightFire(state, content, intent.slot, ctx, events);
       break;
     }
     case "CLAIM_PLOT": {
@@ -2970,6 +2977,12 @@ export function tick(
   // Loot left on the floor too long fades away.
   if (state.ground.length) {
     state.ground = state.ground.filter((g) => g.despawnAt > ctx.now);
+  }
+
+  // A lit campfire burns down to ash after its time is up.
+  if (state.campfire && ctx.now >= state.campfire.expiresAt) {
+    state.campfire = null;
+    events.push({ type: "LOG", message: "Your campfire burns out." });
   }
 
   // Shops top their shelves back up on a timer.
@@ -4791,6 +4804,69 @@ function grindBones(
   if (data.qty <= 0) player.inventory[slot] = null;
   addItem(player, "bonemeal", yieldN, events);
   events.push({ type: "LOG", message: `You grind the ${def.name} into bonemeal.` });
+}
+
+/** Firemaking data per log id: the level to burn it, the XP it grants, and how
+ *  long its fire lasts. Tougher logs burn longer and pay far more — mirrors the
+ *  Forestry ladder that produces them. */
+const FIRE_LOGS: Record<string, { level: number; xp: number; burnMs: number }> = {
+  ashwood_log: { level: 1, xp: 40, burnMs: 60_000 },
+  coldpine_log: { level: 20, xp: 90, burnMs: 75_000 },
+  stonewood_log: { level: 30, xp: 125, burnMs: 90_000 },
+  greyoak_log: { level: 45, xp: 165, burnMs: 105_000 },
+  ironbark_log: { level: 55, xp: 200, burnMs: 120_000 },
+  ruewood_log: { level: 60, xp: 230, burnMs: 135_000 },
+  heartoak_log: { level: 80, xp: 300, burnMs: 165_000 },
+  deeproot_log: { level: 90, xp: 360, burnMs: 195_000 },
+};
+
+/** Strike flint against a log to set a campfire at the player's feet, OSRS-style:
+ *  the log is consumed, Firemaking XP is granted, a transient `state.campfire` is
+ *  lit (a cooking source that burns for a while), and — if there's room — the
+ *  player steps clear onto an adjacent tile so they aren't standing in the flames. */
+function lightFire(
+  state: WorldState,
+  content: Content,
+  slot: number,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const data = player.inventory[slot];
+  if (!data) return;
+  const spec = FIRE_LOGS[data.item];
+  if (!spec) {
+    events.push({ type: "LOG", message: `You can't set fire to the ${content.items[data.item].name}.` });
+    return;
+  }
+  if (!hasItem(player, "flint")) {
+    events.push({ type: "LOG", message: "You need Flint & Steel to light a fire." });
+    return;
+  }
+  if (player.skills.firemaking.level < spec.level) {
+    events.push({ type: "LOG", message: `You need Firemaking level ${spec.level} to burn ${content.items[data.item].name}.` });
+    return;
+  }
+  if (state.campfire) {
+    events.push({ type: "LOG", message: "There's already a fire burning here." });
+    return;
+  }
+
+  const px = Math.round(player.pos.x);
+  const py = Math.round(player.pos.y);
+  // Find a free tile to step onto so the fire lights where the player stood.
+  const walk = buildWalkability(content, state);
+  const step = [[-1, 0], [1, 0], [0, -1], [0, 1]].find(([dx, dy]) => walk(px + dx!, py + dy!));
+
+  data.qty -= 1;
+  if (data.qty <= 0) player.inventory[slot] = null;
+  grantXp(state, content, "firemaking", spec.xp, events);
+  if (step) {
+    player.pos = { x: px + step[0]!, y: py + step[1]! };
+    player.path = [];
+  }
+  state.campfire = { x: px, y: py, expiresAt: ctx.now + spec.burnMs };
+  events.push({ type: "LOG", message: `The ${content.items[data.item].name} catches and a fire roars up.` });
 }
 
 function monsterSwing(

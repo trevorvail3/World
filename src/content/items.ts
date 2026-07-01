@@ -566,6 +566,14 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Logs",
     "sell": 220
   },
+  "flint": {
+    "id": "flint",
+    "name": "Flint & Steel",
+    "description": "A striker and a shard of flint. Strike it against a log to set a fire. Doesn't wear out.",
+    "icon": "🔥",
+    "cat": "Tools",
+    "sell": 15
+  },
   "ashwood_shaft": {
     "id": "ashwood_shaft",
     "name": "Ashwood Shaft",

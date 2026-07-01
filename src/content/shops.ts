@@ -49,6 +49,8 @@ export const shops: ShopDef[] = [
       { item: "glass_flask", price: 45, qty: 1 },
       // Pestle & Mortar — crush bones into bonemeal for Devotion Potions.
       { item: "pestle", price: 12, qty: 1 },
+      // Flint & Steel — strike logs to light a campfire for Firemaking & cooking.
+      { item: "flint", price: 20, qty: 1 },
       // Sinew for stitching ranger leathers (also drops from beasts).
       { item: "sinew", price: 22, qty: 3 },
       // Starter gathering tools (round(sell × 1.3)).

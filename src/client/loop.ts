@@ -343,6 +343,8 @@ export class Game {
   private crierLogged = false;
   /** A loot tile the player is walking toward to pick up, polled each frame. */
   private pickupTarget: (Vec2 & { id?: number; qty?: number }) | null = null;
+  /** A campfire the player is walking toward to cook at, polled each frame. */
+  private cookTarget: Vec2 | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
   private hurtFlash = 0;
   /** Active screen-shake: when it started, how strong (px), and how long. */
@@ -495,6 +497,7 @@ export class Game {
     this.handleEvents(events, now);
     this.guide.update(this.bridge.state);
     this.checkPickup();
+    this.checkCampfire();
     // "Cook all": once the current dish finishes (activity idle), start the next
     // cookable recipe, until nothing's left to cook.
     if (this.cookAll && this.bridge.state.player.activity.kind !== "crafting") {
@@ -2117,11 +2120,27 @@ export class Game {
   }
 
   /** A plain tap: do the obvious thing for whatever was under the finger. */
+  /** The player-lit campfire, if it sits on this tile. */
+  private campfireAt(tile: Vec2): boolean {
+    const f = this.bridge.state.campfire;
+    return !!f && f.x === tile.x && f.y === tile.y;
+  }
+
   private defaultAction(tile: Vec2, sx: number, sy: number): void {
     this.cookAll = null; // any deliberate tap ends a "Cook all" run
     const obj = this.objectAt(tile);
     // An item is armed with "Use": this tap picks the target.
-    if (this.useItem) { this.resolveUseOn(obj ?? null, sx, sy); return; }
+    if (this.useItem) {
+      // A campfire is a real cooking source even though it's not a world object.
+      if (!obj && this.campfireAt(tile)) {
+        this.resolveUseOn({ id: "campfire", kind: "fire", name: "Fire", x: tile.x, y: tile.y } as WorldObjectDef, sx, sy);
+        return;
+      }
+      this.resolveUseOn(obj ?? null, sx, sy);
+      return;
+    }
+    // Tapping your campfire opens its cooking menu (walk beside it first).
+    if (!obj && this.campfireAt(tile)) { this.approachCampfire(tile); return; }
     const st = obj ? this.bridge.state.objects[obj.id] : undefined;
     // A felled monster's body lingers on its tile while it respawns; don't try to
     // re-attack it — let loot there be picked up instead.
@@ -2180,6 +2199,31 @@ export class Game {
     if (opts?.qty !== undefined) target.qty = opts.qty;
     this.pickupTarget = target;
     if (path.length) this.dispatch({ type: "MOVE", path });
+  }
+
+  /** Walk beside the campfire (if not already) and open its cook menu on arrival. */
+  private approachCampfire(tile: Vec2): void {
+    const p = this.bridge.state.player;
+    const near = Math.max(Math.abs(Math.round(p.pos.x) - tile.x), Math.abs(Math.round(p.pos.y) - tile.y)) <= 1;
+    if (near) { this.openCraft("fire", "campfire"); return; }
+    this.walkBeside(tile);
+    this.cookTarget = { x: tile.x, y: tile.y };
+  }
+
+  /** Each frame: if we're walking to a campfire and have arrived, open its menu. */
+  private checkCampfire(): void {
+    const t = this.cookTarget;
+    if (!t) return;
+    // The fire went out from under us — abandon the trip.
+    if (!this.campfireAt(t)) { this.cookTarget = null; return; }
+    const p = this.bridge.state.player;
+    const near = Math.max(Math.abs(Math.round(p.pos.x) - t.x), Math.abs(Math.round(p.pos.y) - t.y)) <= 1;
+    if (near) {
+      this.openCraft("fire", "campfire");
+      this.cookTarget = null;
+    } else if (p.path.length === 0) {
+      this.cookTarget = null; // stopped short — give up
+    }
   }
 
   /** Each frame: if we're walking to loot and have arrived, grab it. */

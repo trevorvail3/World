@@ -24,6 +24,7 @@ export const skills: Record<SkillId, { name: string; icon: string; blurb: string
   hunter: { name: "Hunter", icon: "🪤", blurb: "Lay traps and snares for beasts to take hides, sinew and meat. Higher Hunter catches rarer, wilier quarry." },
   fishing: { name: "Fishing", icon: "🎣", blurb: "Fish at marked spots for a raw catch. Higher Fishing lands bigger fish from harder waters." },
   cooking: { name: "Cooking", icon: "🍳", blurb: "Cook raw food at a fire or range into meals that heal you. Higher Cooking unlocks heartier dishes — and burns fewer of them." },
+  firemaking: { name: "Firemaking", icon: "🔥", blurb: "Strike flint against logs to light campfires wherever you stand. Higher Firemaking burns tougher logs for more experience — and a fire to cook at." },
   farming: { name: "Farming", icon: "🌾", blurb: "Sow seeds in tilled patches and return when they ripen. Higher Farming unlocks better crops and trees with richer yields." },
   survivalist: { name: "Survivalist", icon: "🏕️", blurb: "Forage the wilds for herbs and field goods. Higher Survivalist turns up scarcer, more valuable finds." },
   herblore: { name: "Herblore", icon: "⚗️", blurb: "Brew gathered herbs into potions at a cauldron. Higher Herblore unlocks stronger, longer-lasting brews." },
