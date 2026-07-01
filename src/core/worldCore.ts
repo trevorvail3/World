@@ -475,7 +475,7 @@ export function createWorld(
     combatStyle: "vigour",
     running: true,
     energy: ENERGY_MAX,
-    grace: 1, // Faith 1 → a 1-point Grace pool; grows with Faith, refilled at altars
+    grace: 10, // start with a small Grace pool (floored at 10); grows with Faith
     winded: false,
     agilityLap: null,
     agilityHop: null,
@@ -1546,6 +1546,10 @@ export function applyIntent(
     }
     case "BURY": {
       buryBones(state, content, intent.slot, events);
+      break;
+    }
+    case "GRIND": {
+      grindBones(state, content, intent.slot, events);
       break;
     }
     case "CLAIM_PLOT": {
@@ -4050,9 +4054,10 @@ function isMagic(player: Player, content: Content): boolean {
   return !!equippedStaff(player, content);
 }
 
-/** The player's Grace ceiling — their Faith level (min 1). */
+/** The player's Grace ceiling — their Faith level, floored at 10 so a new caster
+ *  can get a few casts off before Faith is trained. */
 function graceMax(player: Player): number {
-  return Math.max(1, skillLvl(player, "faith"));
+  return Math.max(10, skillLvl(player, "faith"));
 }
 
 /** Magic accuracy: Faith + staff acc + any magic-accuracy buff. */
@@ -4456,6 +4461,37 @@ function buryBones(
   if (data.qty <= 0) player.inventory[slot] = null;
   events.push({ type: "LOG", message: `You bury the ${def.name}. You murmur a rite to Orun.` });
   grantXp(state, content, "faith", def.buryXp, events);
+}
+
+/** Crush the bones in a slot into bonemeal with a Pestle & Mortar. Big bones give
+ *  two; needs a pestle in the pack (an in-pack action, no station). */
+function grindBones(
+  state: WorldState,
+  content: Content,
+  slot: number,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const data = player.inventory[slot];
+  if (!data) return;
+  const def = content.items[data.item];
+  if (!def.buryXp) {
+    events.push({ type: "LOG", message: `You can't grind the ${def.name}.` });
+    return;
+  }
+  if (!hasItem(player, "pestle")) {
+    events.push({ type: "LOG", message: "You need a Pestle & Mortar to crush bones." });
+    return;
+  }
+  const yieldN = data.item === "big_bones" ? 2 : 1;
+  if (!canAddItem(player, "bonemeal")) {
+    events.push({ type: "INVENTORY_FULL" });
+    return;
+  }
+  data.qty -= 1;
+  if (data.qty <= 0) player.inventory[slot] = null;
+  addItem(player, "bonemeal", yieldN, events);
+  events.push({ type: "LOG", message: `You grind the ${def.name} into bonemeal.` });
 }
 
 function monsterSwing(

@@ -69,6 +69,9 @@ const GLYPHS: Record<string, string> = {
   check: line(`<path d="M5 13 L10 18 L19 6"/>`),
   next: line(`<path d="M9 6 L15 12 L9 18"/>`),
   leaf: line(`<path d="M5 19 Q5 7 19 5 Q19 17 7 19 Q6 19 5 19 Z"/><path d="M6 18 Q12 12 17 8"/>`),
+  orb: line(`<circle cx="12" cy="11" r="7"/><path d="M8 9 Q10 6 13 6.5" stroke-width="1.2"/><path d="M7 19 H17"/><circle cx="9.5" cy="9" r="1" fill="currentColor" stroke="none"/>`),
+  gem: line(`<path d="M6 9 L9 5 H15 L18 9 L12 20 Z"/><path d="M6 9 H18"/><path d="M9 5 L11 9 M15 5 L13 9 M11 9 L12 20 M13 9 L12 20"/>`),
+  bone: line(`<path d="M7 17 Q4 17 4 19.5 Q4 22 6.5 22 Q6 19 9 19"/><line x1="8" y1="18.5" x2="16" y2="10.5"/><path d="M17 7 Q20 7 20 4.5 Q20 2 17.5 2 Q18 5 15 5"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.
@@ -90,6 +93,8 @@ const EMOJI: Record<string, string> = {
   "🏠": "house", "🏡": "house", "🏰": "castle", "🧥": "cape",
   "⚖️": "scales", "⚖": "scales",
   "💬": "speech", "🗨️": "speech", "💭": "speech",
+  // Faith / magic + gems + bones.
+  "🔮": "orb", "🌟": "sparkle", "💎": "gem", "🦴": "bone",
 };
 
 /** A named glyph's SVG (falls back to a neutral dot if unknown). */

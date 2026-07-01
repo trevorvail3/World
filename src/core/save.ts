@@ -250,7 +250,7 @@ export function hydratePlayer(
   player.winded = player.energy <= 0;
   // Faith Grace: clamp to the current pool; pre-Faith saves (no grace) start full.
   const savedGrace = raw["grace"];
-  const gmax = Math.max(1, player.skills.faith.level);
+  const gmax = Math.max(10, player.skills.faith.level);
   player.grace = finiteNum(savedGrace) ? Math.max(0, Math.min(gmax, savedGrace)) : gmax;
   player.agilityLap = null; // lap progress is transient — start fresh on load
   // Tools are wielded in the mainhand now. Make sure the player still owns each

@@ -47,6 +47,8 @@ export const shops: ShopDef[] = [
       // (blow your own once Crafting's glassblowing is open; buy them meanwhile).
       { item: "glass_vial", price: 25, qty: 2 },
       { item: "glass_flask", price: 45, qty: 1 },
+      // Pestle & Mortar — crush bones into bonemeal for Faith Potions.
+      { item: "pestle", price: 12, qty: 1 },
       // Starter gathering tools (round(sell × 1.3)).
       { item: "pickaxe_1", price: 20, qty: 1 },
       { item: "hatchet_1", price: 20, qty: 1 },

@@ -4727,6 +4727,10 @@ export const items: Record<ItemId, ItemDef> = {
     "id": "bonemeal", "name": "Bonemeal", "icon": "🦴", "cat": "Materials", "sell": 6,
     "description": "Ground bone, pale and fine. The base of a Faith Potion."
   },
+  "pestle": {
+    "id": "pestle", "name": "Pestle & Mortar", "icon": "🥣", "cat": "Tools", "sell": 8,
+    "description": "A stone bowl and grinder. Crush bones in your pack into bonemeal with it."
+  },
   "potion_grace": {
     "id": "potion_grace", "name": "Faith Potion", "icon": "🙏", "cat": "Potions",
     "graceRestore": 30, "sell": 120,

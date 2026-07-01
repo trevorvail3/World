@@ -1013,6 +1013,15 @@ export class Hud {
         tone: "action",
         onSelect: () => this.dispatch({ type: "BURY", slot: index }),
       });
+      // Crush into bonemeal — only offered when you're carrying a pestle.
+      if (this.invData.some((s) => s?.item === "pestle")) {
+        items.push({
+          label: "Crush",
+          target: def.name,
+          tone: "action",
+          onSelect: () => this.dispatch({ type: "GRIND", slot: index }),
+        });
+      }
     }
     if (def.slot && WEARABLE.has(def.slot)) {
       items.push({
@@ -1239,10 +1248,10 @@ export class Hud {
     this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
 
-    // Grace (Faith fuel): the bar shows only once Faith is trained past level 1
-    // (a caster's concern), and never regenerates in the field — only at altars.
-    const graceMax = Math.max(1, player.skills.faith.level);
-    const showGrace = player.skills.faith.level > 1 || player.grace > 0 ||
+    // Grace (Faith fuel): the bar shows once you've taken up Faith (trained it or
+    // hold a staff), and never regenerates in the field — only at altars.
+    const graceMax = Math.max(10, player.skills.faith.level);
+    const showGrace = player.skills.faith.level > 1 ||
       !!(player.equipment.mainhand && this.content.items[player.equipment.mainhand]?.magic);
     this.graceRow.classList.toggle("hidden", !showGrace);
     if (showGrace) {

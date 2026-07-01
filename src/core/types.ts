@@ -548,6 +548,7 @@ export type ItemId =
   | "staff_ruewood"
   | "staff_deeproot"
   | "bonemeal"
+  | "pestle"
   | "potion_grace"
   | "potion_grace_greater"
   | "seed_ashweed"
@@ -1467,6 +1468,12 @@ export interface BuryIntent {
   slot: number;
 }
 
+/** "Crush the bones in this slot into bonemeal" (needs a pestle in the pack). */
+export interface GrindIntent {
+  type: "GRIND";
+  slot: number;
+}
+
 /** Flip the run/walk toggle. */
 export interface ToggleRunIntent {
   type: "TOGGLE_RUN";
@@ -1634,6 +1641,7 @@ export type Intent =
   | SetStyleIntent
   | CastSpellIntent
   | BuryIntent
+  | GrindIntent
   | ToggleRunIntent
   | ChooseIntent
   | SpendXpLampIntent
