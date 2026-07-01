@@ -4613,6 +4613,71 @@ export const items: Record<ItemId, ItemDef> = {
     "id": "marrow_shard", "name": "Marrow Shard", "icon": "🦴", "cat": "Drops", "sell": 200,
     "description": "A splinter of pale bone from the deep places. Cold to the touch, and dear to collectors."
   },
+
+  // === Batch 7: expanded drop-table loot ====================================
+  // Bones, an uncut-gem ladder, jewellery and everyday junk — the OSRS texture
+  // that makes each kill a small gamble. All sellable; the gems and jewellery
+  // are the "rare drop table" spice shared across many foes.
+  "bones": {
+    "id": "bones", "name": "Bones", "icon": "🦴", "cat": "Drops", "sell": 3,
+    "description": "A pile of picked-clean bones. Not much, but a bonemeal trader will take them."
+  },
+  "big_bones": {
+    "id": "big_bones", "name": "Big Bones", "icon": "🦴", "cat": "Drops", "sell": 14,
+    "description": "The heavy bones of a large beast. Worth a fair bit more than the common sort."
+  },
+  "chipped_tooth": {
+    "id": "chipped_tooth", "name": "Chipped Tooth", "icon": "🦷", "cat": "Drops", "sell": 6,
+    "description": "A cracked tooth pried from some snarling thing. Curios collectors pay for oddities."
+  },
+  "beast_horn": {
+    "id": "beast_horn", "name": "Beast Horn", "icon": "🦬", "cat": "Drops", "sell": 45,
+    "description": "A thick, curved horn. Ground for powders or mounted as a trophy."
+  },
+  "cracked_shell": {
+    "id": "cracked_shell", "name": "Cracked Shell", "icon": "🐚", "cat": "Drops", "sell": 10,
+    "description": "A plate of chitinous shell, split from a crawling thing. Light and surprisingly strong."
+  },
+  "uncut_sapphire": {
+    "id": "uncut_sapphire", "name": "Uncut Sapphire", "icon": "💎", "cat": "Gems", "sell": 55,
+    "description": "A rough blue gem. The commonest stone off the rare drop table — still worth a purse."
+  },
+  "uncut_emerald": {
+    "id": "uncut_emerald", "name": "Uncut Emerald", "icon": "💎", "cat": "Gems", "sell": 95,
+    "description": "A rough green gem, clearer than a sapphire and worth the more for it."
+  },
+  "uncut_ruby": {
+    "id": "uncut_ruby", "name": "Uncut Ruby", "icon": "💎", "cat": "Gems", "sell": 175,
+    "description": "A rough red gem, deep as an ember. A fine find from any foe's purse."
+  },
+  "uncut_diamond": {
+    "id": "uncut_diamond", "name": "Uncut Diamond", "icon": "💎", "cat": "Gems", "sell": 450,
+    "description": "A rough white gem of the first water. The prize of the rare drop table."
+  },
+  "tarnished_amulet": {
+    "id": "tarnished_amulet", "name": "Tarnished Amulet", "icon": "📿", "cat": "Drops", "sell": 34,
+    "description": "A looted amulet gone dull and green. No power left in it, but a fence will pay."
+  },
+  "gold_ring": {
+    "id": "gold_ring", "name": "Gold Signet Ring", "icon": "💍", "cat": "Drops", "sell": 130,
+    "description": "A heavy gold ring, someone's mark worn into the band. Any trader will pay well for the metal."
+  },
+  "broken_arrow": {
+    "id": "broken_arrow", "name": "Broken Arrow", "icon": "🏹", "cat": "Drops", "sell": 2,
+    "description": "A snapped shaft with the head still on. Scrap, but scrap sells."
+  },
+  "bent_nail": {
+    "id": "bent_nail", "name": "Bent Nail", "icon": "🔩", "cat": "Drops", "sell": 1,
+    "description": "A rusted, bent nail. The sort of thing that falls out of a bandit's pocket."
+  },
+  "rusty_key": {
+    "id": "rusty_key", "name": "Rusty Key", "icon": "🔑", "cat": "Drops", "sell": 6,
+    "description": "An old key to no lock you know. Traders buy them by the handful, no questions asked."
+  },
+  "scrap_cloth": {
+    "id": "scrap_cloth", "name": "Scrap of Cloth", "icon": "🧵", "cat": "Drops", "sell": 4,
+    "description": "A torn strip of dirty cloth. Fit for rags, bandages, or a few coppers."
+  },
   "seed_ashweed": {
     "id": "seed_ashweed",
     "name": "Ashweed Seed",

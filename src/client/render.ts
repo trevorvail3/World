@@ -3443,6 +3443,15 @@ function drawMonsterBody(
       return H("#3a3a40", "#4c4c54"); // heavy iron
     case "outlaw_captain":
       return H("#5a2630", "#763440"); // maroon captain
+    // --- Settlement guards (watchmen) + farmers ---
+    case "town_guard":
+      return H("#3f4a58", "#586a7e"); // steel-blue watch tabard
+    case "ironvale_guard":
+      return H("#41474f", "#616b78"); // mail-grey Ironvale soldier
+    case "field_farmer":
+      return H("#6b5636", "#8a7148"); // earthy tans
+    case "master_farmer":
+      return H("#4c5233", "#67703f"); // green farm apron
     default:
       return drawRat(g, cx, cy, now);
   }
@@ -4196,6 +4205,7 @@ const HUMANOID_MONSTERS = new Set([
   "bog_knight", "redrun_brigand", "ancient_orc", "dread_ferryman",
   "footpad", "cutpurse", "bandit", "poacher", "highwayman",
   "outlaw_archer", "cutthroat", "marauder", "outlaw_captain",
+  "town_guard", "ironvale_guard", "field_farmer", "master_farmer",
 ]);
 
 /**

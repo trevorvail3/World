@@ -488,6 +488,31 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trap_hare_1", kind: "trap", x: 52, y: 31, name: "Snare", resource: "hunt_hare" },
   { id: "trap_hare_2", kind: "trap", x: 74, y: 32, name: "Snare", resource: "hunt_hare" },
 
+  // === SETTLEMENT GUARDS (Batch 7) =========================================
+  // Attackable but never aggressive (see AGGRESSIVE in worldCore) — they hold
+  // the watch at every named settlement. Ironvale, the capital, fields the
+  // tougher city guard; the hamlets get the common Settlement Guard.
+  { id: "guard_iv_1", kind: "monster", monster: "ironvale_guard", x: 49, y: 40, name: "Ironvale Guard" },
+  { id: "guard_iv_2", kind: "monster", monster: "ironvale_guard", x: 59, y: 46, name: "Ironvale Guard" },
+  { id: "guard_iv_3", kind: "monster", monster: "ironvale_guard", x: 52, y: 55, name: "Ironvale Guard" },
+  { id: "guard_fold", kind: "monster", monster: "town_guard", x: 61, y: 14, name: "Settlement Guard" },
+  { id: "guard_redmouth", kind: "monster", monster: "town_guard", x: 84, y: 61, name: "Settlement Guard" },
+  { id: "guard_drover", kind: "monster", monster: "town_guard", x: 71, y: 75, name: "Settlement Guard" },
+  { id: "guard_heartmoor", kind: "monster", monster: "town_guard", x: 19, y: 83, name: "Settlement Guard" },
+  { id: "guard_knuckle", kind: "monster", monster: "town_guard", x: 13, y: 10, name: "Settlement Guard" },
+  { id: "guard_greyoak", kind: "monster", monster: "town_guard", x: 17, y: 34, name: "Forester's Guard" },
+  { id: "guard_deeps", kind: "monster", monster: "town_guard", x: 91, y: 18, name: "Outpost Guard" },
+  { id: "guard_spine", kind: "monster", monster: "town_guard", x: 46, y: 7, name: "Settlement Guard" },
+
+  // === FARMERS — kill for seeds (Batch 7) ==================================
+  // Passive field hands worked for their seed satchels; the master farmer runs
+  // the larger plots and carries the rare herb/tree seeds.
+  { id: "farmer_iv", kind: "monster", monster: "field_farmer", x: 80, y: 45, name: "Field Farmer" },
+  { id: "farmer_iv_master", kind: "monster", monster: "master_farmer", x: 86, y: 46, name: "Master Farmer" },
+  { id: "farmer_redmouth", kind: "monster", monster: "field_farmer", x: 89, y: 53, name: "Field Farmer" },
+  { id: "farmer_drover", kind: "monster", monster: "field_farmer", x: 61, y: 71, name: "Field Farmer" },
+  { id: "farmer_knuckle", kind: "monster", monster: "field_farmer", x: 27, y: 18, name: "Field Farmer" },
+
   // --- The Hollow Barrows portal, up in the grove (arena at x=2) ---
   {
     // Moved out to the remote eastern woods edge — a cave mouth you only find by

@@ -187,12 +187,12 @@ function classify(def: ItemDef): Shape {
   if (has("rivet")) return "rivet";
   if (has("charcoal") || has("ash ") || id.endsWith("_ash") || has("wood_ash") || has("mortar") || has("sand") || has("silica")) return "powder";
   if (has("fertilizer")) return "sack";
-  if (has("leather") || has("hide") || has("pelt")) return "hide";
+  if (has("leather") || has("hide") || has("pelt") || has("cloth") || has("rag")) return "hide";
   if (has("seed")) return "seed";
   if (has("pearl") || has("gem")) return "gem";
   if (has("key") || has("lens") || has("cipher pendant")) return "key";
   if (has("scroll") || has("notes") || has("ledger") || has("record") || has("seal") || has("cipher") || has("pass") || has("lens")) return "scroll";
-  if (has("fang") || has("tusk") || has("claw") || has("tooth") || has("skull") || has("ear") || has("tail") || has("crown") || has("trophy") || has("bone")) return "trophy";
+  if (has("fang") || has("tusk") || has("claw") || has("tooth") || has("skull") || has("ear") || has("tail") || has("crown") || has("trophy") || has("bone") || has("horn") || has("antler") || has("hoof") || has("shell")) return "trophy";
   if (has("stone") && !has("stonewood")) return "ore";
   if (has("hook") || has("nail")) return "rivet";
   if (has("token") || has("coin") || has("badge") || has("mark") || has("sigil") || has("forge_token")) return "coin";

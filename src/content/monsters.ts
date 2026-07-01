@@ -31,41 +31,17 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A bristling, overgrown rat of the hill moors. More nuisance than threat.",
     "drops": [
-      {
-        "item": "raw_rat_meat",
-        "chance": 1,
-        "tier": "always"
-      },
-      {
-        "item": "raw_hide",
-        "chance": 0.4,
-        "tier": "common"
-      },
-      {
-        "item": "rat_tail",
-        "chance": 0.25,
-        "tier": "common"
-      },
-      {
-        "item": "seed_ashweed",
-        "chance": 0.05,
-        "tier": "common"
-      },
-      {
-        "item": "worn_coin",
-        "chance": 0.05,
-        "tier": "uncommon"
-      },
-      {
-        "item": "rat_king_ear",
-        "chance": 0.005,
-        "tier": "rare"
-      },
-      {
-        "item": "shard_of_orun",
-        "chance": 0.001,
-        "tier": "legendary"
-      }
+      { item: "raw_rat_meat", chance: 1, tier: "always" },
+      { item: "bones", chance: 0.9, tier: "common" },
+      { item: "raw_hide", chance: 0.35, tier: "common" },
+      { item: "rat_tail", chance: 0.25, tier: "common" },
+      { item: "chipped_tooth", chance: 0.12, tier: "common" },
+      { item: "scrap_cloth", chance: 0.1, tier: "common" },
+      { item: "worn_coin", chance: 0.15, min: 1, max: 4, tier: "uncommon" },
+      { item: "seed_ashweed", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.008, tier: "rare" },
+      { item: "rat_king_ear", chance: 0.005, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
     ]
   },
   "hill_wolf": {
@@ -85,36 +61,16 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A lean grey wolf that hunts the Knuckle Hills in the cold months. Quick and wary.",
     "drops": [
-      {
-        "item": "raw_meat",
-        "chance": 1,
-        "tier": "always"
-      },
-      {
-        "item": "raw_hide",
-        "chance": 0.5,
-        "tier": "common"
-      },
-      {
-        "item": "wolf_fang",
-        "chance": 0.1,
-        "tier": "uncommon"
-      },
-      {
-        "item": "seed_thornroot",
-        "chance": 0.04,
-        "tier": "common"
-      },
-      {
-        "item": "silver_wolf_pelt",
-        "chance": 0.005,
-        "tier": "rare"
-      },
-      {
-        "item": "shard_of_orun",
-        "chance": 0.001,
-        "tier": "legendary"
-      }
+      { item: "raw_meat", chance: 1, tier: "always" },
+      { item: "bones", chance: 0.9, tier: "common" },
+      { item: "raw_hide", chance: 0.5, tier: "common" },
+      { item: "wolf_fang", chance: 0.15, tier: "uncommon" },
+      { item: "chipped_tooth", chance: 0.12, tier: "common" },
+      { item: "worn_coin", chance: 0.2, min: 1, max: 6, tier: "common" },
+      { item: "seed_thornroot", chance: 0.04, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.01, tier: "rare" },
+      { item: "silver_wolf_pelt", chance: 0.005, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
     ]
   },
   "wild_boar": {
@@ -134,36 +90,17 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A heavy, ill-tempered boar of the Greyoak understory. It charges before it thinks.",
     "drops": [
-      {
-        "item": "raw_meat",
-        "chance": 1,
-        "tier": "always"
-      },
-      {
-        "item": "raw_hide",
-        "chance": 0.6,
-        "tier": "common"
-      },
-      {
-        "item": "boar_tusk",
-        "chance": 0.15,
-        "tier": "uncommon"
-      },
-      {
-        "item": "seed_bloodberry",
-        "chance": 0.04,
-        "tier": "common"
-      },
-      {
-        "item": "bristle_crown",
-        "chance": 0.004,
-        "tier": "rare"
-      },
-      {
-        "item": "shard_of_orun",
-        "chance": 0.001,
-        "tier": "legendary"
-      }
+      { item: "raw_meat", chance: 1, tier: "always" },
+      { item: "big_bones", chance: 0.85, tier: "common" },
+      { item: "raw_hide", chance: 0.55, tier: "common" },
+      { item: "boar_tusk", chance: 0.18, tier: "uncommon" },
+      { item: "beast_horn", chance: 0.05, tier: "uncommon" },
+      { item: "worn_coin", chance: 0.25, min: 2, max: 8, tier: "common" },
+      { item: "seed_bloodberry", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.012, tier: "rare" },
+      { item: "uncut_emerald", chance: 0.004, tier: "rare" },
+      { item: "bristle_crown", chance: 0.004, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
     ]
   },
   "forest_bear": {
@@ -183,31 +120,16 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A great bear of the deep Greyoak. Slow to rouse, devastating once roused.",
     "drops": [
-      {
-        "item": "raw_meat",
-        "chance": 1,
-        "tier": "always"
-      },
-      {
-        "item": "raw_hide",
-        "chance": 0.7,
-        "tier": "common"
-      },
-      {
-        "item": "bear_claw",
-        "chance": 0.2,
-        "tier": "uncommon"
-      },
-      {
-        "item": "forest_bear_skull",
-        "chance": 0.003,
-        "tier": "rare"
-      },
-      {
-        "item": "shard_of_orun",
-        "chance": 0.002,
-        "tier": "legendary"
-      }
+      { item: "raw_meat", chance: 1, min: 1, max: 2, tier: "always" },
+      { item: "big_bones", chance: 0.9, tier: "common" },
+      { item: "raw_hide", chance: 0.65, tier: "common" },
+      { item: "thick_hide", chance: 0.12, tier: "uncommon" },
+      { item: "bear_claw", chance: 0.2, tier: "uncommon" },
+      { item: "worn_coin", chance: 0.3, min: 5, max: 16, tier: "common" },
+      { item: "uncut_sapphire", chance: 0.02, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.008, tier: "rare" },
+      { item: "forest_bear_skull", chance: 0.003, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.002, tier: "legendary" }
     ]
   },
   "red_deer": {
@@ -225,9 +147,13 @@ export const monsters: Record<string, MonsterStats> = {
     "weakness": ["stab"],
     "desc": "A wary stag of the open country. It will bolt — or, cornered, drive its antlers home.",
     "drops": [
-      { "item": "raw_meat", "chance": 1, "tier": "always" },
-      { "item": "raw_hide", "chance": 0.6, "tier": "common" },
-      { "item": "worn_coin", "chance": 0.4, "min": 2, "max": 12, "tier": "common" }
+      { item: "raw_meat", chance: 1, tier: "always" },
+      { item: "bones", chance: 0.85, tier: "common" },
+      { item: "raw_hide", chance: 0.6, tier: "common" },
+      { item: "beast_horn", chance: 0.15, tier: "uncommon" },
+      { item: "worn_coin", chance: 0.4, min: 2, max: 12, tier: "common" },
+      { item: "seed_greybloom", chance: 0.04, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.01, tier: "rare" }
     ]
   },
   "mountain_lion": {
@@ -245,10 +171,16 @@ export const monsters: Record<string, MonsterStats> = {
     "weakness": ["stab"],
     "desc": "A tawny cat of the high rocks and the wood's edge. It stalks, then it sprints — and it does not miss twice.",
     "drops": [
-      { "item": "raw_meat", "chance": 1, "min": 1, "max": 2, "tier": "always" },
-      { "item": "raw_hide", "chance": 0.7, "tier": "common" },
-      { "item": "worn_coin", "chance": 0.5, "min": 5, "max": 30, "tier": "common" },
-      { "item": "cut_gem", "chance": 0.02, "tier": "rare" }
+      { item: "raw_meat", chance: 1, min: 1, max: 2, tier: "always" },
+      { item: "big_bones", chance: 0.85, tier: "common" },
+      { item: "raw_hide", chance: 0.6, tier: "common" },
+      { item: "bear_claw", chance: 0.15, tier: "uncommon" },
+      { item: "chipped_tooth", chance: 0.15, tier: "common" },
+      { item: "worn_coin", chance: 0.45, min: 5, max: 26, tier: "common" },
+      { item: "uncut_sapphire", chance: 0.025, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.01, tier: "rare" },
+      { item: "cut_gem", chance: 0.02, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.0015, tier: "legendary" }
     ]
   },
   "ridge_wolf": {
@@ -269,31 +201,16 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A mountain wolf, larger and meaner than its forest cousins.",
     "drops": [
-      {
-        "item": "raw_meat",
-        "chance": 0.8,
-        "tier": "always"
-      },
-      {
-        "item": "wolf_fang",
-        "chance": 0.5,
-        "tier": "common"
-      },
-      {
-        "item": "raw_hide",
-        "chance": 0.25,
-        "tier": "uncommon"
-      },
-      {
-        "item": "silver_wolf_pelt",
-        "chance": 0.02,
-        "tier": "rare"
-      },
-      {
-        "item": "shard_of_orun",
-        "chance": 0.001,
-        "tier": "legendary"
-      }
+      { item: "raw_meat", chance: 0.8, tier: "always" },
+      { item: "big_bones", chance: 0.8, tier: "common" },
+      { item: "wolf_fang", chance: 0.4, tier: "common" },
+      { item: "raw_hide", chance: 0.25, tier: "uncommon" },
+      { item: "chipped_tooth", chance: 0.15, tier: "common" },
+      { item: "worn_coin", chance: 0.4, min: 5, max: 18, tier: "common" },
+      { item: "uncut_sapphire", chance: 0.03, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.012, tier: "rare" },
+      { item: "silver_wolf_pelt", chance: 0.02, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
     ]
   },
   "stone_crawler": {
@@ -315,11 +232,15 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "knucklestone_ore", chance: 0.55, min: 1, max: 2, tier: "common" },
       { item: "ribstone_ore", chance: 0.25, min: 1, max: 2, tier: "common" },
+      { item: "cracked_shell", chance: 0.35, tier: "common" },
       { item: "golem_dust", chance: 0.22, tier: "common" },
       { item: "worn_coin", chance: 0.4, min: 4, max: 12, tier: "common" },
+      { item: "uncut_sapphire", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.03, tier: "uncommon" },
       { item: "rough_gem", chance: 0.1, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.06, tier: "uncommon" },
       { item: "seed_coldmoss", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.01, tier: "rare" },
       { item: "helm_3", chance: 0.03, tier: "rare" },
       { item: "cut_gem", chance: 0.02, tier: "rare" },
       { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
@@ -344,11 +265,16 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Slow. Extremely strong. Does not like being poked.",
     "drops": [
       { item: "worn_coin", chance: 0.7, min: 8, max: 22, tier: "always" },
+      { item: "big_bones", chance: 0.7, tier: "common" },
       { item: "ribstone_ore", chance: 0.45, min: 1, max: 3, tier: "common" },
       { item: "golem_dust", chance: 0.25, tier: "common" },
+      { item: "beast_horn", chance: 0.1, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.12, tier: "uncommon" },
       { item: "bloodore_ore", chance: 0.07, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.04, tier: "uncommon" },
       { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.015, tier: "rare" },
       { item: "hammer_4", chance: 0.04, tier: "rare" },
       { item: "seed_greybloom", chance: 0.05, tier: "uncommon" },
       { item: "cut_gem", chance: 0.03, tier: "rare" },
@@ -375,10 +301,14 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A fast, barely-visible thing that moves between rocks. It flings shards of cold from afar — close the gap or answer it with a bow.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 6, max: 18, tier: "common" },
+      { item: "bones", chance: 0.5, tier: "common" },
       { item: "wraith_fragment", chance: 0.3, tier: "uncommon" },
+      { item: "tarnished_amulet", chance: 0.1, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.12, tier: "uncommon" },
       { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.05, tier: "uncommon" },
       { item: "seed_spinethistle", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.02, tier: "rare" },
       { item: "ring_3", chance: 0.04, tier: "rare" },
       { item: "cut_gem", chance: 0.04, tier: "rare" },
       { item: "shard_of_orun", chance: 0.008, tier: "legendary" }
@@ -404,12 +334,15 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "raw_boar_meat", chance: 0.55, tier: "common" },
       { item: "serpent_scale", chance: 0.3, tier: "common" },
+      { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
       { item: "worn_coin", chance: 0.5, min: 5, max: 16, tier: "common" },
       { item: "tanned_leather", chance: 0.2, tier: "common" },
       { item: "ribstone_bar", chance: 0.08, tier: "uncommon" },
       { item: "cured_leather", chance: 0.08, tier: "uncommon" },
       { item: "rough_gem", chance: 0.1, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.05, tier: "uncommon" },
       { item: "seed_ruevine", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.02, tier: "rare" },
       { item: "spear_6", chance: 0.025, tier: "rare" },
       { item: "shard_of_orun", chance: 0.003, tier: "legendary" }
     ]
@@ -432,12 +365,16 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Pack hunters of the Heartmoor. Faster than they look. Work in groups.",
     "drops": [
       { item: "raw_wolf_meat", chance: 0.7, tier: "always" },
+      { item: "big_bones", chance: 0.7, tier: "common" },
       { item: "wolf_fang", chance: 0.4, tier: "common" },
       { item: "wolf_pelt", chance: 0.22, tier: "uncommon" },
+      { item: "chipped_tooth", chance: 0.15, tier: "common" },
       { item: "worn_coin", chance: 0.45, min: 5, max: 14, tier: "common" },
       { item: "thick_hide", chance: 0.1, tier: "uncommon" },
       { item: "rough_gem", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.06, tier: "uncommon" },
       { item: "seed_greybloom", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.02, tier: "rare" },
       { item: "shard_of_orun", chance: 0.001, tier: "legendary" }
     ]
   },
@@ -459,12 +396,18 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Something armoured that was buried in the mire and did not stay buried.",
     "drops": [
       { item: "worn_coin", chance: 0.8, min: 8, max: 22, tier: "always" },
+      { item: "big_bones", chance: 0.55, tier: "common" },
       { item: "ashiron_bar", chance: 0.18, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.1, tier: "uncommon" },
+      { item: "tarnished_amulet", chance: 0.12, tier: "uncommon" },
+      { item: "gold_ring", chance: 0.05, tier: "rare" },
       { item: "rough_gem", chance: 0.12, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.06, tier: "uncommon" },
       { item: "armor_6", chance: 0.04, tier: "rare" },
       { item: "legs_6", chance: 0.04, tier: "rare" },
+      { item: "uncut_ruby", chance: 0.03, tier: "rare" },
       { item: "cut_gem", chance: 0.05, tier: "rare" },
+      { item: "uncut_diamond", chance: 0.005, tier: "rare" },
       { item: "seed_ruevine", chance: 0.05, tier: "uncommon" },
       { item: "shard_of_orun", chance: 0.003, tier: "legendary" }
     ]
@@ -489,10 +432,13 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "serpent_scale", chance: 0.4, min: 1, max: 2, tier: "common" },
       { item: "raw_boar_meat", chance: 0.4, tier: "common" },
+      { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
       { item: "worn_coin", chance: 0.55, min: 8, max: 22, tier: "common" },
       { item: "ribstone_bar", chance: 0.12, tier: "uncommon" },
       { item: "cured_leather", chance: 0.12, tier: "uncommon" },
       { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.025, tier: "rare" },
       { item: "cut_gem", chance: 0.05, tier: "rare" },
       { item: "seed_duskshade", chance: 0.05, tier: "uncommon" },
       { item: "claymore_6", chance: 0.025, tier: "rare" },
@@ -518,9 +464,13 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "spider_silk", chance: 0.45, min: 1, max: 2, tier: "common" },
       { item: "ashiron_ore", chance: 0.3, min: 1, max: 2, tier: "common" },
+      { item: "cracked_shell", chance: 0.25, tier: "uncommon" },
+      { item: "chipped_tooth", chance: 0.12, tier: "common" },
       { item: "worn_coin", chance: 0.5, min: 10, max: 26, tier: "common" },
       { item: "ribstone_bar", chance: 0.12, tier: "uncommon" },
       { item: "rough_gem", chance: 0.14, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.07, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.03, tier: "rare" },
       { item: "cut_gem", chance: 0.05, tier: "rare" },
       { item: "seed_marrowflower", chance: 0.05, tier: "uncommon" },
       { item: "dagger_9", chance: 0.02, tier: "rare" },
@@ -546,10 +496,14 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Enormous bats that hunt in the Marrow Deeps. Incredibly fast, somewhat fragile.",
     "drops": [
       { item: "bat_wing", chance: 0.5, min: 1, max: 2, tier: "common" },
+      { item: "bones", chance: 0.55, tier: "common" },
       { item: "worn_coin", chance: 0.5, min: 10, max: 28, tier: "common" },
+      { item: "chipped_tooth", chance: 0.18, tier: "common" },
       { item: "raw_rat_meat", chance: 0.3, tier: "common" },
       { item: "bloodore_ore", chance: 0.1, tier: "uncommon" },
       { item: "rough_gem", chance: 0.12, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.025, tier: "rare" },
       { item: "cut_gem", chance: 0.05, tier: "rare" },
       { item: "arrow_hearthite", chance: 0.25, min: 10, max: 25, tier: "common" },
       { item: "shard_of_orun", chance: 0.002, tier: "legendary" }
@@ -575,10 +529,15 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A remnant that has absorbed the minerals of the deep. Bone without flesh — it hurls splinters of itself from a distance.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 14, max: 36, tier: "common" },
+      { item: "big_bones", chance: 0.5, tier: "common" },
       { item: "wraith_fragment", chance: 0.32, tier: "uncommon" },
       { item: "marrow_shard", chance: 0.08, tier: "rare" },
+      { item: "tarnished_amulet", chance: 0.12, tier: "uncommon" },
+      { item: "gold_ring", chance: 0.06, tier: "rare" },
       { item: "bloodore_bar", chance: 0.1, tier: "uncommon" },
       { item: "rough_gem", chance: 0.14, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.05, tier: "rare" },
+      { item: "uncut_diamond", chance: 0.01, tier: "rare" },
       { item: "cut_gem", chance: 0.06, tier: "rare" },
       { item: "ring_5", chance: 0.03, tier: "rare" },
       { item: "seed_hearthbloom", chance: 0.04, tier: "rare" },
@@ -645,9 +604,12 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "golem_dust", chance: 0.6, min: 1, max: 3, tier: "common" },
       { item: "worn_coin", chance: 0.7, min: 30, max: 80, tier: "always" },
+      { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
       { item: "hearthite_ore", chance: 0.25, min: 1, max: 2, tier: "uncommon" },
       { item: "hearthite_bar", chance: 0.12, tier: "uncommon" },
       { item: "marrow_shard", chance: 0.12, tier: "rare" },
+      { item: "uncut_ruby", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_diamond", chance: 0.02, tier: "rare" },
       { item: "cut_gem", chance: 0.2, min: 1, max: 2, tier: "uncommon" },
       { item: "hammer_9", chance: 0.05, tier: "rare" },
       { item: "shield_9", chance: 0.05, tier: "rare" },
@@ -674,9 +636,12 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "serpent_scale", chance: 0.5, min: 1, max: 3, tier: "common" },
       { item: "raw_bear_meat", chance: 0.45, tier: "common" },
+      { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
       { item: "eyeless_scale", chance: 0.25, tier: "uncommon" },
       { item: "worn_coin", chance: 0.6, min: 20, max: 55, tier: "common" },
       { item: "hearthite_bar", chance: 0.1, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_diamond", chance: 0.02, tier: "rare" },
       { item: "cut_gem", chance: 0.15, min: 1, max: 2, tier: "uncommon" },
       { item: "claymore_9", chance: 0.04, tier: "rare" },
       { item: "seed_orunroot", chance: 0.03, tier: "rare" },
@@ -701,10 +666,16 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "An outlaw of the Redrun crossings. Armed, armoured, and motivated.",
     "drops": [
       { item: "worn_coin", chance: 0.95, min: 20, max: 60, tier: "always" },
+      { item: "bones", chance: 0.4, tier: "common" },
       { item: "tarnished_ring", chance: 0.3, tier: "common" },
+      { item: "tarnished_amulet", chance: 0.15, tier: "uncommon" },
+      { item: "rusty_key", chance: 0.15, tier: "common" },
+      { item: "gold_ring", chance: 0.06, tier: "rare" },
       { item: "bloodore_ore", chance: 0.4, min: 1, max: 2, tier: "common" },
       { item: "bloodore_bar", chance: 0.15, tier: "uncommon" },
       { item: "hearthite_ore", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_diamond", chance: 0.015, tier: "rare" },
       { item: "cut_gem", chance: 0.12, tier: "uncommon" },
       { item: "sword_9", chance: 0.04, tier: "rare" },
       { item: "ring_5", chance: 0.04, tier: "rare" },
@@ -730,10 +701,14 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A very old orc warrior. Carries centuries of fighting experience. Approach respectfully.",
     "drops": [
       { item: "orc_tooth", chance: 0.5, min: 1, max: 2, tier: "common" },
+      { item: "big_bones", chance: 0.5, tier: "common" },
       { item: "worn_coin", chance: 0.7, min: 30, max: 75, tier: "always" },
+      { item: "beast_horn", chance: 0.1, tier: "uncommon" },
       { item: "hearthite_ore", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
       { item: "hearthite_bar", chance: 0.12, tier: "uncommon" },
       { item: "marrow_shard", chance: 0.06, tier: "rare" },
+      { item: "uncut_ruby", chance: 0.09, tier: "uncommon" },
+      { item: "uncut_diamond", chance: 0.02, tier: "rare" },
       { item: "cut_gem", chance: 0.18, min: 1, max: 2, tier: "uncommon" },
       { item: "spear_9", chance: 0.05, tier: "rare" },
       { item: "helm_9", chance: 0.04, tier: "rare" },
@@ -842,11 +817,15 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "greymane_pelt", chance: 0.6, tier: "common" },
       { item: "greymane_tusk", chance: 0.25, tier: "uncommon" },
+      { item: "big_bones", chance: 0.7, tier: "common" },
       { item: "raw_boar_meat", chance: 0.5, min: 1, max: 2, tier: "common" },
+      { item: "beast_horn", chance: 0.08, tier: "uncommon" },
       { item: "worn_coin", chance: 0.4, min: 3, max: 10, tier: "common" },
       { item: "tanned_leather", chance: 0.18, tier: "common" },
       { item: "seed_coldmoss", chance: 0.08, tier: "uncommon" },
       { item: "rough_gem", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.03, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.01, tier: "rare" },
       { item: "spear_4", chance: 0.03, tier: "rare" },
       { item: "shard_of_orun", chance: 0.002, tier: "legendary" }
     ]
@@ -1123,9 +1102,14 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A nervy cutpurse working the hill roads — quick with a knife, quicker to run.",
     drops: [
       { item: "worn_coin", chance: 0.85, min: 1, max: 3, tier: "always" },
+      { item: "bent_nail", chance: 0.25, tier: "common" },
+      { item: "scrap_cloth", chance: 0.2, tier: "common" },
+      { item: "bones", chance: 0.3, tier: "common" },
       { item: "dagger_1", chance: 0.06, tier: "uncommon" },
       { item: "ashfin_cooked", chance: 0.15, tier: "common" },
       { item: "plant_fiber", chance: 0.2, min: 1, max: 2, tier: "common" },
+      { item: "tarnished_ring", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.006, tier: "rare" },
     ],
   },
   "cutpurse": {
@@ -1135,10 +1119,14 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A pickpocket turned to the blade when purses got scarce. Light fingers, lighter conscience.",
     drops: [
       { item: "worn_coin", chance: 0.9, min: 1, max: 5, tier: "always" },
+      { item: "scrap_cloth", chance: 0.2, tier: "common" },
+      { item: "rusty_key", chance: 0.12, tier: "common" },
       { item: "glass_vial", chance: 0.1, tier: "common" },
       { item: "herb_ashweed", chance: 0.1, tier: "common" },
       { item: "seed_ashweed", chance: 0.08, tier: "common" },
       { item: "rat_meat_cooked", chance: 0.12, tier: "common" },
+      { item: "tarnished_ring", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.008, tier: "rare" },
     ],
   },
   "bandit": {
@@ -1148,11 +1136,16 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A road bandit, armed with whatever the last traveller was carrying. They work in numbers.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 2, max: 7, tier: "always" },
+      { item: "bent_nail", chance: 0.2, tier: "common" },
+      { item: "bones", chance: 0.3, tier: "common" },
       { item: "sword_1", chance: 0.08, tier: "uncommon" },
       { item: "dagger_1", chance: 0.06, tier: "uncommon" },
       { item: "arrow_knucklestone", chance: 0.3, min: 5, max: 12, tier: "common" },
       { item: "hill_stew", chance: 0.12, tier: "common" },
       { item: "tanned_leather", chance: 0.1, tier: "common" },
+      { item: "tarnished_ring", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.01, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.003, tier: "rare" },
     ],
   },
   "poacher": {
@@ -1162,12 +1155,14 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A wood-thief who hunts the Lodge's game and the Lodge's purse alike. Deadly with a bow.",
     drops: [
       { item: "worn_coin", chance: 0.7, min: 1, max: 5, tier: "always" },
+      { item: "broken_arrow", chance: 0.35, tier: "common" },
       { item: "crude_shortbow", chance: 0.08, tier: "uncommon" },
       { item: "arrow_knucklestone", chance: 0.4, min: 8, max: 18, tier: "common" },
       { item: "boar_hide", chance: 0.2, tier: "common" },
       { item: "wolf_pelt", chance: 0.15, tier: "common" },
       { item: "venison", chance: 0.12, tier: "common" },
       { item: "hatchet_1", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.012, tier: "uncommon" },
     ],
   },
   "highwayman": {
@@ -1177,12 +1172,17 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A mounted robber fallen on hard times and harder methods. Stands his ground for a fat purse.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 3, max: 9, tier: "always" },
+      { item: "scrap_cloth", chance: 0.18, tier: "common" },
+      { item: "rusty_key", chance: 0.12, tier: "common" },
       { item: "sword_3", chance: 0.06, tier: "uncommon" },
       { item: "spear_1", chance: 0.06, tier: "uncommon" },
       { item: "arrow_ashiron", chance: 0.25, min: 5, max: 14, tier: "common" },
       { item: "forest_roast", chance: 0.12, tier: "common" },
       { item: "ring_1", chance: 0.03, tier: "rare" },
+      { item: "tarnished_amulet", chance: 0.08, tier: "uncommon" },
       { item: "rough_gem", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.02, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.006, tier: "rare" },
     ],
   },
   "outlaw_archer": {
@@ -1192,11 +1192,15 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A marksman gone over to the road gangs. Picks off the careless from cover.",
     drops: [
       { item: "worn_coin", chance: 0.9, min: 2, max: 8, tier: "always" },
+      { item: "broken_arrow", chance: 0.4, tier: "common" },
       { item: "shortbow", chance: 0.06, tier: "uncommon" },
       { item: "arrow_ashiron", chance: 0.5, min: 10, max: 22, tier: "common" },
       { item: "arrow_knucklestone", chance: 0.3, min: 10, max: 25, tier: "common" },
       { item: "tanned_leather", chance: 0.15, tier: "common" },
       { item: "cured_leather", chance: 0.05, tier: "uncommon" },
+      { item: "tarnished_ring", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.02, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.006, tier: "rare" },
     ],
   },
   "cutthroat": {
@@ -1206,13 +1210,18 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A killer the other outlaws step around. Past robbery now — does it for the doing.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 4, max: 12, tier: "always" },
+      { item: "scrap_cloth", chance: 0.18, tier: "common" },
+      { item: "bones", chance: 0.3, tier: "common" },
       { item: "sword_4", chance: 0.05, tier: "rare" },
       { item: "dagger_3", chance: 0.06, tier: "uncommon" },
       { item: "hammer_3", chance: 0.05, tier: "uncommon" },
       { item: "ashiron_ore", chance: 0.2, min: 1, max: 2, tier: "common" },
       { item: "arrow_ashiron", chance: 0.3, min: 8, max: 18, tier: "common" },
       { item: "bone_broth", chance: 0.1, tier: "common" },
+      { item: "tarnished_amulet", chance: 0.1, tier: "uncommon" },
       { item: "rough_gem", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.02, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.006, tier: "rare" },
     ],
   },
   "marauder": {
@@ -1222,12 +1231,18 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A raider who rides the lawless edges of the map, taking whole carts and the drovers with them.",
     drops: [
       { item: "worn_coin", chance: 0.95, min: 5, max: 16, tier: "always" },
+      { item: "bent_nail", chance: 0.15, tier: "common" },
+      { item: "big_bones", chance: 0.3, tier: "common" },
       { item: "claymore_3", chance: 0.04, tier: "rare" },
       { item: "hammer_4", chance: 0.04, tier: "rare" },
       { item: "ashiron_bar", chance: 0.1, tier: "uncommon" },
       { item: "ribstone_ore", chance: 0.12, min: 1, max: 2, tier: "common" },
       { item: "cured_leather", chance: 0.1, tier: "common" },
+      { item: "tarnished_amulet", chance: 0.1, tier: "uncommon" },
+      { item: "gold_ring", chance: 0.03, tier: "rare" },
       { item: "rough_gem", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.03, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.01, tier: "rare" },
       { item: "cut_gem", chance: 0.02, tier: "rare" },
     ],
   },
@@ -1238,12 +1253,18 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "The one the camp answers to. Better armed, better fed, and worth the trouble — if you can take him.",
     drops: [
       { item: "worn_coin", chance: 1, min: 10, max: 28, tier: "always" },
+      { item: "rusty_key", chance: 0.2, tier: "common" },
+      { item: "big_bones", chance: 0.3, tier: "common" },
       { item: "sword_6", chance: 0.03, tier: "rare" },
       { item: "claymore_4", chance: 0.03, tier: "rare" },
       { item: "ring_3", chance: 0.04, tier: "rare" },
+      { item: "gold_ring", chance: 0.05, tier: "rare" },
+      { item: "tarnished_amulet", chance: 0.12, tier: "uncommon" },
       { item: "arrow_ashiron", chance: 0.5, min: 15, max: 30, tier: "common" },
       { item: "ribstone_bar", chance: 0.06, tier: "uncommon" },
       { item: "rough_gem", chance: 0.12, min: 1, max: 2, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.03, tier: "rare" },
+      { item: "uncut_diamond", chance: 0.006, tier: "rare" },
       { item: "cut_gem", chance: 0.04, tier: "rare" },
     ],
   },
@@ -1310,6 +1331,107 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
       { item: "hearthite_bar", chance: 0.25, min: 1, max: 2, tier: "uncommon" },
       { item: "seed_bloodberry", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
+    ],
+  },
+
+  // === SETTLEMENT GUARDS — attackable, but NOT aggressive ===================
+  // OSRS-style town guards: they stand watch and never strike first (they're
+  // left out of the AGGRESSIVE set in worldCore), so you can walk the streets in
+  // peace — but pick a fight and they answer with steel. Solid defence makes
+  // them a deliberate target, and they pay out in coin, gems and the odd ring.
+  "town_guard": {
+    id: "town_guard", name: "Settlement Guard", icon: "🛡️", level: 21, hp: 55,
+    acc: 48, def: 26, maxHit: 9, speed: 2800, xp: 90, attackStyle: "stab",
+    weakness: ["crush"],
+    desc: "A local watchman keeping the peace at the settlement's edge. Leave them be and they'll leave you be — raise a hand, and they raise one back.",
+    drops: [
+      { item: "worn_coin", chance: 1, min: 8, max: 20, tier: "always" },
+      { item: "bones", chance: 0.7, tier: "common" },
+      { item: "rusty_key", chance: 0.2, tier: "common" },
+      { item: "scrap_cloth", chance: 0.15, tier: "common" },
+      { item: "sword_3", chance: 0.05, tier: "uncommon" },
+      { item: "helm_3", chance: 0.04, tier: "uncommon" },
+      { item: "tarnished_ring", chance: 0.12, tier: "common" },
+      { item: "tarnished_amulet", chance: 0.08, tier: "uncommon" },
+      { item: "rough_gem", chance: 0.06, tier: "uncommon" },
+      { item: "uncut_sapphire", chance: 0.05, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.02, tier: "rare" },
+      { item: "gold_ring", chance: 0.02, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.001, tier: "legendary" },
+    ],
+  },
+  "ironvale_guard": {
+    id: "ironvale_guard", name: "Ironvale Guard", icon: "⚔️", level: 38, hp: 90,
+    acc: 84, def: 40, maxHit: 16, speed: 2600, xp: 240, attackStyle: "slash",
+    weakness: ["stab"],
+    desc: "A drilled soldier of the Ironvale watch, mail-clad and unbothered. The city's law made flesh — not to be picked at lightly, but worth the trouble if you can take one.",
+    drops: [
+      { item: "worn_coin", chance: 1, min: 20, max: 55, tier: "always" },
+      { item: "bones", chance: 0.7, tier: "common" },
+      { item: "rusty_key", chance: 0.22, tier: "common" },
+      { item: "sword_4", chance: 0.05, tier: "uncommon" },
+      { item: "helm_3", chance: 0.05, tier: "uncommon" },
+      { item: "armor_6", chance: 0.02, tier: "rare" },
+      { item: "ring_3", chance: 0.05, tier: "uncommon" },
+      { item: "tarnished_amulet", chance: 0.12, tier: "common" },
+      { item: "gold_ring", chance: 0.05, tier: "rare" },
+      { item: "uncut_sapphire", chance: 0.08, tier: "uncommon" },
+      { item: "uncut_emerald", chance: 0.04, tier: "uncommon" },
+      { item: "uncut_ruby", chance: 0.015, tier: "rare" },
+      { item: "cut_gem", chance: 0.04, tier: "rare" },
+      { item: "uncut_diamond", chance: 0.004, tier: "rare" },
+      { item: "shard_of_orun", chance: 0.002, tier: "legendary" },
+    ],
+  },
+
+  // === FARMERS — killed for seeds (OSRS Master-Farmer style) ================
+  // Passive (not in AGGRESSIVE), so they work the fields until you rob them. The
+  // whole point is the seed satchel: field hands drop the common sowing seeds,
+  // the master farmer the rare herb and tree seeds you can't easily buy.
+  "field_farmer": {
+    id: "field_farmer", name: "Field Farmer", icon: "🧑‍🌾", level: 18, hp: 40,
+    acc: 22, def: 12, maxHit: 6, speed: 2900, xp: 85, attackStyle: "crush",
+    weakness: ["stab"],
+    desc: "A weathered farmhand working the settlement plots, pockets stuffed with seed for the next sowing. Rob them if you dare — the seeds are the prize.",
+    drops: [
+      { item: "worn_coin", chance: 0.6, min: 2, max: 8, tier: "common" },
+      { item: "bones", chance: 0.4, tier: "common" },
+      { item: "scrap_cloth", chance: 0.2, tier: "common" },
+      { item: "seed_ashweed", chance: 0.35, min: 1, max: 3, tier: "common" },
+      { item: "seed_thornroot", chance: 0.25, min: 1, max: 2, tier: "common" },
+      { item: "seed_bloodberry", chance: 0.18, min: 1, max: 2, tier: "uncommon" },
+      { item: "seed_coldmoss", chance: 0.14, tier: "uncommon" },
+      { item: "seed_ironleaf", chance: 0.1, tier: "uncommon" },
+      { item: "seed_greybloom", chance: 0.08, tier: "uncommon" },
+      { item: "seed_ashwood", chance: 0.05, tier: "uncommon" },
+      { item: "seed_coldpine", chance: 0.04, tier: "rare" },
+      { item: "hill_stew", chance: 0.12, tier: "common" },
+      { item: "uncut_sapphire", chance: 0.02, tier: "rare" },
+    ],
+  },
+  "master_farmer": {
+    id: "master_farmer", name: "Master Farmer", icon: "🧑‍🌾", level: 38, hp: 70,
+    acc: 60, def: 22, maxHit: 12, speed: 2800, xp: 200, attackStyle: "crush",
+    weakness: ["stab"],
+    desc: "The one who runs the fields — decades of sowing in their hands and the rarest seeds in their satchel. A hard mark, but the seed is worth the sweat.",
+    drops: [
+      { item: "worn_coin", chance: 0.7, min: 6, max: 18, tier: "common" },
+      { item: "bones", chance: 0.5, tier: "common" },
+      { item: "seed_bloodberry", chance: 0.3, min: 1, max: 3, tier: "common" },
+      { item: "seed_coldmoss", chance: 0.25, min: 1, max: 2, tier: "common" },
+      { item: "seed_ironleaf", chance: 0.2, tier: "uncommon" },
+      { item: "seed_greybloom", chance: 0.18, tier: "uncommon" },
+      { item: "seed_spinethistle", chance: 0.12, tier: "uncommon" },
+      { item: "seed_ruevine", chance: 0.1, tier: "uncommon" },
+      { item: "seed_duskshade", chance: 0.07, tier: "rare" },
+      { item: "seed_marrowflower", chance: 0.05, tier: "rare" },
+      { item: "seed_hearthbloom", chance: 0.03, tier: "rare" },
+      { item: "seed_orunroot", chance: 0.015, tier: "rare" },
+      { item: "seed_greyoak", chance: 0.06, tier: "uncommon" },
+      { item: "seed_ruewood", chance: 0.04, tier: "rare" },
+      { item: "seed_deeproot", chance: 0.02, tier: "rare" },
+      { item: "uncut_emerald", chance: 0.03, tier: "rare" },
+      { item: "uncut_ruby", chance: 0.01, tier: "rare" },
     ],
   }
 };
