@@ -975,6 +975,17 @@ export function drawWorld(
   // --- Objects ---
   const lights: Array<[number, number]> = []; // warm light sources, for night
   const trophy = trophyGlyph(state, content); // the player's rarest item, for display cases
+  // Label de-clutter: collect the boxes of labels already drawn (NPC/monster
+  // names) so fishing-spot labels — which pile up where shoals cluster — can be
+  // drawn last with collision avoidance instead of bleeding into each other.
+  const labelBoxes: Array<[number, number, number, number]> = [];
+  const fishLabels: Array<{ cx: number; yb: number; text: string; color: string; locked: boolean; dist: number }> = [];
+  const labelBox = (text: string, cx: number, yb: number): [number, number, number, number] => {
+    const half = (text.length * 5.2 + 4) / 2;
+    return [cx - half, yb - 11, cx + half, yb + 1];
+  };
+  const labelHits = (b: [number, number, number, number]): boolean =>
+    labelBoxes.some((p) => b[0] < p[2] && b[2] > p[0] && b[1] < p[3] && b[3] > p[1]);
   for (const def of content.objects) {
     const obj = state.objects[def.id];
     if (!obj) continue;
@@ -1028,16 +1039,32 @@ export function drawWorld(
     if (def.kind === "npc" || (def.kind === "monster" && obj.available)) {
       const lvl = def.kind === "monster" && def.monster ? content.monsters[def.monster]?.level : undefined;
       const text = lvl !== undefined ? `${def.name} (lvl ${lvl})` : def.name;
-      label(g, text, px + TILE / 2, py - 6, def.kind === "monster" ? "#c98" : "#cdbf9a");
+      const cx = px + TILE / 2, yb = py - 6;
+      label(g, text, cx, yb, def.kind === "monster" ? "#c98" : "#cdbf9a");
+      labelBoxes.push(labelBox(text, cx, yb)); // fishing labels steer clear of names
     }
-    // Fishing spots name their catch above the water (OSRS-style), so you know
-    // what's there without trying it. Shares the loot-labels toggle. Greyed with
-    // the level it needs when you're not yet skilled enough to land it.
+    // Fishing spots name their catch above the water (OSRS-style). Collected and
+    // drawn last (with collision avoidance) so a dense estuary reads cleanly
+    // instead of a bleeding wall of text. Shares the loot-labels toggle.
     if (lootLabels && def.kind === "fishing_spot") {
       const fl = state.player.skills.fishing?.level ?? 1;
       const hl = fishingHeadline(content, def, fl);
-      if (hl) label(g, hl.text, px + TILE / 2, py - 6, hl.locked ? "#b9968f" : "#9fd0d8");
+      if (hl) {
+        const dx = p.x - state.player.pos.x, dy = p.y - state.player.pos.y;
+        fishLabels.push({ cx: px + TILE / 2, yb: py - 6, text: hl.text, color: hl.locked ? "#b9968f" : "#9fd0d8", locked: hl.locked, dist: dx * dx + dy * dy });
+      }
     }
+  }
+
+  // Fishing-spot labels, de-cluttered: the ones you can fish come first, then the
+  // nearest, and each is skipped if it would overlap a label already placed — so a
+  // packed estuary shows a handful of clean labels rather than a bleeding stack.
+  fishLabels.sort((a, b) => (a.locked ? 1 : 0) - (b.locked ? 1 : 0) || a.dist - b.dist);
+  for (const fl of fishLabels) {
+    const box = labelBox(fl.text, fl.cx, fl.yb);
+    if (labelHits(box)) continue;
+    label(g, fl.text, fl.cx, fl.yb, fl.color);
+    labelBoxes.push(box);
   }
 
   // Agility: pulsing marker over the next obstacle to take.
