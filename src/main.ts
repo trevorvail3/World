@@ -220,7 +220,7 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   };
 
   const menu = new ContextMenu(app!);
-  const guide = new Guide(app!);
+  const guide = new Guide(app!, content);
   let game: Game;
   const dispatch = (intent: Intent): void => game.dispatch(intent);
   // `game` is assigned just below; the slider may read zoom during Hud build,

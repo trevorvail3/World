@@ -1,27 +1,36 @@
 /**
  * src/client/guide.ts
  * -------------------
- * A contextual onboarding coach. It does NOT tour the whole UI up front — it
- * teaches one system at a time, exactly when the opening quest ("Ash and
- * Knuckle") makes that system matter: talk to a quest-giver, gather and train a
- * skill, use a crafting station, deliver, then graduate into the tabs, the run
- * toggle and combat.
+ * The onboarding coach — two layers, one banner.
  *
- * It is driven by the world STATE (the player's quest progress), not a fragile
- * count of events, so it always shows the line that matches what the gold arrow
- * is pointing at — and it can never get out of step. The very first interactions
- * (move / act / inspect) are taught by the one-time Primer card before this even
- * starts. Presentation only: it reads state and shows a single banner.
+ * 1) THE OPENING COACH. For a brand-new player it teaches one system at a time,
+ *    exactly when the opening quest ("Ash and Knuckle") makes that system
+ *    matter: talk to a quest-giver, gather and train a skill, use a crafting
+ *    station, deliver, then graduate into the tabs, the run toggle and combat.
+ *    It is driven by the player's quest progress, so it can never get out of
+ *    step. When the first quest ends it retires for good.
+ *
+ * 2) CONTEXTUAL TIPS. Varath has far more systems than the first quest touches —
+ *    ranged combat, Faith/magic, farming, cooking, banking, Grace. Rather than
+ *    front-load all of that, a set of one-shot tips fire the FIRST time the
+ *    player's state shows they've met a system (a bow in the pack, bones to
+ *    bury, a staff to wield, an empty Grace bar…). Each fires once, is
+ *    remembered in localStorage so it never nags across sessions, and — via a
+ *    one-time grandfather check — existing veterans are opted out entirely so
+ *    they never get taught what they already know.
+ *
+ * Presentation only: it reads state and shows a single banner. It never mutates
+ * the world.
  */
 
-import type { WorldState } from "../core/types.ts";
+import type { Content, Player, WorldState } from "../core/types.ts";
 
-/** Quest-derived phases, in the order a new player meets them. */
+/** Quest-derived phases of the opening coach, in the order a new player meets them. */
 type Phase = "off" | "greet" | "mine" | "smelt" | "deliver" | "graduate";
 
 const FIRST_QUEST = "q_ash_and_knuckle";
 
-// One line per phase. Each names the next action and the system it teaches.
+// One line per opening-coach phase. Each names the next action + the system it teaches.
 const TEXT: Record<Exclude<Phase, "off" | "graduate">, string> = {
   greet: "Aldric is waving you over — tap him to hear what the old man needs.",
   mine: "Follow the gold arrow and tap the Knucklestone rock. Every swing trains your Mining.",
@@ -35,14 +44,114 @@ const GRAD_UI =
 const GRAD_COMBAT =
   "The moor's beasts carry rarer things. Hold a creature to study it, then tap to strike — and eat food if your Hitpoints run low.";
 
+// --- Contextual tips ---------------------------------------------------------
+
+/** localStorage keys: the set of tip ids already shown, and a one-time init marker. */
+const SEEN_KEY = "varath-tips-seen";
+const INIT_KEY = "varath-tips-init";
+
+/** How long a tip banner lingers before it fades on its own (ms). */
+const TIP_MS = 12000;
+
+/** One contextual tip: fires the first time `test` is true, then never again. */
+interface Tip {
+  id: string;
+  test: (state: WorldState, content: Content) => boolean;
+  text: string;
+}
+
+/** Does any pack slot hold an item matching `pred`? */
+function packHas(p: Player, pred: (id: string) => boolean): boolean {
+  return p.inventory.some((s) => s !== null && pred(s.item));
+}
+
+/** The contextual tips, checked top to bottom; the first unseen match fires.
+ *  Order rarely matters (each fires when its own condition first holds), but a
+ *  more specific / rarer trigger is listed before a broader one just in case
+ *  two come true on the same tick. */
+const TIPS: Tip[] = [
+  {
+    id: "faith_bones",
+    test: (s) => packHas(s.player, (id) => id === "bones" || id === "big_bones"),
+    text: "Bones! Hold them in your Pack and choose Bury for Faith XP — or Crush them with a Pestle into bonemeal for potions. Faith is Varath's prayer-and-magic skill.",
+  },
+  {
+    id: "magic_staff",
+    test: (s, c) =>
+      packHas(s.player, (id) => !!c.items[id as keyof typeof c.items]?.magic) ||
+      !!(s.player.equipment.mainhand && c.items[s.player.equipment.mainhand]?.magic),
+    text: "A staff casts Faith spells. Wield it, open the Devotion tab and pick a spell to autocast — the basic bolt costs no Grace. Higher staves hit harder.",
+  },
+  {
+    id: "grace_empty",
+    test: (s) => s.player.grace <= 0 && s.player.skills.faith.level > 1,
+    text: "Out of Grace. It never refills in the field — pray at a shrine or altar to top it up, or drink a Faith Potion (bonemeal + a herb) to restore it on the move.",
+  },
+  {
+    id: "ranged_bow",
+    test: (s, c) =>
+      packHas(s.player, (id) => !!c.items[id as keyof typeof c.items]?.ranged) ||
+      !!s.player.equipment.ranged,
+    text: "A bow! Equip it, then stock arrows in the Ammo slot (Gear tab) — you'll fight from range and train Draw. Enemies weak to ranged take extra damage.",
+  },
+  {
+    id: "farming_seed",
+    test: (s) => packHas(s.player, (id) => id.startsWith("seed_")),
+    text: "A seed. Farming patches are dotted around the world (a sprout icon on the map) — plant it there, then come back later. Crops grow in real time, even while you're away.",
+  },
+  {
+    id: "cooking_raw",
+    test: (s) => packHas(s.player, (id) => id.startsWith("raw_") || id.endsWith("_raw")),
+    text: "Raw food heals nothing. Cook it at a fire or range first — but mind the flame; a low Cooking level burns some. Cooked food is your lifeline in a fight.",
+  },
+  {
+    id: "combat_style",
+    test: (s) => (s.player.stats?.monstersSlain ?? 0) >= 3,
+    text: "Tip: switch your combat style in the Gear tab — Edge trains accuracy, Vigour trains damage, Ward trains defence. Each kill pours XP into the style you're using.",
+  },
+  {
+    id: "pack_full",
+    test: (s) => s.player.inventory.every((slot) => slot !== null),
+    text: "Your pack is full. Head to a Bank (the chest icon on the map) to stash items — bank storage is unlimited, and you can withdraw anything later.",
+  },
+];
+
+/** Would this player look like a beginner who still needs the tips? A fresh
+ *  character sits near ~20 total level with no quests done; anyone past that is
+ *  grandfathered out so long-time players are never taught the basics again. */
+function looksAdvanced(p: Player): boolean {
+  if (p.questsDone.length >= 2) return true;
+  if ((p.stats?.monstersSlain ?? 0) >= 30) return true;
+  const total = Object.values(p.skills).reduce((sum, sk) => sum + sk.level, 0);
+  return total >= 60;
+}
+
+function loadSeen(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (raw) return new Set(JSON.parse(raw) as string[]);
+  } catch { /* storage blocked — tips simply repeat, harmless */ }
+  return new Set();
+}
+
+function saveSeen(seen: Set<string>): void {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen])); } catch { /* ignore */ }
+}
+
 export class Guide {
   private banner: HTMLElement;
   private active = false;
   private phase: Phase = "off";
-  private graduated = false; // graduation sequence has run (once per session)
+  private graduated = false; // opening-coach graduation sequence has run (once per session)
   private timers: number[] = [];
 
-  constructor(root: HTMLElement) {
+  private content: Content;
+  private seen: Set<string> = loadSeen();
+  private tipTimer: number | null = null; // set while a tip banner is on screen
+  private initChecked = false; // the one-time grandfather check has run
+
+  constructor(root: HTMLElement, content: Content) {
+    this.content = content;
     this.banner = document.createElement("div");
     this.banner.className = "guide-banner hidden";
     root.appendChild(this.banner);
@@ -52,22 +161,36 @@ export class Guide {
     return this.phase;
   }
 
-  /** Begin the onboarding (call once, for a brand-new player). */
+  /** Begin the opening coach (call once, for a brand-new player). */
   start(): void {
     this.active = true;
   }
 
   /**
    * Re-evaluate against the latest world state. Called every tick; cheap, and
-   * only touches the DOM when the phase actually changes.
+   * only touches the DOM when something actually changes.
    */
   update(state: WorldState): void {
-    if (!this.active) return;
+    this.grandfatherOnce(state.player);
+
+    // The opening coach owns the banner while it runs; suppress tips until it
+    // has retired (or was never started, e.g. for a returning player).
+    if (this.active) {
+      this.updateOpeningCoach(state);
+      return;
+    }
+
+    this.updateTips(state);
+  }
+
+  // --- Opening coach ---------------------------------------------------------
+
+  private updateOpeningCoach(state: WorldState): void {
     const phase = this.derivePhase(state);
     if (phase === this.phase) return;
 
     // Reaching the end of the first quest plays the graduation sequence once,
-    // then the guide retires for good.
+    // then the coach retires for good and the tips take over.
     if (phase === "graduate") {
       this.phase = "graduate";
       if (!this.graduated) {
@@ -91,23 +214,63 @@ export class Guide {
     return st.step <= 0 ? "mine" : st.step === 1 ? "smelt" : "deliver";
   }
 
-  /** UI line, then combat line, then fade away for the rest of the game. */
+  /** UI line, then combat line, then hand off to the contextual tips. */
   private runGraduation(): void {
     this.show(GRAD_UI);
     this.after(8000, () => this.show(GRAD_COMBAT));
-    this.after(18000, () => this.retire());
+    this.after(18000, () => this.retireOpeningCoach());
   }
 
-  private show(text: string): void {
-    this.banner.textContent = text;
-    this.banner.classList.remove("hidden");
-  }
-
-  private retire(): void {
+  /** The opening coach steps aside; contextual tips continue from here. */
+  private retireOpeningCoach(): void {
     this.active = false;
     this.phase = "off";
     this.banner.classList.add("hidden");
     this.clearTimers();
+  }
+
+  // --- Contextual tips -------------------------------------------------------
+
+  /** Once per session, opt existing/advanced players out of the beginner tips
+   *  (so this feature launching never nags a veteran) by marking them all seen. */
+  private grandfatherOnce(player: Player): void {
+    if (this.initChecked) return;
+    this.initChecked = true;
+    let init: string | null = null;
+    try { init = localStorage.getItem(INIT_KEY); } catch { /* ignore */ }
+    if (init) return; // already initialised on a previous session
+    if (looksAdvanced(player)) {
+      for (const t of TIPS) this.seen.add(t.id);
+      saveSeen(this.seen);
+    }
+    try { localStorage.setItem(INIT_KEY, "1"); } catch { /* ignore */ }
+  }
+
+  private updateTips(state: WorldState): void {
+    if (this.tipTimer !== null) return; // one tip on screen at a time
+    for (const tip of TIPS) {
+      if (this.seen.has(tip.id)) continue;
+      if (!tip.test(state, this.content)) continue;
+      this.seen.add(tip.id);
+      saveSeen(this.seen);
+      this.showTip(tip.text);
+      return;
+    }
+  }
+
+  private showTip(text: string): void {
+    this.show(text);
+    this.tipTimer = window.setTimeout(() => {
+      this.banner.classList.add("hidden");
+      this.tipTimer = null;
+    }, TIP_MS);
+  }
+
+  // --- Shared banner ---------------------------------------------------------
+
+  private show(text: string): void {
+    this.banner.textContent = text;
+    this.banner.classList.remove("hidden");
   }
 
   private after(ms: number, fn: () => void): void {
