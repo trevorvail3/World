@@ -52,10 +52,13 @@ const METAL: Metal[] = [
 // Unique looks keyed by id prefix — drops that should stand out from the metal
 // ladder. The Ashen Wyrm's set reads as black-red scale lit by molten seams.
 const DRAGON: Metal = { base: "#2e0f12", edge: "#ff7a2a" };
+// The Boneman's set: lacquered pale bone — white, not metal.
+const BONE: Metal = { base: "#ddd5c2", edge: "#f6f1e2" };
 
 /** A distinct look for a named unique set, or null to fall back to the ladder. */
 function uniqueLook(id: string): Metal | null {
   if (id.startsWith("wyrm_")) return DRAGON;
+  if (id.startsWith("bone_") || id === "bonesaw") return BONE;
   return null;
 }
 

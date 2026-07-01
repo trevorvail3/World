@@ -352,6 +352,9 @@ export const shops: ShopDef[] = [
       { item: "mount_packbear", price: 75000, qty: 1 },
       { item: "mount_hound", price: 80000, qty: 1 },
       { item: "mount_dustrunner", price: 90000, qty: 1 },
+      // Cosmetics: worn by WHATEVER you ride, forever. Berta's real profit.
+      { item: "saddle_gold", price: 25000, qty: 1 },
+      { item: "horse_armor", price: 40000, qty: 1 },
     ],
   },
   {

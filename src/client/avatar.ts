@@ -94,6 +94,8 @@ export interface AvatarAnim {
   action?: { kind: string; tool: string; frac: number };
   /** Mirror the figure horizontally — used to face the way it's walking. */
   flip?: boolean;
+  /** Mounted: legs tuck out of sight into the saddle; no walk-cycle lift. */
+  riding?: boolean;
 }
 
 type Ctx = CanvasRenderingContext2D;
@@ -153,8 +155,9 @@ function drawAvatarInner(
   const bob = acting ? Math.sin(t / 280) * 0.5
     : moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
   const swing = moving ? Math.sin(step) * 0.5 : (!acting ? Math.sin(t / 340) * 0.05 : 0);
-  const liftL = moving ? Math.max(0, Math.sin(step)) * 1.8 : 0;
-  const liftR = moving ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
+  const riding = anim.riding ?? false;
+  const liftL = moving && !riding ? Math.max(0, Math.sin(step)) * 1.8 : 0;
+  const liftR = moving && !riding ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
   // The near arm swings the action, or holds the equipped weapon while idle.
   const heldWeapon = !acting && gear.weapon ? gear.weapon.type : "";
   const nearAngle = acting ? actionArmAngle(action!.frac, action!.kind) : -0.12 + swing;
@@ -252,8 +255,20 @@ function drawAvatarInner(
       g.fillStyle = shade(look.shoeColor, 0.3); R(bx - 0.2, 12 + y, 5.4, 0.6); // sole
     }
   };
-  foot(-6, liftL);
-  foot(1, liftR);
+  // In the saddle the legs tuck against the horse's flanks — just a short
+  // trouser cuff and boot-top peeking below the torso, no walking feet.
+  if (riding) {
+    const cuff = (bx: number): void => {
+      if (look.legs !== "kilt") { g.fillStyle = look.legColor; R(bx, 5, 5, 3); }
+      g.fillStyle = gear.boots ? gear.boots.base : look.shoeColor;
+      R(bx + 0.2, 7.6, 4.6, 2.2);
+    };
+    cuff(-6);
+    cuff(1);
+  } else {
+    foot(-6, liftL);
+    foot(1, liftR);
+  }
 
   // --- Robe skirt: a single flaring panel over both legs (magic leg gear) ---
   if (gear.legs && gear.legs.style === "robe") {

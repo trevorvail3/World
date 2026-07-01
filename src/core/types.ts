@@ -271,6 +271,8 @@ export type ItemId =
   | "pet_hollow_prophet"
   | "pet_superior"
   | "horror_lantern"
+  | "saddle_gold"
+  | "horse_armor"
   | "cloak_greyback"
   | "cape_ending_flame"
   | "cape_ending_vault"

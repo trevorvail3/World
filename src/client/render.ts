@@ -1487,10 +1487,14 @@ export function drawWorld(
       g.translate(php.ox, php.oy);
       g.translate(cx, cy); g.scale(php.s, php.s); g.translate(-cx, -cy);
     }
+    const mountId = pl.equipment.mount;
+    const ownsCosmetic = (iid: string): boolean =>
+      ((pl.bank as Record<string, number>)[iid] ?? 0) > 0 || pl.inventory.some((s) => s?.item === (iid as ItemId));
     drawPlayer(
       g, pl.pos, cam, now, pl.appearance,
       pl.path.length > 0, playerAction(pl, content, now),
       resolveGear(pl.equipment, content), playerFaceLeft,
+      mountId ? { id: mountId, gold: ownsCosmetic("saddle_gold"), barding: ownsCosmetic("horse_armor") } : undefined,
     );
     if (php) g.restore();
     // A warm light the player carries — added after the bloom pass so it only
@@ -2751,8 +2755,219 @@ function drawCompanion(
   g.translate(sx, sy);
   g.scale(0.5, 0.5);
   if (typeof boss === "string") drawMonsterBody(g, boss, 0, 0, now, moving);
+  else if (id.startsWith("pet_")) drawSkillPet(g, id, 0, 0, now, moving);
   else drawCritter(g, undefined, 0, 0, now);
   g.restore();
+}
+
+/** The skilling pets: each a bespoke little familiar, earned by the grind it
+ *  honours — a rock pup for Mining, an ember imp for Smithing, a fox kit for
+ *  Hunter… all drawn at critter scale so they read as companions, not fighters.
+ *  (Boss pets don't come here — they render as mini bosses above.) */
+function drawSkillPet(
+  g: CanvasRenderingContext2D, id: string, cx: number, cy: number, now: number, moving: boolean,
+): void {
+  const bob = Math.sin(now / (moving ? 140 : 300)) * (moving ? 1.6 : 0.8);
+  const y = cy + bob;
+  shadow(g, cx, cy + 9, 9, 3);
+  const eye = (ex: number, ey: number, r = 1.2, col = "#15100b"): void => { g.fillStyle = col; circle(g, ex, ey, r); };
+  switch (id) {
+    case "pet_mining": { // ROCK PUP — a living pebble with a crystal spine
+      g.fillStyle = "#6a6660";
+      g.beginPath(); g.ellipse(cx, y + 2, 9, 7, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#7d786f";
+      g.beginPath(); g.ellipse(cx - 2, y - 1, 6, 4.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#8fd0e0"; // crystal spikes
+      g.beginPath(); g.moveTo(cx + 1, y - 6); g.lineTo(cx + 4, y - 1); g.lineTo(cx - 2, y - 1); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(cx + 6, y - 3); g.lineTo(cx + 8, y + 1); g.lineTo(cx + 3, y + 1); g.closePath(); g.fill();
+      g.fillStyle = "#4f4b46"; // stubby feet
+      g.fillRect(cx - 6, cy + 7, 3, 3); g.fillRect(cx + 3, cy + 7, 3, 3);
+      eye(cx - 5, y + 1, 1.4, "#dff2f8"); eye(cx - 5, y + 1, 0.8);
+      break;
+    }
+    case "pet_smithing": { // EMBER IMP — coal-dark, seamed with fire
+      const gl = 0.6 + 0.4 * Math.sin(now / 200);
+      g.fillStyle = "#2a2320";
+      g.beginPath(); g.ellipse(cx, y, 7, 8, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = `rgba(240,120,40,${gl})`; g.lineWidth = 1.2; // molten seams
+      g.beginPath(); g.moveTo(cx - 4, y - 3); g.lineTo(cx + 1, y + 1); g.lineTo(cx - 2, y + 5); g.stroke();
+      g.beginPath(); g.moveTo(cx + 4, y - 4); g.lineTo(cx + 3, y + 2); g.stroke();
+      g.fillStyle = "#2a2320"; // horn nubs
+      g.beginPath(); g.moveTo(cx - 4, y - 7); g.lineTo(cx - 2, y - 10); g.lineTo(cx - 1, y - 6); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(cx + 4, y - 7); g.lineTo(cx + 2, y - 10); g.lineTo(cx + 1, y - 6); g.closePath(); g.fill();
+      eye(cx - 2.5, y - 3, 1.3, `rgba(255,170,60,${0.6 + 0.4 * gl})`); eye(cx + 2.5, y - 3, 1.3, `rgba(255,170,60,${0.6 + 0.4 * gl})`);
+      break;
+    }
+    case "pet_forestry": { // SAPLING SPRITE — a walking seedling
+      g.fillStyle = "#7a5c38"; // trunk body
+      g.fillRect(cx - 2.5, y - 2, 5, 9);
+      g.fillStyle = "#4e6a34"; // leaf crown
+      circle(g, cx, y - 6, 6);
+      g.fillStyle = "#63834a";
+      circle(g, cx - 2, y - 8, 3.4);
+      g.fillStyle = "#8fb060";
+      circle(g, cx + 3, y - 5, 2.2);
+      eye(cx - 1.5, y + 0.5); eye(cx + 1.5, y + 0.5);
+      g.fillStyle = "#7a5c38"; g.fillRect(cx - 4, cy + 7, 2.5, 3); g.fillRect(cx + 1.5, cy + 7, 2.5, 3);
+      break;
+    }
+    case "pet_woodcraft": { // SHAVIE — a carved wooden owl, ring-grained
+      g.fillStyle = "#9a7848";
+      g.beginPath(); g.ellipse(cx, y, 7, 8.5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#7c5e36"; g.lineWidth = 1; // grain rings
+      g.beginPath(); g.arc(cx, y + 1, 4.5, 0.3, Math.PI - 0.3); g.stroke();
+      g.beginPath(); g.arc(cx, y + 1, 2.5, 0.4, Math.PI - 0.4); g.stroke();
+      g.fillStyle = "#b99a64"; // face disc
+      circle(g, cx - 2.6, y - 4, 2.8); circle(g, cx + 2.6, y - 4, 2.8);
+      eye(cx - 2.6, y - 4, 1.3); eye(cx + 2.6, y - 4, 1.3);
+      g.fillStyle = "#d2b880"; // beak chip
+      g.beginPath(); g.moveTo(cx, y - 3); g.lineTo(cx - 1.2, y - 1); g.lineTo(cx + 1.2, y - 1); g.closePath(); g.fill();
+      break;
+    }
+    case "pet_hunter": { // FOX KIT — rust coat, white tail tip
+      g.fillStyle = "#b56a30";
+      g.beginPath(); g.ellipse(cx, y + 1, 8, 5.5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#b56a30"; g.lineWidth = 3.4; g.lineCap = "round"; // tail
+      g.beginPath(); g.moveTo(cx + 7, y + 2); g.quadraticCurveTo(cx + 13, y, cx + 12, y - 5); g.stroke();
+      g.strokeStyle = "#f0e8da"; g.lineWidth = 2.2;
+      g.beginPath(); g.moveTo(cx + 12.4, y - 3); g.lineTo(cx + 12, y - 5.5); g.stroke(); g.lineCap = "butt";
+      g.fillStyle = "#b56a30"; circle(g, cx - 7, y - 2, 4);          // head
+      g.fillStyle = "#8a4c20"; // ears
+      g.beginPath(); g.moveTo(cx - 10, y - 5); g.lineTo(cx - 9, y - 9); g.lineTo(cx - 6.5, y - 5.5); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(cx - 6, y - 5.5); g.lineTo(cx - 4.5, y - 9); g.lineTo(cx - 3, y - 5); g.closePath(); g.fill();
+      g.fillStyle = "#f0e8da"; circle(g, cx - 9.5, y - 0.5, 1.8);    // white muzzle
+      eye(cx - 7, y - 2.6, 1.1);
+      break;
+    }
+    case "pet_fishing": { // OTTER — sleek, with a silver catch in its mouth
+      g.fillStyle = "#6a4e30";
+      g.beginPath(); g.ellipse(cx, y + 1, 8.5, 5, -0.15, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#6a4e30"; g.lineWidth = 2.6; g.lineCap = "round"; // tail
+      g.beginPath(); g.moveTo(cx + 8, y + 3); g.quadraticCurveTo(cx + 13, y + 5, cx + 15, y + 2); g.stroke(); g.lineCap = "butt";
+      g.fillStyle = "#6a4e30"; circle(g, cx - 8, y - 2, 3.6);
+      g.fillStyle = "#caa87c"; circle(g, cx - 9, y - 0.6, 1.9); // pale chin
+      eye(cx - 8, y - 3, 1.05);
+      g.fillStyle = "#9fb6c4"; // the fish
+      g.beginPath(); g.ellipse(cx - 12, y + 0.5, 3.4, 1.4, -0.3, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(cx - 15, y - 0.6); g.lineTo(cx - 17, y - 1.8); g.lineTo(cx - 16.4, y + 1); g.closePath(); g.fill();
+      break;
+    }
+    case "pet_cooking": { // SOUS HEN — plump, flour-dusted, chef-hatted
+      g.fillStyle = "#c78a4a";
+      g.beginPath(); g.ellipse(cx, y + 1, 7, 6.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#e0a860"; circle(g, cx - 5, y - 4, 3.4); // head
+      g.fillStyle = "#f4f2ec"; // tiny chef's toque
+      g.fillRect(cx - 7.5, y - 10.5, 5, 3.4);
+      circle(g, cx - 6.8, y - 11, 1.7); circle(g, cx - 4.2, y - 11.4, 1.9);
+      g.fillStyle = "#e0b23c"; // beak
+      g.beginPath(); g.moveTo(cx - 8.4, y - 4); g.lineTo(cx - 11, y - 3.2); g.lineTo(cx - 8.4, y - 2.4); g.closePath(); g.fill();
+      g.fillStyle = "#b0752f"; // wing
+      g.beginPath(); g.ellipse(cx + 1, y + 1, 3.6, 2.6, 0.3, 0, Math.PI * 2); g.fill();
+      eye(cx - 5, y - 4.6, 1);
+      break;
+    }
+    case "pet_farming": { // HARVEST MOUSE — wheat sprig in paw
+      g.fillStyle = "#c2a06a";
+      g.beginPath(); g.ellipse(cx, y + 2, 6.5, 5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#a8865a"; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(cx + 6, y + 3); g.quadraticCurveTo(cx + 11, y + 2, cx + 10, y - 3); g.stroke();
+      g.fillStyle = "#c2a06a"; circle(g, cx - 5.5, y - 1, 3.6);
+      g.fillStyle = "#d8bc88"; circle(g, cx - 7, y - 5, 2.1); circle(g, cx - 3.4, y - 5.4, 2.1); // big ears
+      eye(cx - 6, y - 1.6, 1);
+      g.strokeStyle = "#c9a83e"; g.lineWidth = 1.2; // the wheat sprig
+      g.beginPath(); g.moveTo(cx - 8.5, y + 2); g.lineTo(cx - 11.5, y - 4); g.stroke();
+      g.fillStyle = "#e2c455";
+      for (let i = 0; i < 3; i++) circle(g, cx - 11 - i * 0.5, y - 4 - i * 1.6, 1.1);
+      break;
+    }
+    case "pet_survivalist": { // MOSS HARE — green-dappled wild hare
+      g.fillStyle = "#7a8458";
+      g.beginPath(); g.ellipse(cx, y + 1, 7, 5.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#5c6a40"; // moss dapples
+      circle(g, cx + 2, y - 1, 1.6); circle(g, cx - 2, y + 3, 1.3);
+      g.fillStyle = "#7a8458"; circle(g, cx - 5.5, y - 2.5, 3.4);
+      g.fillStyle = "#697452"; // long ears, one flopped
+      g.beginPath(); g.ellipse(cx - 7, y - 8, 1.6, 4.2, -0.25, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(cx - 3.4, y - 7, 1.6, 3.6, 0.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#e8e2d2"; circle(g, cx + 6.4, y + 2.4, 1.8); // bob tail
+      eye(cx - 6, y - 3, 1.05);
+      break;
+    }
+    case "pet_herblore": { // BREWTOAD — teal toad under a mushroom cap
+      g.fillStyle = "#4e7a6a";
+      g.beginPath(); g.ellipse(cx, y + 2, 7.5, 5.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#6a9a86"; // throat
+      g.beginPath(); g.ellipse(cx - 3, y + 3.5, 3, 2.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#a24a3a"; // mushroom cap hat
+      g.beginPath(); g.arc(cx + 1, y - 4, 5.5, Math.PI, 0); g.closePath(); g.fill();
+      g.fillStyle = "#e8ddca";
+      circle(g, cx - 1, y - 6, 1); circle(g, cx + 3.4, y - 5.4, 0.8);
+      eye(cx - 4.5, y - 1.5, 1.5, "#e8e2c2"); eye(cx - 4.5, y - 1.5, 0.8);
+      eye(cx + 2.5, y - 1.5, 1.5, "#e8e2c2"); eye(cx + 2.5, y - 1.5, 0.8);
+      break;
+    }
+    case "pet_construction": { // HOD BEETLE — square-backed, hauling a brick
+      g.fillStyle = "#5a5248";
+      g.fillRect(cx - 6, y - 3, 12, 8); // square carapace
+      g.fillStyle = "#6e6558";
+      g.fillRect(cx - 6, y - 3, 12, 2.4);
+      g.fillStyle = "#8a4a34"; // the brick it carries
+      g.fillRect(cx - 3.4, y - 7.5, 7, 3.6);
+      g.fillStyle = "#a05e42";
+      g.fillRect(cx - 3.4, y - 7.5, 7, 1.1);
+      g.fillStyle = "#3c362e"; // legs
+      for (let i = 0; i < 3; i++) { g.fillRect(cx - 5 + i * 4, cy + 5.4, 1.6, 3.4); }
+      g.fillStyle = "#5a5248"; circle(g, cx - 7.5, y + 0.5, 2.6);
+      eye(cx - 8.2, y, 0.9);
+      break;
+    }
+    case "pet_crafting": { // GEMBACK TORTOISE — a cut gem for a shell
+      g.fillStyle = "#7c6a4c"; // body
+      g.beginPath(); g.ellipse(cx, y + 3, 7.5, 3.6, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#3fa8a0"; // gem shell
+      g.beginPath();
+      g.moveTo(cx - 6, y + 1); g.lineTo(cx - 2, y - 5); g.lineTo(cx + 2, y - 5);
+      g.lineTo(cx + 6, y + 1); g.closePath(); g.fill();
+      g.fillStyle = "#7fd8d0"; // facets
+      g.beginPath(); g.moveTo(cx - 2, y - 5); g.lineTo(cx, y + 1); g.lineTo(cx - 6, y + 1); g.closePath(); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.7)"; g.fillRect(cx - 1, y - 4, 2, 1.2);
+      g.fillStyle = "#7c6a4c"; circle(g, cx - 8, y + 1.4, 2.4); // head
+      eye(cx - 8.6, y + 1, 0.9);
+      break;
+    }
+    case "pet_bounty": { // LEDGER HAWK — the Reckoner's little watcher
+      g.fillStyle = "#5c4a38";
+      g.beginPath(); g.ellipse(cx, y, 5, 7, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#7a6248"; // folded wing
+      g.beginPath(); g.ellipse(cx + 1.6, y + 0.5, 2.6, 5, 0.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#d8cfc0"; // barred chest
+      g.fillRect(cx - 3.4, y + 1, 3.4, 1.1); g.fillRect(cx - 3.2, y + 3, 3, 1.1);
+      g.fillStyle = "#5c4a38"; circle(g, cx - 1, y - 7, 3.2);
+      g.fillStyle = "#e0b23c"; // hooked beak
+      g.beginPath(); g.moveTo(cx - 4, y - 7.5); g.lineTo(cx - 6.4, y - 6.4); g.lineTo(cx - 3.6, y - 5.8); g.closePath(); g.fill();
+      eye(cx - 1.8, y - 7.8, 1.15, "#f2c84a"); eye(cx - 1.8, y - 7.8, 0.6);
+      g.fillStyle = "#3c362e"; g.fillRect(cx - 2.4, cy + 6, 1.4, 3); g.fillRect(cx + 1, cy + 6, 1.4, 3); // talons
+      break;
+    }
+    case "pet_superior": { // THE RECKONING WISP — black flame, gold mask
+      const fl = Math.sin(now / 180);
+      g.fillStyle = "rgba(20,14,26,0.9)";
+      g.beginPath();
+      g.moveTo(cx, y - 9 - fl);
+      g.quadraticCurveTo(cx + 7, y - 2, cx + 5, y + 5);
+      g.quadraticCurveTo(cx, y + 8, cx - 5, y + 5);
+      g.quadraticCurveTo(cx - 7, y - 2, cx, y - 9 - fl);
+      g.fill();
+      g.strokeStyle = `rgba(232,196,90,${0.5 + 0.3 * fl})`; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(cx - 3, y + 6); g.quadraticCurveTo(cx, y, cx - 1, y - 6); g.stroke();
+      g.fillStyle = "#e8c45a"; // the little gold mask
+      g.beginPath(); g.ellipse(cx, y - 2, 3.4, 2.6, 0, 0, Math.PI * 2); g.fill();
+      eye(cx - 1.3, y - 2.2, 0.75); eye(cx + 1.3, y - 2.2, 0.75);
+      break;
+    }
+    default:
+      drawCritter(g, undefined, cx, cy, now);
+  }
 }
 
 /** A town fountain: a round stone basin with a bright, jetting plume. */
@@ -4739,11 +4954,169 @@ function drawPlayer(
   action?: AvatarAnim["action"],
   gear: GearLook = {},
   flip = false,
+  mount?: { id: string; gold: boolean; barding: boolean },
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
+  if (mount) {
+    // Mounted: the steed is drawn first, then the rider sits into the saddle
+    // (legs tucked — the avatar knows it's riding). One shared shadow.
+    shadow(g, cx, cy + TILE / 2 - 2, 14, 4.5);
+    drawMountRig(g, cx, cy + 5, now, moving, flip, mount);
+    drawAvatar(g, cx, cy - 8, 1, withDefaults(look), { now, moving, flip, riding: true, ...(action ? { action } : {}) }, gear);
+    return;
+  }
   shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain
   drawAvatar(g, cx, cy, 1, withDefaults(look), { now, moving, flip, ...(action ? { action } : {}) }, gear);
+}
+
+// --- The mount rig: one parameterised quadruped for every steed the stables
+// sell. Natural coats only (bays, chestnuts, duns, greys, blacks — no purple
+// horses in Varath). Gallop cycle while moving; tail-swish and head-dip at
+// rest. A leather saddle always; gilded when the rider owns the Gilded
+// Saddle, plus steel barding (chest plate + chamfron) with the Steel Barding.
+interface MountLook { coat: string; mane: string; ears: "point" | "long" | "round" | "horn"; tusks?: boolean; bulky?: boolean }
+const MOUNT_LOOKS: Record<string, MountLook> = {
+  mount_pony:         { coat: "#8a7a66", mane: "#5c5044", ears: "point" },
+  mount_horse:        { coat: "#6b4a2e", mane: "#3a2818", ears: "point" },            // bay
+  mount_destrier:     { coat: "#2e2a28", mane: "#171412", ears: "point" },            // black
+  mount_courser:      { coat: "#8a5a30", mane: "#573418", ears: "point" },
+  mount_dustrunner:   { coat: "#a3703c", mane: "#6b4522", ears: "point" },            // red dun
+  mount_courier:      { coat: "#7a6a52", mane: "#4c4034", ears: "point" },
+  mount_galloper:     { coat: "#5c4632", mane: "#33251a", ears: "point" },
+  mount_runemarked:   { coat: "#3a3634", mane: "#211e1c", ears: "point" },
+  mount_marshstrider: { coat: "#7c7668", mane: "#524e42", ears: "point" },
+  mount_spinecharger: { coat: "#59524c", mane: "#38332e", ears: "point" },
+  mount_ferryman:     { coat: "#3c4048", mane: "#23262c", ears: "point" },
+  mount_mule:         { coat: "#7a6a58", mane: "#4c4234", ears: "long" },
+  mount_ox:           { coat: "#5a4a3a", mane: "#3a2f24", ears: "round", bulky: true },
+  mount_aurochs:      { coat: "#4a3a2e", mane: "#2c2118", ears: "horn", bulky: true },
+  mount_packbear:     { coat: "#5c4630", mane: "#3a2c1c", ears: "round", bulky: true },
+  mount_bristleback:  { coat: "#6a5240", mane: "#42322a", ears: "round", tusks: true, bulky: true },
+  mount_ironboar:     { coat: "#57504a", mane: "#332e2a", ears: "round", tusks: true, bulky: true },
+  mount_greymane:     { coat: "#8b8b86", mane: "#5b5b57", ears: "round", tusks: true, bulky: true },
+  mount_craggoat:     { coat: "#b9b2a4", mane: "#8a8274", ears: "horn" },
+  mount_hound:        { coat: "#4a4b52", mane: "#2c2d33", ears: "point" },
+  mount_nighthound:   { coat: "#33343a", mane: "#1c1d22", ears: "point" },
+  mount_stormhound:   { coat: "#5a616c", mane: "#3a3f48", ears: "point" },
+  mount_ridgewolf:    { coat: "#6f7178", mane: "#4a4c52", ears: "point" },
+  mount_silverwolf:   { coat: "#b4b8c0", mane: "#83878f", ears: "point" },
+  mount_wraithsteed:  { coat: "#4e5258", mane: "#2e3136", ears: "point" },
+  mount_bogwisp:      { coat: "#6a705c", mane: "#474c3c", ears: "point" },
+  mount_deepwing:     { coat: "#4c4650", mane: "#2e2a32", ears: "point" },
+  mount_deepstrider:  { coat: "#5c5852", mane: "#3a3733", ears: "round", bulky: true },
+  mount_palecrawler:  { coat: "#8a8578", mane: "#5e5a4e", ears: "round", bulky: true },
+};
+
+function drawMountRig(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+  moving: boolean,
+  flip: boolean,
+  mount: { id: string; gold: boolean; barding: boolean },
+): void {
+  const look = MOUNT_LOOKS[mount.id] ?? MOUNT_LOOKS["mount_horse"]!;
+  const coat = look.coat, mane = look.mane;
+  const dark = "#1e1812";
+  g.save();
+  g.translate(cx, cy);
+  if (flip) g.scale(-1, 1);
+  const bob = moving ? Math.abs(Math.sin(now / 130)) * 1.6 : Math.sin(now / 460) * 0.6;
+  const bodyW = look.bulky ? 15 : 13.5;
+  const bodyH = look.bulky ? 8.5 : 7;
+
+  // legs: two pairs, phase-shifted gallop while moving
+  const legPh = now / 110;
+  const legs: Array<[number, number]> = [[-9, 0], [-4.5, Math.PI * 0.5], [4.5, Math.PI], [9, Math.PI * 1.5]];
+  for (const [lx, ph] of legs) {
+    const swing = moving ? Math.sin(legPh + ph) * 3.4 : 0;
+    const lift = moving ? Math.max(0, Math.cos(legPh + ph)) * 2 : 0;
+    g.fillStyle = coat;
+    g.fillRect(lx - 1.4 + swing * 0.55, -1 - bob, 2.8, 12 - lift);
+    g.fillStyle = dark; // hoof
+    g.fillRect(lx - 1.4 + swing * 0.55, 10.4 - bob - lift, 2.8, 1.8);
+  }
+  // body
+  g.fillStyle = coat;
+  g.beginPath(); g.ellipse(0, -4 - bob, bodyW, bodyH, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "rgba(255,255,255,0.08)"; // top light
+  g.beginPath(); g.ellipse(-1, -7 - bob, bodyW * 0.7, bodyH * 0.45, 0, 0, Math.PI * 2); g.fill();
+  // tail
+  g.strokeStyle = mane; g.lineWidth = 2.6; g.lineCap = "round";
+  const ts = Math.sin(now / (moving ? 160 : 520)) * 3;
+  g.beginPath(); g.moveTo(bodyW - 1, -6 - bob); g.quadraticCurveTo(bodyW + 5, -2 - bob + ts, bodyW + 3.4, 5 - bob + ts); g.stroke();
+  g.lineCap = "butt";
+  // neck + head (forward = -x)
+  const dip = moving ? Math.sin(now / 130 + 1) * 1.2 : Math.sin(now / 700) * 1.6;
+  g.fillStyle = coat;
+  g.beginPath();
+  g.moveTo(-bodyW + 4, -7 - bob);
+  g.lineTo(-bodyW - 2, -14 - bob + dip);
+  g.lineTo(-bodyW + 1.5, -15 - bob + dip);
+  g.lineTo(-bodyW + 7.5, -5 - bob);
+  g.closePath(); g.fill();
+  g.beginPath(); g.ellipse(-bodyW - 3.4, -15.5 - bob + dip, 4.6, 3.2, -0.25, 0, Math.PI * 2); g.fill();
+  g.fillStyle = shadeHex(coat, -18); // muzzle
+  g.beginPath(); g.ellipse(-bodyW - 7, -14.6 - bob + dip, 2.4, 1.9, -0.2, 0, Math.PI * 2); g.fill();
+  // ears / horns
+  g.fillStyle = mane;
+  if (look.ears === "long") {
+    g.beginPath(); g.ellipse(-bodyW - 2.4, -20 - bob + dip, 1.3, 3.4, -0.3, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(-bodyW + 0.6, -19.4 - bob + dip, 1.3, 3.2, 0.15, 0, Math.PI * 2); g.fill();
+  } else if (look.ears === "horn") {
+    g.strokeStyle = "#d8d2c2"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(-bodyW - 4, -18 - bob + dip); g.quadraticCurveTo(-bodyW - 8, -20 - bob + dip, -bodyW - 7, -23 - bob + dip); g.stroke();
+    g.beginPath(); g.moveTo(-bodyW - 1, -18.4 - bob + dip); g.quadraticCurveTo(-bodyW + 3, -20.4 - bob + dip, -bodyW + 2, -23 - bob + dip); g.stroke();
+  } else if (look.ears === "round") {
+    circle(g, -bodyW - 5, -18.6 - bob + dip, 1.7);
+    circle(g, -bodyW - 0.6, -18.8 - bob + dip, 1.7);
+  } else {
+    g.beginPath(); g.moveTo(-bodyW - 5.4, -17.4 - bob + dip); g.lineTo(-bodyW - 4.4, -21 - bob + dip); g.lineTo(-bodyW - 2.8, -17.8 - bob + dip); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(-bodyW - 1.6, -17.8 - bob + dip); g.lineTo(-bodyW - 0.2, -21 - bob + dip); g.lineTo(-bodyW + 1, -17.6 - bob + dip); g.closePath(); g.fill();
+  }
+  if (look.tusks) {
+    g.strokeStyle = "#e8e2d0"; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(-bodyW - 7.4, -13.4 - bob + dip); g.quadraticCurveTo(-bodyW - 9.4, -15 - bob + dip, -bodyW - 8.8, -17 - bob + dip); g.stroke();
+  }
+  // mane down the neck
+  g.strokeStyle = mane; g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(-bodyW + 1.4, -14.4 - bob + dip); g.quadraticCurveTo(-bodyW + 4.5, -10 - bob, -bodyW + 6, -5.6 - bob); g.stroke();
+  // eye
+  g.fillStyle = "#15100b"; circle(g, -bodyW - 3.4, -16.2 - bob + dip, 0.95);
+  // --- Steel barding (cosmetic): chest plate + chamfron ---
+  if (mount.barding) {
+    g.fillStyle = "#9aa0ab";
+    g.beginPath();
+    g.moveTo(-bodyW + 2.5, -9.5 - bob); g.lineTo(-bodyW - 1, -2 - bob); g.lineTo(-bodyW + 5, 1 - bob); g.lineTo(-bodyW + 8, -6 - bob);
+    g.closePath(); g.fill();
+    g.fillStyle = "#cdd3dc";
+    g.fillRect(-bodyW + 1, -8.4 - bob, 6.5, 1.4);
+    g.fillStyle = "#9aa0ab"; // chamfron on the face
+    g.beginPath(); g.ellipse(-bodyW - 4, -16 - bob + dip, 3.4, 2.2, -0.25, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#cdd3dc"; g.fillRect(-bodyW - 6.4, -16.6 - bob + dip, 4.6, 0.9);
+  }
+  // --- Saddle: leather, or gilded (cosmetic) ---
+  const sBase = mount.gold ? "#c9992e" : "#5a3c22";
+  const sLit = mount.gold ? "#f2d060" : "#7a5432";
+  g.fillStyle = sBase;
+  g.beginPath(); g.ellipse(-1, -10 - bob, 6.2, 3, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = sLit;
+  g.beginPath(); g.ellipse(-1, -10.8 - bob, 5, 1.7, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = sBase; g.lineWidth = 2; // girth strap
+  g.beginPath(); g.moveTo(-1, -5 - bob); g.lineTo(-1, 3 - bob); g.stroke();
+  if (mount.gold) { // gilded glint
+    g.fillStyle = "rgba(255,240,190,0.9)";
+    g.fillRect(-3.4, -11.6 - bob, 2, 1);
+  }
+  g.restore();
+}
+
+/** Lighten (+) or darken (-) a hex colour by an absolute channel amount. */
+function shadeHex(hex: string, amt: number): string {
+  const n = (i: number) => Math.max(0, Math.min(255, parseInt(hex.slice(i, i + 2), 16) + amt));
+  return `rgb(${n(1)},${n(3)},${n(5)})`;
 }
 
 // --- Another player, rendered as a faint, idle apparition with a name label. ---

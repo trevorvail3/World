@@ -226,7 +226,7 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
   // 0) Boss-drop sets take a signature palette across the whole set: the
   //    Boneman's bone-white, the Green Baron's forest green, the Hollow
   //    Prophet's hex violet.
-  if (def.lore === "boneman") return shadeFrom("#e9e3d3", "#cfc7b2");
+  if (def.lore === "boneman" || id.startsWith("bone_") || id === "bonesaw") return shadeFrom("#efe9d8", "#cfc7b2");
   if (def.lore === "green_baron") return shadeFrom("#2f5233", "#5c8a3a");
   if (def.lore === "hollow_prophet") return shadeFrom("#3a2f4a", "#8a6bc0");
 
@@ -270,7 +270,7 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
     case "bread": return shadeFrom(hashColor(id, 22, 26, 38, 20, 50, 16));
     case "hide": return shadeFrom(hashColor(id, 14, 34, 30, 22, 32, 18));
     case "cape": return shadeFrom(hashColor(id, 0, 360, 44, 22, 38, 16));
-    case "mount": return shadeFrom(hashColor(id, 10, 140, 26, 24, 34, 20));
+    case "mount": return shadeFrom(hashColor(id, 16, 26, 14, 26, 24, 28)); // natural coats: bay, chestnut, dun, grey
     case "pet": return shadeFrom(hashColor(id, 0, 360, 32, 26, 42, 20));
     case "ring":
     case "amulet": return shadeFrom(tweak("#d2b24a", id, 6, 8, 8), hslHex(hash(id) % 360, 62, 56));

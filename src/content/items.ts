@@ -5660,6 +5660,22 @@ export const items: Record<ItemId, ItemDef> = {
     "sell": 120
   },
 
+  "saddle_gold": {
+    "id": "saddle_gold",
+    "name": "Gilded Saddle",
+    "description": "Tooled leather worked with gold leaf. Any steed you ride wears it — pure swagger, zero speed.",
+    "icon": "🏇",
+    "cat": "Mounts",
+    "sell": 8000
+  },
+  "horse_armor": {
+    "id": "horse_armor",
+    "name": "Steel Barding",
+    "description": "A chest plate and chamfron fitted to any steed you ride. The horse hates the weight and loves the drama.",
+    "icon": "🛡️",
+    "cat": "Mounts",
+    "sell": 12000
+  },
   "horror_lantern": {
     "id": "horror_lantern",
     "name": "Horror's Lantern",
