@@ -154,6 +154,10 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   out_smugglers_landing_0: { x: 151, y: 96 }, // outlaw archers + marauder → NE
   out_smugglers_landing_1: { x: 153, y: 97 },
   out_smugglers_landing_2: { x: 150, y: 99 },
+  // The Knuckle field farmer (lvl 18) remapped onto (47,44) — ~5 tiles from the
+  // tutorial spawn AND stacked on a Gallows Oak footpad. Push it east onto open
+  // ground so the opening clearing stays calm and no two foes share a tile.
+  farmer_knuckle: { x: 51, y: 47 },
 };
 
 /** Re-home a legacy-coordinate object (and its teleport target) onto the new,
@@ -1283,8 +1287,14 @@ const newPois: WorldObjectDef[] = [
   { id: "poi_cross_sign", kind: "signpost", x: 40, y: 43, name: "Wayfarers' Crossroads", lines: ["A ruined waystation where the north and west roads cross. Travellers rest here — and so do those who prey on them."] },
   { id: "poi_cross_rock1", kind: "rock", x: 38, y: 45, name: "Knucklestone Rock", resource: "mine_knucklestone" },
   { id: "poi_cross_rock2", kind: "rock", x: 42, y: 45, name: "Knucklestone Rock", resource: "mine_knucklestone" },
-  { id: "poi_cross_bandit", kind: "monster", monster: "bandit", x: 41, y: 42, name: "Roadside Bandit" },
-  { id: "poi_cross_footpad", kind: "monster", monster: "footpad", x: 38, y: 42, name: "Footpad" },
+  // Kept off the tutorial clearing: a brand-new player spawns at (42,42) beside
+  // Aldric and the first knucklestone rock (40,40). A lvl-12 bandit one tile away
+  // was a misclick death-trap and a hostile-looking welcome, so the crossroads
+  // outlaws now work the road south, toward Waylayer's Bend — a fight you walk
+  // out to find, not one that greets you. (The low-level Gallows Oak footpads to
+  // the east remain the natural first foes.)
+  { id: "poi_cross_bandit", kind: "monster", monster: "bandit", x: 40, y: 52, name: "Roadside Bandit" },
+  { id: "poi_cross_footpad", kind: "monster", monster: "footpad", x: 39, y: 51, name: "Footpad" },
   // The Old Quarry (NE) — abandoned stone-cutting on the city→marrow road.
   { id: "poi_quarry_sign", kind: "signpost", x: 117, y: 51, name: "The Old Quarry", lines: ["A played-out stone quarry gone to weeds. The deep cuts still give good stone — and shelter for worse things."] },
   { id: "poi_quarry_rock1", kind: "rock", x: 114, y: 49, name: "Knucklestone Rock", resource: "mine_knucklestone" },
