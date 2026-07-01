@@ -1648,19 +1648,27 @@ function drawWaterLife(
           }
           continue;
         }
-      } else if (seed < 0.34) {
-        // Leaping fish (rivers + lakes): a bright silver arc clear of the water,
-        // with a splash ring at take-off and splash-down.
-        const period = 3400 + seed * 4200;
+      } else {
+        // Leaping fish (rivers + lakes): a bright silver arc that stays OVER the
+        // water tile it belongs to — the splash never strays onto the bank. Only
+        // a slowly-rotating slice of water cells are active at once, and each
+        // leaps on a long, jittered cycle, so jumps are occasional and never
+        // repeat in the same spot.
+        const epoch = Math.floor(now / 30000);
+        if (frac(cx * 3.1 + cy * 5.7 + epoch * 2.3) >= 0.16) continue; // inactive cell
+        const period = 9000 + seed * 11000; // 9–20s between leaps
         const ph = ((now + seed * 12000) % period) / period;
         if (ph < 0.2) {
           const jp = ph / 0.2;
           const arc = Math.sin(jp * Math.PI);
           const dir = seed > 0.17 ? 1 : -1;
-          const jx = ax + TILE * 1.5 + (frac(cx * 7 + cy) - 0.5) * TILE * 2;
-          const jy = ay + TILE * 1.5 + (frac(cy * 7 + cx) - 0.5) * TILE * 2;
-          const fx = jx + (jp - 0.5) * 14 * dir;
-          const fy = jy - arc * 26;
+          // A fresh jitter each leap (by cycle index) keeps the splash within the
+          // water tile (±~0.25 tile) yet in a different spot every time.
+          const cycle = Math.floor((now + seed * 12000) / period);
+          const jx = ax + TILE * 0.5 + (frac(cx * 7 + cy + cycle * 1.7) - 0.5) * TILE * 0.5;
+          const jy = ay + TILE * 0.55 + (frac(cy * 7 + cx + cycle * 2.3) - 0.5) * TILE * 0.4;
+          const fx = jx + (jp - 0.5) * 12 * dir;
+          const fy = jy - arc * 22;
           if (jp < 0.28 || jp > 0.72) {
             const k = jp < 0.28 ? 1 - jp / 0.28 : (jp - 0.72) / 0.28;
             g.strokeStyle = `rgba(214,232,244,${(0.72 * k).toFixed(2)})`;
