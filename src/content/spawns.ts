@@ -516,6 +516,16 @@ const rawObjects: WorldObjectDef[] = [
   { id: "farmer_drover", kind: "monster", monster: "field_farmer", x: 61, y: 71, name: "Field Farmer" },
   { id: "farmer_knuckle", kind: "monster", monster: "field_farmer", x: 27, y: 18, name: "Field Farmer" },
 
+  // === HEARTMOOR CULT CASTERS (magic enemies) ===============================
+  // Around the cult's haunts in the Ashfen Flats (Cult Tender ~60,86) and the
+  // Heartmoor moor-edge. They fling Grace-bolts and drop Hex Cloth for robes.
+  { id: "cultist_ash_1", kind: "monster", monster: "cult_acolyte", x: 58, y: 88, name: "Cult Acolyte" },
+  { id: "cultist_ash_2", kind: "monster", monster: "cult_acolyte", x: 63, y: 89, name: "Cult Acolyte" },
+  { id: "cultist_ash_3", kind: "monster", monster: "cult_zealot", x: 60, y: 91, name: "Cult Zealot" },
+  { id: "cultist_ash_4", kind: "monster", monster: "cult_magus", x: 65, y: 92, name: "Cult Magus" },
+  { id: "cultist_heart_1", kind: "monster", monster: "cult_acolyte", x: 20, y: 86, name: "Cult Acolyte" },
+  { id: "cultist_heart_2", kind: "monster", monster: "cult_zealot", x: 23, y: 88, name: "Cult Zealot" },
+
   // --- The Hollow Barrows portal, up in the grove (arena at x=2) ---
   {
     // Moved out to the remote eastern woods edge — a cave mouth you only find by

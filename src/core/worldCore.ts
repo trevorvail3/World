@@ -94,6 +94,7 @@ const AGGRESSIVE = new Set<string>([
   "forest_bear", "stone_crawler", "cave_crawler", "mountain_troll", "deep_golem",
   "spine_wraith", "marrow_wraith", "mire_serpent", "outlaw_archer",
   "hollow_warden", "bog_warden", "spine_warlord", "marrow_keeper",
+  "cult_zealot", "cult_magus",
 ]);
 const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
 const FLEE_GRACE_MS = 2500; // after a move, aggressive monsters hold off this long
@@ -1292,7 +1293,7 @@ function removeItems(player: Player, item: ItemId, qty: number): number {
 function equipStat(
   player: Player,
   content: Content,
-  field: "acc" | "dmg" | "def",
+  field: "acc" | "dmg" | "def" | "rngAcc" | "rngDmg" | "magAcc" | "magDmg",
 ): number {
   let total = 0;
   for (const [slot, id] of Object.entries(player.equipment)) {
@@ -1718,8 +1719,9 @@ export function equipRequirement(
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
   // A bow sits in the mainhand but is a ranged weapon — it gates on Draw, not
-  // Edge. A staff likewise gates on Faith rather than Edge.
-  const gearSkill = def.magic ? "faith" : def.ranged ? "draw" : (def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined);
+  // Edge. A staff likewise gates on Faith. Ranged/magic ARMOUR sets carry an
+  // explicit equipSkill (Draw / Faith) so they don't gate on Ward like plate.
+  const gearSkill = def.equipSkill ?? (def.magic ? "faith" : def.ranged ? "draw" : (def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined));
   if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
   // An explicit equipLevel (uniques like the dragon set) overrides the tier
   // table; otherwise the level comes from the material tier.
@@ -4037,7 +4039,7 @@ function rangedAccuracy(player: Player, content: Content): number {
   const ammo = player.equipment.ammo;
   const ba = bow ? content.items[bow].acc ?? 0 : 0;
   const aa = ammo ? content.items[ammo].acc ?? 0 : 0;
-  return skillLvl(player, "draw") + ba + aa + buffVal(player, "ranged_acc");
+  return skillLvl(player, "draw") + ba + aa + equipStat(player, content, "rngAcc") + buffVal(player, "ranged_acc");
 }
 
 /** Ranged max hit: Draw + bow + arrow damage + any ranged-damage buff. */
@@ -4047,7 +4049,7 @@ function rangedMaxHit(player: Player, content: Content): number {
   const bd = bow ? content.items[bow].dmg ?? 0 : 0;
   const ad = ammo ? content.items[ammo].dmg ?? 0 : 0;
   const str = Math.round(skillLvl(player, "draw") * COMBAT.dmgSkillScale);
-  return str + bd + ad + buffVal(player, "ranged_dmg");
+  return str + bd + ad + equipStat(player, content, "rngDmg") + buffVal(player, "ranged_dmg");
 }
 
 /** The casting staff the player is wielding, if any (a magic weapon in mainhand). */
@@ -4071,7 +4073,7 @@ function graceMax(player: Player): number {
 function magicAccuracy(player: Player, content: Content): number {
   const st = equippedStaff(player, content);
   const sa = st ? content.items[st].acc ?? 0 : 0;
-  return skillLvl(player, "faith") + sa + buffVal(player, "magic_acc");
+  return skillLvl(player, "faith") + sa + equipStat(player, content, "magAcc") + buffVal(player, "magic_acc");
 }
 
 /** Magic max hit: Faith + staff dmg + any magic-damage buff. */
@@ -4079,7 +4081,7 @@ function magicMaxHit(player: Player, content: Content): number {
   const st = equippedStaff(player, content);
   const sd = st ? content.items[st].dmg ?? 0 : 0;
   const str = Math.round(skillLvl(player, "faith") * COMBAT.dmgSkillScale);
-  return str + sd + buffVal(player, "magic_dmg");
+  return str + sd + equipStat(player, content, "magDmg") + buffVal(player, "magic_dmg");
 }
 
 /** Player defence rating: Ward + summed armour defence (+ any Defence buff). */

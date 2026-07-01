@@ -551,6 +551,17 @@ export type ItemId =
   | "pestle"
   | "potion_grace"
   | "potion_grace_greater"
+  // Ranged + magic gear sets (4 tiers × 3 slots each) and the magic resource.
+  // (Sinew already exists as a beast drop.)
+  | "hex_cloth"
+  | "rng_hood_1" | "rng_body_1" | "rng_legs_1"
+  | "rng_hood_2" | "rng_body_2" | "rng_legs_2"
+  | "rng_hood_3" | "rng_body_3" | "rng_legs_3"
+  | "rng_hood_4" | "rng_body_4" | "rng_legs_4"
+  | "mag_hood_1" | "mag_robe_1" | "mag_skirt_1"
+  | "mag_hood_2" | "mag_robe_2" | "mag_skirt_2"
+  | "mag_hood_3" | "mag_robe_3" | "mag_skirt_3"
+  | "mag_hood_4" | "mag_robe_4" | "mag_skirt_4"
   | "seed_ashweed"
   | "seed_thornroot"
   | "seed_bloodberry"
@@ -733,6 +744,15 @@ export interface ItemDef {
   graceRestore?: number;
   /** Bones: Faith XP granted when this item is buried. */
   buryXp?: number;
+  /** Ranged gear bonuses (summed across worn armour, added to bow ratings). */
+  rngAcc?: number;
+  rngDmg?: number;
+  /** Magic gear bonuses (summed across worn armour, added to staff ratings). */
+  magAcc?: number;
+  magDmg?: number;
+  /** Override the skill that gates equipping this (else derived from slot/flags).
+   *  Ranged armour gates on Draw, magic robes on Faith. */
+  equipSkill?: SkillId;
   /** Crafting tier for leather armour (1–4). */
   craftTier?: number;
   /** Rarity label, e.g. "legendary". */

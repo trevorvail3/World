@@ -1251,6 +1251,35 @@ export const actions: SkillAction[] = [
   { "id": "wc_staff_greyoak", "skill": "woodcraft", "name": "Greyoak Staff", "levelReq": 45, "xp": 85, "requires": { "greyoak_log": 2 }, "produces": "staff_greyoak", "group": "staves" },
   { "id": "wc_staff_ruewood", "skill": "woodcraft", "name": "Ruewood Staff", "levelReq": 60, "xp": 120, "requires": { "ruewood_log": 2 }, "produces": "staff_ruewood", "group": "staves" },
   { "id": "wc_staff_deeproot", "skill": "woodcraft", "name": "Deeproot Staff", "levelReq": 75, "xp": 170, "requires": { "deeproot_log": 2 }, "produces": "staff_deeproot", "group": "staves" },
+
+  // --- Ranged armour (Crafting): leather + sinew, four tiers ---
+  { "id": "cr_rng_hood_1", "skill": "crafting", "name": "Tanned Ranger Hood", "levelReq": 5, "xp": 30, "requires": { "tanned_leather": 2, "sinew": 1 }, "produces": "rng_hood_1", "group": "ranged_armour" },
+  { "id": "cr_rng_body_1", "skill": "crafting", "name": "Tanned Ranger Body", "levelReq": 5, "xp": 50, "requires": { "tanned_leather": 3, "sinew": 1 }, "produces": "rng_body_1", "group": "ranged_armour" },
+  { "id": "cr_rng_legs_1", "skill": "crafting", "name": "Tanned Ranger Chaps", "levelReq": 5, "xp": 40, "requires": { "tanned_leather": 2, "sinew": 1 }, "produces": "rng_legs_1", "group": "ranged_armour" },
+  { "id": "cr_rng_hood_2", "skill": "crafting", "name": "Studded Ranger Hood", "levelReq": 25, "xp": 70, "requires": { "cured_leather": 2, "sinew": 1 }, "produces": "rng_hood_2", "group": "ranged_armour" },
+  { "id": "cr_rng_body_2", "skill": "crafting", "name": "Studded Ranger Body", "levelReq": 25, "xp": 110, "requires": { "cured_leather": 3, "sinew": 2 }, "produces": "rng_body_2", "group": "ranged_armour" },
+  { "id": "cr_rng_legs_2", "skill": "crafting", "name": "Studded Ranger Chaps", "levelReq": 25, "xp": 90, "requires": { "cured_leather": 2, "sinew": 1 }, "produces": "rng_legs_2", "group": "ranged_armour" },
+  { "id": "cr_rng_hood_3", "skill": "crafting", "name": "Hardened Ranger Hood", "levelReq": 45, "xp": 130, "requires": { "cured_leather": 3, "sinew": 2, "ribstone_bar": 1 }, "produces": "rng_hood_3", "group": "ranged_armour" },
+  { "id": "cr_rng_body_3", "skill": "crafting", "name": "Hardened Ranger Body", "levelReq": 45, "xp": 200, "requires": { "cured_leather": 4, "sinew": 3, "ribstone_bar": 1 }, "produces": "rng_body_3", "group": "ranged_armour" },
+  { "id": "cr_rng_legs_3", "skill": "crafting", "name": "Hardened Ranger Chaps", "levelReq": 45, "xp": 160, "requires": { "cured_leather": 3, "sinew": 2, "ribstone_bar": 1 }, "produces": "rng_legs_3", "group": "ranged_armour" },
+  { "id": "cr_rng_hood_4", "skill": "crafting", "name": "Master Ranger Hood", "levelReq": 65, "xp": 220, "requires": { "cured_leather": 3, "sinew": 3, "hearthite_bar": 1 }, "produces": "rng_hood_4", "group": "ranged_armour" },
+  { "id": "cr_rng_body_4", "skill": "crafting", "name": "Master Ranger Body", "levelReq": 65, "xp": 340, "requires": { "cured_leather": 5, "sinew": 4, "hearthite_bar": 1 }, "produces": "rng_body_4", "group": "ranged_armour" },
+  { "id": "cr_rng_legs_4", "skill": "crafting", "name": "Master Ranger Chaps", "levelReq": 65, "xp": 270, "requires": { "cured_leather": 3, "sinew": 3, "hearthite_bar": 1 }, "produces": "rng_legs_4", "group": "ranged_armour" },
+
+  // --- Magic robes (Crafting): spider silk + hex cloth + gems, four tiers ---
+  { "id": "cr_mag_hood_1", "skill": "crafting", "name": "Acolyte Hood", "levelReq": 5, "xp": 30, "requires": { "spider_silk": 2, "hex_cloth": 1 }, "produces": "mag_hood_1", "group": "magic_robes" },
+  { "id": "cr_mag_robe_1", "skill": "crafting", "name": "Acolyte Robe", "levelReq": 5, "xp": 50, "requires": { "spider_silk": 3, "hex_cloth": 1 }, "produces": "mag_robe_1", "group": "magic_robes" },
+  { "id": "cr_mag_skirt_1", "skill": "crafting", "name": "Acolyte Skirt", "levelReq": 5, "xp": 40, "requires": { "spider_silk": 2, "hex_cloth": 1 }, "produces": "mag_skirt_1", "group": "magic_robes" },
+  { "id": "cr_mag_hood_2", "skill": "crafting", "name": "Adept Hood", "levelReq": 25, "xp": 70, "requires": { "spider_silk": 3, "hex_cloth": 2 }, "produces": "mag_hood_2", "group": "magic_robes" },
+  { "id": "cr_mag_robe_2", "skill": "crafting", "name": "Adept Robe", "levelReq": 25, "xp": 110, "requires": { "spider_silk": 4, "hex_cloth": 2, "uncut_sapphire": 1 }, "produces": "mag_robe_2", "group": "magic_robes" },
+  { "id": "cr_mag_skirt_2", "skill": "crafting", "name": "Adept Skirt", "levelReq": 25, "xp": 90, "requires": { "spider_silk": 3, "hex_cloth": 2 }, "produces": "mag_skirt_2", "group": "magic_robes" },
+  { "id": "cr_mag_hood_3", "skill": "crafting", "name": "Warden Hood", "levelReq": 45, "xp": 130, "requires": { "spider_silk": 4, "hex_cloth": 3 }, "produces": "mag_hood_3", "group": "magic_robes" },
+  { "id": "cr_mag_robe_3", "skill": "crafting", "name": "Warden Robe", "levelReq": 45, "xp": 200, "requires": { "spider_silk": 5, "hex_cloth": 3, "uncut_emerald": 1 }, "produces": "mag_robe_3", "group": "magic_robes" },
+  { "id": "cr_mag_skirt_3", "skill": "crafting", "name": "Warden Skirt", "levelReq": 45, "xp": 160, "requires": { "spider_silk": 4, "hex_cloth": 3 }, "produces": "mag_skirt_3", "group": "magic_robes" },
+  { "id": "cr_mag_hood_4", "skill": "crafting", "name": "Archon Hood", "levelReq": 65, "xp": 220, "requires": { "spider_silk": 5, "hex_cloth": 4 }, "produces": "mag_hood_4", "group": "magic_robes" },
+  { "id": "cr_mag_robe_4", "skill": "crafting", "name": "Archon Robe", "levelReq": 65, "xp": 340, "requires": { "spider_silk": 6, "hex_cloth": 4, "uncut_ruby": 1 }, "produces": "mag_robe_4", "group": "magic_robes" },
+  { "id": "cr_mag_skirt_4", "skill": "crafting", "name": "Archon Skirt", "levelReq": 65, "xp": 270, "requires": { "spider_silk": 5, "hex_cloth": 4 }, "produces": "mag_skirt_4", "group": "magic_robes" },
+
   {
     "id": "wcu_short",
     "skill": "woodcraft",

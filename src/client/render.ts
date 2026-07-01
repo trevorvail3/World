@@ -3493,6 +3493,13 @@ function drawMonsterBody(
       return H("#6b5636", "#8a7148"); // earthy tans
     case "master_farmer":
       return H("#4c5233", "#67703f"); // green farm apron
+    // --- Heartmoor cult casters (dark hooded robes, hex-red trim) ---
+    case "cult_acolyte":
+      return H("#3a2634", "#5a3a4a");
+    case "cult_zealot":
+      return H("#3a2030", "#6a2a44");
+    case "cult_magus":
+      return H("#2a1830", "#7a3a58");
     default:
       return drawRat(g, cx, cy, now);
   }
@@ -4249,6 +4256,7 @@ const HUMANOID_MONSTERS = new Set([
   "footpad", "cutpurse", "bandit", "poacher", "highwayman",
   "outlaw_archer", "cutthroat", "marauder", "outlaw_captain",
   "town_guard", "ironvale_guard", "field_farmer", "master_farmer",
+  "cult_acolyte", "cult_zealot", "cult_magus",
 ]);
 
 /**
@@ -4284,6 +4292,10 @@ function monsterAttack(
       return { frac, dx, dy, action: { kind: "ranged", tool: "bow", frac } };
     }
     const style = stats.attackStyle;
+    // Casters (cultists) hold up a staff and cast rather than swing.
+    if (style === "magic") {
+      return { frac, dx, dy, action: { kind: "cast", tool: "staff", frac } };
+    }
     const tool = style === "crush" ? "hammer" : style === "stab" ? "spear" : "sword";
     return { frac, dx, dy, action: { kind: "combat", tool, frac } };
   }

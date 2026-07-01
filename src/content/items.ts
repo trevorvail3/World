@@ -4742,6 +4742,41 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A potent flask of bonemeal and rare herb — restores a deep draught of Grace anywhere."
   },
 
+  // === RANGED + MAGIC GEAR RESOURCES ========================================
+  // (Sinew already exists — dropped by beasts and sold at the general store.)
+  "hex_cloth": {
+    "id": "hex_cloth", "name": "Hex Cloth", "icon": "🧵", "cat": "Materials", "sell": 40,
+    "description": "Dark cloth woven by the cult, humming faintly with Orun's borrowed power. The base of enchanted robes."
+  },
+
+  // === RANGED ARMOUR (gate on Draw) — Tanned → Studded → Hardened → Master ===
+  "rng_hood_1": { "id": "rng_hood_1", "name": "Tanned Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 1, "rngAcc": 2, "def": 2, "sell": 40, "description": "A soft leather hood for a hunter's quiet approach." },
+  "rng_body_1": { "id": "rng_body_1", "name": "Tanned Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 1, "rngAcc": 3, "rngDmg": 1, "def": 4, "sell": 80, "description": "A stitched leather jerkin cut for drawing a bow." },
+  "rng_legs_1": { "id": "rng_legs_1", "name": "Tanned Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 1, "rngAcc": 2, "def": 3, "sell": 55, "description": "Light leather chaps that never snag the string." },
+  "rng_hood_2": { "id": "rng_hood_2", "name": "Studded Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 20, "rngAcc": 4, "def": 4, "sell": 130, "description": "Cured leather set with iron studs." },
+  "rng_body_2": { "id": "rng_body_2", "name": "Studded Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 20, "rngAcc": 6, "rngDmg": 2, "def": 7, "sell": 260, "description": "Studded leather that turns a glancing blow." },
+  "rng_legs_2": { "id": "rng_legs_2", "name": "Studded Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 20, "rngAcc": 5, "def": 5, "sell": 180, "description": "Reinforced chaps for the long hunt." },
+  "rng_hood_3": { "id": "rng_hood_3", "name": "Hardened Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 7, "def": 7, "sell": 400, "description": "Boiled, hardened leather, light and strong." },
+  "rng_body_3": { "id": "rng_body_3", "name": "Hardened Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 10, "rngDmg": 4, "def": 11, "sell": 800, "description": "A hardened hide coat prized by marksmen." },
+  "rng_legs_3": { "id": "rng_legs_3", "name": "Hardened Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 8, "def": 8, "sell": 560, "description": "Hardened chaps, quiet and quick." },
+  "rng_hood_4": { "id": "rng_hood_4", "name": "Master Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 11, "def": 11, "sell": 1200, "description": "The hood of a master archer — supple and deadly." },
+  "rng_body_4": { "id": "rng_body_4", "name": "Master Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 15, "rngDmg": 6, "def": 16, "sell": 2400, "description": "Master-worked hide, the finest a bowyer can wear." },
+  "rng_legs_4": { "id": "rng_legs_4", "name": "Master Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 12, "def": 12, "sell": 1600, "description": "Master chaps for the surest hunter in Varath." },
+
+  // === MAGIC ROBES (gate on Faith) — Acolyte → Adept → Warden → Archon ======
+  "mag_hood_1": { "id": "mag_hood_1", "name": "Acolyte Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 1, "magAcc": 2, "def": 1, "sell": 40, "description": "A plain hood for a novice of Orun." },
+  "mag_robe_1": { "id": "mag_robe_1", "name": "Acolyte Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 1, "magAcc": 3, "magDmg": 1, "def": 2, "sell": 80, "description": "Simple woven robes that steady a cast." },
+  "mag_skirt_1": { "id": "mag_skirt_1", "name": "Acolyte Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 1, "magAcc": 2, "def": 1, "sell": 55, "description": "The lower robes of a devotee." },
+  "mag_hood_2": { "id": "mag_hood_2", "name": "Adept Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 20, "magAcc": 4, "def": 2, "sell": 130, "description": "The hood of a practised caster." },
+  "mag_robe_2": { "id": "mag_robe_2", "name": "Adept Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 20, "magAcc": 6, "magDmg": 2, "def": 4, "sell": 260, "description": "Silk-woven robes that focus Grace." },
+  "mag_skirt_2": { "id": "mag_skirt_2", "name": "Adept Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 20, "magAcc": 5, "def": 2, "sell": 180, "description": "Fine lower robes, hex-threaded." },
+  "mag_hood_3": { "id": "mag_hood_3", "name": "Warden Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 40, "magAcc": 7, "def": 4, "sell": 400, "description": "A warden's hood, heavy with woven power." },
+  "mag_robe_3": { "id": "mag_robe_3", "name": "Warden Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 40, "magAcc": 10, "magDmg": 4, "def": 6, "sell": 800, "description": "Warden robes that pour Orun's light into every bolt." },
+  "mag_skirt_3": { "id": "mag_skirt_3", "name": "Warden Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 40, "magAcc": 8, "def": 4, "sell": 560, "description": "Warden lower robes, thick with hex cloth." },
+  "mag_hood_4": { "id": "mag_hood_4", "name": "Archon Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 60, "magAcc": 11, "def": 6, "sell": 1200, "description": "The crowning hood of an archon of Orun." },
+  "mag_robe_4": { "id": "mag_robe_4", "name": "Archon Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 60, "magAcc": 15, "magDmg": 6, "def": 9, "sell": 2400, "description": "Archon robes — the finest vessel for a caster's will." },
+  "mag_skirt_4": { "id": "mag_skirt_4", "name": "Archon Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 60, "magAcc": 12, "def": 6, "sell": 1600, "description": "Archon lower robes, woven for the highest devotion." },
+
   "seed_ashweed": {
     "id": "seed_ashweed",
     "name": "Ashweed Seed",
