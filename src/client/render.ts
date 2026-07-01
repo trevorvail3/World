@@ -2240,6 +2240,12 @@ function drawObject(
     case "lamppost":
       drawLamppost(g, cx, cy);
       break;
+    case "fence":
+      drawFence(g, cx, cy, def.species === "v" ? "v" : "h");
+      break;
+    case "boat":
+      drawBoat(g, cx, cy, now);
+      break;
     case "signpost":
       scaled(g, cx, cy, 1.25, () => drawSignpost(g, 0, 0));
       break;
@@ -2736,6 +2742,17 @@ function drawCritter(
   cy: number,
   now: number,
 ): void {
+  // Stable and paddock stock render as the full mount rig (idle) so the beasts
+  // in a pen look like the beasts the stable sells.
+  if (species === "horse" || species === "ox") {
+    shadow(g, cx, cy + 11, 11, 3.5);
+    g.save();
+    g.translate(cx, cy);
+    g.scale(0.85, 0.85);
+    drawMountRig(g, 0, 0, now, false, cx % 80 < 40, { id: species === "ox" ? "mount_ox" : "mount_horse", gold: false, barding: false });
+    g.restore();
+    return;
+  }
   shadow(g, cx, cy + 7, 6, 2);
   const bob = Math.sin(now / 220 + cx) * 1.2; // a little life
   const y = cy + bob;
@@ -3126,6 +3143,73 @@ function drawCart(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   g.fillRect(cx - 4, cy - 3, 8, 6);
   g.strokeStyle = "rgba(60,40,20,0.6)"; g.lineWidth = 0.8;
   g.strokeRect(cx - 4, cy - 3, 8, 6);
+}
+
+/** A post-and-rail fence segment. Spans the full tile along its run ("h" across
+ *  the screen, "v" down it) so adjacent segments join into a continuous rail —
+ *  paddocks, sheep pens and net-drying rails are built from these. */
+function drawFence(g: CanvasRenderingContext2D, cx: number, cy: number, run: "h" | "v"): void {
+  const post = "#4a3826", rail = "#6f5436", lit = "#7d6040";
+  if (run === "h") {
+    // Two rails clear across the tile; posts at each tile edge so runs share them.
+    g.fillStyle = rail;
+    g.fillRect(cx - TILE / 2, cy - 6, TILE, 2.6);
+    g.fillRect(cx - TILE / 2, cy + 1, TILE, 2.6);
+    g.fillStyle = lit;
+    g.fillRect(cx - TILE / 2, cy - 6, TILE, 1);
+    g.fillRect(cx - TILE / 2, cy + 1, TILE, 1);
+    g.fillStyle = post;
+    g.fillRect(cx - TILE / 2 - 1.5, cy - 10, 3, 18);
+    g.fillRect(cx + TILE / 2 - 1.5, cy - 10, 3, 18);
+  } else {
+    // A run going down the screen: posts at the tile's top and bottom edges,
+    // rails stepping between them (drawn as paired verticals in this projection).
+    g.fillStyle = rail;
+    g.fillRect(cx - 5, cy - TILE / 2, 2.6, TILE);
+    g.fillRect(cx + 2.5, cy - TILE / 2, 2.6, TILE);
+    g.fillStyle = lit;
+    g.fillRect(cx - 5, cy - TILE / 2, 1, TILE);
+    g.fillRect(cx + 2.5, cy - TILE / 2, 1, TILE);
+    g.fillStyle = post;
+    g.fillRect(cx - 6.5, cy - TILE / 2 - 3, 3, 9);
+    g.fillRect(cx + 3.5, cy - TILE / 2 - 3, 3, 9);
+    g.fillRect(cx - 6.5, cy + TILE / 2 - 6, 3, 9);
+    g.fillRect(cx + 3.5, cy + TILE / 2 - 6, 3, 9);
+  }
+}
+
+/** A small clinker rowboat — moored at a jetty (bobbing on the water) or hauled
+ *  out on the strand. Read from the side: tarred hull, lapped strakes, a bench
+ *  and shipped oars. */
+function drawBoat(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 700 + cx * 0.3) * 1.4;
+  const y = cy + bob;
+  // Water shadow / resting hollow.
+  g.fillStyle = "rgba(10,20,30,0.25)";
+  g.beginPath(); g.ellipse(cx, cy + 9, 17, 4.5, 0, 0, Math.PI * 2); g.fill();
+  // Hull: a shallow crescent, stem and stern swept up.
+  g.fillStyle = "#2e241a";
+  g.beginPath();
+  g.moveTo(cx - 16, y - 3);
+  g.quadraticCurveTo(cx, y + 12, cx + 16, y - 3);
+  g.lineTo(cx + 13, y + 2);
+  g.quadraticCurveTo(cx, y + 9, cx - 13, y + 2);
+  g.closePath(); g.fill();
+  // Lapped strakes.
+  g.strokeStyle = "#4a3826"; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(cx - 14, y); g.quadraticCurveTo(cx, y + 8, cx + 14, y); g.stroke();
+  g.beginPath(); g.moveTo(cx - 15, y - 2); g.quadraticCurveTo(cx, y + 5, cx + 15, y - 2); g.stroke();
+  // Gunwale highlight.
+  g.strokeStyle = "#6f5436"; g.lineWidth = 1.6;
+  g.beginPath(); g.moveTo(cx - 16, y - 3); g.quadraticCurveTo(cx, y + 4, cx + 16, y - 3); g.stroke();
+  // The bench + shipped oars.
+  g.fillStyle = "#5a4127";
+  g.fillRect(cx - 4, y - 1, 8, 2.6);
+  g.strokeStyle = "#7d6040"; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(cx - 9, y + 1); g.lineTo(cx + 11, y - 4); g.stroke();
+  // Mooring rope off the bow.
+  g.strokeStyle = "rgba(180,160,120,0.7)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx - 16, y - 3); g.quadraticCurveTo(cx - 20, y + 1, cx - 19, y + 7); g.stroke();
 }
 
 /** A Crafting table: a tanning frame with a stretched hide and a jeweller's lamp. */

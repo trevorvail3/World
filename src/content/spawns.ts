@@ -78,6 +78,8 @@ function snapSpawn(o: WorldObjectDef): WorldObjectDef {
   // The Drowned Pier is hand-placed on exact tiles (the cast point deliberately
   // sits on open deep water, the gate on a plank neck) — leave it where it is.
   if (o.kind === "pier_spot" || o.kind === "record_board" || o.kind === "pier_gate") return o;
+  // Boats are hand-moored: on the water at a jetty, or hauled out on the strand.
+  if (o.kind === "boat") return o;
   if (o.kind === "fishing_spot") {
     // A spot is only usable if the player can stand beside it — water in the dead
     // centre of a pond is unreachable, so it reads as a "broken" fishing spot.
@@ -106,7 +108,9 @@ function snapSpawn(o: WorldObjectDef): WorldObjectDef {
   }
   // Resources/props must sit on walkable, NON-road ground that ISN'T inside the
   // Ironvale walls — no ore in the middle of a road, no campfire on the highway,
-  // no mining seam in the middle of the paved city.
+  // no mining seam in the middle of the paved city. The city's own designed
+  // stations are exempt: the market cooking fire belongs where it stands.
+  if (o.id === "fire_1") return o;
   if (OFF_ROAD_KINDS.has(o.kind)) {
     const inCity = (x: number, y: number) =>
       x >= CITY.x0 && x <= CITY.x1 && y >= CITY.y0 && y <= CITY.y1;
@@ -158,6 +162,12 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   // tutorial spawn AND stacked on a Gallows Oak footpad. Push it east onto open
   // ground so the opening clearing stays calm and no two foes share a tile.
   farmer_knuckle: { x: 51, y: 47 },
+  // The Redmouth waterfront (jetty, boat, Warin, Mourne) sits where the legacy
+  // redrun bounding-box overlaps the hamlet's riverbank — pinned to final tiles.
+  redmouth_warin: { x: 110, y: 87 },
+  boat_redmouth: { x: 115, y: 86 },
+  fish_redmouth_2: { x: 115, y: 88 },
+  mourne: { x: 112, y: 88 },
   // Settlement clearance: aggressive monsters that spawned right at a town's
   // doorstep (waystone / shop / bank) would lock a player into a fight while
   // they shopped or fast-travelled — you shouldn't meet a wolf or a wraith two
@@ -263,23 +273,43 @@ function buildHousing(): WorldObjectDef[] {
   return out;
 }
 
+/** A rectangular post-and-rail pen: fence segments around (x0,y0)–(x1,y1)
+ *  inclusive, skipping the listed gate tiles. `species` carries the rail run
+ *  ("h" along the top/bottom, "v" down the sides) for the renderer. */
+function makePen(prefix: string, x0: number, y0: number, x1: number, y1: number, gates: [number, number][], examine: string): WorldObjectDef[] {
+  const out: WorldObjectDef[] = [];
+  const gate = new Set(gates.map(([gx, gy]) => `${gx},${gy}`));
+  let n = 0;
+  const add = (x: number, y: number, run: "h" | "v") => {
+    if (gate.has(`${x},${y}`)) return;
+    out.push({ id: `${prefix}_${n++}`, kind: "fence", x, y, name: "Fence", species: run, lines: [examine] });
+  };
+  for (let x = x0; x <= x1; x++) { add(x, y0, "h"); add(x, y1, "h"); }
+  for (let y = y0 + 1; y <= y1 - 1; y++) { add(x0, y, "v"); add(x1, y, "v"); }
+  return out;
+}
+
 const rawObjects: WorldObjectDef[] = [
   // === IRONVALE — the central city =========================================
 
-  // --- Civic yard (north-west): the forge stations, the bank, the crafting
-  //     stations — an open yard ringed by the Ashforge, the Vault and the
-  //     Pale Record buildings. ---
-  { id: "furnace_1", kind: "furnace", x: 49, y: 43, name: "Furnace" },
-  { id: "anvil_1", kind: "anvil", x: 50, y: 43, name: "Anvil" },
-  { id: "bank_1", kind: "bank", x: 54, y: 43, name: "Bank Chest" },
-  { id: "fire_1", kind: "fire", x: 56, y: 43, name: "Cooking Fire" },
-  { id: "cauldron_1", kind: "cauldron", x: 53, y: 48, name: "Herbalist's Cauldron" },
-  { id: "workbench_1", kind: "workbench", x: 55, y: 48, name: "Builder's Workbench" },
-  { id: "crafting_1", kind: "crafting_table", x: 57, y: 48, name: "Artisan's Table" },
+  // --- Civic yard (north-west): every station stands at the door of the house
+  //     that runs it — the forge pair flanks the Ashforge's threshold, the bank
+  //     chest faces the Vault's door across the north lane — so the quarter
+  //     reads as workplaces, not loose furniture in a plaza. ---
+  { id: "furnace_1", kind: "furnace", x: 46, y: 43, name: "Furnace" },
+  { id: "anvil_1", kind: "anvil", x: 47, y: 43, name: "Anvil" },
+  { id: "bank_1", kind: "bank", x: 53, y: 43, name: "Bank Chest" },
+  // The cooking fire burns beside Brenna's cook-stall in the market (65,48);
+  // the cauldron beside Wenna's herb stall (70,48); the maker's benches stand
+  // on the artisans' row before the Craftworks (see the trade-row block below).
+  { id: "fire_1", kind: "fire", x: 65, y: 48, name: "Cooking Fire" },
+  { id: "cauldron_1", kind: "cauldron", x: 70, y: 48, name: "Herbalist's Cauldron" },
+  { id: "workbench_1", kind: "workbench", x: 49, y: 62, name: "Builder's Workbench" },
+  { id: "crafting_1", kind: "crafting_table", x: 51, y: 62, name: "Artisan's Table" },
 
   // --- Civic NPCs (the forge & archive folk) ---
   {
-    id: "vorn", kind: "npc", x: 51, y: 43, name: "Vorn",
+    id: "vorn", kind: "npc", x: 45, y: 43, name: "Vorn",
     lines: [
       "Hot work, smith. Mind the slag and we'll get along.",
       "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs, and then we wait to see if he picks it up anyway.",
@@ -303,7 +333,7 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "sera", kind: "npc", x: 49, y: 48, name: "Sera",
+    id: "sera", kind: "npc", x: 49, y: 46, name: "Sera",
     lines: [
       "Careful with the dust — half of it is older than the kingdom.",
       "The Pale Record keeps what the world would rather forget. The Underloft. The warm stone they buried their dead with. The coins that keep surfacing.",
@@ -327,7 +357,7 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "berric", kind: "npc", x: 51, y: 48, name: "Berric",
+    id: "berric", kind: "npc", x: 49, y: 48, name: "Berric",
     lines: [
       "New blood. Vorn's project, are you. He does like to collect strays.",
       "Stone's stone, friend. A seam doesn't care who surveys it or who buys the map after. Only a fool leaves money in the ground out of sentiment.",
@@ -350,31 +380,31 @@ const rawObjects: WorldObjectDef[] = [
   // --- Market square (north-east): the shopkeepers stand at their stalls in
   //     front of the Store and the Armoury, the rest of the square full of carts. ---
   {
-    id: "shop_quartermaster", kind: "npc", x: 64, y: 42, name: "Hespa, Quartermaster",
+    id: "shop_quartermaster", kind: "npc", x: 64, y: 43, name: "Hespa, Quartermaster",
     lines: [
       "Ironvale's market, friend. Cramped, loud, and the only honest counter for three days' walk.",
       "Tools, packs, rations, seeds — it's all on the stall. Sell me your odds and ends, too.",
     ],
   },
-  { id: "cart_hespa", kind: "cart", x: 63, y: 42, name: "Quartermaster's Stall", lines: ["Hespa's stall — tools and sundries stacked to the awning."] },
+  { id: "cart_hespa", kind: "cart", x: 64, y: 44, name: "Quartermaster's Stall", lines: ["Hespa's stall — tools and sundries stacked to the awning."] },
   {
-    id: "food_vendor", kind: "npc", x: 62, y: 44, name: "Brenna, Cook",
+    id: "food_vendor", kind: "npc", x: 63, y: 48, name: "Brenna, Cook",
     lines: [
       "Smell that? Fresh off the coals. A hot meal mends you faster than a cold one.",
       "No time to fish or cook? Buy a meal here and eat it when the blows land.",
     ],
   },
-  { id: "cart_brenna", kind: "cart", x: 61, y: 44, name: "Cookhouse Stall", lines: ["A cook-stall hung with smoked fish and warm rations."] },
+  { id: "cart_brenna", kind: "cart", x: 63, y: 47, name: "Cookhouse Stall", lines: ["A cook-stall hung with smoked fish and warm rations."] },
   {
-    id: "shop_armourer", kind: "npc", x: 70, y: 42, name: "Doran, Armourer",
+    id: "shop_armourer", kind: "npc", x: 70, y: 43, name: "Doran, Armourer",
     lines: [
       "You stand like someone who's been hit before. Good — means you'll buy mail and mean it.",
       "Shields, helms, plate — Ashforge seconds, tiers I through III. The heavy stuff you forge yourself.",
     ],
   },
-  { id: "cart_doran", kind: "cart", x: 71, y: 42, name: "Armourer's Stall", lines: ["A rack of field steel and dented Ashforge seconds."] },
+  { id: "cart_doran", kind: "cart", x: 70, y: 44, name: "Armourer's Stall", lines: ["A rack of field steel and dented Ashforge seconds."] },
   {
-    id: "cape_master", kind: "npc", x: 67, y: 43, name: "Master of Capes",
+    id: "cape_master", kind: "npc", x: 74, y: 43, name: "Master of Capes",
     lines: [
       "Every skill has a summit. Reach it — level ninety-nine — and I'll cut you the cape that says so. A million gold; you'll have it by then.",
       "Master all of them, and there is one cape left: the Cape of Varath. No coin truly buys it. You earn it, and I merely hand it over.",
@@ -384,21 +414,21 @@ const rawObjects: WorldObjectDef[] = [
   //     stuff of Construction for gold, so a full purse can be poured straight
   //     into building (an OSRS-style skill sink). ---
   {
-    id: "builder_merchant", kind: "npc", x: 47, y: 61, name: "Marrick, Builders' Merchant",
+    id: "builder_merchant", kind: "npc", x: 46, y: 61, name: "Marrick, Builders' Merchant",
     lines: [
       "Building something? Then you'll want timber, stone and mortar — and I've a yard full.",
       "Planks cut, blocks dressed, beams squared. Bring coin and I'll save you the felling and the sawing. Your Construction will thank you.",
     ],
   },
-  { id: "cart_builder", kind: "cart", x: 48, y: 61, name: "Sawmill Stacks", lines: ["Stacked planks and dressed stone under a timber awning, smelling of sawdust and pitch."] },
-  { id: "cart_produce", kind: "cart", x: 64, y: 47, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
-  { id: "cart_cloth", kind: "cart", x: 70, y: 47, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
-  { id: "cart_spice", kind: "cart", x: 67, y: 45, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },
+  { id: "cart_builder", kind: "cart", x: 47, y: 61, name: "Sawmill Stacks", lines: ["Stacked planks and dressed stone under a timber awning, smelling of sawdust and pitch."] },
+  { id: "cart_produce", kind: "cart", x: 67, y: 44, name: "Produce Cart", lines: ["Moor greens and river fish, laid out on straw."] },
+  { id: "cart_cloth", kind: "cart", x: 73, y: 44, name: "Cloth Stall", lines: ["Bolts of undyed wool and a few faded bright ones."] },
+  { id: "cart_spice", kind: "cart", x: 69, y: 47, name: "Spice Cart", lines: ["Dried herbs and ground roots in little horn scoops."] },
   // --- The Apothecary: herbs and field-gathered secondaries by the spice cart.
   //     Buy the makings of a brew for coin and pour gold into Herblore (a sink
   //     to match the Builders' Yard for Construction). ---
   {
-    id: "apothecary", kind: "npc", x: 66, y: 44, name: "Wenna, Apothecary",
+    id: "apothecary", kind: "npc", x: 69, y: 48, name: "Wenna, Apothecary",
     lines: [
       "Herbs dried and roots ground — every leaf a tincture wants, and the field-stuff to bind them.",
       "Brewing? Buy the makings here and save the long forage. Coin in, Herblore out — that's the trade.",
@@ -426,7 +456,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "grand_exchange_1", kind: "grand_exchange", x: 66, y: 47, name: "Grand Exchange", lines: ["A clerk's booth ringed with chalkboards of bids and asks — the honest heart of Varath's market."] },
 
   // --- The Carpenter's sawmill, in the artisans' yard (Woodcraft) ---
-  { id: "sawmill_1", kind: "sawmill", x: 49, y: 57, name: "Carpenter's Sawmill" },
+  { id: "sawmill_1", kind: "sawmill", x: 53, y: 62, name: "Carpenter's Sawmill" },
 
   // --- Townsfolk going about the day (they wander the streets and squares) ---
   // The Town Crier stands by the fountain, calling out the news of Varath. He
@@ -443,7 +473,7 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "town_fishwife", kind: "npc", x: 66, y: 55, name: "A Fishwife",
+    id: "town_fishwife", kind: "npc", x: 69, y: 57, name: "A Fishwife",
     lines: [
       "Greyfin, fresh off the Redrun! Well — fresh enough. You'll not get better this side of the estuary.",
       "My man rows the river. Says the water's been running redder than it ought. I tell him it's the season. He doesn't argue, but he doesn't smile either.",
@@ -504,7 +534,7 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "town_pilgrim", kind: "npc", x: 51, y: 56, name: "A Pilgrim",
+    id: "town_pilgrim", kind: "npc", x: 55, y: 63, name: "A Pilgrim",
     lines: [
       "I walked from the Heartmoor to stand a day in a city that still has walls. It's a comfort, walls.",
       "They say the Spine is Orun's own back. I came to see it. I'll go home and say I saw a mountain. Both are true, I think.",
@@ -655,13 +685,21 @@ const rawObjects: WorldObjectDef[] = [
   // from a plough ox to the Redrun Courser — the game's biggest coin sinks
   // after the skillcapes.
   {
-    id: "stablemaster", kind: "npc", x: 51, y: 44, name: "Berta, the Stablemaster",
+    id: "stablemaster", kind: "npc", x: 52, y: 54, name: "Berta, the Stablemaster",
     lines: [
       "Mind the straw. Every animal in this yard is broke to saddle and better behaved than most patrons.",
       "The ox hauls, the wolves keep pace with a killer, and the Courser — the Courser outruns the wind off the Redrun. Priced accordingly.",
       "No refunds. They remember being sold back, and they sulk.",
     ],
   },
+  // The stable itself: the barn on the west wall opens onto a fenced dirt
+  // paddock — live horses ambling in the straw, hay by the rail, Berta at the
+  // gate — so the mount shop is a PLACE, not a lone woman in a plaza.
+  ...makePen("fence_stable", 49, 55, 55, 61, [[52, 55]], "The stable paddock's post-and-rail. The top bar is chewed."),
+  { id: "cr_stable_horse1", kind: "critter", species: "horse", x: 51, y: 57, name: "A Stable Horse" },
+  { id: "cr_stable_horse2", kind: "critter", species: "horse", x: 53, y: 59, name: "A Stable Horse" },
+  { id: "cr_stable_ox", kind: "critter", species: "ox", x: 51, y: 60, name: "A Plough Ox" },
+  { id: "cart_hay", kind: "cart", x: 54, y: 56, name: "Hay Bales", lines: ["Sweet meadow hay, stacked to the rail. Something has been eating it faster than Berta forks it in."] },
 
   // === SETTLEMENT GUARDS (Batch 7) =========================================
   // Attackable but never aggressive (see AGGRESSIVE in worldCore) — they hold
@@ -669,8 +707,8 @@ const rawObjects: WorldObjectDef[] = [
   // tougher city guard; the hamlets get the common Settlement Guard.
   { id: "guard_iv_1", kind: "monster", monster: "ironvale_guard", x: 49, y: 40, name: "Ironvale Guard" },
   { id: "guard_iv_2", kind: "monster", monster: "ironvale_guard", x: 59, y: 46, name: "Ironvale Guard" },
-  { id: "guard_iv_3", kind: "monster", monster: "ironvale_guard", x: 52, y: 55, name: "Ironvale Guard" },
-  { id: "guard_fold", kind: "monster", monster: "town_guard", x: 61, y: 14, name: "Settlement Guard" },
+  { id: "guard_iv_3", kind: "monster", monster: "ironvale_guard", x: 57, y: 60, name: "Ironvale Guard" },
+  { id: "guard_fold", kind: "monster", monster: "town_guard", x: 63, y: 14, name: "Settlement Guard" },
   { id: "guard_redmouth", kind: "monster", monster: "town_guard", x: 84, y: 61, name: "Settlement Guard" },
   { id: "guard_drover", kind: "monster", monster: "town_guard", x: 71, y: 75, name: "Settlement Guard" },
   { id: "guard_heartmoor", kind: "monster", monster: "town_guard", x: 19, y: 83, name: "Settlement Guard" },
@@ -1113,7 +1151,7 @@ const rawObjects: WorldObjectDef[] = [
   // City strays + birds:
   { id: "cr_cat", kind: "critter", species: "cat", x: 58, y: 60, name: "A Cat" },
   { id: "cr_pigeon1", kind: "critter", species: "crow", x: 61, y: 54, name: "Pigeons" },
-  { id: "cr_bfly_city", kind: "critter", species: "butterfly", x: 55, y: 56, name: "A Butterfly" },
+  { id: "cr_bfly_city", kind: "critter", species: "butterfly", x: 69, y: 59, name: "A Butterfly" },
   // Knuckle Hills (around the city):
   { id: "cr_hare1", kind: "critter", species: "rabbit", x: 48, y: 30, name: "A Moor Hare" },
   { id: "cr_hare2", kind: "critter", species: "rabbit", x: 72, y: 31, name: "A Moor Hare" },
@@ -1339,7 +1377,7 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "redmouth_warin", kind: "npc", x: 82, y: 60, name: "Warin, an Old Fisher",
+    id: "redmouth_warin", kind: "npc", x: 90, y: 61, name: "Warin, an Old Fisher",
     lines: [
       "Redmouth, this. Three roofs and a smokehouse, and we've buried better men for less.",
       "I've rowed the Redrun forty years. The water's wrong this season — runs red past the time of year for it, and the greyfin come up thin and few. My girl's wed downstream, near the estuary. Even she's stopped telling me it's nothing.",
@@ -1358,6 +1396,14 @@ const rawObjects: WorldObjectDef[] = [
   { id: "lamp_redmouth_1", kind: "lamppost", x: 82, y: 57, name: "Bank Lamp" },
   { id: "lamp_redmouth_2", kind: "lamppost", x: 90, y: 58, name: "Bank Lamp" },
   { id: "sign_redmouth", kind: "signpost", x: 84, y: 57, name: "Fingerpost", lines: ["REDMOUTH — the fisherfolk of the Redrun. Smoked fish, and a board for those who'd hunt the deep."] },
+  // The waterfront: the fishers' track runs east from the yard to a plank jetty
+  // over the Redrun (carved in map.ts) — drying rails along it, Warin's coble
+  // moored at the end, and the hamlet's own fishing water off the planks.
+  { id: "fence_redmouth_net1", kind: "fence", x: 88, y: 59, name: "Net-Drying Rail", species: "h", lines: ["A season of nets drying on the rail. Mind your boots — Neila is watching."] },
+  { id: "fence_redmouth_net2", kind: "fence", x: 89, y: 59, name: "Net-Drying Rail", species: "h", lines: ["A season of nets drying on the rail. Mind your boots — Neila is watching."] },
+  { id: "boat_redmouth", kind: "boat", x: 95, y: 60, name: "Warin's Coble", lines: ["A clinker-built river coble, tarred black, tied to the jetty's last post. Forty years of the Redrun in its boards."] },
+  { id: "fish_redmouth_1", kind: "fishing_spot", x: 95, y: 58, name: "Jetty Water", resource: "fish_ashfin", catches: POOL_RIVER },
+  { id: "fish_redmouth_2", kind: "fishing_spot", x: 95, y: 62, name: "Jetty Water", resource: "fish_ashfin", catches: POOL_RIVER },
 
   // --- THE DROVER'S REST: a waystation on the south road, victualling the
   //     herds up from the Ashfen — and shaken since the Drover's Loss. ---
@@ -1369,22 +1415,27 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
-    id: "drover_hodd", kind: "npc", x: 71, y: 77, name: "Hodd, a Drover",
+    id: "drover_hodd", kind: "npc", x: 70, y: 75, name: "Hodd, a Drover",
     lines: [
       "Twelve mile a day, rain or the moor's mood — that's a drove. You learn to sleep walking.",
       "I'll not take the herd through the Drover's Loss after dark. The reeve says I've gone soft. The reeve didn't hear what I heard, the night the moor took the others.",
     ],
   },
   { id: "fire_drover", kind: "fire", x: 67, y: 75, name: "The Rest's Hearth" },
-  { id: "cart_drover", kind: "cart", x: 69, y: 78, name: "Drover's Wagon", lines: ["A high-sided wagon, axle-deep in dried mud from the moor road."] },
+  { id: "cart_drover", kind: "cart", x: 70, y: 78, name: "Drover's Wagon", lines: ["A high-sided wagon, axle-deep in dried mud from the moor road."] },
   { id: "lamp_drover_1", kind: "lamppost", x: 64, y: 74, name: "Gate Lamp" },
-  { id: "lamp_drover_2", kind: "lamppost", x: 72, y: 78, name: "Yard Lamp" },
+  { id: "lamp_drover_2", kind: "lamppost", x: 74, y: 77, name: "Yard Lamp" },
   { id: "sign_drover", kind: "signpost", x: 63, y: 73, name: "Fingerpost", lines: ["THE DROVER'S REST — bed, board and a barred gate. ▲ IRONVALE. ▼ THE ASHFEN FLATS."] },
+  // The stock paddock: where the droves overnight — rails, the mired wagon and
+  // the beasts themselves, gated toward the inn.
+  ...makePen("fence_drover", 69, 76, 73, 79, [[71, 76]], "The Rest's stock paddock. The rail is rubbed smooth by a hundred herds."),
+  { id: "cr_drover_ox1", kind: "critter", species: "ox", x: 71, y: 77, name: "A Drove Ox" },
+  { id: "cr_drover_ox2", kind: "critter", species: "ox", x: 72, y: 78, name: "A Drove Ox" },
 
   // --- THE FOLD: an upland shepherds' croft in the northern Knuckle Hills,
   //     plagued by Rook's wolf-that-is-no-wolf. ---
   {
-    id: "fold_brannog", kind: "npc", x: 63, y: 16, name: "Brannog, the Shepherd",
+    id: "fold_brannog", kind: "npc", x: 62, y: 17, name: "Brannog, the Shepherd",
     lines: [
       "Up here it's sheep, stone and weather, and little else. Suits me. Suits the flock well enough.",
       "Old Rook, down the hills, keeps on about a wolf that's no wolf — clever, lame, takes a lamb clean and leaves no track. I've lost three this spring. I've stopped calling it a wolf. I just count the flock twice over now, and sleep the less for it.",
@@ -1398,12 +1449,16 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   { id: "fire_fold", kind: "fire", x: 61, y: 16, name: "Croft Hearth" },
-  { id: "cart_fold", kind: "cart", x: 65, y: 17, name: "Wool Cart", lines: ["Sacks of greasy fleece, bound for the Ironvale cloth stalls."] },
+  { id: "cart_fold", kind: "cart", x: 67, y: 14, name: "Wool Cart", lines: ["Sacks of greasy fleece, bound for the Ironvale cloth stalls."] },
   { id: "lamp_fold_1", kind: "lamppost", x: 59, y: 14, name: "Croft Lamp" },
   { id: "lamp_fold_2", kind: "lamppost", x: 66, y: 18, name: "Fold Lamp" },
   { id: "sign_fold", kind: "signpost", x: 58, y: 19, name: "Fingerpost", lines: ["THE FOLD — an upland croft. Mind the flock, and mind what minds the flock."] },
-  { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 66, y: 16, name: "A Hill Sheep" },
-  { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 59, y: 18, name: "A Hill Sheep" },
+  // The pen: post-and-rail off the wool-shed, its gate under the shed door, the
+  // flock inside with Wyn — a working croft, not scattered set-dressing.
+  ...makePen("fence_fold", 63, 16, 67, 19, [[65, 16]], "The Fold's sheep pen. Three lambs short, if you believe Brannog's count."),
+  { id: "cr_fold_sheep1", kind: "critter", species: "sheep", x: 65, y: 17, name: "A Hill Sheep" },
+  { id: "cr_fold_sheep2", kind: "critter", species: "sheep", x: 64, y: 18, name: "A Hill Sheep" },
+  { id: "cr_fold_sheep3", kind: "critter", species: "sheep", x: 66, y: 18, name: "A Hill Sheep" },
 
   // === PLAYER HOUSING — claim a lot, then furnish its lived-in interior =======
   // Each home is a four-room house in the hidden band (see homeLayout in map.ts):
@@ -1459,25 +1514,32 @@ const newPois: WorldObjectDef[] = [
   { id: "npc_frostgate_trader", kind: "npc", x: 50, y: 19, name: "Hesk, a Pass-Warden", lines: ["Cold enough for you? It gets worse up the pass. Take rope, take a lamp, take more food than your pride wants to.", "Ore comes down through here from the high cuttings. I'll sell you the tools to win your own."] },
   { id: "npc_frostgate_folk", kind: "npc", x: 48, y: 20, name: "A Shivering Porter", lines: ["Twelve trips up the pass today. My back's a map of every one."] },
   { id: "fire_frostgate", kind: "fire", x: 52, y: 20, name: "Pass Fire" },
+  { id: "cart_frostgate", kind: "cart", x: 47, y: 18, name: "Rope & Tackle Sledge", lines: ["Coiled rope, iron pitons and a torn coat nobody has claimed. Pass gear, stacked for the next fool going up."] },
   // --- Deeplight (Marrow): a delvers' outpost in the cavern mouth ---
   { id: "sign_deeplight", kind: "signpost", x: 125, y: 28, name: "Deeplight", lines: ["DEEPLIGHT — keep a light burning and keep it close. The deep doesn't forgive the dark."] },
   { id: "npc_deeplight_trader", kind: "npc", x: 125, y: 26, name: "Mott, a Deep-Delver", lines: ["Down here we trade in light and in nerve. I've a stock of the one, at least.", "Gems come out of these walls if you've the pick and the patience. I'll buy what you bring up."] },
-  { id: "npc_deeplight_folk", kind: "npc", x: 127, y: 26, name: "A Wary Lampwright", lines: ["Never let it gutter. A lamp's the only friend that doesn't run when the crawlers come."] },
+  { id: "npc_deeplight_folk", kind: "npc", x: 127, y: 27, name: "A Wary Lampwright", lines: ["Never let it gutter. A lamp's the only friend that doesn't run when the crawlers come."] },
   { id: "fire_deeplight", kind: "fire", x: 123, y: 27, name: "Delvers' Brazier" },
+  { id: "lamp_deeplight", kind: "lamppost", x: 125, y: 24, name: "Deeplight Lantern" },
+  { id: "cart_deeplight", kind: "cart", x: 122, y: 25, name: "Ore Crates", lines: ["Crates of ashiron and raw gemstone, chalk-marked for the Ironvale road. The deep pays, when it doesn't collect."] },
   // --- Saltreach (Redrun): a fishing village on the river's east bank ---
   { id: "sign_saltreach", kind: "signpost", x: 146, y: 109, name: "Saltreach", lines: ["SALTREACH — where the Redrun meets the Eyeless Sea. Fresh catch daily, weather and serpents allowing."] },
-  { id: "npc_saltreach_trader", kind: "npc", x: 146, y: 106, name: "Brine, a Fishwife", lines: ["Off the boats this morning — couldn't be fresher unless you caught it yourself. Which I'll sell you the gear to do.", "The deep water's good fishing and bad luck both. Mind the serpents past the bar."] },
+  { id: "npc_saltreach_trader", kind: "npc", x: 145, y: 106, name: "Brine, a Fishwife", lines: ["Off the boats this morning — couldn't be fresher unless you caught it yourself. Which I'll sell you the gear to do.", "The deep water's good fishing and bad luck both. Mind the serpents past the bar."] },
   { id: "npc_saltreach_folk", kind: "npc", x: 144, y: 107, name: "A Net-Mender", lines: ["A torn net catches nothing but blame. Patience and good twine, that's the whole trade."] },
   { id: "fire_saltreach", kind: "fire", x: 148, y: 107, name: "Smoking Fire" },
+  { id: "boat_saltreach", kind: "boat", x: 149, y: 108, name: "A Beached Coble", lines: ["Hauled out on rollers for the season's tarring. The Eyeless Sea is patient; the hull can't afford to be."] },
+  { id: "fence_saltreach_net1", kind: "fence", x: 143, y: 104, name: "Net-Drying Rail", species: "h", lines: ["Nets on the rail, drying between tides. The mesh is torn where something big went through."] },
+  { id: "fence_saltreach_net2", kind: "fence", x: 144, y: 104, name: "Net-Drying Rail", species: "h", lines: ["Nets on the rail, drying between tides. The mesh is torn where something big went through."] },
   // --- Emberhearth (Ashfen): a warm-flats camp of cult miners ---
   { id: "sign_emberhearth", kind: "signpost", x: 77, y: 145, name: "Emberhearth", lines: ["EMBERHEARTH — the warm ground keeps the fires lit and the faithful close. Witness the heat, or move along."] },
   { id: "npc_emberhearth_trader", kind: "npc", x: 77, y: 142, name: "Sefa, a Flux-Trader", lines: ["Embercite for your flux, charcoal for your forge, a flask for whatever you brew. The warm ground gives plenty.", "We don't sell the faith. Only the goods. The faith you feel through your boots, free of charge."] },
-  { id: "npc_emberhearth_folk", kind: "npc", x: 79, y: 142, name: "A Sweating Digger", lines: ["Short shifts down the warm cuts. Any longer and a man starts hearing the ground breathe."],
+  { id: "npc_emberhearth_folk", kind: "npc", x: 79, y: 143, name: "A Sweating Digger", lines: ["Short shifts down the warm cuts. Any longer and a man starts hearing the ground breathe."],
     reactiveLines: [
       { requiresFlags: ["the_warmth_answered"], lines: ["Don't tell the Tender I said it — but the ground doesn't just breathe now. It answers. Since you did whatever you did down deep, the seam pulses like a heart, and we all feel it through our boots.","Shortest shifts we've ever worked. Nobody can stand it long. Nobody wants to leave it either."] },
       { requiresFlags: ["endgame_shard_destroyed"], lines: ["Warm cuts went cold, first time in living memory. Cold rock, plain and quiet. The Tender's not spoken a word in days.","Easier digging, cold. Truth be told, I miss the breathing. A man gets used to a strange thing, and then it's gone, and the quiet's worse."] },
     ] },
   { id: "fire_emberhearth", kind: "fire", x: 75, y: 143, name: "Ember Pit" },
+  { id: "cart_emberhearth", kind: "cart", x: 74, y: 141, name: "Charcoal Heap", lines: ["Charcoal sacked and stacked, still warm from the burn. The ground under it is warmer."] },
   // --- Mirehold (Heartmoor): a moor hamlet of cutters & trappers ---
   { id: "sign_mirehold", kind: "signpost", x: 15, y: 143, name: "Mirehold", lines: ["MIREHOLD — a few roofs on firm ground in a sea of bog. Keep to the boards and the moor keeps its temper."] },
   { id: "npc_mirehold_trader", kind: "npc", x: 15, y: 140, name: "Tam, a Peat-Cutter", lines: ["Eel, peat, snare-line and good moor boots — all a body needs out here. I'll trade you fair.", "The bog keeps things. Best not ask too closely what, or it keeps you too."] },
@@ -1487,11 +1549,13 @@ const newPois: WorldObjectDef[] = [
       { requiresFlags: ["the_warmth_answered"], lines: ["The pools ran warmer than ever the night the warmth answered. Warm enough I went down and stood in them, foolish as a girl, calling his name into the steam.","Nothing called back. But it was warm. After all these cold years — it was warm. I'll take that. I'll have to."] },
     ] },
   { id: "fire_mirehold", kind: "fire", x: 17, y: 141, name: "Peat Fire" },
+  { id: "cart_mirehold", kind: "cart", x: 14, y: 138, name: "Peat Barrow", lines: ["A barrow of cut peat bricks, drying under sacking. Moor fuel — slow, smoky and dependable, like the folk who cut it."] },
   // --- Lodgehold (Greyoak): a foresters' steading at the wood's heart ---
   { id: "sign_lodgehold", kind: "signpost", x: 13, y: 85, name: "Lodgehold", lines: ["LODGEHOLD — the Warden's steading in the old wood. Bring an axe worth the name, and leave the deep growth its peace."] },
   { id: "npc_lodgehold_trader", kind: "npc", x: 13, y: 82, name: "Bryn, a Bowyer", lines: ["Hatchets, bowstaves, good arrows fletched true — the wood gives, if you've the tools to ask. I'll sell you those.", "Greyoak's the finest timber in Varath. Cut honest and it'll never blunt you for spite."] },
   { id: "npc_lodgehold_folk", kind: "npc", x: 15, y: 83, name: "A Lodge Fletcher", lines: ["Straight shaft, true feather, a head that flies where you look. Anything less is a stick with ambitions."] },
   { id: "fire_lodgehold", kind: "fire", x: 11, y: 83, name: "Steading Hearth" },
+  { id: "cart_lodgehold", kind: "cart", x: 12, y: 80, name: "Log Pile", lines: ["Greyoak trunks bucked to length and stacked to season. Every ring in them is older than you."] },
 
   // === WILD ANIMALS roaming the open country between places — huntable for the
   // generic Raw Meat + Raw Hide (and a little coin). Spread across the gaps. ====

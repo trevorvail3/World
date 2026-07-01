@@ -900,6 +900,11 @@ export type ObjKind =
   | "critter"
   /** A street lamp — city dressing that casts warm light at night. */
   | "lamppost"
+  /** A post-and-rail fence segment — pens, paddocks and garden bounds
+   *  (decorative; `species` picks the run: "h" horizontal, "v" vertical). */
+  | "fence"
+  /** A small clinker rowboat — moored on water or hauled out on the strand. */
+  | "boat"
   /** A directional signpost at a junction (examine for the way). */
   | "signpost"
   /** A cairn of bones and skulls — grim dressing for the Boneman's lair. */

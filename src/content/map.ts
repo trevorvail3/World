@@ -316,12 +316,18 @@ const BUILDINGS_LEGACY: Building[] = [
   { x0: 62, y0: 39, x1: 66, y1: 41, roof: "tile", door: { x: 64, y: 41 } },   // Quartermaster's Store
   { x0: 68, y0: 39, x1: 72, y1: 41, roof: "slate", door: { x: 70, y: 41 } },  // The Armoury
   { x0: 75, y0: 39, x1: 78, y1: 42, roof: "tower", door: { x: 76, y: 42 } },  // The Watchtower
-  // --- West wall ---
-  { x0: 45, y0: 44, x1: 47, y1: 49, roof: "slate", door: { x: 47, y: 49 } },  // The Pale Record
-  { x0: 45, y0: 55, x1: 47, y1: 60, roof: "thatch", door: { x: 47, y: 60 } }, // houses
-  // --- East wall ---
-  { x0: 76, y0: 44, x1: 78, y1: 49, roof: "thatch", door: { x: 76, y: 49 } },
-  { x0: 76, y0: 55, x1: 78, y1: 60, roof: "thatch", door: { x: 76, y: 55 } },
+  // --- West wall (doors mid-face, onto the west lane) ---
+  { x0: 45, y0: 44, x1: 47, y1: 49, roof: "slate", door: { x: 47, y: 46 } },  // The Pale Record
+  { x0: 45, y0: 55, x1: 47, y1: 60, roof: "thatch", door: { x: 47, y: 57 } }, // the Stables barn
+  // --- East wall (doors mid-face, onto the east lane) ---
+  { x0: 76, y0: 44, x1: 78, y1: 49, roof: "thatch", door: { x: 76, y: 46 } },
+  { x0: 76, y0: 55, x1: 78, y1: 60, roof: "thatch", door: { x: 76, y: 57 } },
+  // --- The residential quarter (SE): row-houses flanking their own lane, each
+  //     door opening onto it — homes, not warehouse slabs against the wall. ---
+  { x0: 66, y0: 55, x1: 68, y1: 57, roof: "thatch", door: { x: 68, y: 56 } },
+  { x0: 72, y0: 55, x1: 74, y1: 57, roof: "tile", door: { x: 72, y: 56 } },
+  { x0: 66, y0: 59, x1: 68, y1: 61, roof: "tile", door: { x: 68, y: 60 } },
+  { x0: 72, y0: 59, x1: 74, y1: 61, roof: "thatch", door: { x: 72, y: 60 } },
   // --- South wall row ---
   { x0: 45, y0: 64, x1: 50, y1: 66, roof: "slate", door: { x: 47, y: 64 } },  // The Craftworks
   { x0: 52, y0: 64, x1: 57, y1: 66, roof: "tile", door: { x: 54, y: 64 } },   // The Mending House
@@ -340,7 +346,7 @@ const BUILDINGS_LEGACY: Building[] = [
   { x0: 65, y0: 77, x1: 67, y1: 78, roof: "thatch", door: { x: 66, y: 77 } },  // the byre
   // --- The Fold: an upland shepherds' croft in the Knuckle Hills, north ---
   { x0: 60, y0: 14, x1: 62, y1: 15, roof: "thatch", door: { x: 61, y: 15 } },  // the croft house
-  { x0: 64, y0: 14, x1: 66, y1: 15, roof: "thatch", door: { x: 64, y: 15 } },  // the wool-shed
+  { x0: 64, y0: 14, x1: 66, y1: 15, roof: "thatch", door: { x: 65, y: 15 } },  // the wool-shed (opens into the pen)
   { x0: 60, y0: 17, x1: 62, y1: 18, roof: "thatch", door: { x: 61, y: 17 } },  // the lambing shed
 ];
 const shiftDoor = (d?: { x: number; y: number }) => (d ? { x: d.x + CDX, y: d.y + CDY } : undefined);
@@ -362,25 +368,29 @@ export const SETTLEMENT_CLEARINGS: { x0: number; y0: number; x1: number; y1: num
   { x0: 11, y0: 135, x1: 19, y1: 143, floor: "dirt" },  // Heartmoor — Mirehold (moor hamlet)
   { x0: 9, y0: 77, x1: 17, y1: 85, floor: "dirt" },     // Greyoak — Lodgehold (foresters' steading)
 ];
+// Each pair is set as an L around a shared hearth-yard — one cottage along the
+// top, the second below and to the east with its door turned WEST to face the
+// yard — so the settlement reads as folk living around a fire, not two sheds
+// dropped side by side in a field.
 const REGION_BUILDINGS: Building[] = [
   // Frostgate (Spine)
   { x0: 47, y0: 15, x1: 49, y1: 16, roof: "slate", door: { x: 48, y: 16 } },
-  { x0: 51, y0: 15, x1: 53, y1: 16, roof: "slate", door: { x: 52, y: 16 } },
+  { x0: 51, y0: 18, x1: 53, y1: 19, roof: "slate", door: { x: 51, y: 18 } },
   // Deeplight (Marrow)
   { x0: 122, y0: 22, x1: 124, y1: 23, roof: "slate", door: { x: 123, y: 23 } },
-  { x0: 126, y0: 22, x1: 128, y1: 23, roof: "slate", door: { x: 127, y: 23 } },
+  { x0: 126, y0: 25, x1: 128, y1: 26, roof: "slate", door: { x: 126, y: 25 } },
   // Saltreach (Redrun)
   { x0: 143, y0: 102, x1: 145, y1: 103, roof: "thatch", door: { x: 144, y: 103 } },
-  { x0: 147, y0: 102, x1: 149, y1: 103, roof: "thatch", door: { x: 148, y: 103 } },
+  { x0: 146, y0: 105, x1: 148, y1: 106, roof: "thatch", door: { x: 146, y: 105 } },
   // Emberhearth (Ashfen)
   { x0: 74, y0: 138, x1: 76, y1: 139, roof: "tile", door: { x: 75, y: 139 } },
-  { x0: 78, y0: 138, x1: 80, y1: 139, roof: "tile", door: { x: 79, y: 139 } },
+  { x0: 78, y0: 141, x1: 80, y1: 142, roof: "tile", door: { x: 78, y: 141 } },
   // Mirehold (Heartmoor)
   { x0: 12, y0: 136, x1: 14, y1: 137, roof: "thatch", door: { x: 13, y: 137 } },
-  { x0: 16, y0: 136, x1: 18, y1: 137, roof: "thatch", door: { x: 17, y: 137 } },
+  { x0: 16, y0: 139, x1: 18, y1: 140, roof: "thatch", door: { x: 16, y: 139 } },
   // Lodgehold (Greyoak)
   { x0: 10, y0: 78, x1: 12, y1: 79, roof: "thatch", door: { x: 11, y: 79 } },
-  { x0: 14, y0: 78, x1: 16, y1: 79, roof: "tile", door: { x: 15, y: 79 } },
+  { x0: 14, y0: 81, x1: 16, y1: 82, roof: "tile", door: { x: 14, y: 81 } },
 ];
 (BUILDINGS as Building[]).push(...REGION_BUILDINGS);
 
@@ -505,6 +515,16 @@ function decode(): WorldMap {
   cc(81, 64, 86, 67, "dirt");  // Redmouth homestead lot
   cc(74, 73, 79, 76, "dirt");  // Drover's Rest homestead lot
   cc(59, 8, 64, 11, "dirt");   // The Fold homestead lot
+  //    Side lanes, so every building's door opens onto a street and each city
+  //    quarter has real circulation instead of one bare plaza:
+  cc(45, 42, 74, 42, "path");   // north lane, along the north-row forecourts
+  cc(45, 63, 78, 63, "path");   // south lane, along the trade-row forecourts
+  cc(48, 42, 48, 63, "path");   // west lane (Pale Record + the Stables)
+  cc(75, 43, 75, 63, "path");   // east lane (the wall houses)
+  cc(63, 45, 75, 46, "path");   // the market lane — stalls line both sides
+  cc(70, 54, 70, 63, "path");   // the residential lane, high street → Lodge
+  //    The stable paddock: packed-dirt yard beside the barn, fenced in spawns.
+  cc(49, 55, 55, 61, "dirt");
   //    The buildings: each footprint becomes blocking masonry (roofed by the renderer).
   for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");
   //    A flagged town square around the crossroads, for the fountain + crowds.
@@ -616,6 +636,12 @@ function decode(): WorldMap {
   cc(84, 54, 85, 57, "path");   // Redmouth lane up to the east road
   cc(61, 75, 64, 76, "path");   // The Drover's Rest, off the south road
   cc(58, 19, 60, 24, "path");   // The Fold, down to the grove
+  //     The fishers' track: Redmouth is a FISHING hamlet, so a worn track runs
+  //     from its yard east to the Redrun bank, onto a short plank jetty over the
+  //     water (canvas coords — the river is carved in final space). The boat and
+  //     net-racks stand at its head (spawns.ts).
+  cc(86, 60, 91, 60, "path");                       // yard → riverbank
+  for (let px = 110; px <= 114; px++) set(px, 86, "plank"); // the jetty (final coords)
 
   // 5c) Ecotone dither — feather the seams between open-wilderness biomes so
   //     they roll into one another instead of cutting hard on the grid. Rather

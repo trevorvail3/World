@@ -208,6 +208,8 @@ const VERB: Record<ObjKind, string> = {
   sawmill: "Mill at",
   critter: "Watch",
   lamppost: "Examine",
+  fence: "Examine",
+  boat: "Examine",
   signpost: "Read",
   bone_cairn: "Examine",
   waystone: "Travel from",
@@ -249,6 +251,8 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   sawmill: "A sawmill bench — frame-saws, a shaving-horse and a bowyer's vice.",
   critter: "A wild thing, going about its small business. It startles as you near.",
   lamppost: "An iron lamp on a tall post. Lit against the dark by whoever walks the rounds.",
+  fence: "A post-and-rail fence, silvered by the weather and leaned on by generations.",
+  boat: "A small clinker-built boat, tarred against the water it works.",
   signpost: "A weathered fingerpost, its boards pointing the old roads.",
   bone_cairn: "A cairn of stacked bones, a skull set on top like a marker. Each one was a person the Boneman kept.",
   waystone: "A Courier waystone. Pay the toll and a rider will see you to another.",
@@ -2351,7 +2355,7 @@ export class Game {
     if (obj.kind === "tree" && obj.species && EXAMINE_TREE[obj.species]) {
       return EXAMINE_TREE[obj.species]!;
     }
-    if ((obj.kind === "shrine" || obj.kind === "bone_cairn") && obj.lines?.[0]) return obj.lines[0];
+    if ((obj.kind === "shrine" || obj.kind === "bone_cairn" || obj.kind === "fence" || obj.kind === "boat") && obj.lines?.[0]) return obj.lines[0];
     if (obj.kind === "npc") return `${obj.name}, met on the road.`;
     if (obj.kind === "fishing_spot") {
       const lvl = this.bridge.state.player.skills.fishing?.level ?? 1;

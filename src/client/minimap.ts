@@ -106,6 +106,8 @@ const MM_OBJ: Record<ObjKind, string> = {
   sawmill: "#9a7b4e",
   critter: "", // ambient wildlife isn't marked on the minimap
   lamppost: "", // street dressing — not marked
+  fence: "", // pen rails — not marked
+  boat: "", // moored dressing — not marked
   signpost: "#caa05a",
   bone_cairn: "", // grim dressing — not marked on the minimap
   waystone: "#d2742c",
