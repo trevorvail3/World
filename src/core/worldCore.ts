@@ -106,6 +106,13 @@ const FLEE_GRACE_MS = 2500; // after a move, aggressive monsters hold off this l
 // On death you drop a tenth of your coin (a real but gentle setback).
 const DEATH_GOLD_FRACTION = 0.1;
 const DEATH_GOLD_CAP = 250;
+// Item risk on death (see the death block in monsterSwing): worn gear is safe,
+// the 3 most valuable carried stacks are kept, the rest spills where you fell.
+const DEATH_ITEMS_KEPT = 3;
+// Total spill value under this is waived — new players never lose their pack.
+const DEATH_SPILL_MIN_VALUE = 200;
+// How long the spilled pile waits for its corpse run (vs 90s ordinary litter).
+const DEATH_SPILL_TTL = 5 * 60_000;
 // The Shard of Orun is a rare drop, but this many kills without one guarantees
 // the next — so q_first_shard (and the whole main story) can't be RNG-walled.
 const SHARD_PITY = 250;
@@ -1662,6 +1669,27 @@ export function applyIntent(
       events.push({ type: "LOG", message: nm ? `Autocast set: ${nm}.` : "Autocast cleared." });
       break;
     }
+    case "TOGGLE_BLESSING": {
+      // Light or douse a protection blessing — a held prayer, no staff needed.
+      const sp = content.spells.find((s) => s.id === intent.spell);
+      if (!sp || sp.kind !== "blessing") break;
+      if (player.blessing === sp.id) {
+        player.blessing = null;
+        events.push({ type: "LOG", message: `You let ${sp.name} go out.` });
+        break;
+      }
+      if (skillLvl(player, "faith") < sp.faithReq) {
+        events.push({ type: "LOG", message: `You need Devotion ${sp.faithReq} to hold ${sp.name}.` });
+        break;
+      }
+      if (player.grace < 1) {
+        events.push({ type: "LOG", message: "You have no Grace to burn. Pray at a shrine first." });
+        break;
+      }
+      player.blessing = sp.id; // switching replaces — one blessing at a time
+      events.push({ type: "LOG", message: `You hold ${sp.name} — it will burn Grace while it lasts.` });
+      break;
+    }
     case "BURY": {
       if (notedGuard(player, intent.slot, events)) break;
       buryBones(state, content, intent.slot, events);
@@ -3005,6 +3033,10 @@ export function tick(
     events.push({ type: "LOG", message: "Your campfire burns out." });
   }
 
+  // Armed boss slams detonate when their windup elapses — wherever the player
+  // is by then. Standing clear means it hits nothing but scorched ground.
+  resolveSlams(state, content, ctx, events);
+
   // Shops top their shelves back up on a timer.
   ensureShopStock(state, content, ctx);
 
@@ -3018,6 +3050,21 @@ export function tick(
     if (ctx.now >= player.buffs[kind]!.until) {
       delete player.buffs[kind];
       events.push({ type: "LOG", message: `Your ${(BUFF_LABEL[kind] ?? kind).replace(/^\+/, "")} boost fades.` });
+    }
+  }
+
+  // 0c) A held protection blessing burns Grace steadily; it gutters out when
+  // the pool runs dry (refill at a shrine and re-light it).
+  if (player.blessing) {
+    const sp = content.spells.find((s) => s.id === player.blessing);
+    if (!sp) player.blessing = null;
+    else {
+      player.grace -= (sp.drainPerSec ?? 0.6) * (dt / 1000);
+      if (player.grace <= 0) {
+        player.grace = 0;
+        player.blessing = null;
+        events.push({ type: "LOG", message: `${sp.name} gutters out — your Grace is spent.` });
+      }
     }
   }
 
@@ -4933,6 +4980,21 @@ function monsterSwing(
       events.push({ type: "LOG", message: m.tell });
     }
     if (m.type === "enrage" && obj.enraged) dmgMult *= m.mult;
+    // A ground SLAM replaces this swing entirely: the tiles around where the
+    // player is standing RIGHT NOW are marked, and detonate after the windup.
+    // Step off the marked ground and it hits nothing — the one boss move you
+    // beat by moving, not eating. Resolved in resolveSlams (tick).
+    if (m.type === "slam" && obj.swings % m.every === 0 && !obj.slam) {
+      obj.slam = {
+        x: Math.round(player.pos.x),
+        y: Math.round(player.pos.y),
+        radius: m.radius,
+        at: ctx.now + m.windupMs,
+        mult: m.mult,
+      };
+      events.push({ type: "LOG", message: m.tell });
+      return; // the slam IS this attack — no regular swing on top
+    }
   }
 
   if (ctx.rng() < hitChance(stats.acc ?? 0, playerDefence(player, content))) {
@@ -4941,7 +5003,15 @@ function monsterSwing(
     // Ordinary monsters hit harder now (so an even fight bites); bosses keep
     // their own hand-tuned damage and are exempt from the global bump.
     const offense = stats.boss ? 1 : COMBAT.monsterDmgMult;
-    const dmg = Math.max(1, Math.round((raw - soak) * dmgMult * offense));
+    let dmg = Math.max(1, Math.round((raw - soak) * dmgMult * offense));
+    // A held protection blessing halves damage of its style — the counterplay
+    // layer: read the boss's attack style and light the right deflection.
+    const bless = player.blessing ? content.spells.find((s) => s.id === player.blessing) : undefined;
+    if (bless?.deflectStyle) {
+      const incoming = stats.attackStyle === "ranged" ? "ranged"
+        : stats.attackStyle === "magic" ? "magic" : "melee";
+      if (bless.deflectStyle === incoming) dmg = Math.max(1, Math.ceil(dmg * 0.5));
+    }
     const before = player.hp;
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
@@ -4966,15 +5036,97 @@ function monsterSwing(
     player.respawnAt = ctx.now + PLAYER_RESPAWN;
     player.path = [];
     clearActivity(player);
-    // A gentle setback: drop a tenth of your carried coin (capped).
+    // Coin setback: a tenth of your carried gold (capped).
     const lost = Math.min(DEATH_GOLD_CAP, Math.floor(player.gold * DEATH_GOLD_FRACTION));
-    if (lost > 0) {
-      player.gold -= lost;
-      events.push({ type: "LOG", message: `The ${def.name} knocks you out! You lose ${lost}g.` });
-    } else {
-      events.push({ type: "LOG", message: `The ${def.name} knocks you out!` });
+    if (lost > 0) player.gold -= lost;
+    // Item risk, OSRS-style: your gear stays on your back and your THREE most
+    // valuable carried stacks are kept — the rest spills where you fell, and
+    // you have a recovery window to run back for it. New players carry little,
+    // so this self-scales: trivial at level 5, a real corpse-run at the Wyrm.
+    const px = Math.round(player.pos.x);
+    const py = Math.round(player.pos.y);
+    const slots = player.inventory
+      .map((s, i) => ({ s, i, v: s ? marketValue(content, s.item) * s.qty : -1 }))
+      .filter((r) => r.s !== null)
+      .sort((a, b) => b.v - a.v);
+    const spilled = slots.slice(DEATH_ITEMS_KEPT).filter((r) => r.v > 0);
+    // Below a pocket-change total the spill is waived — a newbie's first deaths
+    // sting (coin) but never strip their pack.
+    const spillValue = spilled.reduce((n, r) => n + r.v, 0);
+    let droppedCount = 0;
+    if (spillValue >= DEATH_SPILL_MIN_VALUE) {
+      for (const r of spilled) {
+        dropToGround(state, r.s!.item, r.s!.qty, px, py, ctx, true);
+        player.inventory[r.i] = null;
+        droppedCount++;
+      }
+      // Death drops get a LONGER window than ordinary litter — enough to
+      // respawn, re-gear and run back across the map.
+      for (const g of state.ground) {
+        if (g.x === px && g.y === py) g.despawnAt = ctx.now + DEATH_SPILL_TTL;
+      }
     }
+    const bits = [
+      lost > 0 ? `You lose ${lost}g` : "",
+      droppedCount > 0 ? `your pack spills where you fell (${droppedCount} stack${droppedCount === 1 ? "" : "s"} — run back within ${Math.round(DEATH_SPILL_TTL / 60000)} minutes!)` : "",
+    ].filter(Boolean).join(" and ");
+    events.push({ type: "LOG", message: `The ${def.name} knocks you out!${bits ? ` ${bits}.` : ""}` });
     events.push({ type: "PLAYER_DIED" });
+  }
+}
+
+/**
+ * Detonate any boss ground-slams whose windup has elapsed. The marked tiles
+ * were fixed when the slam was armed (where the player then stood); if the
+ * player has stepped clear, it wastes itself — dodging is the counterplay.
+ * A held blessing still halves it (the ground burns with the boss's style).
+ */
+function resolveSlams(
+  state: WorldState,
+  content: Content,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  for (const def of content.objects) {
+    if (def.kind !== "monster") continue;
+    const obj = state.objects[def.id];
+    if (!obj?.slam || ctx.now < obj.slam.at) continue;
+    const slam = obj.slam;
+    obj.slam = null;
+    const stats = monsterFor(content, def);
+    if (!stats || !obj.available || !player.alive) continue;
+    const dist = Math.max(
+      Math.abs(Math.round(player.pos.x) - slam.x),
+      Math.abs(Math.round(player.pos.y) - slam.y),
+    );
+    if (dist > slam.radius) {
+      events.push({ type: "LOG", message: `${def.name}'s slam shatters empty ground — you stepped clear!` });
+      continue;
+    }
+    let dmg = Math.max(1, Math.round(stats.maxHit * slam.mult));
+    const bless = player.blessing ? content.spells.find((s) => s.id === player.blessing) : undefined;
+    if (bless?.deflectStyle) {
+      const incoming = stats.attackStyle === "ranged" ? "ranged"
+        : stats.attackStyle === "magic" ? "magic" : "melee";
+      if (bless.deflectStyle === incoming) dmg = Math.max(1, Math.ceil(dmg * 0.5));
+    }
+    player.hp -= dmg;
+    events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
+    events.push({ type: "LOG", message: `${def.name}'s slam catches you square — ${dmg} damage!` });
+    if (player.hp <= 0) {
+      // Same stakes as any killing blow (coin + pack spill live in monsterSwing's
+      // death block; a slam death keeps it simple: coin only, pack intact).
+      player.hp = 0;
+      player.alive = false;
+      player.respawnAt = ctx.now + PLAYER_RESPAWN;
+      player.path = [];
+      clearActivity(player);
+      const lost = Math.min(DEATH_GOLD_CAP, Math.floor(player.gold * DEATH_GOLD_FRACTION));
+      if (lost > 0) player.gold -= lost;
+      events.push({ type: "LOG", message: `${def.name}'s slam knocks you out!${lost > 0 ? ` You lose ${lost}g.` : ""}` });
+      events.push({ type: "PLAYER_DIED" });
+    }
   }
 }
 

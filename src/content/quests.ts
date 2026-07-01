@@ -49,8 +49,8 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "mining", amount: 60 },
-        { skill: "smithing", amount: 50 },
+        { skill: "mining", amount: 480 },
+        { skill: "smithing", amount: 400 },
       ],
       items: [{ item: "worn_coin", qty: 1 }],
       flags: ["q_ash_and_knuckle_complete", "met_aldric", "has_aldric_coin"],
@@ -157,7 +157,7 @@ export const quests: QuestDef[] = [
       "Welcome in. Mind Berric, and mind yourself.",
     ],
     reward: {
-      xp: [{ skill: "smithing", amount: 250 }],
+      xp: [{ skill: "smithing", amount: 2000 }],
       items: [{ item: "ashforge_hammer", qty: 1 }],
       flags: ["guild_ashforge_joined", "met_vorn"],
       rep: [{ faction: "ashforge", amount: 10 }],
@@ -207,8 +207,8 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "vigour", amount: 150 },
-        { skill: "survivalist", amount: 100 },
+        { skill: "vigour", amount: 1200 },
+        { skill: "survivalist", amount: 800 },
       ],
       items: [{ item: "lodge_token", qty: 1 }],
       flags: ["guild_lodge_contacted"],
@@ -254,7 +254,7 @@ export const quests: QuestDef[] = [
       "You've found the edge of something old and ugly. Come down to the Underloft when you're ready to read further. The Pale Record could use eyes like yours.",
     ],
     reward: {
-      xp: [{ skill: "mining", amount: 150 }],
+      xp: [{ skill: "mining", amount: 1200 }],
       items: [{ item: "order_cipher_key", qty: 1 }, { item: "mount_pony", qty: 1 }],
       flags: ["guild_pale_record_contacted", "met_sera", "knows_underloft", "act1_complete"],
       rep: [{ faction: "pale_record", amount: 10 }],
@@ -308,7 +308,7 @@ export const quests: QuestDef[] = [
       "And if you learned what I think you learned from Berric — keep it close. We'll need it.",
     ],
     reward: {
-      xp: [{ skill: "smithing", amount: 500 }],
+      xp: [{ skill: "smithing", amount: 4000 }],
       items: [{ item: "apprentice_mark_blade", qty: 1 }, { item: "mount_ironboar", qty: 1 }],
       flags: ["guild_ashforge_rank_2"],
       rep: [{ faction: "ashforge", amount: 15 }],
@@ -358,8 +358,8 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "smithing", amount: 300 },
-        { skill: "edge", amount: 300 },
+        { skill: "smithing", amount: 2400 },
+        { skill: "edge", amount: 2400 },
       ],
       items: [{ item: "berric_ledger", qty: 1 }],
       flags: ["act2_berric_dealt_with"],
@@ -407,9 +407,9 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "survivalist", amount: 400 },
-        { skill: "forestry", amount: 300 },
-        { skill: "vitality", amount: 200 },
+        { skill: "survivalist", amount: 3200 },
+        { skill: "forestry", amount: 2400 },
+        { skill: "vitality", amount: 1600 },
       ],
       items: [{ item: "warden_longbow", qty: 1 }, { item: "mount_silverwolf", qty: 1 }],
       flags: ["guild_lodge_rank_2", "knows_forest_retreat"],
@@ -459,7 +459,7 @@ export const quests: QuestDef[] = [
       "You're a Chronicler of the Pale Record now — Rank One. When I learn what this is, you'll be the first I tell.",
     ],
     reward: {
-      xp: [{ skill: "vitality", amount: 500 }],
+      xp: [{ skill: "vitality", amount: 4000 }],
       items: [
         { item: "chronicler_seal", qty: 1 },
         { item: "order_cipher_key", qty: 1 },
@@ -540,8 +540,8 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "mining", amount: 600 },
-        { skill: "edge", amount: 400 },
+        { skill: "mining", amount: 4800 },
+        { skill: "edge", amount: 3200 },
       ],
       flags: ["act2_complete"],
     },
@@ -590,8 +590,8 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "vitality", amount: 1000 },
-        { skill: "edge", amount: 500 },
+        { skill: "vitality", amount: 8000 },
+        { skill: "edge", amount: 4000 },
       ],
       items: [
         { item: "marrow_keep_plate", qty: 1 },
@@ -691,9 +691,11 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "edge", amount: 1000 },
-        { skill: "vigour", amount: 1000 },
-        { skill: "vitality", amount: 1000 },
+        // The finale's lamp: the story's weight, paid in the skill you choose.
+        { skill: "vitality", amount: 60000 },
+        { skill: "edge", amount: 8000 },
+        { skill: "vigour", amount: 8000 },
+        { skill: "vitality", amount: 8000 },
       ],
       items: [{ item: "mount_destrier", qty: 1 }],
       flags: ["varath_main_story_complete"],
@@ -725,7 +727,7 @@ export const quests: QuestDef[] = [
       "You did it clean. Take this — field rations, for the next cold watch.",
     ],
     reward: {
-      xp: [{ skill: "vigour", amount: 350 }, { skill: "vitality", amount: 150 }],
+      xp: [{ skill: "vigour", amount: 2800 }, { skill: "vitality", amount: 1200 }],
       items: [{ item: "battle_ration", qty: 2 }],
     },
   },
@@ -746,7 +748,7 @@ export const quests: QuestDef[] = [
       "Come back when you've news. The wood's gone quiet and I like to know who's still walking it.",
     ],
     reward: {
-      xp: [{ skill: "survivalist", amount: 280 }],
+      xp: [{ skill: "survivalist", amount: 2240 }],
       items: [{ item: "charcoal", qty: 6 }],
     },
   },
@@ -768,7 +770,7 @@ export const quests: QuestDef[] = [
       "Take the meat off them; I've no use for it deep in. Quiet roads to you.",
     ],
     reward: {
-      xp: [{ skill: "hunter", amount: 320 }, { skill: "draw", amount: 120 }],
+      xp: [{ skill: "hunter", amount: 2560 }, { skill: "draw", amount: 960 }],
       items: [{ item: "raw_boar_meat", qty: 3 }],
     },
   },
@@ -790,7 +792,7 @@ export const quests: QuestDef[] = [
       "Keep the embercite. And take these — flasks, for whatever you brew with what you've learned.",
     ],
     reward: {
-      xp: [{ skill: "smithing", amount: 300 }, { skill: "herblore", amount: 200 }],
+      xp: [{ skill: "smithing", amount: 2400 }, { skill: "herblore", amount: 1600 }],
       items: [{ item: "glass_flask", qty: 3 }],
     },
   },
@@ -812,7 +814,7 @@ export const quests: QuestDef[] = [
       "You walked where few do, and came back. That is worth something. Take it, and go up to the light.",
     ],
     reward: {
-      xp: [{ skill: "ward", amount: 400 }, { skill: "vitality", amount: 200 }],
+      xp: [{ skill: "ward", amount: 3200 }, { skill: "vitality", amount: 1600 }],
       items: [{ item: "battle_ration", qty: 3 }],
     },
   },
@@ -835,7 +837,7 @@ export const quests: QuestDef[] = [
       "You did right by the moor's-edge fire. There's always a meal here for you. Go warm.",
     ],
     reward: {
-      xp: [{ skill: "vitality", amount: 350 }, { skill: "ward", amount: 150 }],
+      xp: [{ skill: "vitality", amount: 2800 }, { skill: "ward", amount: 1200 }],
       items: [{ item: "battle_ration", qty: 2 }],
     },
   },
@@ -888,7 +890,7 @@ export const quests: QuestDef[] = [
       "Go careful past the pools. The moor keeps what it takes — and it's begun to keep more than it used to.",
     ],
     reward: {
-      xp: [{ skill: "mining", amount: 220 }],
+      xp: [{ skill: "mining", amount: 1760 }],
       gold: 200,
     },
   },
@@ -930,7 +932,7 @@ export const quests: QuestDef[] = [
       "The seam runs clean again, and the fire's banked deep. Take this — the Heartmoor looks after its own.",
     ],
     reward: {
-      xp: [{ skill: "mining", amount: 280 }, { skill: "vitality", amount: 150 }],
+      xp: [{ skill: "mining", amount: 2240 }, { skill: "vitality", amount: 1200 }],
       items: [{ item: "cult_offering", qty: 1 }],
       flags: ["hm_rank_tender"],
       rep: [{ faction: "heartmoor_cult", amount: 12 }],
@@ -975,7 +977,7 @@ export const quests: QuestDef[] = [
       "You're faithful now, in the way that matters. The fire's yours as much as mine.",
     ],
     reward: {
-      xp: [{ skill: "vitality", amount: 400 }, { skill: "ward", amount: 200 }],
+      xp: [{ skill: "vitality", amount: 3200 }, { skill: "ward", amount: 1600 }],
       items: [{ item: "ring_3", qty: 1 }],
       flags: ["hm_faithful", "hm_devotion_done"],
       rep: [{ faction: "heartmoor_cult", amount: 20 }],
@@ -1030,7 +1032,7 @@ export const quests: QuestDef[] = [
       "The Roost's quiet for the first time in years. Won't last — these things never do — but a quiet season is worth something. You earned the thanks of a city, whether it ever learns your name.",
     ],
     reward: {
-      xp: [{ skill: "vigour", amount: 300 }, { skill: "vitality", amount: 150 }],
+      xp: [{ skill: "vigour", amount: 2400 }, { skill: "vitality", amount: 1200 }],
       items: [{ item: "sword_4", qty: 1 }],
     },
   },
@@ -1080,9 +1082,11 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "edge", amount: 650 },
-        { skill: "ward", amount: 350 },
-        { skill: "vitality", amount: 350 },
+        // Boss-quest lamp: a real jump for the skill you choose.
+        { skill: "vitality", amount: 25000 },
+        { skill: "edge", amount: 5200 },
+        { skill: "ward", amount: 2800 },
+        { skill: "vitality", amount: 2800 },
       ],
       items: [{ item: "marrow_shard", qty: 2 }],
       gold: 600,
@@ -1130,9 +1134,11 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "draw", amount: 700 },
-        { skill: "vitality", amount: 300 },
-        { skill: "agility", amount: 250 },
+        // Boss-quest lamp: a real jump for the skill you choose.
+        { skill: "vitality", amount: 25000 },
+        { skill: "draw", amount: 5600 },
+        { skill: "vitality", amount: 2400 },
+        { skill: "agility", amount: 2000 },
       ],
       items: [{ item: "marrow_shard", qty: 2 }],
       gold: 600,
@@ -1180,9 +1186,11 @@ export const quests: QuestDef[] = [
     ],
     reward: {
       xp: [
-        { skill: "faith", amount: 700 },
-        { skill: "vitality", amount: 300 },
-        { skill: "draw", amount: 250 },
+        // Boss-quest lamp: a real jump for the skill you choose.
+        { skill: "vitality", amount: 25000 },
+        { skill: "faith", amount: 5600 },
+        { skill: "vitality", amount: 2400 },
+        { skill: "draw", amount: 2000 },
       ],
       items: [{ item: "shard_of_orun", qty: 1 }],
       gold: 600,
@@ -1225,7 +1233,7 @@ export const quests: QuestDef[] = [
       "The road's a little safer for the next rider. That's the whole job, in the end — making the road safe for the next one. Ride easy.",
     ],
     reward: {
-      xp: [{ skill: "edge", amount: 220 }, { skill: "vigour", amount: 120 }],
+      xp: [{ skill: "edge", amount: 1760 }, { skill: "vigour", amount: 960 }],
       items: [{ item: "arrow_ashiron", qty: 30 }],
       gold: 150,
     },
@@ -1266,7 +1274,7 @@ export const quests: QuestDef[] = [
       "Whatever you told me, you went and looked, and that's more than the watch would. Take some of the catch — fresh enough, I swear it.",
     ],
     reward: {
-      xp: [{ skill: "fishing", amount: 200 }],
+      xp: [{ skill: "fishing", amount: 1600 }],
       items: [{ item: "redrun_chowder", qty: 2 }],
     },
   },
@@ -1304,7 +1312,7 @@ export const quests: QuestDef[] = [
       "There really was something under the Oak — the drunk earned his drink. The moon watches, he said. You find you can't quite laugh it off.",
     ],
     reward: {
-      xp: [{ skill: "agility", amount: 120 }],
+      xp: [{ skill: "agility", amount: 960 }],
       items: [{ item: "cut_gem", qty: 1 }],
       gold: 500,
     },
@@ -1346,7 +1354,7 @@ export const quests: QuestDef[] = [
       "The wood gives a little more each year, and we mark it, and we keep the road behind us safe. That's the work. You've a tracker's patience — the Lodge could use you.",
     ],
     reward: {
-      xp: [{ skill: "forestry", amount: 250 }, { skill: "woodcraft", amount: 150 }],
+      xp: [{ skill: "forestry", amount: 2000 }, { skill: "woodcraft", amount: 1200 }],
       items: [{ item: "greyoak_log", qty: 5 }],
       gold: 250,
     },
@@ -1400,7 +1408,7 @@ export const quests: QuestDef[] = [
       "Come back when your conscience is quiet and your pockets are empty. Skritt always has work.",
     ],
     reward: {
-      xp: [{ skill: "crafting", amount: 180 }],
+      xp: [{ skill: "crafting", amount: 1440 }],
     },
   },
 
@@ -1446,7 +1454,7 @@ export const quests: QuestDef[] = [
       "The Roost will think twice before touching a Skritt shipment again. Whether they touch a Skritt partner — that's still being decided.",
     ],
     reward: {
-      xp: [{ skill: "edge", amount: 220 }, { skill: "vigour", amount: 120 }],
+      xp: [{ skill: "edge", amount: 1760 }, { skill: "vigour", amount: 960 }],
       items: [{ item: "arrow_ashiron", qty: 40 }],
       gold: 150,
     },
@@ -1495,7 +1503,7 @@ export const quests: QuestDef[] = [
       "Whatever the quiet trade becomes — partner, master, or memory — you decided it. Few get to decide a whole hidden world. Spend the coin while it's warm.",
     ],
     reward: {
-      xp: [{ skill: "crafting", amount: 300 }, { skill: "agility", amount: 150 }],
+      xp: [{ skill: "crafting", amount: 2400 }, { skill: "agility", amount: 1200 }],
       items: [{ item: "cut_gem", qty: 2 }],
       gold: 400,
     },
@@ -1524,7 +1532,7 @@ export const quests: QuestDef[] = [
       "Raise it however suits you. And mind — sleep in your own bed, and the road will always carry you home to it.",
     ],
     reward: {
-      xp: [{ skill: "construction", amount: 250 }],
+      xp: [{ skill: "construction", amount: 2000 }],
       items: [
         { item: "plank_greyoak", qty: 6 },
         { item: "plank_stonewood", qty: 6 },
@@ -1554,7 +1562,7 @@ export const quests: QuestDef[] = [
       "The end of the pier is open. Cast into the deep, ease off when she runs, and haul when she tires. Every great catch goes up on the board — make them remember your name.",
     ],
     reward: {
-      xp: [{ skill: "fishing", amount: 750 }],
+      xp: [{ skill: "fishing", amount: 6000 }],
       gold: 150,
       flags: ["pier_access"],
     },
@@ -1603,7 +1611,7 @@ export const quests: QuestDef[] = [
       "The road's safer up high for a while, and I know more than I did. That's the whole of the warden's job — knowing what walks the pass before it walks down onto the road.",
     ],
     reward: {
-      xp: [{ skill: "survivalist", amount: 420 }, { skill: "vigour", amount: 260 }],
+      xp: [{ skill: "survivalist", amount: 3360 }, { skill: "vigour", amount: 2080 }],
       items: [{ item: "warriors_draught", qty: 2 }],
       gold: 150,
     },
@@ -1627,7 +1635,7 @@ export const quests: QuestDef[] = [
       "Here's your pay, and a flask on top. My delvers will work the far cut again knowing someone walked it and came out. That's worth more than the gems.",
     ],
     reward: {
-      xp: [{ skill: "mining", amount: 480 }, { skill: "crafting", amount: 220 }],
+      xp: [{ skill: "mining", amount: 3840 }, { skill: "crafting", amount: 1760 }],
       items: [{ item: "cut_gem", qty: 1 }, { item: "glass_flask", qty: 2 }],
       gold: 350,
     },
@@ -1669,7 +1677,7 @@ export const quests: QuestDef[] = [
       "The line runs clean and the cutters will work it again. The moor gives up peat, and swords, and older things — and you took the measure of all three today without flinching. That's rare out here.",
     ],
     reward: {
-      xp: [{ skill: "vitality", amount: 520 }, { skill: "survivalist", amount: 300 }],
+      xp: [{ skill: "vitality", amount: 4160 }, { skill: "survivalist", amount: 2400 }],
       items: [{ item: "redrun_chowder", qty: 2 }, { item: "bone_broth", qty: 1 }],
       gold: 300,
     },

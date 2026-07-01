@@ -453,14 +453,20 @@ export class Hud {
           const cell = document.createElement("button");
           cell.type = "button";
           cell.className = "spell-btn";
+          // Blessings are HELD, not cast: tap toggles them; the footer shows
+          // their Grace drain per second rather than a one-off cost.
+          const blessing = spell.kind === "blessing";
+          const cost = blessing ? `${spell.drainPerSec ?? 0.6}/s` : String(spell.cost);
           cell.innerHTML = `
             <span class="spell-ic">${iconize(spell.icon)}</span>
             <span class="spell-nm">${escapeHtml(spell.name)}</span>
-            <span class="spell-co">${glyph("orb")} ${spell.cost}</span>`;
+            <span class="spell-co">${glyph("orb")} ${cost}</span>`;
           this.attachLongPress(
             cell,
             (x, y) => this.showSpellInfo(spell, x, y),
-            () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }),
+            () => this.dispatch(blessing
+              ? { type: "TOGGLE_BLESSING", spell: spell.id }
+              : { type: "CAST_SPELL", spell: spell.id }),
           );
           this.spellRows.set(spell.id, { row: cell, btn: cell });
           grid.appendChild(cell);
@@ -1017,8 +1023,15 @@ export class Hud {
       const ref = this.spellRows.get(spell.id);
       if (!ref) continue;
       const known = faith >= spell.faithReq;
-      const affordable = known && hasStaff && player.grace >= spell.cost;
+      // Blessings are prayers, not casts: no staff needed, and they stay
+      // pressable while held (so you can douse one at zero Grace).
+      const blessing = spell.kind === "blessing";
+      const held = blessing && player.blessing === spell.id;
+      const affordable = blessing
+        ? known && (player.grace >= 1 || held)
+        : known && hasStaff && player.grace >= spell.cost;
       ref.row.classList.toggle("locked", !known);
+      ref.row.classList.toggle("held", held);
       ref.btn.disabled = !affordable;
     }
     const active = player.autocastSpell ?? "none";
@@ -1037,10 +1050,14 @@ export class Hud {
       : spell.kind === "teleport" ? "Teleports you to the city hub"
       : spell.kind === "kindle" ? "Superheats an ore in your pack into a bar"
       : spell.kind === "enchant" ? "Cuts a rough/uncut gem into a cut gem"
+      : spell.kind === "blessing" ? `Halves incoming ${spell.deflectStyle} damage while held`
       : "";
+    const blessing = spell.kind === "blessing";
     const items: MenuItem[] = [{
-      label: "Cast", target: spell.name, tone: "action",
-      onSelect: () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }),
+      label: blessing ? "Hold / release" : "Cast", target: spell.name, tone: "action",
+      onSelect: () => this.dispatch(blessing
+        ? { type: "TOGGLE_BLESSING", spell: spell.id }
+        : { type: "CAST_SPELL", spell: spell.id }),
     }];
     if (spell.kind === "attack") {
       items.push({
@@ -1048,7 +1065,8 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "SET_AUTOCAST", spell: spell.id }),
       });
     }
-    this.menu.show(x, y, spell.name, items, `${spell.blurb} · Faith ${spell.faithReq} · ${spell.cost} Grace · ${effect}`);
+    const costLine = blessing ? `${spell.drainPerSec ?? 0.6} Grace/s while held` : `${spell.cost} Grace`;
+    this.menu.show(x, y, spell.name, items, `${spell.blurb} · Faith ${spell.faithReq} · ${costLine} · ${effect}`);
   }
 
   private renderBuffs(player: WorldState["player"]): void {

@@ -1069,6 +1069,11 @@ export type BossMechanic =
   | { type: "lifedrain"; frac: number; tell: string }
   /** Below `below` HP fraction, the boss heals `amount` once. */
   | { type: "selfheal"; below: number; amount: number; tell: string }
+  /** Every `every`-th attack is a ground SLAM: the tiles around the player's
+   *  position are marked for `windupMs`, then anyone still standing there
+   *  takes ×`mult` damage. The one boss move you dodge by MOVING — step off
+   *  the marked ground before it lands. */
+  | { type: "slam"; every: number; mult: number; radius: number; windupMs: number; tell: string }
   /** Thick hide: melee damage to the boss is cut by `reduce` (0–1) unless the
    *  hit exploits its weakness. Rewards bringing the right attack style. */
   | { type: "scaleguard"; reduce: number; tell?: string }
@@ -1109,6 +1114,9 @@ export interface WorldObjectState {
   /** Faith curse (Marrow Grip): the target's defence is dropped until this time.
    *  Transient combat state — never persisted. */
   defCurse?: { amount: number; until: number };
+  /** An armed ground slam: marked tiles centred on (x,y) that detonate at
+   *  `at` for ×`mult` of the boss's max hit. Transient — never persisted. */
+  slam?: { x: number; y: number; radius: number; at: number; mult: number } | null;
   /** housing_plot only: set once the player has claimed this homestead. */
   owned?: boolean;
   /** build_hotspot only: the FurnitureDef id currently built here (else empty). */
@@ -1307,6 +1315,13 @@ export interface Player {
    * bolt when Grace runs out. Null = just the free bolt. Persisted preference.
    */
   autocastSpell?: string | null;
+  /**
+   * The protection blessing currently held (a spell id with kind "blessing"),
+   * or null. One at a time, OSRS-prayer-style: while held it halves incoming
+   * damage of its style and drains Grace steadily; it gutters out when Grace
+   * runs dry. Transient (not persisted) — you re-light it each session.
+   */
+  blessing?: string | null;
   /**
    * Progress on the current Agility circuit: the course id and the next
    * obstacle order expected. Null when not mid-lap. Transient (not persisted).
@@ -1573,6 +1588,13 @@ export interface CastSpellIntent {
   spell: string;
 }
 
+/** "Light (or douse) this protection blessing" — no staff needed; a prayer,
+ *  not a cast. One at a time; it drains Grace steadily while held. */
+export interface ToggleBlessingIntent {
+  type: "TOGGLE_BLESSING";
+  spell: string;
+}
+
 /** "Set (or clear) the attack spell I autocast with a staff." */
 export interface SetAutocastIntent {
   type: "SET_AUTOCAST";
@@ -1791,6 +1813,7 @@ export type Intent =
   | SetStyleIntent
   | CastSpellIntent
   | SetAutocastIntent
+  | ToggleBlessingIntent
   | BuryIntent
   | GrindIntent
   | LightFireIntent
@@ -2212,7 +2235,7 @@ export interface SpellDef {
   faithReq: number;
   /** Grace spent per cast. */
   cost: number;
-  kind: "attack" | "heal" | "ward" | "teleport" | "curse" | "kindle" | "enchant";
+  kind: "attack" | "heal" | "ward" | "teleport" | "curse" | "kindle" | "enchant" | "blessing";
   /** attack: fraction of magic max hit dealt as a burst (e.g. 1.5). */
   dmgMult?: number;
   /** heal: HP restored. */
@@ -2223,6 +2246,10 @@ export interface SpellDef {
   /** curse: how far the target's defence is dropped, and for how long (ms). */
   curseAmt?: number;
   curseMs?: number;
+  /** blessing: which attack style it deflects (halves that style's damage). */
+  deflectStyle?: "melee" | "ranged" | "magic";
+  /** blessing: Grace drained per second while the blessing is held. */
+  drainPerSec?: number;
   /** Faith XP granted on a successful cast. */
   xp: number;
   /** Short explainer for the spellbook. */

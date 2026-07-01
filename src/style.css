@@ -312,6 +312,12 @@ body {
 .spell-btn:hover:not(:disabled) { border-color: #5a74a4; background: linear-gradient(180deg, #2b3a58, #1e2840); }
 .spell-btn:disabled { opacity: 0.4; cursor: default; }
 .spell-btn.locked { opacity: 0.3; }
+/* A held protection blessing glows gold — it's burning Grace right now. */
+.spell-btn.held {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(90, 74, 30, 0.55), rgba(50, 42, 20, 0.55));
+  box-shadow: 0 0 8px rgba(232, 196, 90, 0.35);
+}
 .spell-ic { color: var(--gold); }
 .spell-ic .g-ico { width: 20px; height: 20px; }
 .spell-nm {

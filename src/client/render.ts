@@ -1180,6 +1180,31 @@ export function drawWorld(
     }
   }
 
+  // Boss ground-slams: the armed tiles pulse an urgent red through the windup —
+  // the player's cue to STEP OFF before the detonation lands. Urgency ramps as
+  // the timer runs down (faster, hotter pulsing near zero).
+  for (const bdef of content.objects) {
+    if (bdef.kind !== "monster") continue;
+    const bobj = state.objects[bdef.id];
+    const slam = bobj?.slam;
+    if (!slam) continue;
+    for (let dy = -slam.radius; dy <= slam.radius; dy++) {
+      for (let dx = -slam.radius; dx <= slam.radius; dx++) {
+        const tx = slam.x + dx, ty = slam.y + dy;
+        if (!inRegion(tx, ty) || outside(tx, ty)) continue;
+        const px = tx * TILE - cam.x;
+        const py = ty * TILE - cam.y;
+        if (px < -TILE || py < -TILE || px > w + TILE || py > h + TILE) continue;
+        const pulse = 0.30 + 0.22 * Math.sin(now / 90);
+        g.fillStyle = `rgba(220, 50, 30, ${pulse.toFixed(3)})`;
+        g.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+        g.strokeStyle = `rgba(255, 120, 60, ${(pulse + 0.25).toFixed(3)})`;
+        g.lineWidth = 2;
+        g.strokeRect(px + 2, py + 2, TILE - 4, TILE - 4);
+      }
+    }
+  }
+
   // A player-lit campfire (Survivalist): a transient cooking source that isn't a
   // world object, so it's drawn here from live state, culled like everything else.
   const fire = state.campfire;

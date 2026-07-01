@@ -43,6 +43,26 @@ export const spells: SpellDef[] = [
     faithReq: 35, cost: 10, kind: "ward", wardAmt: 12, wardMs: 30000, xp: 26,
     blurb: "A shimmering ward that turns aside blows for a short while.",
   },
+  // --- Protection blessings: held, not cast. One at a time, no staff needed —
+  // a prayer, OSRS-style. While held it HALVES incoming damage of its style and
+  // drains Grace steadily, guttering out when the pool runs dry. This is the
+  // counterplay layer every hard boss assumes: read the boss's attack style,
+  // light the right blessing, and the unhealable bursts become survivable.
+  {
+    id: "deflect_magic", name: "Deflect Sorcery", icon: "🌀",
+    faithReq: 37, cost: 0, kind: "blessing", deflectStyle: "magic", drainPerSec: 0.6, xp: 0,
+    blurb: "Hold Orun's light against hostile magic — halves magic damage while it burns. Drains Grace steadily; douse it when the danger passes.",
+  },
+  {
+    id: "deflect_ranged", name: "Deflect Arrows", icon: "🛡️",
+    faithReq: 40, cost: 0, kind: "blessing", deflectStyle: "ranged", drainPerSec: 0.6, xp: 0,
+    blurb: "A shimmer in the air that turns arrows from their line — halves ranged damage while it burns. Drains Grace steadily.",
+  },
+  {
+    id: "deflect_melee", name: "Deflect Blows", icon: "✋",
+    faithReq: 43, cost: 0, kind: "blessing", deflectStyle: "melee", drainPerSec: 0.6, xp: 0,
+    blurb: "Orun's hand between you and the blow — halves melee damage while it burns. Drains Grace steadily.",
+  },
   {
     id: "marrow_grip", name: "Marrow Grip", icon: "🦴",
     faithReq: 45, cost: 8, kind: "curse", curseAmt: 25, curseMs: 20000, xp: 34,

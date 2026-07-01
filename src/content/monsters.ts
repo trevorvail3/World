@@ -567,7 +567,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "The thing that was left to watch the vault. It is still watching.",
     "mechanics": [
       { "type": "lifedrain", "frac": 0.4, "tell": "The Keeper draws the marrow from your bones." },
-      { "type": "heavy", "every": 5, "mult": 2.5, "tell": "The Marrow Keeper strikes to shatter — Bone-break!" }
+      { "type": "slam", "every": 5, "mult": 2.5, "radius": 1, "windupMs": 2200, "tell": "The Keeper heaves its fists high — the ground beneath you cracks. MOVE!" }
     ],
     "drops": [
       {
@@ -916,7 +916,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "An armoured revenant. It carries a weapon from before smithing had names.",
     "mechanics": [
-      { "type": "heavy", "every": 4, "mult": 2, "tell": "The Hollow Warden raises its ancient blade — Grave Slam!" },
+      { "type": "slam", "every": 4, "mult": 2, "radius": 1, "windupMs": 2400, "tell": "The Hollow Warden raises its ancient blade over the ground you stand on — Grave Slam. MOVE!" },
       { "type": "enrage", "below": 0.3, "mult": 1.5, "tell": "The Warden's hollow eyes blaze with old fury." }
     ],
     "drops": [
@@ -993,7 +993,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "An orc warlord who refused to die. The Spine took him in instead.",
     "mechanics": [
-      { "type": "heavy", "every": 3, "mult": 2, "tell": "The Warlord bellows a war-cry — Crushing Blow!" },
+      { "type": "slam", "every": 4, "mult": 2.2, "radius": 1, "windupMs": 2000, "tell": "The Warlord bellows and leaps — the ground you stand on darkens. MOVE!" },
       { "type": "enrage", "below": 0.25, "mult": 1.6, "tell": "The Spine Warlord refuses to fall." }
     ],
     "drops": [
@@ -1294,7 +1294,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "The last great wyrm of Varath, coiled in the black heat of the Marrow Deeps where it long ago burrowed away from the sky. Its scales run forge-hot and its patience is long gone. Bring a stabbing weapon and more food than you think you'll need.",
     mechanics: [
       // 1. Inferno Breath — a telegraphed, devastating breath every 4th swing.
-      { type: "heavy", every: 4, mult: 2.4, tell: "Cindrath rears back, throat glowing — INFERNO BREATH!" },
+      { type: "slam", every: 4, mult: 2.4, radius: 1, windupMs: 2000, tell: "Cindrath rears back, throat glowing — INFERNO BREATH sweeps where you stand. MOVE!" },
       // 2. Wrath — past 35% HP it enrages, every blow harder.
       { type: "enrage", below: 0.35, mult: 1.4, tell: "Cindrath shrieks, wounds blazing white — its fury redoubles!" },
       // 3. Molten Scales — your melee blows sear you back (ranged is spared).
@@ -1328,7 +1328,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A gaunt thing in a mask of stitched faces, dragging a long saw it never sets down. It has hunted the roads of Varath for years, taking the bones of those it kills and wearing them. Crushing weapons shatter its grisly armour best.",
     mechanics: [
       // 1. Bone Cleave — a wide, telegraphed saw stroke every 5th swing.
-      { type: "heavy", every: 5, mult: 2.0, tell: "The Boneman hauls the saw back over his shoulder — BONE CLEAVE!" },
+      { type: "slam", every: 5, mult: 2.0, radius: 1, windupMs: 2200, tell: "The Boneman hauls the saw back over his shoulder — BONE CLEAVE arcs at your feet. MOVE!" },
       // 2. Marrow Feast — once, below 45% HP, he feeds on his trophies and mends.
       { type: "selfheal", below: 0.45, amount: 80, tell: "The Boneman cracks a bone and sucks the marrow — his wounds knit shut!" },
     ],
