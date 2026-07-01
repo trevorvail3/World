@@ -3436,6 +3436,7 @@ function drawMonster(
 const MONSTER_SCALE: Record<string, number> = {
   ashen_wyrm: 1.85,
   boneman: 1.4, hollow_warden: 1.35, spine_warlord: 1.4, bog_warden: 1.4, marrow_keeper: 1.4,
+  green_baron: 1.3, hollow_prophet: 1.35,
   mountain_troll: 1.3, deep_golem: 1.35, forest_bear: 1.22, mountain_lion: 1.1,
   river_serpent: 1.25, mire_serpent: 1.15, marrow_wraith: 1.12,
 };
@@ -3504,6 +3505,10 @@ function drawMonsterBody(
       return drawDragon(g, cx, cy, now);
     case "boneman":
       return drawBoneman(g, cx, cy, now);
+    case "green_baron":
+      return H("#2f5233", "#5c8a3a"); // outlaw forest greens
+    case "hollow_prophet":
+      return H("#342a45", "#8a6bc0"); // hex-woven robe, pale violet light
     case "hollow_warden":
       return H("#6c7077", "#8b9099"); // pale grey revenant
     case "spine_warlord":

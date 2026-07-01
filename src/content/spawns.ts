@@ -1019,6 +1019,30 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trail_bone_14", kind: "bone_cairn", x: 38, y: 58, name: "Arranged Bones", lines: ["Bones arranged in the grass near the wood. The Ironvale watch knows of it, off the record — ask the off-duty guard."] },
   { id: "trail_bone_15", kind: "bone_cairn", x: 74, y: 30, name: "A Stack of Skulls", lines: ["A neat stack of skulls by the field path. Honest folk leave flowers for their dead. This is something else entirely."] },
 
+  // === The Green Baron: a mid-tier RANGED quest boss in a hidden Greyoak glade.
+  // Hidden until The False Hood quest has Lenne lead you in (green_baron_revealed).
+  // Close fast — he is lethal at range and brittle to a crushing blow. ===
+  { id: "baron_glade_sign", kind: "signpost", x: 39, y: 32, name: "The Hollow Oak", requiresFlag: "green_baron_revealed", lines: ["THE HOLLOW OAK — a glade the Greyoak grew a wall around. Camp-ash, coin-scales, and a chair of antler and rope. The outlaw who calls himself a baron holds court here. Close the distance fast and bring something that crushes."] },
+  { id: "green_baron_1", kind: "monster", x: 38, y: 32, name: "The Green Baron", monster: "green_baron", requiresFlag: "green_baron_revealed" },
+
+  // The Baron's legend — road-rumours the length of the Greyoak. Always present:
+  // breadcrumbs that foreshadow the outlaw and point toward Maret at the Lodge. ===
+  { id: "baron_rumor_1", kind: "signpost", x: 43, y: 25, name: "A Nailed Notice", lines: ["A hand-copied ballad nailed to a post — 'The Green Baron, who robs the fat and feeds the lean.' Someone has scratched underneath: LIES. He robbed my whole cart and left my boy in the ditch."] },
+  { id: "baron_rumor_2", kind: "signpost", x: 29, y: 31, name: "A Robbed Cart", lines: ["A drover's cart, wheels gone, strongbox split open. A black-fletched arrow is driven into the seat like a signature. The Greyoak Lodge keeps a tally of these — ask Maret."] },
+  { id: "baron_rumor_3", kind: "signpost", x: 24, y: 33, name: "A Warning Post", lines: ["THE ROAD PAST HERE IS THE BARON'S. Pay the toll at the treeline or keep your coin and lose the rest. He was a hero once, the old songs say. The songs are out of date."] },
+
+  // === The Hollow Prophet: a mid-tier DEVOTION quest boss in a hidden Heartmoor
+  // hollow. Hidden until The Hollow Prophet quest sends you to his rite
+  // (hollow_prophet_revealed). Bring a bow — melee only lets him mend. ===
+  { id: "prophet_rite_sign", kind: "signpost", x: 72, y: 95, name: "The Weeping Circle", requiresFlag: "hollow_prophet_revealed", lines: ["THE WEEPING CIRCLE — moor-grass worn to bare peat in a ring ten thousand prayers wide. At its centre a man kneels to a seam of Orun's light, and the light kneels back. Ranged shots hound him; melee only lets him mend."] },
+  { id: "hollow_prophet_1", kind: "monster", x: 72, y: 96, name: "The Hollow Prophet", monster: "hollow_prophet", requiresFlag: "hollow_prophet_revealed" },
+
+  // The Prophet's word — sermons and warnings on the moor roads. Always present:
+  // breadcrumbs that foreshadow the cult's mad founder and point toward Calder. ===
+  { id: "prophet_rumor_1", kind: "signpost", x: 60, y: 88, name: "A Sermon Stone", lines: ["A flat stone painted with a spiral eye and a scrawl: 'THE SEAM IS A MOUTH AND I HAVE TAUGHT IT MY NAME.' The Heartmoor faithful step around these. Calder can tell you whose hand made them."] },
+  { id: "prophet_rumor_2", kind: "signpost", x: 45, y: 96, name: "A Bound Effigy", lines: ["A figure of reed and hex-cloth lashed to a stake, its face a smear of pale wax. An offering, or a threat. The cult that feeds the poor did not make this — but something inside the cult did."] },
+  { id: "prophet_rumor_3", kind: "signpost", x: 42, y: 97, name: "A Prayer Circle", lines: ["Stones set in a ring, the grass inside dead and grey. Whatever was called here answered. Calder at the moor-fire names the one who does this the Hollow Prophet, and won't meet your eye when he says it."] },
+
   // === Survivalist: forage clumps you search for herbs, mushrooms & roots ===
   // --- Forager's Hollow: the full ladder in one wild pocket (west moor). ---
   { id: "fh_sign", kind: "signpost", x: 30, y: 58, name: "Forager's Hollow", lines: ["FORAGER'S HOLLOW — fibre and mushrooms to dawnspore, all of it grows wild here."] },

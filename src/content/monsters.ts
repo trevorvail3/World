@@ -1340,6 +1340,69 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "seed_bloodberry", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
     ],
   },
+  // === The Green Baron: a mid-tier RANGED quest boss — the outlaws' fallen
+  // hero. Once the greenwood's protector, now a robber-king who bleeds the poor
+  // he claims to shield. Fights from range; weak to a crushing rush up close. ==
+  "green_baron": {
+    id: "green_baron", name: "The Green Baron", icon: "🏹", level: 58, hp: 240,
+    acc: 185, def: 48, maxHit: 27, speed: 2500, attackRange: 5, xp: 850, attackStyle: "ranged",
+    weakness: ["crush"],
+    boss: true,
+    bossHint: "The outlaw legend of the Greyoak wood — a marksman who styled himself a hero and became worse than the men he hunted. Maret of the Lodge will set you on him. Close the distance fast: he is deadly at range and brittle in a crushing grip.",
+    desc: "A tall figure in weathered greens, a black-fletched longbow never far from full draw. They sing songs about who he used to be. He collects the coins off the songs, and the throats of those who won't pay.",
+    mechanics: [
+      // 1. Aimed Shot — a telegraphed, doubled arrow every 4th attack.
+      { type: "heavy", every: 4, mult: 2.0, tell: "The Green Baron nocks a black arrow and draws to the ear — AIMED SHOT!" },
+      // 2. Cornered — below 30% HP he turns vicious, hitting harder.
+      { type: "enrage", below: 0.3, mult: 1.5, tell: "The Baron laughs and stops playing the hero — every shot for the kill now!" },
+    ],
+    drops: [
+      { item: "pet_green_baron", chance: 0.004, tier: "legendary" },
+      // The Greenhood set + the Baron's Yew, Barrows-style equal rates.
+      { item: "greenhood_hood", chance: 0.13, tier: "rare" },
+      { item: "greenhood_cloak", chance: 0.13, tier: "rare" },
+      { item: "greenhood_chaps", chance: 0.13, tier: "rare" },
+      { item: "greenhood_boots", chance: 0.13, tier: "rare" },
+      { item: "baron_longbow", chance: 0.13, tier: "rare" },
+      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "arrow_hearthite", chance: 0.5, min: 15, max: 40, tier: "uncommon" },
+      { item: "marrow_shard", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
+      { item: "seed_bloodberry", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
+    ],
+  },
+  // === The Hollow Prophet: a mid-tier DEVOTION quest boss — the Heartmoor
+  // cult's founder, hollowed out by the power he stole from Orun's seam. He
+  // smites from range; weak to a fast bow that never lets him settle. ==========
+  "hollow_prophet": {
+    id: "hollow_prophet", name: "The Hollow Prophet", icon: "🔮", level: 62, hp: 280,
+    acc: 200, def: 52, maxHit: 32, speed: 2600, attackRange: 5, xp: 950, attackStyle: "magic",
+    weakness: ["ranged"],
+    boss: true,
+    bossHint: "The mad archmage who founded the Heartmoor cult and hollowed himself pouring Orun's stolen light through his own bones. Calder will point you to his rite. Bring a bow — he mends what melee opens, but ranged shots hound him down.",
+    desc: "A gaunt man in hex-woven robes, eyes gone to pale fire. He speaks to a god that stopped answering long ago, and the seam speaks back through the hole he burned in himself. What comes out is not mercy.",
+    mechanics: [
+      // 1. Hollow Smite — a telegraphed, doubled bolt of stolen light every 4th cast.
+      { type: "heavy", every: 4, mult: 2.0, tell: "The Hollow Prophet raises both hands and the air goes white — HOLLOW SMITE!" },
+      // 2. Borrowed Light — once, below 40% HP, he drinks from the seam and mends.
+      { type: "selfheal", below: 0.4, amount: 75, tell: "The Prophet opens the hole in himself wider — Orun's stolen light knits his wounds shut!" },
+    ],
+    drops: [
+      { item: "pet_hollow_prophet", chance: 0.004, tier: "legendary" },
+      // The Prophet's Regalia + the Hollow Staff, Barrows-style equal rates.
+      { item: "prophet_hood", chance: 0.13, tier: "rare" },
+      { item: "prophet_robe", chance: 0.13, tier: "rare" },
+      { item: "prophet_skirt", chance: 0.13, tier: "rare" },
+      { item: "prophet_sandals", chance: 0.13, tier: "rare" },
+      { item: "prophet_staff", chance: 0.13, tier: "rare" },
+      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "hex_cloth", chance: 0.6, min: 1, max: 3, tier: "uncommon" },
+      { item: "shard_of_orun", chance: 0.08, tier: "legendary" },
+      { item: "marrow_shard", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
+      { item: "seed_duskshade", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
+    ],
+  },
 
   // === SETTLEMENT GUARDS — attackable, but NOT aggressive ===================
   // OSRS-style town guards: they stand watch and never strike first (they're

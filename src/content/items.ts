@@ -1641,6 +1641,30 @@ export const items: Record<ItemId, ItemDef> = {
       "petBoss": "boneman"
     }
   },
+  "pet_green_baron": {
+    "id": "pet_green_baron",
+    "name": "The Little Hood",
+    "description": "A knee-high outlaw in miniature greens, a toy bow slung on its back. It swears it robs from the rich. It does not.",
+    "icon": "🏹",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "green_baron"
+    }
+  },
+  "pet_hollow_prophet": {
+    "id": "pet_hollow_prophet",
+    "name": "Little Hollow",
+    "description": "A tiny robed figure with a pinprick of pale light where its face should be. It murmurs sermons at your ankles, to a god only it can hear.",
+    "icon": "🔮",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "meta": {
+      "petBoss": "hollow_prophet"
+    }
+  },
   "ribstone_arrow": {
     "id": "ribstone_arrow",
     "name": "Ribstone Arrow",
@@ -4589,6 +4613,77 @@ export const items: Record<ItemId, ItemDef> = {
     "lore": "boneman",
     "sell": 4200
   },
+
+  // === GREENHOOD SET + The Baron's Yew — drops from The Green Baron (RANGED) ===
+  // The outlaw legend's own gear: forest-worn leather and a black-fletched yew
+  // longbow. Gates on Draw 55 — a notch above the craftable Master Ranger set,
+  // below the Coldbone Bow. All share lore "green_baron".
+  "greenhood_hood": {
+    "id": "greenhood_hood", "name": "Greenhood Cowl", "icon": "🪖", "cat": "Greenhood Armour",
+    "slot": "helmet", "equipSkill": "draw", "equipLevel": 55, "rngAcc": 12, "def": 12,
+    "rarity": "rare", "lore": "green_baron", "sell": 2200,
+    "description": "The Baron's own cowl, dark forest green and cut to vanish in leaf-shadow. It smells of woodsmoke and old blood."
+  },
+  "greenhood_cloak": {
+    "id": "greenhood_cloak", "name": "Greenhood Cloak", "icon": "🥋", "cat": "Greenhood Armour",
+    "slot": "armor", "equipSkill": "draw", "equipLevel": 55, "rngAcc": 16, "rngDmg": 7, "def": 17,
+    "rarity": "rare", "lore": "green_baron", "sell": 3600,
+    "description": "A layered leather cloak, quiet as moss and quicker than it looks. The finest ranger armour in Varath — taken off a man who called himself a hero."
+  },
+  "greenhood_chaps": {
+    "id": "greenhood_chaps", "name": "Greenhood Chaps", "icon": "🩲", "cat": "Greenhood Armour",
+    "slot": "legs", "equipSkill": "draw", "equipLevel": 55, "rngAcc": 13, "def": 13,
+    "rarity": "rare", "lore": "green_baron", "sell": 3200,
+    "description": "Supple green chaps that never snag a drawn string. Built for a man who spent his life running the wood."
+  },
+  "greenhood_boots": {
+    "id": "greenhood_boots", "name": "Greenhood Boots", "icon": "🥾", "cat": "Greenhood Armour",
+    "slot": "boots", "equipSkill": "draw", "equipLevel": 55, "rngAcc": 6, "def": 8,
+    "rarity": "rare", "lore": "green_baron", "sell": 2000,
+    "description": "Soft-soled boots that leave no track worth following. The Baron was never caught in these."
+  },
+  "baron_longbow": {
+    "id": "baron_longbow", "name": "The Baron's Yew", "icon": "🏹", "cat": "Greenhood Weapons",
+    "slot": "mainhand", "ranged": true, "twoHand": true, "equipSkill": "draw", "equipLevel": 55,
+    "acc": 52, "dmg": 25, "speed": 2400, "rarity": "rare", "lore": "green_baron", "sell": 4400,
+    "description": "A tall black-yew longbow, the grip worn pale by one hand over many years. It puts a black-fletched arrow through anything the Baron decided didn't deserve to keep breathing."
+  },
+
+  // === PROPHET'S REGALIA + The Hollow Staff — drops from The Hollow Prophet ====
+  // (DEVOTION). The cult founder's hex-woven robes and burnt-bone staff. Gates on
+  // Faith 55 — a notch above the craftable Archon set. All share lore
+  // "hollow_prophet".
+  "prophet_hood": {
+    "id": "prophet_hood", "name": "Hollow Prophet's Hood", "icon": "🎓", "cat": "Prophet's Regalia",
+    "slot": "helmet", "equipSkill": "faith", "equipLevel": 55, "magAcc": 12, "def": 7,
+    "rarity": "rare", "lore": "hollow_prophet", "sell": 2200,
+    "description": "A deep hood of hex-woven cloth, the inside stained pale where the light leaked out of him. It hums against your scalp."
+  },
+  "prophet_robe": {
+    "id": "prophet_robe", "name": "Hollow Prophet's Robe", "icon": "🥋", "cat": "Prophet's Regalia",
+    "slot": "armor", "equipSkill": "faith", "equipLevel": 55, "magAcc": 16, "magDmg": 7, "def": 10,
+    "rarity": "rare", "lore": "hollow_prophet", "sell": 3600,
+    "description": "The Prophet's own robe, threaded through with hex cloth and something finer that catches no light. The strongest caster's vestment in Varath."
+  },
+  "prophet_skirt": {
+    "id": "prophet_skirt", "name": "Hollow Prophet's Skirt", "icon": "🩲", "cat": "Prophet's Regalia",
+    "slot": "legs", "equipSkill": "faith", "equipLevel": 55, "magAcc": 13, "def": 7,
+    "rarity": "rare", "lore": "hollow_prophet", "sell": 3200,
+    "description": "Lower robes heavy with woven hex-thread. They drag faintly, as if the seam beneath still reaches for them."
+  },
+  "prophet_sandals": {
+    "id": "prophet_sandals", "name": "Hollow Prophet's Sandals", "icon": "🥿", "cat": "Prophet's Regalia",
+    "slot": "boots", "equipSkill": "faith", "equipLevel": 55, "magAcc": 6, "def": 4,
+    "rarity": "rare", "lore": "hollow_prophet", "sell": 2000,
+    "description": "Plain bound sandals, worn thin walking the same moor circle ten thousand times in prayer to a god that stopped listening."
+  },
+  "prophet_staff": {
+    "id": "prophet_staff", "name": "The Hollow Staff", "icon": "🔮", "cat": "Prophet's Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipSkill": "faith", "equipLevel": 55,
+    "acc": 62, "dmg": 38, "speed": 2600, "rarity": "rare", "lore": "hollow_prophet", "sell": 4400,
+    "description": "A staff of burnt bone capped with a shard of Orun's seam. It pulls Grace straight out of the world's wound — the finest, and the worst, staff a faithful hand can hold."
+  },
+
   "serpent_scale": {
     "id": "serpent_scale", "name": "Serpent Scale", "icon": "🐍", "cat": "Drops", "sell": 45,
     "description": "A hard, iridescent scale prised from a swamp serpent. Leather-workers pay for these."

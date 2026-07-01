@@ -219,8 +219,12 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
   const name = (def.name ?? "").toLowerCase();
   const s = id + " " + name;
 
-  // 0) The Boneman's set is bone-white throughout (helm, body, legs, shield, saw).
+  // 0) Boss-drop sets take a signature palette across the whole set: the
+  //    Boneman's bone-white, the Green Baron's forest green, the Hollow
+  //    Prophet's hex violet.
   if (def.lore === "boneman") return shadeFrom("#e9e3d3", "#cfc7b2");
+  if (def.lore === "green_baron") return shadeFrom("#2f5233", "#5c8a3a");
+  if (def.lore === "hollow_prophet") return shadeFrom("#3a2f4a", "#8a6bc0");
 
   // 1) shared material lines (metals, woods, leathers) — keeps a tier consistent,
   //    but nudged per-item so a plank and a beam of the same wood still differ.

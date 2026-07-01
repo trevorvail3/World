@@ -1090,6 +1090,106 @@ export const quests: QuestDef[] = [
     },
   },
 
+  // Offered by Maret at the Greyoak Lodge once you've taken the Roost
+  // (sq_roost_done). A mid-tier RANGED boss: the outlaws' fallen hero.
+  {
+    id: "q_green_baron",
+    name: "The False Hood",
+    giver: "maret",
+    requiresFlags: ["sq_roost_done"],
+    intro: [
+      "You cleared the Roost. Good. But the footpads out there are the fingers — I want to talk to you about the hand that taught them their trade.",
+      "There was a man, years back, best bow the Greyoak ever grew. Sir Alden, they called him — the Green Baron. He'd stand off a tax-cart on the Lodge road and hand the coin back to the drovers, and the ballads made him a saint for it. Half the songs you hear on the road are still about him.",
+      "The songs stopped keeping up. He kept robbing after there was no one left to give it back to. Now he takes the cart AND the drover, and any child slow to look away. The 'hero' is a story he tells the wood so he can sleep. I want him ended — and I want it done by someone who won't fall for the ballad.",
+    ],
+    steps: [
+      {
+        type: "choice",
+        npc: "lenne",
+        text: "Find Lenne the tracker at the Greyoak treeline",
+        prompt: "Lenne has followed the black-fletched arrows to a walled glade — the Hollow Oak. 'That's where he holds court. He'll have the range on you the moment you step in. How do you want to take him?'",
+        options: [
+          {
+            label: "Rush him. Get inside his bow before he can use it.",
+            flags: ["green_baron_revealed", "baron_hunt_rush"],
+            reply: "Lenne grins, hard. 'A close fighter's answer. He's death at forty paces and a frightened old man at four. Get in his face and stay there. The Hollow Oak's through the gap — go take the hero down a peg.'",
+          },
+          {
+            label: "Out-shoot him. Meet the legend at his own game.",
+            flags: ["green_baron_revealed", "baron_hunt_duel"],
+            reply: "Lenne studies you a moment. 'Bold. He's the finest bow the wood ever made, and you mean to prove the wood can make another. Then do it clean, and mind his aimed shot — it's put down better archers than you. The Hollow Oak's waiting.'",
+          },
+        ],
+      },
+      { type: "kill", monster: "green_baron", count: 1, text: "End the Green Baron at the Hollow Oak (0/1)" },
+      { type: "talk", npc: "maret", text: "Bring word back to Maret at the Lodge" },
+    ],
+    outro: [
+      "So the Green Baron's just a dead outlaw in a glade after all. No chorus, no last clever line. Good. The wood believes its own songs too easily — it needed to see the man under this one.",
+      "Keep his gear. Nobody at the Lodge will wear a thing off him, but green like that was made to move quiet through the Greyoak, and you've earned the right to it. The road's the drovers' again tonight. That's the only ballad I care to hear.",
+    ],
+    reward: {
+      xp: [
+        { skill: "draw", amount: 700 },
+        { skill: "vitality", amount: 300 },
+        { skill: "agility", amount: 250 },
+      ],
+      items: [{ item: "marrow_shard", qty: 2 }],
+      gold: 600,
+      flags: ["q_green_baron_complete"],
+    },
+  },
+
+  // Offered by Calder at the Heartmoor fire once you've been welcomed among the
+  // faithful (hm_welcome_done). A mid-tier DEVOTION boss: the cult's mad founder.
+  {
+    id: "q_hollow_prophet",
+    name: "The Hollow Prophet",
+    giver: "calder",
+    requiresFlags: ["hm_welcome_done"],
+    intro: [
+      "Sit. This one I can't say at the fire with the others listening — it's a family shame, and the family is all of us.",
+      "The Heartmoor faithful started with one man. He heard the seam the way you'd hear a voice, and he taught the rest of us to listen kindly — to feed the road, to keep the warm stone, to ask the world for nothing it wasn't giving. A good beginning. His name was the first prayer any of us learned.",
+      "Then he stopped asking and started taking. He opened a hole in himself to pour more of Orun's light through, and the light poured back, and what's left out on the moor isn't him — it's the hole wearing his robes. He calls it prophecy. We call it, quietly, the Hollow Prophet. Someone from outside the faith has to be the one to end him. Melee only feeds him; go with a bow, and go soon.",
+    ],
+    steps: [
+      {
+        type: "choice",
+        npc: "calder",
+        text: "Tell Calder how you'll approach the Prophet",
+        prompt: "Calder draws a spiral in the ash. 'His rite is the Weeping Circle, out past the pools. He'll not stop preaching even as you loose on him. Do you go to silence him, or to hear him out first?'",
+        options: [
+          {
+            label: "Silence him. He's past saving; make it quick.",
+            flags: ["hollow_prophet_revealed", "prophet_hunt_silence"],
+            reply: "Calder closes his eyes. 'Mercy dressed as a bowshot. Maybe that's all that's left for him. The Circle's past the pools — end it before he mends himself, and don't listen too closely. His voice is the hook, not the man.'",
+          },
+          {
+            label: "Hear him first. Someone should know what he became.",
+            flags: ["hollow_prophet_revealed", "prophet_hunt_witness"],
+            reply: "Calder nods slowly. 'A chronicler's mercy. Let him say his piece to one honest witness, then let him rest. But keep the arrow nocked while he talks — the hole in him has no interest in being witnessed. The Weeping Circle's waiting.'",
+          },
+        ],
+      },
+      { type: "kill", monster: "hollow_prophet", count: 1, text: "Lay the Hollow Prophet to rest at the Weeping Circle (0/1)" },
+      { type: "talk", npc: "calder", text: "Return to Calder at the moor-fire" },
+    ],
+    outro: [
+      "Gone, then. The seam's quiet where he knelt — I felt it close a little, like a wound that finally stopped weeping. He was the first of us. Now he's the last thing any of us has to be afraid of becoming.",
+      "Take his robes and his staff. No one at the fire could bear to, but they were made to hold the light gently, and you carried them out without letting the light hold you. That's the whole of the faith, really. Warm yourself. You've earned the peat.",
+    ],
+    reward: {
+      xp: [
+        { skill: "faith", amount: 700 },
+        { skill: "vitality", amount: 300 },
+        { skill: "draw", amount: 250 },
+      ],
+      items: [{ item: "shard_of_orun", qty: 1 }],
+      gold: 600,
+      flags: ["q_hollow_prophet_complete"],
+    },
+  },
+
   {
     id: "q_sq_courier",
     name: "The Overdue Rider",
