@@ -1880,6 +1880,40 @@ button.inv-slot {
 .shop-info-name { font-family: "Cinzel", serif; color: var(--gold); font-size: 14px; }
 .shop-info-desc { font-family: "EB Garamond", serif; color: var(--ink); font-size: 12px; margin: 5px 0 7px; line-height: 1.35; }
 .shop-info-stats { font-family: "EB Garamond", serif; color: var(--ember); font-size: 12px; }
+.shop-info-gear { font-family: "EB Garamond", serif; color: var(--ink); font-size: 12px; margin-bottom: 4px; }
+.shop-info-req { font-family: "EB Garamond", serif; color: var(--ink-dim); font-size: 11px; margin-bottom: 5px; }
+.shop-info-sell {
+  margin-top: 10px; font-family: "Cinzel", serif; font-size: 12px;
+  background: var(--btn); color: var(--ink); border: 1px solid var(--edge);
+  border-radius: 6px; padding: 5px 16px; cursor: pointer;
+}
+.shop-info-sell:hover { background: var(--btn-hi); }
+/* Buy / Sell tabs */
+.shop-tabs { display: flex; gap: 6px; margin: 4px 0 8px; }
+.shop-tab {
+  flex: 1; font-family: "Cinzel", serif; font-size: 13px; letter-spacing: 0.04em;
+  background: transparent; color: var(--ink-dim); border: 1px solid var(--edge);
+  border-radius: 7px; padding: 7px 0; cursor: pointer;
+}
+.shop-tab:hover { color: var(--ink); }
+.shop-tab.active { background: var(--btn-hi); color: var(--gold); border-color: var(--gold); }
+.shop-sell-hint { font-family: "EB Garamond", serif; color: var(--ink-dim); font-size: 11px; margin: 0 0 8px; text-align: center; }
+/* Sell quantity picker */
+.shop-pick-btns { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 4px; }
+.shop-pick-btn {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: "EB Garamond", serif; font-size: 13px;
+  background: var(--btn); color: var(--ink); border: 1px solid var(--edge);
+  border-radius: 7px; padding: 8px 12px; cursor: pointer;
+}
+.shop-pick-btn:hover { background: var(--btn-hi); border-color: var(--gold); }
+.shop-pick-n { font-family: "Cinzel", serif; }
+.shop-pick-g { color: var(--ember); }
+.shop-pick-inspect {
+  margin-top: 6px; background: transparent; border: 0; cursor: pointer;
+  color: var(--ink-dim); font-family: "EB Garamond", serif; font-size: 11px; text-decoration: underline;
+}
+.shop-pick-inspect:hover { color: var(--ink); }
 .shop-modal {
   position: relative;
   width: min(380px, 92vw);

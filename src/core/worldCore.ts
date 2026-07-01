@@ -1199,8 +1199,9 @@ function shopFloor(content: Content): Map<string, number> {
   return m;
 }
 /** Gold the market pays for an item: its sell value, but never above the
- *  cheapest shop buy price (so a stocked item can't be flipped for profit). */
-function marketValue(content: Content, item: ItemId): number {
+ *  cheapest shop buy price (so a stocked item can't be flipped for profit).
+ *  Exported so the shop UI can show the exact payout the core will pay. */
+export function marketValue(content: Content, item: ItemId): number {
   const base = content.items[item]?.sell ?? 0;
   const floor = shopFloor(content).get(item);
   return floor !== undefined ? Math.min(base, floor) : base;

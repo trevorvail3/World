@@ -1,10 +1,14 @@
 /**
  * src/client/shopUI.ts
  * --------------------
- * A shopkeeper's trade window. Top: the keeper's wares (tap Buy to purchase a
- * bundle). Bottom: your pack (tap an item to sell the whole stack at its gold
- * value). It only sends BUY / SELL intents — the core moves the gold and goods
- * (RULE 2) — and re-reads live state after each one.
+ * A shopkeeper's trade window, split into two tabs:
+ *   - Buy: the keeper's wares (tap Buy to purchase a bundle; long-hold to inspect).
+ *   - Sell: your pack. Tapping an item opens a quantity picker (Sell 1 / 5 / 10 /
+ *     All) rather than dumping the whole stack — a buffer against a fat-fingered
+ *     sale. Long-holding a pack item inspects it (stats + sell value) first.
+ *
+ * It only sends BUY / SELL intents — the core moves the gold and goods (RULE 2) —
+ * and re-reads live state after each one.
  */
 
 import type {
@@ -15,17 +19,20 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
-import { shopStockLeft } from "../core/worldCore.ts";
+import { shopStockLeft, marketValue, equipRequirement } from "../core/worldCore.ts";
 
 export class ShopUI {
   private backdrop: HTMLElement;
   private head: HTMLElement;
   private goldEl: HTMLElement;
-  private waresEl: HTMLElement;
-  private invGrid: HTMLElement;
+  private tabsEl: HTMLElement;
+  private contentEl: HTMLElement;
+  private infoEl: HTMLElement;
   private open = false;
   private state: WorldState | null = null;
   private shop: ShopDef | null = null;
+  private tab: "buy" | "sell" = "buy";
+  private pressTimer = 0;
 
   constructor(
     root: HTMLElement,
@@ -42,77 +49,39 @@ export class ShopUI {
           <button class="shop-close" type="button">✕</button>
         </div>
         <div class="shop-greeting"></div>
-        <div class="shop-label">Wares</div>
-        <div class="shop-wares"></div>
-        <div class="shop-label">Your Pack — tap to sell</div>
-        <div class="shop-inv inv-grid"></div>
+        <div class="shop-tabs">
+          <button class="shop-tab" data-tab="buy" type="button">Buy</button>
+          <button class="shop-tab" data-tab="sell" type="button">Sell</button>
+        </div>
+        <div class="shop-content"></div>
       </div>
       <div class="shop-info hidden"></div>`;
     this.head = this.backdrop.querySelector(".shop-title") as HTMLElement;
     this.goldEl = this.backdrop.querySelector(".shop-gold") as HTMLElement;
-    this.waresEl = this.backdrop.querySelector(".shop-wares") as HTMLElement;
-    this.invGrid = this.backdrop.querySelector(".shop-inv") as HTMLElement;
+    this.tabsEl = this.backdrop.querySelector(".shop-tabs") as HTMLElement;
+    this.contentEl = this.backdrop.querySelector(".shop-content") as HTMLElement;
+    this.infoEl = this.backdrop.querySelector(".shop-info") as HTMLElement;
     root.appendChild(this.backdrop);
 
     (this.backdrop.querySelector(".shop-close") as HTMLElement).addEventListener(
       "pointerdown",
-      (e) => {
-        e.stopPropagation();
-        this.close();
-      },
+      (e) => { e.stopPropagation(); this.close(); },
     );
     this.backdrop.addEventListener("pointerdown", (e) => {
       if (e.target === this.backdrop) this.close();
     });
-    this.infoEl = this.backdrop.querySelector(".shop-info") as HTMLElement;
-    // Tapping the info overlay (but not the box inside it) dismisses it.
+    for (const t of Array.from(this.tabsEl.querySelectorAll<HTMLElement>(".shop-tab"))) {
+      t.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        this.tab = (t.dataset["tab"] as "buy" | "sell") ?? "buy";
+        this.hideInfo();
+        this.render();
+      });
+    }
+    // Tapping the info/picker overlay (but not the box inside it) dismisses it.
     this.infoEl.addEventListener("pointerdown", (e) => {
       if (e.target === this.infoEl) this.hideInfo();
     });
-  }
-
-  private infoEl!: HTMLElement;
-  private pressTimer = 0;
-
-  /** A long-press info box for a ware — what it is, what it heals, and its value. */
-  private showInfo(item: ItemId, buyPrice: number, qty: number): void {
-    const def = this.content.items[item];
-    if (!def) return;
-    const bundle = qty > 1 ? ` (×${qty})` : "";
-    const heal = def.heals ? ` · heals ${def.heals}` : "";
-    const sell = def.sell ? `Sells back for ${def.sell.toLocaleString()}g` : "Can't be sold back";
-    this.infoEl.innerHTML = `
-      <div class="shop-info-box">
-        <button class="shop-info-x" type="button">✕</button>
-        <div class="shop-info-icon">${itemIconSVG(def)}</div>
-        <div class="shop-info-name">${def.name}</div>
-        <div class="shop-info-desc">${def.description}${heal}</div>
-        <div class="shop-info-stats">Buy: ${buyPrice.toLocaleString()}g${bundle} · ${sell}</div>
-      </div>`;
-    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
-      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
-    );
-    this.infoEl.classList.remove("hidden");
-  }
-
-  private hideInfo(): void { this.infoEl.classList.add("hidden"); }
-
-  /** Fire `onHold` after a long press on `el` (cancelled by release or a drag). */
-  private onLongPress(el: HTMLElement, onHold: () => void): void {
-    let sx = 0, sy = 0;
-    const cancel = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
-    el.addEventListener("pointerdown", (e) => {
-      sx = e.clientX; sy = e.clientY;
-      cancel();
-      this.pressTimer = window.setTimeout(() => { this.pressTimer = 0; onHold(); }, 380);
-    });
-    el.addEventListener("pointermove", (e) => {
-      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) cancel();
-    });
-    el.addEventListener("pointerup", cancel);
-    el.addEventListener("pointercancel", cancel);
-    el.addEventListener("pointerleave", cancel);
-    el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   isOpen(): boolean {
@@ -123,14 +92,17 @@ export class ShopUI {
     this.state = state;
     this.shop = shop;
     this.open = true;
+    this.tab = "buy";
     this.head.textContent = shop.name;
     (this.backdrop.querySelector(".shop-greeting") as HTMLElement).textContent = shop.greeting;
+    this.hideInfo();
     this.backdrop.classList.remove("hidden");
     this.render();
   }
 
   close(): void {
     this.open = false;
+    this.hideInfo();
     this.backdrop.classList.add("hidden");
   }
 
@@ -138,19 +110,24 @@ export class ShopUI {
     if (!this.state || !this.shop) return;
     const { player } = this.state;
     this.goldEl.textContent = `${player.gold.toLocaleString()}g`;
+    for (const t of Array.from(this.tabsEl.querySelectorAll<HTMLElement>(".shop-tab"))) {
+      t.classList.toggle("active", t.dataset["tab"] === this.tab);
+    }
+    this.contentEl.innerHTML = "";
+    if (this.tab === "buy") this.renderBuy(player);
+    else this.renderSell(player);
+  }
 
-    // --- Wares (buy) ---
-    this.waresEl.innerHTML = "";
-    for (const line of this.shop.stock) {
+  // --- Buy tab: the keeper's wares. ------------------------------------------
+  private renderBuy(player: WorldState["player"]): void {
+    const wares = document.createElement("div");
+    wares.className = "shop-wares";
+    for (const line of this.shop!.stock) {
       const def = this.content.items[line.item];
       if (!def) continue;
-      // Capes are earned one-offs — never stock-limited; everything else shows
-      // how many are on the shelf and greys out when the keeper's sold out.
       const stocked = def.cat !== "Capes";
-      const left = stocked ? shopStockLeft(this.state, this.shop.id, line.item) : Infinity;
+      const left = stocked ? shopStockLeft(this.state!, this.shop!.id, line.item) : Infinity;
       const inStock = left > 0;
-      // A listing priced in an alternate currency (e.g. Agility Marks) is bought
-      // with that item from the pack, not gold.
       const payItem = line.costItem;
       const payQty = line.costQty ?? 0;
       const have = payItem
@@ -173,46 +150,202 @@ export class ShopUI {
       const btn = row.querySelector(".shop-buy") as HTMLElement;
       btn.title = inStock ? def.description : "Out of stock — the keeper will restock soon.";
       // Long-press the item (not the Buy button) to inspect what you're buying.
-      this.onLongPress(row.querySelector(".shop-swatch") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));
-      this.onLongPress(row.querySelector(".shop-row-name") as HTMLElement, () => this.showInfo(line.item, line.price, line.qty));
+      const inspect = (): void => this.showInspect(line.item, line.qty, "buy", line.price);
+      this.onLongPress(row.querySelector(".shop-swatch") as HTMLElement, inspect);
+      this.onLongPress(row.querySelector(".shop-row-name") as HTMLElement, inspect);
       if (afford) {
         btn.addEventListener("pointerdown", (e) => {
           e.stopPropagation();
           this.dispatchAndRender({ type: "BUY", shop: this.shop!.id, item: line.item });
         });
       }
-      this.waresEl.appendChild(row);
+      wares.appendChild(row);
     }
+    this.contentEl.appendChild(wares);
+  }
 
-    // --- Your pack (sell whole stacks) ---
-    this.invGrid.innerHTML = "";
+  // --- Sell tab: your pack. Tap opens a quantity picker; long-hold inspects. --
+  private renderSell(player: WorldState["player"]): void {
+    const hint = document.createElement("div");
+    hint.className = "shop-sell-hint";
+    hint.textContent = "Tap an item to choose how many to sell · hold to inspect it first.";
+    this.contentEl.appendChild(hint);
+
+    const grid = document.createElement("div");
+    grid.className = "shop-inv inv-grid";
     for (let i = 0; i < player.inventory.length; i++) {
       const data = player.inventory[i];
       if (!data) {
         const blank = document.createElement("div");
         blank.className = "inv-slot";
-        this.invGrid.appendChild(blank);
+        grid.appendChild(blank);
         continue;
       }
       const def = this.content.items[data.item];
-      const value = def?.sell ?? 0;
+      const value = marketValue(this.content, data.item);
+      const sellable = value > 0 && !data.noted; // bank notes can't be sold here
       const slot = document.createElement("button");
       slot.type = "button";
-      slot.className = "inv-slot filled" + (value > 0 ? "" : " unsellable");
-      slot.title = value > 0
-        ? `Sell ${data.qty}× ${def.name} for ${value * data.qty}g`
-        : `${def.name} — can't be sold`;
+      slot.className = "inv-slot filled" + (sellable ? "" : " unsellable") + (data.noted ? " noted" : "");
+      slot.title = sellable
+        ? `${def.name} — sells for ${value.toLocaleString()}g each`
+        : data.noted ? `${def.name} (noted) — can't be sold here` : `${def.name} — can't be sold`;
       slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;
-      if (value > 0) {
-        slot.addEventListener("pointerdown", (e) => {
-          e.stopPropagation();
-          this.dispatchAndRender({ type: "SELL", item: data.item, qty: data.qty });
-        });
-      }
-      this.invGrid.appendChild(slot);
+      // Tap = open the quantity picker (never an instant sale). Hold = inspect.
+      this.attachPress(
+        slot,
+        () => this.showInspect(data.item, data.qty, "sell"),
+        () => { if (sellable) this.showSellPicker(data.item, data.qty); else this.showInspect(data.item, data.qty, "sell"); },
+      );
+      grid.appendChild(slot);
     }
+    this.contentEl.appendChild(grid);
+  }
+
+  // --- The sell quantity picker: the buffer against accidental sales. ---------
+  private showSellPicker(item: ItemId, held: number): void {
+    const def = this.content.items[item];
+    const each = marketValue(this.content, item);
+    if (!def || each <= 0) return;
+    const amounts = [1, 5, 10].filter((n) => n < held);
+    const rows = [...amounts, held]; // always offer "all"
+    const btns = rows.map((n) => {
+      const label = n === held ? `All (${held})` : String(n);
+      return `<button class="shop-pick-btn" data-qty="${n}" type="button">
+          <span class="shop-pick-n">Sell ${label}</span>
+          <span class="shop-pick-g">${(each * n).toLocaleString()}g</span>
+        </button>`;
+    }).join("");
+    this.infoEl.innerHTML = `
+      <div class="shop-info-box shop-pick-box">
+        <button class="shop-info-x" type="button">✕</button>
+        <div class="shop-info-icon">${itemIconSVG(def)}</div>
+        <div class="shop-info-name">Sell ${def.name}?</div>
+        <div class="shop-info-desc">${each.toLocaleString()}g each · you hold ${held}</div>
+        <div class="shop-pick-btns">${btns}</div>
+        <button class="shop-pick-inspect" type="button">Inspect first</button>
+      </div>`;
+    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
+    );
+    (this.infoEl.querySelector(".shop-pick-inspect") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.showInspect(item, held, "sell"); },
+    );
+    for (const b of Array.from(this.infoEl.querySelectorAll<HTMLElement>(".shop-pick-btn"))) {
+      b.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const qty = Number(b.dataset["qty"]) || 1;
+        this.hideInfo();
+        this.dispatchAndRender({ type: "SELL", item, qty });
+      });
+    }
+    this.infoEl.classList.remove("hidden");
+  }
+
+  // --- Inspect: name, description, gear stats, requirement, and value. --------
+  private showInspect(item: ItemId, qty: number, mode: "buy" | "sell", buyPrice = 0): void {
+    const def = this.content.items[item];
+    if (!def) return;
+    const stats = this.itemStats(def);
+    const req = equipRequirement(this.content, item);
+    const reqLine = req ? `<div class="shop-info-req">Requires ${this.skillName(req.skill)} ${req.level}</div>` : "";
+    const value = marketValue(this.content, item);
+    let valueLine: string;
+    if (mode === "buy") {
+      const bundle = qty > 1 ? ` (×${qty})` : "";
+      valueLine = `Buy: ${buyPrice.toLocaleString()}g${bundle} · ${value > 0 ? `sells back for ${value.toLocaleString()}g` : "can't be sold back"}`;
+    } else {
+      valueLine = value > 0
+        ? `Sells for ${value.toLocaleString()}g each${qty > 1 ? ` · ${(value * qty).toLocaleString()}g for all ${qty}` : ""}`
+        : "Can't be sold here";
+    }
+    this.infoEl.innerHTML = `
+      <div class="shop-info-box">
+        <button class="shop-info-x" type="button">✕</button>
+        <div class="shop-info-icon">${itemIconSVG(def)}</div>
+        <div class="shop-info-name">${def.name}</div>
+        <div class="shop-info-desc">${def.description}</div>
+        ${stats ? `<div class="shop-info-gear">${stats}</div>` : ""}
+        ${reqLine}
+        <div class="shop-info-stats">${valueLine}</div>
+        ${mode === "sell" && value > 0 ? `<button class="shop-info-sell" type="button">Sell…</button>` : ""}
+      </div>`;
+    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
+    );
+    const sellBtn = this.infoEl.querySelector(".shop-info-sell") as HTMLElement | null;
+    if (sellBtn) sellBtn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      this.showSellPicker(item, qty);
+    });
+    this.infoEl.classList.remove("hidden");
+  }
+
+  /** A one-line combat/utility stat summary for the inspect box. */
+  private itemStats(def: Content["items"][ItemId]): string {
+    const bits: string[] = [];
+    if (def.acc) bits.push(`+${def.acc} accuracy`);
+    if (def.dmg) bits.push(`+${def.dmg} damage`);
+    if (def.rngAcc) bits.push(`+${def.rngAcc} ranged acc`);
+    if (def.rngDmg) bits.push(`+${def.rngDmg} ranged dmg`);
+    if (def.magAcc) bits.push(`+${def.magAcc} magic acc`);
+    if (def.magDmg) bits.push(`+${def.magDmg} magic dmg`);
+    if (def.def) bits.push(`+${def.def} defence`);
+    if (def.heals) bits.push(`heals ${def.heals}`);
+    if (def.graceRestore) bits.push(`+${def.graceRestore} Grace`);
+    return bits.join(" · ");
+  }
+
+  private skillName(skill: string): string {
+    return this.content.skills[skill as keyof Content["skills"]]?.name ?? skill;
+  }
+
+  private hideInfo(): void { this.infoEl.classList.add("hidden"); }
+
+  /** Fire `onHold` after a long press on `el` (cancelled by release or a drag). */
+  private onLongPress(el: HTMLElement, onHold: () => void): void {
+    let sx = 0, sy = 0;
+    const cancel = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
+    el.addEventListener("pointerdown", (e) => {
+      sx = e.clientX; sy = e.clientY;
+      cancel();
+      this.pressTimer = window.setTimeout(() => { this.pressTimer = 0; onHold(); }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) cancel();
+    });
+    el.addEventListener("pointerup", cancel);
+    el.addEventListener("pointercancel", cancel);
+    el.addEventListener("pointerleave", cancel);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
+  /** Long-press → onLong; a clean tap (no hold, no drag) → onTap. Right-click
+   *  fires the inspect at once on desktop. */
+  private attachPress(el: HTMLElement, onLong: () => void, onTap: () => void): void {
+    let sx = 0, sy = 0, moved = false, fired = false;
+    const clear = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
+    el.addEventListener("pointerdown", (e) => {
+      sx = e.clientX; sy = e.clientY; moved = false; fired = false;
+      clear();
+      if (e.button === 2) { fired = true; onLong(); return; }
+      this.pressTimer = window.setTimeout(() => {
+        this.pressTimer = 0;
+        if (!moved) { fired = true; onLong(); }
+      }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) { moved = true; clear(); }
+    });
+    el.addEventListener("pointerup", (e) => {
+      clear();
+      if (!fired && !moved) { e.stopPropagation(); onTap(); }
+    });
+    el.addEventListener("pointercancel", clear);
+    el.addEventListener("pointerleave", clear);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   private dispatchAndRender(intent: Intent): void {
