@@ -231,8 +231,13 @@ export class ExchangeUI {
   private take(kind: "gold" | "item", amount: number, item?: ItemId): void {
     this.dispatch({ type: "GE_MOVE", dir: "take", kind, amount, ...(item ? { item } : {}) });
   }
-  private give(kind: "gold" | "item", amount: number, item?: ItemId): void {
-    this.dispatch({ type: "GE_MOVE", dir: "give", kind, amount, ...(item ? { item } : {}) });
+  private give(kind: "gold" | "item", amount: number, item?: ItemId, noted?: boolean): void {
+    this.dispatch({ type: "GE_MOVE", dir: "give", kind, amount, ...(item ? { item } : {}), ...(noted ? { noted: true } : {}) });
+  }
+  /** Room for a note of this item: any empty slot, or an existing note stack. */
+  private noteRoom(item: ItemId): boolean {
+    const inv = this.getState()?.player.inventory ?? [];
+    return inv.some((s) => s === null || (s.item === item && s.noted));
   }
 
   // --- Account: gold + item deposits/withdrawals ---
@@ -332,11 +337,18 @@ export class ExchangeUI {
     await this.refresh();
   }
   private async doWithdrawItem(item: ItemId, have: number): Promise<void> {
-    const room = this.packRoom(item);
+    // Big collections of an unstackable item come back as a note (one slip), so
+    // a large Exchange buy doesn't demand a whole empty pack. Stackables collect
+    // normally into their stack.
+    const asNote = !this.isStackable(item) && have > 1;
+    const room = asNote ? (this.noteRoom(item) ? have : 0) : this.packRoom(item);
     const qty = Math.min(have, room);
     if (qty <= 0) return this.msg("Your pack is full.");
-    try { await withdrawItem(item, qty); this.give("item", qty, item); this.msg(`Withdrew ${qty}× ${this.itemName(item)}.`, true); }
-    catch (e) { this.msg(errMsg(e)); }
+    try {
+      await withdrawItem(item, qty);
+      this.give("item", qty, item, asNote);
+      this.msg(`Withdrew ${qty}× ${this.itemName(item)}${asNote ? " (noted)" : ""}.`, true);
+    } catch (e) { this.msg(errMsg(e)); }
     await this.refresh();
   }
 

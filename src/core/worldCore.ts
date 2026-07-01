@@ -1480,6 +1480,8 @@ export function applyIntent(
         if (intent.dir === "take") {
           // Selling can spend notes too, so take from noted stock as well.
           if (countAnyItem(player, intent.item) >= amt) removeAnyItem(player, intent.item, amt);
+        } else if (intent.noted) {
+          addNoted(player, intent.item, amt, events); // big collections come as a slip
         } else {
           addItem(player, intent.item, amt, events);
         }

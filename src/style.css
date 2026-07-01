@@ -661,6 +661,19 @@ body {
   background: rgba(40, 32, 24, 0.7);
 }
 
+/* A note (bank slip): a parchment backing with a folded top-right corner, so a
+   noted stack reads clearly as paper rather than the item itself. */
+.inv-slot.noted {
+  background:
+    linear-gradient(135deg, transparent 60%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.35) 66%, transparent 66%) top right / 14px 14px no-repeat,
+    linear-gradient(160deg, #d8c79a, #b8a578 55%, #a2905f);
+  border-color: #8a7448;
+  box-shadow: inset 0 0 0 1px rgba(255, 244, 214, 0.25);
+}
+.inv-slot.noted .inv-icon { inset: 5px; opacity: 0.92; }
+.inv-slot.noted .item-svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4)) saturate(0.85); }
+.inv-slot.noted .inv-qty { color: #3a2c12; text-shadow: 0 1px 1px rgba(255, 244, 214, 0.5); }
+
 .inv-icon {
   position: absolute;
   inset: 3px;

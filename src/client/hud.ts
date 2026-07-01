@@ -1385,8 +1385,8 @@ export class Hud {
         continue;
       }
       const def = this.content.items[data.item];
-      slot.className = "inv-slot filled";
-      slot.title = `${def.name} — ${def.description}${def.sell ? ` · worth ${def.sell.toLocaleString()}g` : ""}`;
+      slot.className = `inv-slot filled${data.noted ? " noted" : ""}`;
+      slot.title = `${data.noted ? "(Noted) " : ""}${def.name} — ${def.description}${def.sell ? ` · worth ${def.sell.toLocaleString()}g` : ""}${data.noted ? " · a bank slip; bank it to use" : ""}`;
       slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
         data.qty > 1 ? `<span class="inv-qty">${data.qty}</span>` : ""
       }`;

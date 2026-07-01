@@ -1476,6 +1476,9 @@ export interface GeMoveIntent {
   kind: "gold" | "item";
   item?: ItemId;
   amount: number;
+  /** Deliver a "give" of items as a note (bank slip) — big Exchange collections
+   *  arrive in one slot rather than overflowing the pack. */
+  noted?: boolean;
 }
 
 /** Apply the agreed swap of a settled player trade. Idempotent: the core
