@@ -847,15 +847,11 @@ function drawTrailPath(
     const ax = sx(a.x!), ay = sy(a.y!), bx = sx(b.x!), by = sy(b.y!);
     if (Math.max(ax, bx) < -TILE || Math.min(ax, bx) > w + TILE ||
         Math.max(ay, by) < -TILE || Math.min(ay, by) > h + TILE) continue;
-    // A worn earthen tread with a faint dashed centre line, low-contrast so it
-    // sits into the ground rather than standing out like a paved road.
-    g.strokeStyle = "rgba(96, 82, 54, 0.28)";
-    g.lineWidth = 7;
-    g.setLineDash([]);
-    g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
-    g.strokeStyle = "rgba(150, 200, 150, 0.22)";
+    // Just a thin dotted trail — a faint dashed line marking the way to the next
+    // checkpoint, not a worn road.
+    g.strokeStyle = "rgba(150, 200, 150, 0.5)";
     g.lineWidth = 1.5;
-    g.setLineDash([10, 10]);
+    g.setLineDash([3, 7]);
     g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
   }
   g.setLineDash([]);

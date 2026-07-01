@@ -607,6 +607,10 @@ export class Game {
           break;
         case "XP_GAINED": {
           xpSum += ev.amount;
+          // Surface the gain on the active-skill bar so it rises for whatever
+          // you're training — including bursty skills like agility that aren't
+          // a standing activity.
+          this.activeSkill.onXp(ev.skill, ev.amount, now);
           // A little impact burst on the thing you're working, on the beat.
           const tid = this.bridge.state.player.activity.targetId;
           const tp = tid ? this.positionOf(tid) : null;

@@ -1173,6 +1173,10 @@ export interface Player {
    * climb finishes (a short delay so a hop "takes a second"). Transient.
    */
   agilityHop?: { objId: string; at: number } | null;
+  /** Aggressive monsters won't re-engage until this time (ms) — a brief grace set
+   *  when you move, so you can walk away from a fight instead of being re-locked
+   *  every tick. Transient. */
+  aggroImmuneUntil?: number;
   /** How many full laps of the Varathian Trail have been completed (persisted;
    *  drives the trail billboard and each lap's single Agility Mark). */
   trailLaps?: number;

@@ -58,7 +58,7 @@ const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost on top
 // per tile travelled; energy recovers while walking or standing still. Walking is
 // slow on purpose; sprinting (~3.6 tiles/s) is the comfortable pace, so the run
 // bar — and Agility, which stretches it — actually matter.
-const SPRINT_MULT = 1.7;
+const SPRINT_MULT = 1.55;
 const ENERGY_MAX = 100;
 const ENERGY_DRAIN = 2.8; // base energy spent per tile sprinted
 const ENERGY_REGEN = 4; // base energy recovered per second when not sprinting
@@ -96,6 +96,7 @@ const AGGRESSIVE = new Set<string>([
   "hollow_warden", "bog_warden", "spine_warlord", "marrow_keeper",
 ]);
 const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
+const FLEE_GRACE_MS = 2500; // after a move, aggressive monsters hold off this long
 // On death you drop a tenth of your coin (a real but gentle setback).
 const DEATH_GOLD_FRACTION = 0.1;
 const DEATH_GOLD_CAP = 250;
@@ -116,11 +117,11 @@ const LEVEL_CAP = 110;
 const WANDER = {
   /** Max Chebyshev distance (tiles) a creature may stray from its spawn. */
   radius: 2,
-  /** Wander walk speed (tiles/sec) — an unhurried amble, slower than the player. */
-  speed: 1.6,
+  /** Wander walk speed (tiles/sec) — a slow, unhurried amble. */
+  speed: 1.05,
   /** Idle pause between steps is a random ms in [pauseMin, pauseMax]. */
-  pauseMin: 1400,
-  pauseMax: 4200,
+  pauseMin: 1900,
+  pauseMax: 5200,
 };
 
 // `deplete` is the chance, on a successful gather, that the node runs out and
@@ -1332,6 +1333,9 @@ export function applyIntent(
       player.pendingInteractMode = null;
       player.station = null; // walking away leaves the counter
       clearActivity(player);
+      // Deliberately walking = you're fleeing/moving on; give a grace so an
+      // aggressive monster can't re-lock you the instant you step away.
+      player.aggroImmuneUntil = ctx.now + FLEE_GRACE_MS;
       break;
     }
     case "INTERACT": {
@@ -2767,6 +2771,9 @@ function checkAggro(
 ): void {
   const { player } = state;
   if (!player.alive || player.activity.kind !== "idle") return;
+  // Don't pounce on a player who's moving (walking past / fleeing), and honour
+  // the post-move flee grace — so you can leave a fight instead of being re-locked.
+  if (player.path.length > 0 || ctx.now < (player.aggroImmuneUntil ?? 0)) return;
   for (const def of content.objects) {
     if (def.kind !== "monster" || !AGGRESSIVE.has(def.monster ?? "")) continue;
     const obj = state.objects[def.id];

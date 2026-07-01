@@ -2955,7 +2955,9 @@ button.inv-slot {
    .show / .hidden from activeSkill.ts. */
 .activeskill {
   position: absolute;
-  top: 12px;
+  /* Bottom-centre, above the action bar — well clear of the top-right minimap
+     so it never covers it, and right where your eyes are while you play. */
+  bottom: 84px;
   left: 50%;
   z-index: 55;
   pointer-events: none;
@@ -2968,11 +2970,26 @@ button.inv-slot {
   border-radius: 11px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   opacity: 0;
-  transform: translate(-50%, -10px);
+  transform: translate(-50%, 10px);
   transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.18, 1.3, 0.4, 1);
 }
 .activeskill.hidden { display: none; }
 .activeskill.show { opacity: 0.97; transform: translate(-50%, 0); }
+.activeskill-flash {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(201, 162, 74, 0.6);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.4s ease;
+  min-width: 0;
+}
+.activeskill-flash.on {
+  opacity: 1;
+  transform: translateY(0);
+}
 .activeskill-icon {
   font-size: 20px;
   line-height: 1;

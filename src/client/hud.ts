@@ -50,13 +50,14 @@ const HERALD_NAME = "Herald";
 
 type TabId =
   | "inventory" | "skills" | "character"
-  | "quests" | "factions" | "records" | "settings";
+  | "quests" | "social" | "factions" | "records" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
   { id: "skills", icon: "📜", title: "Skills" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
+  { id: "social", icon: "👥", title: "Social" },
   { id: "factions", icon: "🌍", title: "World" },
   { id: "records", icon: "🏆", title: "Records" },
   { id: "settings", icon: "⚙️", title: "Settings" },
@@ -501,7 +502,9 @@ export class Hud {
         p.appendChild(list);
         break;
       }
-      case "factions": {
+      case "social": {
+        // Everything about *other people*: rankings, who's online, and friends —
+        // kept apart from the game-world content on the World tab.
         // --- Hiscores: ranking against other heroes (device-local for now). ---
         const hs = document.createElement("button");
         hs.type = "button";
@@ -512,15 +515,17 @@ export class Hud {
         });
         p.appendChild(hs);
 
-        // --- Players: who's online + your friends. ---
+        // --- Players: who's online + your friends list. ---
         const pl = document.createElement("button");
         pl.type = "button";
         pl.className = "world-hiscores world-players";
-        pl.innerHTML = `<span class="world-hiscores-ic">${iconize("👤")}</span> Players`;
+        pl.innerHTML = `<span class="world-hiscores-ic">${iconize("👤")}</span> Players &amp; Friends`;
         pl.addEventListener("click", () => { void this.players.show(); });
         p.appendChild(pl);
         p.appendChild(note("World chat lives in the message box, bottom-left — type and press Enter."));
-
+        break;
+      }
+      case "factions": {
         // --- Area Diaries: a themed goal checklist per region (collapsible). ---
         p.appendChild(subhead("Area Diaries"));
         for (const d of this.content.diaries) {
