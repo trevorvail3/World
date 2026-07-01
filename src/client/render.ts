@@ -4180,6 +4180,8 @@ function playerAction(
   if (act.kind === "combat") {
     const main = player.equipment.mainhand;
     const interval = (main && content.items[main]?.speed) || 2400; // COMBAT.playerMeleeSpeed
+    // A staff casts: held upright with a glowing orb, thrust on the beat.
+    if (main && content.items[main]?.magic) return { kind: "cast", tool: "staff", frac: linearFrac(interval) };
     // A bow now lives in the mainhand — draw it at range instead of swinging.
     if (main && content.items[main]?.ranged) return { kind: "ranged", tool: "bow", frac: linearFrac(interval) };
     // The Bonesaw swings as a sword but renders its own toothed-saw blade.

@@ -1244,6 +1244,13 @@ export const actions: SkillAction[] = [
     "produces": "unstrung_crude",
     "group": "unstrung"
   },
+  // --- Faith casting staffs: shaped from matching logs at the workbench ---
+  { "id": "wc_staff_ashwood", "skill": "woodcraft", "name": "Ashwood Staff", "levelReq": 1, "xp": 15, "requires": { "ashwood_log": 2 }, "produces": "staff_ashwood", "group": "staves" },
+  { "id": "wc_staff_coldpine", "skill": "woodcraft", "name": "Coldpine Staff", "levelReq": 15, "xp": 30, "requires": { "coldpine_log": 2 }, "produces": "staff_coldpine", "group": "staves" },
+  { "id": "wc_staff_stonewood", "skill": "woodcraft", "name": "Stonewood Staff", "levelReq": 30, "xp": 55, "requires": { "stonewood_log": 2 }, "produces": "staff_stonewood", "group": "staves" },
+  { "id": "wc_staff_greyoak", "skill": "woodcraft", "name": "Greyoak Staff", "levelReq": 45, "xp": 85, "requires": { "greyoak_log": 2 }, "produces": "staff_greyoak", "group": "staves" },
+  { "id": "wc_staff_ruewood", "skill": "woodcraft", "name": "Ruewood Staff", "levelReq": 60, "xp": 120, "requires": { "ruewood_log": 2 }, "produces": "staff_ruewood", "group": "staves" },
+  { "id": "wc_staff_deeproot", "skill": "woodcraft", "name": "Deeproot Staff", "levelReq": 75, "xp": 170, "requires": { "deeproot_log": 2 }, "produces": "staff_deeproot", "group": "staves" },
   {
     "id": "wcu_short",
     "skill": "woodcraft",
@@ -2534,6 +2541,18 @@ export const actions: SkillAction[] = [
     "baseTime": 4000,
     "requires": { "glass_vial": 1, "bonemeal": 1, "herb_ashweed": 1 },
     "produces": "potion_grace",
+    "group": "potions"
+  },
+  {
+    // Faith: the greater brew — a flask, more bonemeal and a rarer herb.
+    "id": "brew_greater_faith_potion",
+    "skill": "herblore",
+    "name": "Greater Faith Potion",
+    "levelReq": 45,
+    "xp": 95,
+    "baseTime": 5000,
+    "requires": { "glass_flask": 1, "bonemeal": 2, "herb_greybloom": 1 },
+    "produces": "potion_grace_greater",
     "group": "potions"
   },
   {

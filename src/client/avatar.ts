@@ -366,6 +366,10 @@ export function actionArmAngle(frac: number, kind: string): number {
   if (kind === "fishing" || kind === "crafting" || kind === "trapping") {
     return -0.55 + Math.sin(t * Math.PI * 2) * 0.24;
   }
+  // Casting: the staff is held upright-forward with a thrust pulse on the beat.
+  if (kind === "cast") {
+    return -0.35 - (t < 0.6 ? t / 0.6 : (1 - t) / 0.4) * 0.5;
+  }
   // Ranged: bow held out front, with a quick draw-and-loose pulse on the beat.
   if (kind === "ranged") {
     return 0.95 - (t < 0.7 ? t / 0.7 : (1 - t) / 0.3) * 0.35;
@@ -452,6 +456,23 @@ export function drawTool(g: Ctx, s: number, tool: string, metal?: Metal & { tier
       g.strokeStyle = "rgba(230,230,236,0.6)"; g.lineWidth = 0.5 * s;
       g.beginPath(); g.moveTo(0, 4.4 * s); g.lineTo(0, 13.6 * s); g.stroke(); // string
       break;
+    case "staff": {
+      // A tall wooden casting staff with a glowing orb at the head.
+      g.strokeStyle = "#6a5236"; g.lineWidth = 1.5 * s; g.lineCap = "round";
+      g.beginPath(); g.moveTo(0, 2 * s); g.lineTo(0, 20 * s); g.stroke();
+      g.lineCap = "butt";
+      g.strokeStyle = "rgba(210,190,150,0.5)"; g.lineWidth = 0.5 * s;
+      g.beginPath(); g.moveTo(0, 4 * s); g.lineTo(0, 18 * s); g.stroke();
+      // orb: a soft blue-white glow at the tip
+      const gr = g.createRadialGradient(0, 1.5 * s, 0, 0, 1.5 * s, 3.2 * s);
+      gr.addColorStop(0, "rgba(190,225,255,0.95)");
+      gr.addColorStop(1, "rgba(90,150,230,0)");
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(0, 1.5 * s, 3.2 * s, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#cfe6ff";
+      g.beginPath(); g.arc(0, 1.5 * s, 1.3 * s, 0, Math.PI * 2); g.fill();
+      break;
+    }
     default:
       break;
   }

@@ -4732,6 +4732,11 @@ export const items: Record<ItemId, ItemDef> = {
     "graceRestore": 30, "sell": 120,
     "description": "A bone-and-herb brew that restores a measure of Grace on the move — no shrine needed."
   },
+  "potion_grace_greater": {
+    "id": "potion_grace_greater", "name": "Greater Faith Potion", "icon": "🙏", "cat": "Potions",
+    "graceRestore": 70, "sell": 320,
+    "description": "A potent flask of bonemeal and rare herb — restores a deep draught of Grace anywhere."
+  },
 
   "seed_ashweed": {
     "id": "seed_ashweed",

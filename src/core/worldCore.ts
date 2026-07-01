@@ -4090,6 +4090,13 @@ function syncMaxHp(player: Player): void {
   if (player.hp > player.maxHp) player.hp = player.maxHp;
 }
 
+/** A monster's effective defence, dropped while a Faith curse (Marrow Grip) holds. */
+function effectiveDef(obj: WorldObjectState, stats: MonsterStats, now: number): number {
+  let d = stats.def ?? 0;
+  if (obj.defCurse && now < obj.defCurse.until) d = Math.max(0, d - obj.defCurse.amount);
+  return d;
+}
+
 /** The shared linear hit-chance: clamp(0.5 + (att - def) * 0.012, 0.05, 0.95). */
 function hitChance(att: number, def: number): number {
   const c = COMBAT.hitBase + (att - def) * COMBAT.hitSlope;
@@ -4203,7 +4210,7 @@ function playerSwing(
     : magic ? magicMaxHit(player, content) : playerMaxHit(player, content);
 
   const mechs = stats.mechanics ?? [];
-  if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
+  if (ctx.rng() < hitChance(acc, effectiveDef(obj, stats, ctx.now))) {
     const top = Math.max(1, maxHit);
     const floor = Math.max(1, Math.round(top * COMBAT.dmgMinFrac));
     const base = randInt(ctx, Math.min(floor, top), top);
@@ -4372,6 +4379,58 @@ function castSpell(
       player.pos = { x: t.x, y: t.y };
       player.aggroImmuneUntil = ctx.now + FLEE_GRACE_MS;
       events.push({ type: "LOG", message: `You cast ${spell.name} and step through Orun's light.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      break;
+    }
+    case "curse": {
+      const targetId = player.activity.kind === "combat" ? player.activity.targetId : null;
+      const obj = targetId ? state.objects[targetId] : undefined;
+      if (!targetId || !obj || obj.hp === undefined || !obj.available) {
+        events.push({ type: "LOG", message: "You have no target to curse." });
+        return;
+      }
+      player.grace -= spell.cost;
+      obj.defCurse = { amount: spell.curseAmt ?? 0, until: ctx.now + (spell.curseMs ?? 15000) };
+      events.push({ type: "LOG", message: `You cast ${spell.name}! Your foe's guard weakens.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      break;
+    }
+    case "kindle": {
+      // Superheat: find a smithing smelt recipe (produces a *_bar) you can fulfil.
+      const recipe = content.actions.find((a) =>
+        a.skill === "smithing" && !!a.produces && a.produces.endsWith("_bar") && hasIngredients(player, a));
+      if (!recipe || !recipe.produces) {
+        events.push({ type: "LOG", message: "You have no ore to superheat." });
+        return;
+      }
+      if (!canAddItem(player, recipe.produces)) {
+        events.push({ type: "INVENTORY_FULL" });
+        return;
+      }
+      player.grace -= spell.cost;
+      consumeIngredients(player, recipe);
+      addItem(player, recipe.produces, recipe.produceQty ?? 1, events);
+      events.push({ type: "LOG", message: `You cast ${spell.name} — the ore melts into a ${content.items[recipe.produces].name}.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      grantXp(state, content, "smithing", recipe.xp ?? 0, events);
+      break;
+    }
+    case "enchant": {
+      // Cut/enchant the cheapest raw gem you hold into a valuable cut gem.
+      const RAW: ItemId[] = ["rough_gem", "uncut_sapphire", "uncut_emerald", "uncut_ruby"];
+      const gem = RAW.find((g) => hasItem(player, g));
+      if (!gem) {
+        events.push({ type: "LOG", message: "You have no rough or uncut gem to enchant." });
+        return;
+      }
+      if (!canAddItem(player, "cut_gem")) {
+        events.push({ type: "INVENTORY_FULL" });
+        return;
+      }
+      player.grace -= spell.cost;
+      removeOneItem(player, gem);
+      addItem(player, "cut_gem", 1, events);
+      events.push({ type: "LOG", message: `You cast ${spell.name} — the ${content.items[gem].name} becomes a Cut Gem.` });
       grantXp(state, content, "faith", spell.xp, events);
       break;
     }

@@ -34,13 +34,28 @@ export const spells: SpellDef[] = [
     blurb: "Step through Orun's light back to the city hub. Escape, or just save the walk.",
   },
   {
+    id: "kindle", name: "Kindle", icon: "🔥",
+    faithReq: 30, cost: 4, kind: "kindle", xp: 24,
+    blurb: "Superheat an ore in your pack straight into a bar — no furnace needed.",
+  },
+  {
     id: "aegis", name: "Aegis", icon: "🛡️",
     faithReq: 35, cost: 10, kind: "ward", wardAmt: 12, wardMs: 30000, xp: 26,
     blurb: "A shimmering ward that turns aside blows for a short while.",
   },
   {
+    id: "marrow_grip", name: "Marrow Grip", icon: "🦴",
+    faithReq: 45, cost: 8, kind: "curse", curseAmt: 25, curseMs: 20000, xp: 34,
+    blurb: "Grip your foe's bones and drop their defence — soften a tough target for the kill.",
+  },
+  {
+    id: "enchant", name: "Enchant", icon: "💎",
+    faithReq: 50, cost: 8, kind: "enchant", xp: 40,
+    blurb: "Cut and enchant a rough or uncut gem into a polished, valuable cut gem.",
+  },
+  {
     id: "oruns_wrath", name: "Orun's Wrath", icon: "🌟",
-    faithReq: 70, cost: 20, kind: "attack", dmgMult: 3, xp: 60,
+    faithReq: 70, cost: 22, kind: "attack", dmgMult: 2.2, xp: 60,
     blurb: "The finisher: call down Orun's full fury on a single foe.",
   },
 ];

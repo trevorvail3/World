@@ -549,6 +549,7 @@ export type ItemId =
   | "staff_deeproot"
   | "bonemeal"
   | "potion_grace"
+  | "potion_grace_greater"
   | "seed_ashweed"
   | "seed_thornroot"
   | "seed_bloodberry"
@@ -1034,6 +1035,9 @@ export interface WorldObjectState {
   /** Boss combat: whether the one-shot enrage / self-heal have fired. */
   enraged?: boolean;
   healed?: boolean;
+  /** Faith curse (Marrow Grip): the target's defence is dropped until this time.
+   *  Transient combat state — never persisted. */
+  defCurse?: { amount: number; until: number };
   /** housing_plot only: set once the player has claimed this homestead. */
   owned?: boolean;
   /** build_hotspot only: the FurnitureDef id currently built here (else empty). */
@@ -2036,7 +2040,7 @@ export interface SpellDef {
   faithReq: number;
   /** Grace spent per cast. */
   cost: number;
-  kind: "attack" | "heal" | "ward" | "teleport";
+  kind: "attack" | "heal" | "ward" | "teleport" | "curse" | "kindle" | "enchant";
   /** attack: fraction of magic max hit dealt as a burst (e.g. 1.5). */
   dmgMult?: number;
   /** heal: HP restored. */
@@ -2044,6 +2048,9 @@ export interface SpellDef {
   /** ward: defence bonus granted, and its duration (ms). */
   wardAmt?: number;
   wardMs?: number;
+  /** curse: how far the target's defence is dropped, and for how long (ms). */
+  curseAmt?: number;
+  curseMs?: number;
   /** Faith XP granted on a successful cast. */
   xp: number;
   /** Short explainer for the spellbook. */
