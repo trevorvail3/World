@@ -2004,7 +2004,7 @@ function unequipSlot(
 }
 
 /**
- * Begin repeating a station recipe (cooking/smelting/smithing/firemaking). The
+ * Begin repeating a station recipe (cooking/smelting/smithing). The
  * actual making happens each tick in processActivity; this just validates the
  * choice and starts the activity so the client shows progress on the station.
  */
@@ -4806,9 +4806,9 @@ function grindBones(
   events.push({ type: "LOG", message: `You grind the ${def.name} into bonemeal.` });
 }
 
-/** Firemaking data per log id: the level to burn it, the XP it grants, and how
- *  long its fire lasts. Tougher logs burn longer and pay far more — mirrors the
- *  Forestry ladder that produces them. */
+/** Fire-lighting data per log id: the Survivalist level to burn it, the XP it
+ *  grants, and how long its fire lasts. Tougher logs burn longer and pay far
+ *  more — mirrors the Forestry ladder that produces them. */
 const FIRE_LOGS: Record<string, { level: number; xp: number; burnMs: number }> = {
   ashwood_log: { level: 1, xp: 40, burnMs: 60_000 },
   coldpine_log: { level: 20, xp: 90, burnMs: 75_000 },
@@ -4821,7 +4821,7 @@ const FIRE_LOGS: Record<string, { level: number; xp: number; burnMs: number }> =
 };
 
 /** Strike flint against a log to set a campfire at the player's feet, OSRS-style:
- *  the log is consumed, Firemaking XP is granted, a transient `state.campfire` is
+ *  the log is consumed, Survivalist XP is granted, a transient `state.campfire` is
  *  lit (a cooking source that burns for a while), and — if there's room — the
  *  player steps clear onto an adjacent tile so they aren't standing in the flames. */
 function lightFire(
@@ -4843,8 +4843,8 @@ function lightFire(
     events.push({ type: "LOG", message: "You need Flint & Steel to light a fire." });
     return;
   }
-  if (player.skills.firemaking.level < spec.level) {
-    events.push({ type: "LOG", message: `You need Firemaking level ${spec.level} to burn ${content.items[data.item].name}.` });
+  if (player.skills.survivalist.level < spec.level) {
+    events.push({ type: "LOG", message: `You need Survivalist level ${spec.level} to burn ${content.items[data.item].name}.` });
     return;
   }
   if (state.campfire) {
@@ -4860,7 +4860,7 @@ function lightFire(
 
   data.qty -= 1;
   if (data.qty <= 0) player.inventory[slot] = null;
-  grantXp(state, content, "firemaking", spec.xp, events);
+  grantXp(state, content, "survivalist", spec.xp, events);
   if (step) {
     player.pos = { x: px + step[0]!, y: py + step[1]! };
     player.path = [];

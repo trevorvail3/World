@@ -1180,7 +1180,7 @@ export function drawWorld(
     }
   }
 
-  // A player-lit campfire (Firemaking): a transient cooking source that isn't a
+  // A player-lit campfire (Survivalist): a transient cooking source that isn't a
   // world object, so it's drawn here from live state, culled like everything else.
   const fire = state.campfire;
   if (fire && inRegion(fire.x, fire.y) && !outside(fire.x, fire.y)) {

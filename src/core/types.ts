@@ -55,7 +55,6 @@ export type SkillId =
   | "hunter"
   | "fishing"
   | "cooking"
-  | "firemaking"
   | "farming"
   | "survivalist"
   | "herblore"
@@ -1162,7 +1161,7 @@ export type ActivityKind =
   /** Foraging a wild plant clump for Survivalist (a depleting gather). */
   | "foraging"
   | "combat"
-  /** Any station recipe (cooking, smelting, smithing, firemaking…). */
+  /** Any station recipe (cooking, smelting, smithing…). */
   | "crafting";
 
 export interface Activity {
@@ -1439,7 +1438,7 @@ export interface WorldState {
   /** Per-line restock clocks for rationed listings (key "shopId:item" → next
    *  top-up ms). Runtime/session only. Used by the Devotion Potion (one/15min). */
   shopLineRestockAt?: Record<string, number>;
-  /** A player-lit campfire (Firemaking): burns for a while as a cooking source,
+  /** A player-lit campfire (Survivalist): burns for a while as a cooking source,
    *  then goes out. One at a time; runtime/session only — not persisted. */
   campfire?: { x: number; y: number; expiresAt: number } | null;
   /**
@@ -1873,7 +1872,7 @@ export type WorldEvent =
 /**
  * One skill action, ported verbatim from the idle game's `SKILLS[*].actions`.
  * This is the canonical recipe/gathering data for every gathering and
- * processing skill. Station crafting (cooking/smelting/smithing/firemaking)
+ * processing skill. Station crafting (cooking/smelting/smithing)
  * runs directly off these. See src/content/actions.ts.
  */
 export interface SkillAction {
