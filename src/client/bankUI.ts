@@ -9,6 +9,7 @@
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
+import { equipRequirement } from "../core/worldCore.ts";
 
 export class BankUI {
   private backdrop: HTMLElement;
@@ -20,6 +21,8 @@ export class BankUI {
   private filter = "";
   private open = false;
   private state: WorldState | null = null;
+  private infoEl!: HTMLElement;
+  private pressTimer = 0;
 
   constructor(
     root: HTMLElement,
@@ -42,7 +45,12 @@ export class BankUI {
         <div class="bank-grid"></div>
         <div class="bank-label">Your Pack <button class="bank-depositall" type="button">Deposit all</button></div>
         <div class="bank-inv inv-grid"></div>
-      </div>`;
+      </div>
+      <div class="shop-info hidden"></div>`;
+    this.infoEl = this.backdrop.querySelector(".shop-info") as HTMLElement;
+    this.infoEl.addEventListener("pointerdown", (e) => {
+      if (e.target === this.infoEl) this.hideInfo();
+    });
     this.bankGrid = this.backdrop.querySelector(".bank-grid") as HTMLElement;
     this.invGrid = this.backdrop.querySelector(".bank-inv") as HTMLElement;
     this.countEl = this.backdrop.querySelector(".bank-count") as HTMLElement;
@@ -165,15 +173,84 @@ export class BankUI {
     const slot = document.createElement("button");
     slot.type = "button";
     slot.className = "inv-slot filled";
-    slot.title = `${def.name} — ${def.description}`;
+    slot.title = `${def.name} — hold to inspect, tap to move`;
     slot.innerHTML = `<span class="inv-icon">${itemIconSVG(def)}</span>${
       qty > 1 ? `<span class="inv-qty">${qty}</span>` : ""
     }`;
-    slot.addEventListener("pointerdown", (e) => {
-      e.stopPropagation();
-      onTap(e.clientX, e.clientY);
-    });
+    // Tap moves the item (withdraw/deposit); long-hold (or right-click) inspects
+    // it instead — so you can examine a stored item without pulling it out.
+    this.attachPress(slot, () => this.showItemInfo(item, qty), (x, y) => onTap(x, y));
     return slot;
+  }
+
+  private hideInfo(): void { this.infoEl.classList.add("hidden"); }
+
+  /** Long-press → inspect; a clean tap → move. Right-click inspects at once. */
+  private attachPress(el: HTMLElement, onLong: () => void, onTap: (x: number, y: number) => void): void {
+    let sx = 0, sy = 0, moved = false, fired = false;
+    const clear = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
+    el.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      sx = e.clientX; sy = e.clientY; moved = false; fired = false;
+      clear();
+      if (e.button === 2) { fired = true; onLong(); return; }
+      this.pressTimer = window.setTimeout(() => {
+        this.pressTimer = 0;
+        if (!moved) { fired = true; onLong(); }
+      }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) { moved = true; clear(); }
+    });
+    el.addEventListener("pointerup", (e) => {
+      clear();
+      if (!fired && !moved) onTap(e.clientX, e.clientY);
+    });
+    el.addEventListener("pointercancel", clear);
+    el.addEventListener("pointerleave", clear);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
+  /** A one-line combat/utility stat summary for the inspect box. */
+  private itemStats(def: Content["items"][ItemId]): string {
+    const bits: string[] = [];
+    if (def.acc) bits.push(`+${def.acc} accuracy`);
+    if (def.dmg) bits.push(`+${def.dmg} damage`);
+    if (def.rngAcc) bits.push(`+${def.rngAcc} ranged acc`);
+    if (def.rngDmg) bits.push(`+${def.rngDmg} ranged dmg`);
+    if (def.magAcc) bits.push(`+${def.magAcc} magic acc`);
+    if (def.magDmg) bits.push(`+${def.magDmg} magic dmg`);
+    if (def.def) bits.push(`+${def.def} defence`);
+    if (def.heals) bits.push(`heals ${def.heals}`);
+    if (def.graceRestore) bits.push(`+${def.graceRestore} Grace`);
+    return bits.join(" · ");
+  }
+
+  /** Inspect a stored/pack item: name, description, stats, requirement, value. */
+  private showItemInfo(item: ItemId, qty: number): void {
+    const def = this.content.items[item];
+    if (!def) return;
+    const stats = this.itemStats(def);
+    const req = equipRequirement(this.content, item);
+    const reqLine = req ? `<div class="shop-info-req">Requires ${this.content.skills[req.skill]?.name ?? req.skill} ${req.level}</div>` : "";
+    const value = def.sell ?? 0;
+    const valLine = value > 0
+      ? `Worth ${value.toLocaleString()}g each${qty > 1 ? ` · ${(value * qty).toLocaleString()}g for all ${qty}` : ""}`
+      : "No market value";
+    this.infoEl.innerHTML = `
+      <div class="shop-info-box">
+        <button class="shop-info-x" type="button">✕</button>
+        <div class="shop-info-icon">${itemIconSVG(def)}</div>
+        <div class="shop-info-name">${def.name}</div>
+        <div class="shop-info-desc">${def.description}</div>
+        ${stats ? `<div class="shop-info-gear">${stats}</div>` : ""}
+        ${reqLine}
+        <div class="shop-info-stats">${valLine}</div>
+      </div>`;
+    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
+    );
+    this.infoEl.classList.remove("hidden");
   }
 
   /** Pack item: choose how much to bank — 1, a typed amount, or the whole stack. */

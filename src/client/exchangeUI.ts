@@ -25,7 +25,7 @@ export class ExchangeUI {
   private balEl: HTMLElement;
   private tabsEl: HTMLElement;
   private open = false;
-  private tab: Tab = "account";
+  private tab: Tab = "market";
   private bal = 0;
   private bank: GeItem[] = [];
   private orders: GeOrder[] = [];
@@ -85,6 +85,9 @@ export class ExchangeUI {
 
   async show(): Promise<void> {
     this.open = true;
+    // Open on the Market every time — it's what most players come here to see.
+    this.tab = "market";
+    this.tabsEl.querySelectorAll(".ge-tab").forEach((t, i) => t.classList.toggle("on", i === 3));
     this.backdrop.classList.remove("hidden");
     this.msg("");
     this.body.innerHTML = `<div class="ge-empty">Loading…</div>`;

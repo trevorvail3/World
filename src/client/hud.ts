@@ -114,9 +114,9 @@ export class Hud {
   private autocastChips = new Map<string, HTMLElement>();
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
-  private hpText!: HTMLElement;
+  private hpBar!: HTMLElement;
   private graceFill!: HTMLElement;
-  private graceText!: HTMLElement;
+  private graceBar!: HTMLElement;
   private goldText!: HTMLElement;
   private vitals!: HTMLElement;
   private runControl!: HTMLElement;
@@ -263,22 +263,20 @@ export class Hud {
     // The HP bar sits under the minimap with the run-energy orb beside it, in one
     // compact row, so both fit neatly under the minimap's width.
     const vitals = panel("hud-panel hud-vitals");
+    // Just the run orb and the two bars (Hitpoints over Grace) — no numbers or
+    // icons cluttering the bars; the exact values live in the hover tooltips.
     vitals.innerHTML = `
-      <div class="vitals-label">
-        <span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span>
-        <span class="grace-label" title="Grace — the Devotion spell fuel. Refill at a shrine or altar."><span class="grace-ic">${glyph("orb")}</span><span class="grace-text">0 / 0</span></span>
-      </div>
       <div class="vitals-row">
         <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
         <div class="vitals-bars">
-          <div class="hp-bar"><div class="hp-fill"></div></div>
-          <div class="grace-row"><div class="grace-bar"><div class="grace-fill"></div></div></div>
+          <div class="hp-bar" title="Hitpoints"><div class="hp-fill"></div></div>
+          <div class="grace-row"><div class="grace-bar" title="Grace — the Devotion spell fuel. Refill at a shrine or altar."><div class="grace-fill"></div></div></div>
         </div>
       </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
-    this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
+    this.hpBar = vitals.querySelector(".hp-bar") as HTMLElement;
     this.graceFill = vitals.querySelector(".grace-fill") as HTMLElement;
-    this.graceText = vitals.querySelector(".grace-text") as HTMLElement;
+    this.graceBar = vitals.querySelector(".grace-bar") as HTMLElement;
     this.vitals = vitals;
     // The boot orb: a ring that drains as energy spends; click toggles run/walk.
     const runCtl = vitals.querySelector(".run-control") as HTMLElement;
@@ -1348,7 +1346,7 @@ export class Hud {
     // Hitpoints (always-on bar) + low-HP warning.
     const pct = Math.max(0, Math.min(1, player.hp / player.maxHp));
     this.hpFill.style.width = `${pct * 100}%`;
-    this.hpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    this.hpBar.title = `Hitpoints: ${Math.max(0, player.hp)} / ${player.maxHp}`;
     this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
 
@@ -1359,7 +1357,7 @@ export class Hud {
     const graceMax = 9 + Math.max(1, player.skills.faith.level);
     const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
     this.graceFill.style.width = `${gpct * 100}%`;
-    this.graceText.textContent = `${Math.floor(player.grace)} / ${graceMax}`;
+    this.graceBar.title = `Grace: ${Math.floor(player.grace)} / ${graceMax} — the Devotion spell fuel. Refill at a shrine or altar.`;
 
     // Run/walk: bar width, percentage, on/off and low-energy styling.
     // Run orb: the ring depletes with energy (a CSS var drives the conic fill),
