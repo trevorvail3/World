@@ -69,6 +69,7 @@ const CLOTH: Record<string, Metal> = {
   lumber: { base: "#4f6a3a", edge: "#7a9a52" }, // woodsman green
   angler: { base: "#3a5a7a", edge: "#5f86b0" }, // fisher blue
   farmer: { base: "#b59a4a", edge: "#e0c878" }, // farmhand straw
+  trail: { base: "#2f7d5a", edge: "#6fce9c" },  // runner's green (Trailblazer)
 };
 
 const CAPE_PALETTE = [
@@ -131,7 +132,7 @@ function leatherStep(id: string): number | null {
 
 /** Themed cloth for a skilling outfit, or null. */
 function clothOf(id: string): Metal | null {
-  const m = /^(prosp|lumber|angler|farmer)_/.exec(id);
+  const m = /^(prosp|lumber|angler|farmer|trail)_/.exec(id);
   return m ? CLOTH[m[1]!]! : null;
 }
 

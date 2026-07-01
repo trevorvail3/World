@@ -294,4 +294,17 @@ export const shops: ShopDef[] = [
       { item: "arrow_ashiron", price: 6, qty: 50 },
     ],
   },
+  {
+    id: "shop_trailkeeper",
+    npc: "trail_keeper",
+    name: "The Trailkeeper's Kit",
+    greeting: "Run the whole country and the Marks are yours to spend. Four pieces of running-gear — wear them all and you'll scarcely tire.",
+    // Bought with Agility Marks (earned per Varathian Trail lap), not gold.
+    stock: [
+      { item: "trail_hood", price: 0, qty: 1, costItem: "agility_mark", costQty: 6 },
+      { item: "trail_vest", price: 0, qty: 1, costItem: "agility_mark", costQty: 10 },
+      { item: "trail_legs", price: 0, qty: 1, costItem: "agility_mark", costQty: 8 },
+      { item: "trail_boots", price: 0, qty: 1, costItem: "agility_mark", costQty: 5 },
+    ],
+  },
 ];

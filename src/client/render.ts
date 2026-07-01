@@ -757,8 +757,12 @@ function drawAgilityTracks(
 ): void {
   const sx = (tx: number): number => tx * TILE + TILE / 2 - cam.x;
   const sy = (ty: number): number => ty * TILE + TILE / 2 - cam.y;
-  for (const pts of agilityCourses(content).values()) {
+  for (const [course, pts] of agilityCourses(content).entries()) {
     if (pts.length < 2) continue;
+    // The Varathian Trail rings the entire map — a single bounding box round it
+    // would fence in the whole world. It has no worn track/fence; its checkpoints
+    // stand alone and the next-leg marker guides you between them.
+    if (course === "course_varath_trail") continue;
     let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
     for (const p of pts) {
       minx = Math.min(minx, p.x!); miny = Math.min(miny, p.y!);

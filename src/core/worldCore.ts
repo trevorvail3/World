@@ -75,6 +75,16 @@ const AGILITY_REGEN_AT_CAP = 2.2;
 // Agility is trained on obstacle courses; clearing a full lap pays a bonus equal
 // to this multiple of the course's total per-obstacle XP.
 const AGILITY_LAP_BONUS_MULT = 1.0;
+// The Varathian Trail (whole-map circuit): a lap pays this flat XP dump on top of
+// the standard lap bonus, plus this many Agility Marks toward the Trailblazer kit.
+const TRAIL_LAP_XP = 6000;
+const TRAIL_LAP_MARKS = 3;
+// The Trailblazer outfit: each worn piece eases run-energy this much (drain scaled
+// down, regen scaled up); wearing the full set adds a bonus on top.
+const TRAIL_PIECES: ItemId[] = ["trail_hood", "trail_vest", "trail_legs", "trail_boots"];
+const TRAIL_DRAIN_PER_PIECE = 0.05; // −5% drain each (−20% at 4; −25% full-set)
+const TRAIL_REGEN_PER_PIECE = 0.08; // +8% regen each (+32% at 4; +40% full-set)
+const TRAIL_FULL_SET_BONUS = 0.05;  // extra 5% both ways for all four
 
 // Predators that strike when you stray too close (everything else waits to be
 // attacked). Kept here rather than in content so it's easy to tune.
@@ -1092,7 +1102,17 @@ function buyFromShop(
     events.push({ type: "LOG", message: "The Cape of Varath is earned only by mastering every skill to 99." });
     return;
   }
-  if (player.gold < line.price) {
+  // A listing may be priced in an alternate currency (e.g. Agility Marks) rather
+  // than gold. Charge whichever this line uses.
+  const payWith = line.costItem;
+  const payQty = line.costQty ?? 0;
+  if (payWith) {
+    if (countItem(player, payWith) < payQty) {
+      const cur = content.items[payWith].name;
+      events.push({ type: "LOG", message: `You need ${payQty} ${cur}${payQty === 1 ? "" : "s"} for that.` });
+      return;
+    }
+  } else if (player.gold < line.price) {
     events.push({ type: "LOG", message: "You can't afford that." });
     return;
   }
@@ -1100,14 +1120,18 @@ function buyFromShop(
     events.push({ type: "INVENTORY_FULL" });
     return;
   }
-  player.gold -= line.price;
+  if (payWith) removeItems(player, payWith, payQty);
+  else player.gold -= line.price;
   addItem(player, item, line.qty, events);
   if (stocked && state.shopStock?.[shopId]) {
     state.shopStock[shopId]![item] = Math.max(0, shopStockLeft(state, shopId, item) - 1);
   }
   const name = content.items[item].name;
   const bundle = line.qty > 1 ? `${line.qty}× ` : "";
-  events.push({ type: "LOG", message: `Bought ${bundle}${name} for ${line.price}g.` });
+  const cost = payWith
+    ? `${payQty} ${content.items[payWith].name}${payQty === 1 ? "" : "s"}`
+    : `${line.price}g`;
+  events.push({ type: "LOG", message: `Bought ${bundle}${name} for ${cost}.` });
 }
 
 /** Sell up to `qty` of an item from the pack at the market for its gold value. */
@@ -2609,10 +2633,20 @@ function finishObstacle(
 
   if (order >= lastOrder) {
     const total = legs.reduce((s, o) => s + (o.xp ?? 0), 0);
-    const bonus = Math.round(total * AGILITY_LAP_BONUS_MULT);
-    if (bonus > 0) grantXp(state, content, "agility", bonus, events);
+    let bonus = Math.round(total * AGILITY_LAP_BONUS_MULT);
     player.agilityLap = null;
-    events.push({ type: "LOG", message: "Lap complete! You catch your breath, pleased with the run." });
+    // The Varathian Trail is a whole-map circuit — a lap pays a far larger XP
+    // dump and a purse of Agility Marks for the Trailkeeper's outfit.
+    if (course === "course_varath_trail") {
+      bonus += TRAIL_LAP_XP;
+      if (canAddItem(player, "agility_mark")) {
+        addItem(player, "agility_mark", TRAIL_LAP_MARKS, events);
+      }
+      events.push({ type: "LOG", message: `Varathian Trail lap complete! A grand run of the whole country — you earn ${TRAIL_LAP_MARKS} Agility Marks.` });
+    } else {
+      events.push({ type: "LOG", message: "Lap complete! You catch your breath, pleased with the run." });
+    }
+    if (bonus > 0) grantXp(state, content, "agility", bonus, events);
   } else {
     player.agilityLap = { course, next: order + 1 };
   }
@@ -3048,18 +3082,35 @@ function randRange(ctx: Ctx, min: number, max: number): number {
   return min + Math.floor(ctx.rng() * (max - min + 1));
 }
 
-/** Higher Agility drains run energy more slowly (harsh at lvl 1 → light at cap). */
+/** How many Trailblazer pieces are worn (0–4), for the run-energy set bonus. */
+function trailPiecesWorn(player: Player): number {
+  let n = 0;
+  for (const slot of ["helmet", "armor", "legs", "boots"] as const) {
+    if (TRAIL_PIECES.includes(player.equipment[slot] as ItemId)) n++;
+  }
+  return n;
+}
+
+/** Higher Agility drains run energy more slowly (harsh at lvl 1 → light at cap).
+ *  The Trailblazer outfit slows it further (per piece, with a full-set bonus). */
 function agilityDrainMult(player: Player): number {
   const lvl = player.skills.agility?.level ?? 1;
   const t = (lvl - 1) / (LEVEL_CAP - 1);
-  return AGILITY_DRAIN_AT_1 + (AGILITY_DRAIN_AT_CAP - AGILITY_DRAIN_AT_1) * t;
+  const base = AGILITY_DRAIN_AT_1 + (AGILITY_DRAIN_AT_CAP - AGILITY_DRAIN_AT_1) * t;
+  const worn = trailPiecesWorn(player);
+  const cut = worn * TRAIL_DRAIN_PER_PIECE + (worn === 4 ? TRAIL_FULL_SET_BONUS : 0);
+  return base * (1 - cut);
 }
 
-/** Higher Agility recovers run energy faster (slow at lvl 1 → fast at cap). */
+/** Higher Agility recovers run energy faster (slow at lvl 1 → fast at cap).
+ *  The Trailblazer outfit speeds it further (per piece, with a full-set bonus). */
 function agilityRegenMult(player: Player): number {
   const lvl = player.skills.agility?.level ?? 1;
   const t = (lvl - 1) / (LEVEL_CAP - 1);
-  return AGILITY_REGEN_AT_1 + (AGILITY_REGEN_AT_CAP - AGILITY_REGEN_AT_1) * t;
+  const base = AGILITY_REGEN_AT_1 + (AGILITY_REGEN_AT_CAP - AGILITY_REGEN_AT_1) * t;
+  const worn = trailPiecesWorn(player);
+  const boost = worn * TRAIL_REGEN_PER_PIECE + (worn === 4 ? TRAIL_FULL_SET_BONUS : 0);
+  return base * (1 + boost);
 }
 
 /** Advance the player along their path; returns the tiles travelled while sprinting. */

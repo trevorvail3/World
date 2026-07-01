@@ -3168,6 +3168,53 @@ export const items: Record<ItemId, ItemDef> = {
       "xpPct": 0.005
     }
   },
+
+  // --- Agility Marks + the Trailblazer outfit (earned on the Varathian Trail) ---
+  "agility_mark": {
+    "id": "agility_mark",
+    "name": "Agility Mark",
+    "description": "A runner's token, struck for each full lap of the Varathian Trail. Cael the Trailkeeper trades these for the Trailblazer outfit.",
+    "icon": "🎗️",
+    "cat": "Finds",
+    "stackable": true,
+    "sell": 0
+  },
+  "trail_hood": {
+    "id": "trail_hood",
+    "name": "Trailblazer Hood",
+    "description": "Light running gear. Each worn piece slows how fast you tire and speeds your recovery — the full set of four saves the most breath.",
+    "icon": "🏃",
+    "cat": "Gathering Gear",
+    "slot": "helmet",
+    "meta": { "agilityGear": true }
+  },
+  "trail_vest": {
+    "id": "trail_vest",
+    "name": "Trailblazer Vest",
+    "description": "Light running gear. Each worn piece slows how fast you tire and speeds your recovery — the full set of four saves the most breath.",
+    "icon": "🎽",
+    "cat": "Gathering Gear",
+    "slot": "armor",
+    "meta": { "agilityGear": true }
+  },
+  "trail_legs": {
+    "id": "trail_legs",
+    "name": "Trailblazer Leggings",
+    "description": "Light running gear. Each worn piece slows how fast you tire and speeds your recovery — the full set of four saves the most breath.",
+    "icon": "👖",
+    "cat": "Gathering Gear",
+    "slot": "legs",
+    "meta": { "agilityGear": true }
+  },
+  "trail_boots": {
+    "id": "trail_boots",
+    "name": "Trailblazer Boots",
+    "description": "Light running gear. Each worn piece slows how fast you tire and speeds your recovery — the full set of four saves the most breath.",
+    "icon": "🥾",
+    "cat": "Gathering Gear",
+    "slot": "boots",
+    "meta": { "agilityGear": true }
+  },
   "cape_mining": {
     "id": "cape_mining",
     "name": "Stone Master's Cape",

@@ -149,7 +149,17 @@ export class ShopUI {
       const stocked = def.cat !== "Capes";
       const left = stocked ? shopStockLeft(this.state, this.shop.id, line.item) : Infinity;
       const inStock = left > 0;
-      const afford = player.gold >= line.price && inStock;
+      // A listing priced in an alternate currency (e.g. Agility Marks) is bought
+      // with that item from the pack, not gold.
+      const payItem = line.costItem;
+      const payQty = line.costQty ?? 0;
+      const have = payItem
+        ? player.inventory.reduce((n, s) => (s?.item === payItem ? n + s.qty : n), 0)
+        : 0;
+      const costLabel = payItem
+        ? `${payQty} ${this.content.items[payItem]?.name ?? "Mark"}${payQty === 1 ? "" : "s"}`
+        : `${line.price.toLocaleString()}g`;
+      const afford = (payItem ? have >= payQty : player.gold >= line.price) && inStock;
       const row = document.createElement("div");
       row.className = "shop-row";
       const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
@@ -159,7 +169,7 @@ export class ShopUI {
       row.innerHTML = `
         <span class="shop-swatch">${itemIconSVG(def)}</span>
         <span class="shop-row-name">${def.name}${bundle}${stockTag}</span>
-        <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${line.price.toLocaleString()}g</button>`;
+        <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${costLabel}</button>`;
       const btn = row.querySelector(".shop-buy") as HTMLElement;
       btn.title = inStock ? def.description : "Out of stock — the keeper will restock soon.";
       // Long-press the item (not the Buy button) to inspect what you're buying.

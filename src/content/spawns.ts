@@ -154,6 +154,10 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
  *  doubled canvas. Applied to every hand-authored spawn so they land on the
  *  same terrain the map's remap() shifted that terrain to. */
 function remapObject(o: WorldObjectDef): WorldObjectDef {
+  // The Varathian Trail rings the whole outskirts, crossing every region — its
+  // checkpoints (and the Trailkeeper) are authored directly in final map
+  // coordinates, so they skip the per-region remap entirely.
+  if (o.id.startsWith("trail_")) return { ...o };
   const p = SPAWN_FIXUP[o.id] ?? remap(o.x, o.y);
   const out: WorldObjectDef = { ...o, x: p.x, y: p.y };
   if (o.target) out.target = remap(o.target.x, o.target.y);   // portal/door teleport tile
@@ -927,6 +931,25 @@ const rawObjects: WorldObjectDef[] = [
   { id: "course_ashfen_2", kind: "agility_obstacle", x: 69, y: 85, name: "Ashfen Gauntlet: Rope Swing", course: "course_ashfen", order: 2, exit: { x: 69, y: 86 }, xp: 360, levelReq: 70, obstacle: "rope" },
   { id: "course_ashfen_3", kind: "agility_obstacle", x: 66, y: 87, name: "Ashfen Gauntlet: Wall Scramble", course: "course_ashfen", order: 3, exit: { x: 65, y: 87 }, xp: 360, levelReq: 70, obstacle: "wall" },
   { id: "course_ashfen_4", kind: "agility_obstacle", x: 64, y: 85, name: "Ashfen Gauntlet: Stepping Stones", course: "course_ashfen", order: 4, exit: { x: 64, y: 84 }, xp: 360, levelReq: 70, obstacle: "stones" },
+
+  // === THE VARATHIAN TRAIL — a whole-map agility circuit (Agility 50+) =========
+  // Eight checkpoints ringing the outskirts, one in each region. They must be
+  // cleared in order (0 → 7); the last completes a LAP, paying a huge XP dump and
+  // a purse of Agility Marks redeemable with the Trailkeeper for the Trailblazer
+  // outfit. Authored in final map coordinates (the "trail_" prefix skips remap).
+  { id: "trail_cp0", kind: "agility_obstacle", x: 57, y: 10, name: "Varathian Trail: Spine Ridge Log", course: "course_varath_trail", order: 0, exit: { x: 58, y: 10 }, xp: 250, levelReq: 50, obstacle: "log" },
+  { id: "trail_cp1", kind: "agility_obstacle", x: 127, y: 15, name: "Varathian Trail: Marrow Climb", course: "course_varath_trail", order: 1, exit: { x: 126, y: 15 }, xp: 250, levelReq: 50, obstacle: "net" },
+  { id: "trail_cp2", kind: "agility_obstacle", x: 144, y: 86, name: "Varathian Trail: Redrun Beam", course: "course_varath_trail", order: 2, exit: { x: 145, y: 86 }, xp: 250, levelReq: 50, obstacle: "beam" },
+  { id: "trail_cp3", kind: "agility_obstacle", x: 140, y: 118, name: "Varathian Trail: Estuary Rope", course: "course_varath_trail", order: 3, exit: { x: 141, y: 118 }, xp: 250, levelReq: 50, obstacle: "rope" },
+  { id: "trail_cp4", kind: "agility_obstacle", x: 78, y: 150, name: "Varathian Trail: Ashfen Stones", course: "course_varath_trail", order: 4, exit: { x: 77, y: 150 }, xp: 250, levelReq: 50, obstacle: "stones" },
+  { id: "trail_cp5", kind: "agility_obstacle", x: 14, y: 146, name: "Varathian Trail: Moor Wall", course: "course_varath_trail", order: 5, exit: { x: 15, y: 146 }, xp: 250, levelReq: 50, obstacle: "wall" },
+  { id: "trail_cp6", kind: "agility_obstacle", x: 12, y: 80, name: "Varathian Trail: Greyoak Log", course: "course_varath_trail", order: 6, exit: { x: 13, y: 80 }, xp: 250, levelReq: 50, obstacle: "log" },
+  { id: "trail_cp7", kind: "agility_obstacle", x: 24, y: 40, name: "Varathian Trail: Northreach Net", course: "course_varath_trail", order: 7, exit: { x: 25, y: 40 }, xp: 250, levelReq: 50, obstacle: "net" },
+  { id: "trail_keeper", kind: "npc", x: 55, y: 11, name: "Cael the Trailkeeper", lines: [
+    "You've the look of a runner. This is the head of the Varathian Trail — eight marks set around the whole of the country, north to moor to coast and back.",
+    "Clear them in order and come round to a full lap. It's a hard run, but the country pays for it — and I keep a set of running-gear for those who bring me the Marks a lap earns.",
+    "Tap me to see what the Marks will buy.",
+  ] },
 
   // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===
   // Each sits beside a landmark whose mystery it deepens; tiles chosen by the

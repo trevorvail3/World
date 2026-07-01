@@ -379,6 +379,11 @@ export type ItemId =
   | "farmer_jacket"
   | "farmer_legs"
   | "farmer_boots"
+  | "agility_mark"
+  | "trail_hood"
+  | "trail_vest"
+  | "trail_legs"
+  | "trail_boots"
   | "cape_mining"
   | "cape_smithing"
   | "cape_forestry"
@@ -1795,6 +1800,10 @@ export interface ShopStock {
   price: number;
   /** How many units one purchase grants. */
   qty: number;
+  /** Alternate currency: when set, this listing is bought with `costQty` of
+   *  `costItem` from the pack instead of gold (e.g. Agility Marks). */
+  costItem?: ItemId;
+  costQty?: number;
 }
 
 /** One crop (a plant or a tree) the player can farm. growthMs is REAL ms. */
