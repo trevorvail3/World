@@ -935,6 +935,11 @@ export function drawWorld(
     }
   }
 
+  // Ambient water wildlife on the surface: fins in the deep, leaping fish in the
+  // rivers and lakes, the odd whale sounding out at sea. Drawn over the water but
+  // under everything else, so the day/night veil tints it with the water.
+  drawWaterLife(g, map, cam, minX, maxX, minY, maxY, now, inRegion, outside);
+
   // Agility courses: worn track + fence, drawn under the obstacles themselves.
   drawAgilityTracks(g, content, cam, w, h, inRegion);
 
@@ -1462,6 +1467,127 @@ function drawAmbientLife(g: CanvasRenderingContext2D, w: number, h: number, now:
       }
     }
     g.restore();
+  }
+}
+
+/**
+ * Ambient water wildlife on the surface: shark fins cruising the ocean, whales
+ * surfacing to blow far out at sea, and fish leaping in the lakes and rivers.
+ * World-anchored per coarse cell (seeded like the butterflies) and deterministic
+ * from the clock, so a fin stays put in the water as the camera slides past. Pure
+ * dressing — no objects, no interaction. Fins/whales ride the "deep" (open
+ * ocean); leaping fish ride the shallow "water" (rivers, lakes, coast).
+ */
+function drawWaterLife(
+  g: CanvasRenderingContext2D,
+  map: WorldMap,
+  cam: Camera,
+  minX: number, maxX: number, minY: number, maxY: number,
+  now: number,
+  inRegion: (x: number, y: number) => boolean,
+  outside: (x: number, y: number) => boolean,
+): void {
+  const t = now / 1000;
+  const tileAt = (x: number, y: number): TileType | null =>
+    (x < 0 || y < 0 || x >= map.width || y >= map.height) ? null : map.tiles[y * map.width + x]!;
+  const STEP = 4; // coarse cells — water features are big and sparse
+  for (let cy = minY - (minY % STEP); cy <= maxY; cy += STEP) {
+    for (let cx = minX - (minX % STEP); cx <= maxX; cx += STEP) {
+      if (!inRegion(cx, cy) || outside(cx, cy)) continue;
+      const tile = tileAt(cx, cy);
+      if (tile !== "water" && tile !== "deep") continue;
+      const seed = frac(cx * 1.93 + cy * 4.27);
+      const ax = cx * TILE - cam.x, ay = cy * TILE - cam.y;
+
+      if (tile === "deep") {
+        // Whale: a big dark back rises out in the deep and throws a tall bright
+        // spout, then sounds again. Uses its OWN seed (independent of the fins) so
+        // it can be common enough to spot from the coast without stealing fin
+        // cells — most whale-cells are submerged (invisible) at any moment anyway.
+        const wseed = frac(cx * 2.71 + cy * 6.13);
+        if (wseed < 0.14) {
+          const period = 11000 + wseed * 60000;
+          const ph = ((now + wseed * 300000) % period) / period;
+          if (ph < 0.3) {
+            const rise = Math.sin((ph / 0.3) * Math.PI); // surface → sound
+            const wx = ax + TILE * 1.5, wy = ay + TILE * 2 - rise * 6;
+            g.fillStyle = "#33414e";
+            g.beginPath(); g.ellipse(wx, wy, 27, 8 + rise * 6, 0, Math.PI, 0); g.fill();
+            g.fillStyle = "#465969"; // paler ridge along the back
+            g.beginPath(); g.ellipse(wx, wy - 1, 18, 4 + rise * 4, 0, Math.PI, 0); g.fill();
+            if (rise > 0.4) { // the blow — a tall bright spout
+              const sx = wx - 12, sy = wy - 6;
+              g.strokeStyle = `rgba(224,238,248,${(0.75 * rise).toFixed(2)})`;
+              g.lineWidth = 2; g.lineCap = "round";
+              for (const dx of [-4.5, 0, 4.5]) {
+                g.beginPath(); g.moveTo(sx, sy);
+                g.quadraticCurveTo(sx + dx, sy - 15, sx + dx * 1.9, sy - 24); g.stroke();
+              }
+              g.lineCap = "butt";
+            }
+          }
+          continue;
+        }
+        // Shark fin: a dorsal fin cutting a bright V-wake across the deep, fading
+        // in and out at the ends of its run.
+        if (seed < 0.3) {
+          const period = 10000 + seed * 26000;
+          const ph = ((now + seed * 50000) % period) / period;
+          if (ph < 0.84) {
+            const glide = ph / 0.84;
+            const dir = seed > 0.1 ? 1 : -1;
+            const fx = ax + TILE * 1.5 + dir * (glide - 0.5) * TILE * 3.2;
+            const fy = ay + TILE * 2 + Math.sin(t * 0.6 + seed * 20) * 4;
+            const fade = Math.min(1, Math.min(glide, 1 - glide) * 6);
+            g.save();
+            g.globalAlpha = fade;
+            g.strokeStyle = "rgba(206,226,238,0.5)"; g.lineWidth = 1.4; // bright wake
+            g.beginPath(); g.moveTo(fx - dir * 4, fy + 3); g.lineTo(fx - dir * 24, fy - 5); g.stroke();
+            g.beginPath(); g.moveTo(fx - dir * 4, fy + 3); g.lineTo(fx - dir * 24, fy + 11); g.stroke();
+            g.fillStyle = "#4a5a69"; // slate fin, light enough to read at night
+            g.beginPath();
+            g.moveTo(fx - dir * 8, fy + 4);
+            g.quadraticCurveTo(fx + dir * 2, fy - 13, fx + dir * 7, fy + 4);
+            g.closePath(); g.fill();
+            g.strokeStyle = "rgba(214,228,238,0.6)"; g.lineWidth = 1; // lit leading edge
+            g.beginPath(); g.moveTo(fx + dir * 7, fy + 4); g.quadraticCurveTo(fx + dir * 4.5, fy - 8, fx + dir * 1, fy - 8); g.stroke();
+            g.restore();
+          }
+          continue;
+        }
+      } else if (seed < 0.34) {
+        // Leaping fish (rivers + lakes): a bright silver arc clear of the water,
+        // with a splash ring at take-off and splash-down.
+        const period = 3400 + seed * 4200;
+        const ph = ((now + seed * 12000) % period) / period;
+        if (ph < 0.2) {
+          const jp = ph / 0.2;
+          const arc = Math.sin(jp * Math.PI);
+          const dir = seed > 0.17 ? 1 : -1;
+          const jx = ax + TILE * 1.5 + (frac(cx * 7 + cy) - 0.5) * TILE * 2;
+          const jy = ay + TILE * 1.5 + (frac(cy * 7 + cx) - 0.5) * TILE * 2;
+          const fx = jx + (jp - 0.5) * 14 * dir;
+          const fy = jy - arc * 26;
+          if (jp < 0.28 || jp > 0.72) {
+            const k = jp < 0.28 ? 1 - jp / 0.28 : (jp - 0.72) / 0.28;
+            g.strokeStyle = `rgba(214,232,244,${(0.72 * k).toFixed(2)})`;
+            g.lineWidth = 1.3;
+            const rr = 3 + (1 - k) * 7;
+            const rx = jp < 0.28 ? jx - 6 * dir : jx + 6 * dir;
+            g.beginPath(); g.ellipse(rx, jy, rr, rr * 0.4, 0, 0, Math.PI * 2); g.stroke();
+          }
+          g.save();
+          g.translate(fx, fy); g.rotate((jp - 0.5) * 1.3 * dir);
+          g.fillStyle = "#c6d2dc"; // bright silver body
+          g.beginPath(); g.ellipse(0, 0, 6, 2.4, 0, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "#eff5fa"; // a white glint along the flank
+          g.beginPath(); g.ellipse(-1, -0.7, 2.6, 1, 0, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "#95a4b2"; // tail
+          g.beginPath(); g.moveTo(-6 * dir, 0); g.lineTo(-11 * dir, -3); g.lineTo(-11 * dir, 3); g.closePath(); g.fill();
+          g.restore();
+        }
+      }
+    }
   }
 }
 
