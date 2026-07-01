@@ -1708,7 +1708,7 @@ const EQUIP_SLOTS = new Set<string>([
 ]);
 
 /** Chance, per successful skill action, of a matching skilling-pet companion. */
-const PET_DROP_CHANCE = 0.004;
+const PET_DROP_CHANCE = 0.002;
 
 /** The companion currently summoned, or undefined. */
 function activeCompanion(player: Player, content: Content): ItemDef | undefined {
