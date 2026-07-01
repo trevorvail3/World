@@ -200,10 +200,16 @@ export function drawAvatar(
     } else if (look.legs !== "kilt") {
       g.fillStyle = look.legColor; R(bx, 5 + y, 5, 6); // trousers
     }
-    // Metal greave over the shin (worn leg armour).
-    if (gear.legs) {
-      g.fillStyle = gear.legs.base; R(bx - 0.2, 5 + y, 5.4, 5.2);
-      g.fillStyle = gear.legs.edge; R(bx - 0.2, 5 + y, 1, 5.2); // edge highlight
+    // Worn leg armour: a metal greave (plate), slim chaps (leather) — or nothing
+    // here for robes, whose skirt is a single panel drawn after both feet.
+    if (gear.legs && gear.legs.style !== "robe") {
+      if (gear.legs.style === "leather") {
+        g.fillStyle = gear.legs.base; R(bx + 0.2, 5 + y, 4.6, 5);       // slim leather chap
+        g.fillStyle = shade(gear.legs.base, 0.3); R(bx + 0.2, 7.6 + y, 4.6, 0.5); // lace seam
+      } else {
+        g.fillStyle = gear.legs.base; R(bx - 0.2, 5 + y, 5.4, 5.2);
+        g.fillStyle = gear.legs.edge; R(bx - 0.2, 5 + y, 1, 5.2);       // edge highlight
+      }
     }
     if (gear.boots) {
       // Plated sabaton replaces the cloth shoe.
@@ -226,6 +232,22 @@ export function drawAvatar(
   };
   foot(-6, liftL);
   foot(1, liftR);
+
+  // --- Robe skirt: a single flaring panel over both legs (magic leg gear) ---
+  if (gear.legs && gear.legs.style === "robe") {
+    g.fillStyle = gear.legs.base;
+    g.beginPath();
+    g.moveTo(cx - 5.5 * s, cy + 3.5 * s);
+    g.lineTo(cx + 5.5 * s, cy + 3.5 * s);
+    g.lineTo(cx + 7 * s, cy + 12 * s);
+    g.lineTo(cx - 7 * s, cy + 12 * s);
+    g.closePath();
+    g.fill();
+    g.fillStyle = shade(gear.legs.base, 0.26);
+    g.fillRect(cx - 0.6 * s, cy + 3.5 * s, 1.2 * s, 8.5 * s); // centre fold
+    g.fillStyle = gear.legs.edge;
+    g.fillRect(cx - 7 * s, cy + 11.3 * s, 14 * s, 0.8 * s);   // hem trim
+  }
 
   // --- The far arm (drawn before the torso so it reads as "behind") ---
   drawArm(g, cx, cy, s, bob, look, 6.4, farAngle);
@@ -257,8 +279,43 @@ export function drawAvatar(
     Rb(-0.6, -7, 1.2, 10); // plain front seam
   }
 
-  // --- Chestplate (worn body armour, over the top) ---
-  if (gear.body) {
+  // --- Worn body armour, over the top: plate / leather jerkin / robe ---
+  if (gear.body && gear.body.style === "robe") {
+    // A flowing robe draping from the shoulders out past the hips.
+    g.fillStyle = gear.body.base;
+    g.beginPath();
+    g.moveTo(cx - 6.5 * s, cy - 7 * s + bob);
+    g.lineTo(cx + 6.5 * s, cy - 7 * s + bob);
+    g.lineTo(cx + 7.6 * s, cy + 6 * s + bob);
+    g.lineTo(cx - 7.6 * s, cy + 6 * s + bob);
+    g.closePath();
+    g.fill();
+    g.fillStyle = gear.body.edge;
+    Rb(-0.6, -7, 1.2, 13);                 // centre trim, collar to hem
+    g.fillStyle = shade(gear.body.base, 0.22);
+    Rb(3.8, -7, 1.1, 12.5);                // a side fold for form
+    g.fillStyle = look.skin;
+    arc(0, -6.8, 1.9, 0, Math.PI, false);  // V collar
+    g.fill();
+  } else if (gear.body && gear.body.style === "leather") {
+    // A fitted leather jerkin — lighter than plate, laced up the front.
+    g.fillStyle = gear.body.base;
+    Rb(-6, -6.4, 12, 9);
+    g.fillStyle = gear.body.edge;
+    Rb(-6, -6.4, 12, 1);                   // shoulder seam highlight
+    g.fillStyle = look.skin;
+    arc(0, -6.4, 1.8, 0, Math.PI, false);  // open V-neck
+    g.fill();
+    g.strokeStyle = shade(gear.body.base, 0.42);
+    g.lineWidth = 0.5 * s;
+    for (const ly of [-3, -1, 1] as const) { // cross-lacing down the centre
+      g.beginPath();
+      g.moveTo(cx - 1.1 * s, cy + ly * s + bob); g.lineTo(cx + 1.1 * s, cy + (ly + 1.4) * s + bob);
+      g.moveTo(cx + 1.1 * s, cy + ly * s + bob); g.lineTo(cx - 1.1 * s, cy + (ly + 1.4) * s + bob);
+      g.stroke();
+    }
+  } else if (gear.body) {
+    // Heavy plate chestplate (melee).
     g.fillStyle = gear.body.base;
     Rb(-6.6, -6.6, 13.2, 9.4);
     g.fillStyle = gear.body.edge;
@@ -274,8 +331,8 @@ export function drawAvatar(
   // --- The near arm (in front of the torso), holding the weapon/tool ---
   drawArm(g, cx, cy, s, bob, look, -6.4, nearAngle, nearTool, nearMetal);
 
-  // --- Pauldrons over both shoulders (sit on top of the arms) ---
-  if (gear.body) {
+  // --- Pauldrons over both shoulders (plate only — leather/robes have none) ---
+  if (gear.body && gear.body.style === "plate") {
     for (const sx of [-6.6, 6.6]) {
       g.fillStyle = gear.body.base;
       g.beginPath();
@@ -314,8 +371,40 @@ export function drawAvatar(
   drawFacial(g, cx, cy, s, bob, look);
   drawHair(g, cx, cy, s, bob, look);
 
-  // --- Helmet (over the hair) ---
-  if (gear.helmet) {
+  // --- Head gear (over the hair): metal helm / leather hood / wizard hat ---
+  if (gear.helmet && gear.helmet.style === "robe") {
+    // A wizard's hat: a wide brim under a tall, slightly leaning cone.
+    g.fillStyle = gear.helmet.base;
+    g.beginPath(); g.ellipse(cx, cy - 13 * s + bob, 8 * s, 2.3 * s, 0, 0, Math.PI * 2); g.fill(); // brim
+    g.beginPath();                                    // cone
+    g.moveTo(cx - 5 * s, cy - 13.4 * s + bob);
+    g.lineTo(cx + 5 * s, cy - 13.4 * s + bob);
+    g.lineTo(cx + 1.2 * s, cy - 24 * s + bob);        // tip leans forward a touch
+    g.closePath(); g.fill();
+    g.fillStyle = shade(gear.helmet.base, 0.3);
+    Rb(-5, -14.6, 10, 1.3);                            // hat band
+    g.fillStyle = gear.helmet.edge;
+    g.beginPath(); g.ellipse(cx, cy - 13.4 * s + bob, 8 * s, 0.9 * s, 0, 0, Math.PI * 2); g.fill(); // brim rim
+  } else if (gear.helmet && gear.helmet.style === "leather") {
+    // A soft hood/cowl pulled over the crown, draping at the neck.
+    g.fillStyle = gear.helmet.base;
+    arc(0, -11.6, 6.8, Math.PI * 0.9, Math.PI * 2.1); // fabric dome, a hair larger than the head
+    g.fill();
+    g.beginPath();                                    // left neck drape
+    g.moveTo(cx - 5.8 * s, cy - 11 * s + bob);
+    g.lineTo(cx - 6.8 * s, cy - 5.5 * s + bob);
+    g.lineTo(cx - 3.4 * s, cy - 8 * s + bob);
+    g.closePath(); g.fill();
+    g.beginPath();                                    // right neck drape
+    g.moveTo(cx + 5.8 * s, cy - 11 * s + bob);
+    g.lineTo(cx + 6.8 * s, cy - 5.5 * s + bob);
+    g.lineTo(cx + 3.4 * s, cy - 8 * s + bob);
+    g.closePath(); g.fill();
+    g.fillStyle = shade(gear.helmet.base, 0.34);
+    arc(0, -11.2, 5, Math.PI * 1.06, Math.PI * 1.94); // shadow inside the hood opening
+    g.fill();
+  } else if (gear.helmet) {
+    // Metal helm (melee).
     g.fillStyle = gear.helmet.base;
     arc(0, -12, 6.4, Math.PI * 1.0, Math.PI * 2.0); // dome over the crown
     g.fill();

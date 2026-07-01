@@ -20,12 +20,16 @@
 import type { Content, EquipSlot, ItemDef, ItemId } from "../core/types.ts";
 
 export interface Metal { base: string; edge: string }
+/** Which silhouette a worn piece draws as: heavy plate, light leather (Draw
+ *  gear), or a flowing robe (Devotion/magic). Drives shape, not just colour. */
+export type ArmorStyle = "plate" | "leather" | "robe";
+export interface GearPiece extends Metal { style: ArmorStyle }
 export interface GearLook {
-  helmet?: Metal;
-  body?: Metal;
-  legs?: Metal;
-  boots?: Metal;
-  shield?: Metal;
+  helmet?: GearPiece;
+  body?: GearPiece;
+  legs?: GearPiece;
+  boots?: GearPiece;
+  shield?: GearPiece;
   weapon?: Metal & { type: string; tier?: number };
   cape?: { color: string };
 }
@@ -136,6 +140,16 @@ function clothOf(id: string): Metal | null {
   return m ? CLOTH[m[1]!]! : null;
 }
 
+/** The silhouette a worn piece draws as: robes for Devotion/magic gear, light
+ *  leather for Draw/ranged (and the crafted leather sets), heavy plate for the
+ *  rest. Read from the item's category/skill so it never guesses from stats. */
+function gearStyle(item: ItemDef): ArmorStyle {
+  if (item.cat === "Magic Robes" || item.equipSkill === "faith" || item.magic) return "robe";
+  if (item.cat === "Ranged Armour" || item.equipSkill === "draw" || item.ranged) return "leather";
+  if (leatherStep(item.id) !== null) return "leather";
+  return "plate";
+}
+
 /** The render colour for a worn armour piece, by material. */
 function colorFor(item: ItemDef, ladderKey: string, content: Content): Metal {
   const uniq = uniqueLook(item.id);
@@ -163,7 +177,7 @@ export function resolveGear(
   const piece = (slot: EquipSlot, key: "helmet" | "body" | "legs" | "boots" | "shield"): void => {
     const id = eq[slot];
     const it = id ? content.items[id] : undefined;
-    if (it) out[key] = colorFor(it, slot === "armor" ? "armor" : slot, content);
+    if (it) out[key] = { ...colorFor(it, slot === "armor" ? "armor" : slot, content), style: gearStyle(it) };
   };
   piece("helmet", "helmet");
   piece("armor", "body");
