@@ -1791,7 +1791,7 @@ function drawObject(
       drawFishingSpot(g, cx, cy, now);
       break;
     case "npc":
-      drawNpc(g, cx, cy, now, moving);
+      drawNpc(g, cx, cy, now, moving, def.x, def.y);
       break;
     case "monster":
       drawMonster(g, def.monster, available, cx, cy, now, moving, attack);
@@ -3228,12 +3228,44 @@ function drawFishingSpot(g: CanvasRenderingContext2D, cx: number, cy: number, no
 }
 
 // --- Aldric: a man in an earthy tunic ---
-function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: number, moving = false): void {
+/** Each region dresses its folk differently, so a Frostgate northerner reads
+ *  apart from a Redrun fisher or a Heartmoor moor-dweller — the land has a look.
+ *  Themes are picked by the NPC's tile (final map coords); a per-NPC hash nudges
+ *  skin/hair so folk in one place aren't clones. */
+interface NpcTheme { tunic: string; collar: string; belt: string; legs: string; hats?: string }
+const NPC_THEMES: Record<string, NpcTheme> = {
+  spine:     { tunic: "#4a5a6e", collar: "#7d93a8", belt: "#2c3540", legs: "#33404d", hats: "#d7dde4" }, // northern furs/blue
+  marrow:    { tunic: "#7a5a30", collar: "#a07a42", belt: "#4a3620", legs: "#43331f" }, // miner ochre/brown
+  redrun:    { tunic: "#2f6a72", collar: "#59a0a6", belt: "#274042", legs: "#2b4a4d" }, // coastal teal
+  ashfen:    { tunic: "#7a4038", collar: "#a86050", belt: "#3e2620", legs: "#4a2f28" }, // ashen red-brown
+  heartmoor: { tunic: "#4f6a3a", collar: "#7a9a52", belt: "#2f3d24", legs: "#38472a" }, // moss green
+  greyoak:   { tunic: "#3f6a4a", collar: "#5f9a6a", belt: "#294031", legs: "#2c4a37" }, // forest green
+  city:      { tunic: "#6a4a6e", collar: "#9a6aa0", belt: "#3a2c3e", legs: "#3f3040" }, // Ironvale plum/civic
+};
+/** Which theme a tile falls under (named region boxes, else the city default). */
+function npcTheme(x: number, y: number): NpcTheme {
+  const inBox = (x0: number, y0: number, x1: number, y1: number) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+  if (inBox(40, 3, 72, 42)) return NPC_THEMES.spine!;
+  if (inBox(115, 5, 145, 45)) return NPC_THEMES.marrow!;
+  if (inBox(120, 55, 155, 135)) return NPC_THEMES.redrun!;
+  if (inBox(60, 130, 100, 162)) return NPC_THEMES.ashfen!;
+  if (inBox(0, 120, 40, 160)) return NPC_THEMES.heartmoor!;
+  if (inBox(0, 60, 40, 100)) return NPC_THEMES.greyoak!;
+  return NPC_THEMES.city!;
+}
+const NPC_SKINS = ["#caa472", "#b3895a", "#9a6b41", "#e0be93", "#8a5a36"];
+const NPC_HAIRS = ["#5b4a33", "#2e2620", "#7a6a4a", "#8a8f98", "#3a2c1e", "#a06a3a"];
+
+function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: number, moving = false, wx = 0, wy = 0): void {
   const a = walkAnim(now, moving);
-  const tunic = "#5a5238", skin = "#caa472";
+  const th = npcTheme(wx, wy);
+  const h = frac(wx * 12.9898 + wy * 78.233);
+  const tunic = th.tunic;
+  const skin = NPC_SKINS[Math.floor(h * NPC_SKINS.length) % NPC_SKINS.length]!;
+  const hair = NPC_HAIRS[Math.floor(h * 997) % NPC_HAIRS.length]!;
   shadow(g, cx, cy + 12, 8, 3);
   // legs (feet lift while walking)
-  g.fillStyle = "#3a2f23";
+  g.fillStyle = th.legs;
   g.fillRect(cx - 5, cy + 6 - a.liftL, 4, 7);
   g.fillRect(cx + 1, cy + 6 - a.liftR, 4, 7);
   // far arm (behind the body)
@@ -3241,19 +3273,25 @@ function drawNpc(g: CanvasRenderingContext2D, cx: number, cy: number, now: numbe
   // tunic + collar + belt (bob)
   g.fillStyle = tunic;
   g.fillRect(cx - 6, cy - 6 + a.bob, 12, 14);
-  g.fillStyle = "#6b6344";
+  g.fillStyle = th.collar;
   g.fillRect(cx - 6, cy - 6 + a.bob, 12, 3);
-  g.fillStyle = "#3a2f23"; // belt
+  g.fillStyle = th.belt;
   g.fillRect(cx - 6, cy + 4 + a.bob, 12, 2);
   // near arm (in front)
   limbArm(g, cx - 5.5, cy - 4 + a.bob, -0.12 + a.swing, tunic, skin);
   // head + hair
   g.fillStyle = skin;
   circle(g, cx, cy - 11 + a.bob, 5);
-  g.fillStyle = "#5b4a33";
+  g.fillStyle = hair;
   g.beginPath();
   g.arc(cx, cy - 12 + a.bob, 5, Math.PI, 0);
   g.fill();
+  // Northern folk wear a pale fur hood against the cold — a clear regional tell.
+  if (th.hats && h > 0.35) {
+    g.fillStyle = th.hats;
+    g.beginPath(); g.arc(cx, cy - 12.5 + a.bob, 5.4, Math.PI * 1.05, Math.PI * 1.95); g.fill();
+    g.fillRect(cx - 5.4, cy - 13 + a.bob, 10.8, 1.6);
+  }
 }
 
 /** Walk-cycle values (in base px): body bounce, limb swing, per-foot lift. */
