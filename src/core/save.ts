@@ -88,6 +88,7 @@ export interface SavedProgress {
     marks: number;
     guideId: string;
     task: { monster: string; required: number; progress: number; xp: number; marks: number; guideId: string } | null;
+    streak: number;
   };
   /** Farming patches: patch id -> what's planted and when (epoch ms). */
   farms: Record<string, { crop: string; plantedAt: number }>;
@@ -155,6 +156,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
       marks: player.bounty.marks,
       guideId: player.bounty.guideId,
       task: player.bounty.task ? { ...player.bounty.task } : null,
+      streak: player.bounty.streak,
     },
     hp: player.hp,
     fishingRecords: player.fishingRecords.map((r) => ({ ...r })),
@@ -398,6 +400,8 @@ export function hydratePlayer(
     if (typeof gid === "string" && content.bountyGuides.some((g) => g.id === gid)) {
       player.bounty.guideId = gid;
     }
+    const streak = savedBounty["streak"];
+    if (finiteNum(streak) && streak >= 0) player.bounty.streak = Math.floor(streak);
     const t = savedBounty["task"];
     if (
       isRecord(t) &&

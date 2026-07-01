@@ -1200,6 +1200,10 @@ export interface BountyTaskDef {
   marks: number;
   /** Bounty level needed before this template can be rolled. */
   minLevel: number;
+  /** Story flag that must be set before this task can be rolled — used to gate
+   *  boss bounties behind their unlock quest, so a flag-gated boss is never
+   *  assigned to a hunter who can't reach it. */
+  requiresFlag?: string;
 }
 
 /** A live, assigned bounty task — a template plus running progress. */
@@ -1222,6 +1226,10 @@ export interface BountyState {
   guideId: string;
   /** The active task, or null when none is taken. */
   task: BountyTask | null;
+  /** Consecutive tasks claimed without abandoning. Each claim past the first
+   *  pays escalating bonus Hunt Marks (+5% per streak, capped +50%); abandoning
+   *  a task resets it to 0. */
+  streak: number;
 }
 
 /** One listing in the Bounty board's Hunt-Marks shop. */

@@ -32,7 +32,7 @@ export const bountyGuides: BountyGuide[] = [
     icon: "🗡️",
     desc: "A scarred warrior stationed at the Spine passes. Assigns tasks in rougher territory for seasoned hunters.",
     levelReq: 30,
-    zones: ["spine", "heartmoor"],
+    zones: ["spine", "heartmoor", "outlaws"],
     xpMult: 1.6,
     marksMult: 1.6,
   },
@@ -46,6 +46,17 @@ export const bountyGuides: BountyGuide[] = [
     zones: ["marrow_deeps", "redrun"],
     xpMult: 2.5,
     marksMult: 2.5,
+  },
+  {
+    id: "kaeda",
+    name: "Kaeda",
+    title: "The Reckoner",
+    icon: "☠️",
+    desc: "Keeps a ledger of Varath's named monsters and who among the living has put one down. Assigns single-target boss hunts — the richest marks in the land, for those who can collect.",
+    levelReq: 60,
+    zones: ["boss_hunts"],
+    xpMult: 3.0,
+    marksMult: 3.0,
   },
 ];
 
@@ -64,6 +75,8 @@ export const bountyTasks: Record<string, BountyTaskDef[]> = {
   greyoak_wood: [
     { monster: "wild_boar", required: 15, xp: 800, marks: 32, minLevel: 10 },
     { monster: "wild_boar", required: 30, xp: 1500, marks: 60, minLevel: 20 },
+    { monster: "greymane_boar", required: 12, xp: 1400, marks: 56, minLevel: 18 },
+    { monster: "mountain_lion", required: 10, xp: 1600, marks: 64, minLevel: 20 },
     { monster: "forest_bear", required: 10, xp: 1200, marks: 50, minLevel: 15 },
     { monster: "forest_bear", required: 20, xp: 2400, marks: 100, minLevel: 30 },
   ],
@@ -81,13 +94,25 @@ export const bountyTasks: Record<string, BountyTaskDef[]> = {
     { monster: "marsh_lurker", required: 20, xp: 5500, marks: 225, minLevel: 55 },
     { monster: "heartmoor_hound", required: 10, xp: 3000, marks: 125, minLevel: 50 },
     { monster: "heartmoor_hound", required: 25, xp: 7000, marks: 285, minLevel: 62 },
+    { monster: "cult_acolyte", required: 15, xp: 1600, marks: 65, minLevel: 30 },
+    { monster: "cult_zealot", required: 10, xp: 3200, marks: 130, minLevel: 42 },
     { monster: "bog_knight", required: 5, xp: 4000, marks: 165, minLevel: 58 },
     { monster: "mire_serpent", required: 4, xp: 4500, marks: 185, minLevel: 62 },
+  ],
+  // The lawless roads — outlaw gangs from footpad to captain, ranging the whole
+  // map. Serath posts these alongside the Spine and moor work.
+  outlaws: [
+    { monster: "outlaw_archer", required: 12, xp: 1500, marks: 60, minLevel: 25 },
+    { monster: "outlaw_archer", required: 25, xp: 3000, marks: 125, minLevel: 35 },
+    { monster: "cutthroat", required: 10, xp: 1800, marks: 75, minLevel: 30 },
+    { monster: "marauder", required: 8, xp: 2400, marks: 100, minLevel: 38 },
+    { monster: "outlaw_captain", required: 5, xp: 3500, marks: 145, minLevel: 45 },
   ],
   marrow_deeps: [
     { monster: "cave_crawler", required: 8, xp: 4000, marks: 165, minLevel: 65 },
     { monster: "cave_crawler", required: 20, xp: 9000, marks: 370, minLevel: 72 },
     { monster: "deep_bat", required: 10, xp: 3500, marks: 145, minLevel: 68 },
+    { monster: "cult_magus", required: 6, xp: 5000, marks: 210, minLevel: 66 },
     { monster: "marrow_wraith", required: 5, xp: 5500, marks: 225, minLevel: 75 },
     { monster: "marrow_wraith", required: 12, xp: 12000, marks: 490, minLevel: 80 },
     { monster: "deep_golem", required: 3, xp: 8000, marks: 330, minLevel: 80 },
@@ -100,6 +125,21 @@ export const bountyTasks: Record<string, BountyTaskDef[]> = {
     { monster: "ancient_orc", required: 3, xp: 12000, marks: 490, minLevel: 91 },
     { monster: "ancient_orc", required: 8, xp: 28000, marks: 1150, minLevel: 95 },
   ],
+  // Kaeda's ledger — single-target hunts for Varath's named bosses. Base values
+  // are large and the guide triples them, so one clean boss kill pays like a
+  // long grind. Quest bosses carry a requiresFlag so they're only ever assigned
+  // to a hunter who has unlocked their lair.
+  boss_hunts: [
+    { monster: "bog_warden", required: 2, xp: 4000, marks: 200, minLevel: 60 },
+    { monster: "hollow_warden", required: 2, xp: 4000, marks: 200, minLevel: 60 },
+    { monster: "green_baron", required: 1, xp: 5000, marks: 240, minLevel: 62, requiresFlag: "q_green_baron_complete" },
+    { monster: "hollow_prophet", required: 1, xp: 5500, marks: 260, minLevel: 64, requiresFlag: "q_hollow_prophet_complete" },
+    { monster: "spine_warlord", required: 1, xp: 6000, marks: 280, minLevel: 66 },
+    { monster: "boneman", required: 1, xp: 6500, marks: 300, minLevel: 68, requiresFlag: "q_boneman_complete" },
+    { monster: "marrow_keeper", required: 1, xp: 7000, marks: 320, minLevel: 70 },
+    { monster: "ashen_wyrm", required: 1, xp: 9000, marks: 420, minLevel: 75 },
+    { monster: "dread_ferryman", required: 1, xp: 10000, marks: 460, minLevel: 78 },
+  ],
 };
 
 /** The Bounty board's Hunt-Marks shop (ported subset that exists in our items). */
@@ -111,4 +151,6 @@ export const bountyShop: BountyShopListing[] = [
   { item: "health_elixir", cost: 40, qty: 1, label: "Health Elixir", desc: "Restores health instantly." },
   { item: "arrow_ashiron", cost: 25, qty: 15, label: "Ashiron Arrows ×15", desc: "A bundle of fifteen ashiron-tipped arrows." },
   { item: "bloodore_arrow", cost: 60, qty: 15, label: "Bloodore Arrows ×15", desc: "A bundle of fifteen bloodore arrows." },
+  { item: "arrow_hearthite", cost: 130, qty: 20, label: "Hearthite Arrows ×20", desc: "A bundle of twenty hearthite-tipped arrows — for the hardest hunts." },
+  { item: "hunters_kit", cost: 400, qty: 3, label: "Hunter's Kit ×3", desc: "Three field kits at a bulk rate. Bank them for your biggest claims." },
 ];

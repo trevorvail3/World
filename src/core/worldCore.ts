@@ -506,7 +506,7 @@ export function createWorld(
       legColor: "#9a5a2a", shoeColor: "#3a2c20",
       hairStyle: "short", facial: "none", top: "plain", legs: "trousers", shoes: "boots",
     },
-    bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null },
+    bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0 },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
@@ -3964,11 +3964,15 @@ function takeBountyTask(
   const pool: BountyTaskDef[] = [];
   for (const zone of guide.zones) {
     for (const t of content.bountyTasks[zone] ?? []) {
-      if (level >= t.minLevel) pool.push(t);
+      if (level < t.minLevel) continue;
+      // Boss bounties are gated behind their unlock quest — never assign a task
+      // for a boss the hunter can't yet reach.
+      if (t.requiresFlag && !player.flags.includes(t.requiresFlag)) continue;
+      pool.push(t);
     }
   }
   if (pool.length === 0) {
-    events.push({ type: "LOG", message: "No tasks available — try a lower-tier guide." });
+    events.push({ type: "LOG", message: "No tasks available yet — earn more Bounty levels, or take work from a lower-tier guide." });
     return;
   }
   const pick = pool[Math.floor(ctx.rng() * pool.length)]!;
@@ -4007,22 +4011,34 @@ function claimBountyTask(
   const hasKit = hasItem(player, "hunters_kit");
   const xp = hasKit ? Math.round(task.xp * 1.5) : task.xp;
   if (hasKit) removeOneItem(player, "hunters_kit");
-  player.bounty.marks += task.marks;
+  // Hunt streak: each consecutive claim (past the first) pays escalating bonus
+  // marks, +5% per streak up to +50%. Abandoning a task breaks the streak.
+  player.bounty.streak += 1;
+  const streakPct = Math.min(player.bounty.streak - 1, 10) * 0.05;
+  const bonusMarks = Math.round(task.marks * streakPct);
+  player.bounty.marks += task.marks + bonusMarks;
   player.bounty.task = null;
   grantXp(state, content, "bounty", xp, events);
+  const kitNote = hasKit ? " (Hunter's Kit bonus)" : "";
+  const streakNote = bonusMarks > 0
+    ? ` · Hunt streak ×${player.bounty.streak}: +${bonusMarks} bonus Marks`
+    : "";
   events.push({
     type: "LOG",
-    message: hasKit
-      ? `Bounty claimed! +${task.marks} Hunt Marks · +${xp} Bounty XP (Hunter's Kit bonus).`
-      : `Bounty claimed! +${task.marks} Hunt Marks · +${xp} Bounty XP.`,
+    message: `Bounty claimed! +${task.marks} Hunt Marks · +${xp} Bounty XP${kitNote}${streakNote}.`,
   });
 }
 
-/** Abandon the current task — no reward, but the board is free again. */
+/** Abandon the current task — no reward, and the hunt streak resets. */
 function abandonBountyTask(player: Player, events: WorldEvent[]): void {
   if (!player.bounty.task) return;
   player.bounty.task = null;
-  events.push({ type: "LOG", message: "Bounty abandoned." });
+  const hadStreak = player.bounty.streak > 0;
+  player.bounty.streak = 0;
+  events.push({
+    type: "LOG",
+    message: hadStreak ? "Bounty abandoned — your hunt streak is broken." : "Bounty abandoned.",
+  });
 }
 
 /** Spend Hunt Marks at the Bounty board's shop. */

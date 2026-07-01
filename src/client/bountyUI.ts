@@ -75,8 +75,14 @@ export class BountyUI {
     const { player } = this.state;
     const b = player.bounty;
     const level = player.skills.bounty?.level ?? 1;
+    // Header: Hunt Marks, plus the live hunt streak once it's building — each
+    // consecutive claim past the first pays escalating bonus marks (up to +50%).
+    const streakPct = Math.min(Math.max(b.streak, 0), 10) * 5;
+    const streakBadge = b.streak > 1
+      ? ` <span class="bounty-streak" title="Consecutive tasks claimed without abandoning — your next claim pays +${streakPct}% bonus Hunt Marks.">${iconize("🔥")} Streak ×${b.streak} (+${streakPct}%)</span>`
+      : "";
     (this.backdrop.querySelector(".bounty-marks") as HTMLElement).innerHTML =
-      `${b.marks.toLocaleString()} <span class="mark-ic">${iconize("🎯")}</span>`;
+      `${b.marks.toLocaleString()} <span class="mark-ic">${iconize("🎯")}</span>${streakBadge}`;
 
     // While a task is live the active guide is whoever issued it — never a guide
     // the player merely walked past — so the contract can't look misattributed.

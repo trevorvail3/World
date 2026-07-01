@@ -1267,6 +1267,14 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   {
+    id: "kaeda", kind: "npc", bountyGuide: "kaeda", x: 88, y: 55, name: "Kaeda, the Reckoner",
+    lines: [
+      "Stand still. I'm reckoning whether you're worth an entry in my ledger, or a line in someone else's.",
+      "Every named thing in Varath is written in this book — the Boneman, the wardens, the wyrm on its hoard, the two the songs got wrong. Beside each, the hunters who put it down. Most pages are empty.",
+      "I don't hand out rat-work. I post one name at a time, and I pay in marks the fat-guild would faint at. Reach Bounty sixty, come back, and I'll set you against something that has a name worth taking.",
+    ],
+  },
+  {
     id: "redmouth_warin", kind: "npc", x: 82, y: 60, name: "Warin, an Old Fisher",
     lines: [
       "Redmouth, this. Three roofs and a smokehouse, and we've buried better men for less.",
