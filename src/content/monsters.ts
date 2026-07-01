@@ -1357,7 +1357,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "enrage", below: 0.3, mult: 1.5, tell: "The Baron laughs and stops playing the hero — every shot for the kill now!" },
     ],
     drops: [
-      { item: "pet_green_baron", chance: 0.004, tier: "legendary" },
+      { item: "pet_green_baron", chance: 0.002, tier: "legendary" },
       // The Greenhood set + the Baron's Yew, Barrows-style equal rates.
       { item: "greenhood_hood", chance: 0.13, tier: "rare" },
       { item: "greenhood_cloak", chance: 0.13, tier: "rare" },
@@ -1388,7 +1388,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "selfheal", below: 0.4, amount: 75, tell: "The Prophet opens the hole in himself wider — Orun's stolen light knits his wounds shut!" },
     ],
     drops: [
-      { item: "pet_hollow_prophet", chance: 0.004, tier: "legendary" },
+      { item: "pet_hollow_prophet", chance: 0.002, tier: "legendary" },
       // The Prophet's Regalia + the Hollow Staff, Barrows-style equal rates.
       { item: "prophet_hood", chance: 0.13, tier: "rare" },
       { item: "prophet_robe", chance: 0.13, tier: "rare" },
