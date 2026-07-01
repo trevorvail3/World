@@ -27,6 +27,7 @@ import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } f
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { findPath } from "./pathfinding.ts";
 
 // Ground loot renders as the actual item's icon: rasterise each item's SVG badge
 // to an <img> once (async), cache by id, and draw it on the tile. Until an image
@@ -821,46 +822,82 @@ function drawAgilityTracks(
   }
 }
 
+/** Tile types a trodden path can cross (for routing the Varathian Trail — the
+ *  ground types, not water/mountain/wall/cave-wall). Object blocking is ignored:
+ *  the track is cosmetic ground, drawn under trees and rocks. */
+const TRAIL_WALKABLE = new Set<TileType>([
+  "grass", "dirt", "path", "moss", "snow", "bog", "ash", "cave", "plank", "stone",
+]);
+
+/** The routed Varathian Trail, tile by tile, cached after the first build (the
+ *  checkpoints are static content). Null until computed. */
+let trailRouteCache: Vec2[] | null = null;
+
+/** A* the trail through walkable tiles: for each checkpoint pair (looping), find
+ *  the efficient ground route rather than a straight line across country. */
+function buildTrailRoute(content: Content, map: WorldMap): Vec2[] {
+  const walkable = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < map.width && y < map.height &&
+    TRAIL_WALKABLE.has(map.tiles[y * map.width + x]!);
+  const snap = (p: Vec2): Vec2 => {
+    if (walkable(p.x, p.y)) return { x: p.x, y: p.y };
+    for (let r = 1; r <= 5; r++)
+      for (let dx = -r; dx <= r; dx++)
+        for (let dy = -r; dy <= r; dy++)
+          if (walkable(p.x + dx, p.y + dy)) return { x: p.x + dx, y: p.y + dy };
+    return { x: p.x, y: p.y };
+  };
+  const cps = content.objects
+    .filter((o) => o.course === "course_varath_trail")
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((o) => snap({ x: o.x, y: o.y }));
+  if (cps.length < 2) return cps;
+  const route: Vec2[] = [cps[0]!];
+  for (let i = 0; i < cps.length; i++) {
+    const a = cps[i]!, b = cps[(i + 1) % cps.length]!; // close the loop
+    const seg = findPath(walkable, a, b);
+    if (seg.length) route.push(...seg);
+    else route.push(b); // unroutable — fall back to a straight hop
+  }
+  return route;
+}
+
 /**
- * The Varathian Trail's ground path: a soft worn track threading its far-flung
- * checkpoints in order, so a runner can follow the ground to the next one rather
- * than guessing across open country. Deliberately faint — a trodden line, not a
- * road — and drawn per-segment with view culling (the whole loop spans the map).
+ * The Varathian Trail's ground path: a thin, dulled, walked-on track — the same
+ * look as the small agility courses' worn dirt, just narrower — routed through
+ * the tiles that make sense (A* between checkpoints) rather than a straight line
+ * to each. Built once and cached; drawn per-segment with view culling since the
+ * loop spans the whole map.
  */
 function drawTrailPath(
   g: CanvasRenderingContext2D,
   content: Content,
+  map: WorldMap,
   cam: Camera,
   w: number,
   h: number,
   inRegion: (x: number, y: number) => boolean,
   outside: (x: number, y: number) => boolean,
 ): void {
-  const pts = content.objects
-    .filter((o) => o.course === "course_varath_trail")
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  if (pts.length < 2) return;
+  if (!trailRouteCache) trailRouteCache = buildTrailRoute(content, map);
+  const route = trailRouteCache;
+  if (route.length < 2) return;
   const sx = (tx: number): number => (tx + 0.5) * TILE - cam.x;
   const sy = (ty: number): number => (ty + 0.5) * TILE - cam.y;
   g.save();
+  g.strokeStyle = "rgba(116, 92, 56, 0.32)"; // worn dirt, matching the courses (thinner)
+  g.lineWidth = 6;
   g.lineCap = "round";
   g.lineJoin = "round";
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i]!, b = pts[(i + 1) % pts.length]!; // close the loop
-    // Cull segments wholly off-screen or outside the current region/draw-distance.
-    const midx = Math.round((a.x! + b.x!) / 2), midy = Math.round((a.y! + b.y!) / 2);
+  for (let i = 0; i < route.length - 1; i++) {
+    const a = route[i]!, b = route[i + 1]!;
+    const midx = Math.round((a.x + b.x) / 2), midy = Math.round((a.y + b.y) / 2);
     if (!inRegion(midx, midy) || outside(midx, midy)) continue;
-    const ax = sx(a.x!), ay = sy(a.y!), bx = sx(b.x!), by = sy(b.y!);
+    const ax = sx(a.x), ay = sy(a.y), bx = sx(b.x), by = sy(b.y);
     if (Math.max(ax, bx) < -TILE || Math.min(ax, bx) > w + TILE ||
         Math.max(ay, by) < -TILE || Math.min(ay, by) > h + TILE) continue;
-    // Just a thin dotted trail — a faint dashed line marking the way to the next
-    // checkpoint, not a worn road.
-    g.strokeStyle = "rgba(150, 200, 150, 0.5)";
-    g.lineWidth = 1.5;
-    g.setLineDash([3, 7]);
     g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
   }
-  g.setLineDash([]);
   g.restore();
 }
 
@@ -1023,7 +1060,7 @@ export function drawWorld(
 
   // Agility courses: worn track + fence, drawn under the obstacles themselves.
   drawAgilityTracks(g, content, cam, w, h, inRegion);
-  drawTrailPath(g, content, cam, w, h, inRegion, outside);
+  drawTrailPath(g, content, state.map, cam, w, h, inRegion, outside);
 
   // --- Loot on the floor (kill drops awaiting pickup) ---
   // Drawn before objects so creatures and the player render ON TOP of loot —

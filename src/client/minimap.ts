@@ -571,6 +571,7 @@ export class WorldMapModal {
     viewW: number,
     viewH: number,
   ): void {
+    void content; // markers are static DOM; the trail is no longer drawn on the map
     const g = this.g;
     const m = state.map;
     const cell = g.canvas.width / m.width;
@@ -584,24 +585,9 @@ export class WorldMapModal {
         g.fillRect(x * cell, y * cell, cell + 0.6, cell + 0.6);
       }
     }
-    // The Varathian Trail: a dashed green loop through its eight checkpoints, so
-    // the whole circuit reads at a glance (a big line across the map is fine).
-    const trail = content.objects
-      .filter((o) => o.course === "course_varath_trail")
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    if (trail.length > 1) {
-      g.save();
-      g.strokeStyle = "rgba(120, 205, 150, 0.6)";
-      g.lineWidth = Math.max(1.5, cell * 0.5);
-      g.lineCap = "round"; g.lineJoin = "round";
-      g.setLineDash([cell * 1.6, cell * 1.1]);
-      g.beginPath();
-      g.moveTo((trail[0]!.x + 0.5) * cell, (trail[0]!.y + 0.5) * cell);
-      for (let i = 1; i < trail.length; i++) g.lineTo((trail[i]!.x + 0.5) * cell, (trail[i]!.y + 0.5) * cell);
-      g.closePath();
-      g.stroke();
-      g.restore();
-    }
+    // The Varathian Trail is deliberately NOT drawn across the world map — only
+    // its start (the "Varathian Trail" head marker in the POI list) is shown, so
+    // the map stays uncluttered. You follow the walked track on the ground itself.
     // The view-rect of what the main camera currently shows.
     if (cam.y / TILE < rows) {
       g.strokeStyle = "rgba(255,255,255,0.3)";
