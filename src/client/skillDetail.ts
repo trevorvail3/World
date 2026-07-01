@@ -11,12 +11,26 @@ import { glyph, iconize } from "./glyph.ts";
 import { equipRequirement } from "../core/worldCore.ts";
 
 /** Which gear each combat skill gates: weapons need Edge, armour needs Ward,
- *  bows & arrows need Draw — each measured against that skill's own level. */
-const COMBAT_GEAR: Partial<Record<SkillId, { label: string; slots: string[] }>> = {
-  edge: { label: "Weapons", slots: ["mainhand"] },
-  ward: { label: "Armour", slots: ["helmet", "armor", "legs", "boots", "offhand"] },
-  draw: { label: "Bows & Arrows", slots: ["mainhand", "ranged", "ammo"] },
+ *  bows & arrows need Draw. Membership is decided by the skill that actually
+ *  gates each piece (see `gateSkill`), not by slot — a bow and a sword share
+ *  the mainhand slot but gate on different skills. */
+const COMBAT_GEAR: Partial<Record<SkillId, { label: string }>> = {
+  edge: { label: "Weapons" },
+  ward: { label: "Armour" },
+  draw: { label: "Bows & Arrows" },
 };
+
+/** The combat skill that gates a wearable, mirroring worldCore's equip rule —
+ *  but resolved even for base-tier (Lv1) pieces, whose equipRequirement()
+ *  returns null and so would otherwise lose their skill. Weapons gate on Edge,
+ *  bows/ranged on Draw, staves/robes on Faith, armour on Ward. */
+const SLOT_SKILL: Record<string, SkillId> = {
+  mainhand: "edge", ranged: "draw", ammo: "draw",
+  helmet: "ward", armor: "ward", legs: "ward", boots: "ward", offhand: "ward",
+};
+function gateSkill(def: { slot?: string; magic?: boolean; ranged?: boolean; equipSkill?: SkillId }): SkillId | undefined {
+  return def.equipSkill ?? (def.magic ? "faith" : def.ranged ? "draw" : SLOT_SKILL[def.slot ?? ""]);
+}
 
 /** Which gathering skill each tool type gates on, and the ladder heading to show
  *  it under (Fishing lists Rods, Mining Pickaxes, Forestry Hatchets). */
@@ -122,19 +136,26 @@ export class SkillDetailModal {
     // gathering skills, not combat.
     const gear = COMBAT_GEAR[skill];
     if (gear) {
-      const byLevel = activities.get(gear.label) ?? new Map<number, string[]>();
       for (const id of Object.keys(this.content.items) as ItemId[]) {
         const def = this.content.items[id];
-        if (!def.slot || !gear.slots.includes(def.slot) || def.tool) continue;
-        if (def.tier === undefined && def.equipLevel === undefined) continue;
+        if (!def.slot || def.tool || gateSkill(def) !== skill) continue;
+        // A tiered piece carries a material tier (explicit `tier` or the `_<n>`
+        // id suffix) or an explicit equipLevel; plain uniques with no gate are
+        // left off the ladder.
+        if (def.tier === undefined && def.equipLevel === undefined && !/_\d+$/.test(def.id)) continue;
         const req = equipRequirement(this.content, id);
-        if (req && req.skill !== skill) continue; // gated by a different skill
-        const lvl = req ? req.level : 1;
+        const lvl = req ? req.level : 1; // base tier resolves to null → Lv1
+        // Draw gates both bows and ranged armour — split them into two
+        // sub-ladders for clarity, the way Devotion separates Staves and Robes.
+        const label = skill === "draw" && !def.ranged && def.slot !== "ranged" && def.slot !== "ammo"
+          ? "Ranged Armour"
+          : gear.label;
+        const byLevel = activities.get(label) ?? new Map<number, string[]>();
         const list = byLevel.get(lvl) ?? [];
         if (!list.includes(def.name)) list.push(def.name);
         byLevel.set(lvl, list);
+        activities.set(label, byLevel);
       }
-      if (byLevel.size) activities.set(gear.label, byLevel);
     }
 
     // Gathering tools gate on THIS skill — list each rod/pickaxe/hatchet at the
@@ -183,7 +204,7 @@ export class SkillDetailModal {
         const def = this.content.items[id];
         const req = equipRequirement(this.content, id);
         if (def.magic) addTo("Staves", req ? req.level : 1, def.name);
-        else if (req && req.skill === "faith") addTo("Robes", req.level, def.name);
+        else if (gateSkill(def) === "faith") addTo("Robes", req ? req.level : 1, def.name);
       }
       for (const sp of this.content.spells) addTo("Spells", sp.faithReq, sp.name);
     }
