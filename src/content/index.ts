@@ -20,7 +20,7 @@ import { achievements } from "./achievements.ts";
 import { diaries } from "./diaries.ts";
 import { crops } from "./crops.ts";
 import { furniture } from "./furniture.ts";
-import { bountyGuides, bountyShop, bountyTasks } from "./bounty.ts";
+import { bountyGuides, bountyShop, bountyTasks, bountyUnlocks } from "./bounty.ts";
 import { objects, playerSpawn } from "./spawns.ts";
 import { skills } from "./skills.ts";
 import { xpForLevel } from "./xpCurve.ts";
@@ -45,6 +45,7 @@ export const content: Content = {
   bountyGuides,
   bountyTasks,
   bountyShop,
+  bountyUnlocks,
   pierFish: PIER_FISH,
   pierRecords: PIER_RECORDS,
   xpForLevel,

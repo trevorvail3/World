@@ -89,6 +89,8 @@ export interface SavedProgress {
     guideId: string;
     task: { monster: string; required: number; progress: number; xp: number; marks: number; guideId: string } | null;
     streak: number;
+    blocked: string[];
+    unlocks: string[];
   };
   /** Farming patches: patch id -> what's planted and when (epoch ms). */
   farms: Record<string, { crop: string; plantedAt: number }>;
@@ -157,6 +159,8 @@ export function serializePlayer(state: WorldState): SavedProgress {
       guideId: player.bounty.guideId,
       task: player.bounty.task ? { ...player.bounty.task } : null,
       streak: player.bounty.streak,
+      blocked: [...player.bounty.blocked],
+      unlocks: [...player.bounty.unlocks],
     },
     hp: player.hp,
     fishingRecords: player.fishingRecords.map((r) => ({ ...r })),
@@ -402,6 +406,14 @@ export function hydratePlayer(
     }
     const streak = savedBounty["streak"];
     if (finiteNum(streak) && streak >= 0) player.bounty.streak = Math.floor(streak);
+    const blocked = savedBounty["blocked"];
+    if (Array.isArray(blocked)) {
+      player.bounty.blocked = blocked.filter((m): m is string => typeof m === "string" && m in content.monsters);
+    }
+    const unlocks = savedBounty["unlocks"];
+    if (Array.isArray(unlocks)) {
+      player.bounty.unlocks = unlocks.filter((u): u is string => typeof u === "string" && content.bountyUnlocks.some((d) => d.id === u));
+    }
     const t = savedBounty["task"];
     if (
       isRecord(t) &&

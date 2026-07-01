@@ -75,6 +75,7 @@ export class BountyUI {
     const { player } = this.state;
     const b = player.bounty;
     const level = player.skills.bounty?.level ?? 1;
+    const blockCap = b.unlocks.includes("wider_net") ? 6 : 3;
     // Header: Hunt Marks, plus the live hunt streak once it's building — each
     // consecutive claim past the first pays escalating bonus marks (up to +50%).
     const streakPct = Math.min(Math.max(b.streak, 0), 10) * 5;
@@ -121,7 +122,9 @@ export class BountyUI {
           <div class="bounty-task-rewards">Reward: +${t.marks} Hunt Marks · +${t.xp.toLocaleString()} Bounty XP</div>
           <div class="bounty-actions">
             <button class="bounty-btn bounty-claim${done ? "" : " disabled"}" type="button">Claim</button>
-            <button class="bounty-btn bounty-abandon" type="button">Abandon</button>
+            <button class="bounty-btn bounty-skip${b.marks >= 30 ? "" : " disabled"}" type="button" title="Reroll this task for 30 Hunt Marks — your streak survives.">Skip · 30 ${iconize("🎯")}</button>
+            <button class="bounty-btn bounty-block${b.blocked.length < blockCap ? "" : " disabled"}" type="button" title="Never be assigned ${this.monsterName(t.monster)} again (uses a block slot).">Block</button>
+            <button class="bounty-btn bounty-abandon" type="button" title="Drop the task for free — but your hunt streak resets.">Abandon</button>
           </div>
         </div>`;
     } else {
@@ -139,7 +142,38 @@ export class BountyUI {
         </div>`;
     }
 
-    // --- 3) Hunt-Marks shop ---
+    // --- 3) Block list ---
+    html += `<div class="bounty-section-label">Block list (${b.blocked.length}/${blockCap})</div>`;
+    if (b.blocked.length) {
+      html += `<div class="bounty-blocked">`;
+      for (const m of b.blocked) {
+        html += `<span class="bounty-block-chip" title="Un-block ${this.monsterName(m)}">${this.monsterName(m)} <button class="bounty-unblock" data-monster="${m}" type="button" aria-label="Un-block">✕</button></span>`;
+      }
+      html += `</div>`;
+    } else {
+      html += `<div class="bounty-empty-mini">Nothing blocked. Use <b>Block</b> on a task you never want again.</div>`;
+    }
+
+    // --- 4) Permanent unlocks ---
+    html += `<div class="bounty-section-label">Unlocks</div><div class="bounty-shop">`;
+    for (const u of this.content.bountyUnlocks) {
+      const owned = b.unlocks.includes(u.id);
+      const needsSuperior = u.id === "keen_eye" && !b.unlocks.includes("superior");
+      const afford = b.marks >= u.cost;
+      const disabled = owned || needsSuperior || !afford;
+      html += `
+        <div class="bounty-shop-row">
+          <span class="bounty-shop-swatch bounty-unlock-ic">${iconize(u.id === "wider_net" ? "🚫" : "💠")}</span>
+          <span class="bounty-shop-info">
+            <span class="bounty-shop-name">${u.name}</span>
+            <span class="bounty-shop-desc">${u.desc}</span>
+          </span>
+          <button class="bounty-unlock-buy${disabled ? " disabled" : ""}" data-unlock="${u.id}" type="button">${owned ? "Owned" : `${u.cost} <span class="mark-ic">${iconize("🎯")}</span>`}</button>
+        </div>`;
+    }
+    html += `</div>`;
+
+    // --- 5) Hunt-Marks shop ---
     html += `<div class="bounty-section-label">Hunt-Marks Shop</div><div class="bounty-shop">`;
     for (const line of this.content.bountyShop) {
       const def = this.content.items[line.item];
@@ -189,6 +223,30 @@ export class BountyUI {
       e.stopPropagation();
       this.act({ type: "BOUNTY_ABANDON" });
     });
+    const skip = this.body.querySelector(".bounty-skip:not(.disabled)") as HTMLElement | null;
+    if (skip) skip.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      this.act({ type: "BOUNTY_SKIP" });
+    });
+    const block = this.body.querySelector(".bounty-block:not(.disabled)") as HTMLElement | null;
+    if (block) block.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      this.act({ type: "BOUNTY_BLOCK" });
+    });
+    for (const el of Array.from(this.body.querySelectorAll<HTMLElement>(".bounty-unblock"))) {
+      el.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const m = el.dataset["monster"];
+        if (m) this.act({ type: "BOUNTY_UNBLOCK", monster: m });
+      });
+    }
+    for (const el of Array.from(this.body.querySelectorAll<HTMLElement>(".bounty-unlock-buy:not(.disabled)"))) {
+      el.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        const id = el.dataset["unlock"];
+        if (id) this.act({ type: "BOUNTY_UNLOCK", id });
+      });
+    }
     for (const el of Array.from(this.body.querySelectorAll<HTMLElement>(".bounty-buy:not(.disabled)"))) {
       el.addEventListener("pointerdown", (e) => {
         e.stopPropagation();

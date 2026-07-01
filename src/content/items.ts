@@ -1667,6 +1667,36 @@ export const items: Record<ItemId, ItemDef> = {
       "petBoss": "hollow_prophet"
     }
   },
+  // === Superior-encounter ultra-rares — only from a Superior bounty kill ======
+  "reckoners_charm": {
+    "id": "reckoners_charm",
+    "name": "Reckoner's Charm",
+    "description": "A blackened coin on a cord, one face worn smooth by a hunter's thumb. Kaeda strikes only a handful, and only a Superior kill ever gives one up. It sharpens every blow you land.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "acc": 8,
+    "dmg": 5,
+    "def": 5,
+    "rngAcc": 6,
+    "magAcc": 6,
+    "rarity": "legendary",
+    "lore": "bounty",
+    "sell": 5000
+  },
+  "pet_superior": {
+    "id": "pet_superior",
+    "name": "The Superior",
+    "description": "A palm-sized creature that came up snarling out of a Superior kill and simply… decided to follow you. It thinks it's much bigger than it is. So did the one it came from.",
+    "icon": "🐾",
+    "cat": "Boss Pets",
+    "slot": "companion",
+    "rarity": "legendary",
+    "lore": "bounty",
+    "meta": {
+      "petSuperior": true
+    }
+  },
   "ribstone_arrow": {
     "id": "ribstone_arrow",
     "name": "Ribstone Arrow",

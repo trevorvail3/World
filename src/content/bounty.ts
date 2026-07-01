@@ -11,7 +11,7 @@
  * flat task rewards (rougher territory pays more).
  */
 
-import type { BountyGuide, BountyShopListing, BountyTaskDef } from "../core/types.ts";
+import type { BountyGuide, BountyShopListing, BountyTaskDef, BountyUnlock } from "../core/types.ts";
 
 export const bountyGuides: BountyGuide[] = [
   {
@@ -153,4 +153,18 @@ export const bountyShop: BountyShopListing[] = [
   { item: "bloodore_arrow", cost: 60, qty: 15, label: "Bloodore Arrows ×15", desc: "A bundle of fifteen bloodore arrows." },
   { item: "arrow_hearthite", cost: 130, qty: 20, label: "Hearthite Arrows ×20", desc: "A bundle of twenty hearthite-tipped arrows — for the hardest hunts." },
   { item: "hunters_kit", cost: 400, qty: 3, label: "Hunter's Kit ×3", desc: "Three field kits at a bulk rate. Bank them for your biggest claims." },
+];
+
+/**
+ * Permanent Hunt-Marks unlocks (bought once, owned forever), in the OSRS
+ * Slayer-reward vein. Effects are resolved by id in the core:
+ *  - "superior"  → task monsters can rise as a Superior (rare, tougher kill →
+ *                  a burst of bonus Marks + XP and a shot at an ultra-rare).
+ *  - "keen_eye"  → Superior encounters come half again as often.
+ *  - "wider_net" → block list grows from 3 slots to 6.
+ */
+export const bountyUnlocks: BountyUnlock[] = [
+  { id: "superior", name: "Bigger & Badder", cost: 750, desc: "Unlocks Superior encounters — while on a task, the creature you hunt can rarely rise as a Superior: a tougher kill that showers bonus Hunt Marks and Bounty XP, with a slim chance at an ultra-rare Hunter's trophy." },
+  { id: "keen_eye", name: "The Hunter's Eye", cost: 600, desc: "You learn the signs. Superior encounters appear roughly half again as often. (Requires Bigger & Badder.)" },
+  { id: "wider_net", name: "Warden's Ledger", cost: 400, desc: "Kaeda lets you keep a longer list of refusals — your block list grows from 3 monsters to 6." },
 ];

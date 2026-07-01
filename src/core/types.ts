@@ -264,6 +264,8 @@ export type ItemId =
   | "pet_boneman"
   | "pet_green_baron"
   | "pet_hollow_prophet"
+  | "pet_superior"
+  | "reckoners_charm"
   | "ribstone_arrow"
   | "bloodore_arrow"
   | "voidstone_arrow"
@@ -1230,6 +1232,12 @@ export interface BountyState {
    *  pays escalating bonus Hunt Marks (+5% per streak, capped +50%); abandoning
    *  a task resets it to 0. */
   streak: number;
+  /** Monster ids the hunter has blocked — never rolled into a task. Capped at a
+   *  base allotment, widened by the "wider_net" unlock. */
+  blocked: string[];
+  /** Permanent Hunt-Marks unlocks the hunter owns (BountyUnlock ids), e.g.
+   *  "superior" (enables Superior encounters) or "wider_net" (more block slots). */
+  unlocks: string[];
 }
 
 /** One listing in the Bounty board's Hunt-Marks shop. */
@@ -1238,6 +1246,15 @@ export interface BountyShopListing {
   cost: number;
   qty: number;
   label: string;
+  desc: string;
+}
+
+/** A one-time, permanent Hunt-Marks purchase (OSRS Slayer-reward style): pay
+ *  once, own it forever. Effects are resolved by id in the core. */
+export interface BountyUnlock {
+  id: string;
+  name: string;
+  cost: number;
   desc: string;
 }
 
@@ -1630,6 +1647,28 @@ export interface BountyBuyIntent {
   item: ItemId;
 }
 
+/** "Skip my current task" — reroll for a Hunt-Marks fee, keeping my streak. */
+export interface BountySkipIntent {
+  type: "BOUNTY_SKIP";
+}
+
+/** "Block my current task's monster" — never assign it again (uses a block slot). */
+export interface BountyBlockIntent {
+  type: "BOUNTY_BLOCK";
+}
+
+/** "Un-block a monster" — free up its block slot so it can be assigned again. */
+export interface BountyUnblockIntent {
+  type: "BOUNTY_UNBLOCK";
+  monster: string;
+}
+
+/** "Buy a permanent Hunt-Marks unlock." */
+export interface BountyUnlockIntent {
+  type: "BOUNTY_UNLOCK";
+  id: string;
+}
+
 /** "Claim this empty homestead plot as mine." */
 export interface ClaimPlotIntent {
   type: "CLAIM_PLOT";
@@ -1724,6 +1763,10 @@ export type Intent =
   | BountyClaimIntent
   | BountyAbandonIntent
   | BountyBuyIntent
+  | BountySkipIntent
+  | BountyBlockIntent
+  | BountyUnblockIntent
+  | BountyUnlockIntent
   | EquipIntent
   | UnequipIntent
   | CraftIntent
@@ -2197,6 +2240,8 @@ export interface Content {
   bountyTasks: Record<string, BountyTaskDef[]>;
   /** What the Bounty board sells for Hunt Marks (data). */
   bountyShop: BountyShopListing[];
+  /** Permanent Hunt-Marks unlocks the board offers (data). */
+  bountyUnlocks: BountyUnlock[];
   /** The species catchable from the deep-water pier minigame (data). */
   pierFish: PierFishDef[];
   /** Seed entries for the pier's records board — rival anglers to beat. */

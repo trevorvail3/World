@@ -506,7 +506,7 @@ export function createWorld(
       legColor: "#9a5a2a", shoeColor: "#3a2c20",
       hairStyle: "short", facial: "none", top: "plain", legs: "trousers", shoes: "boots",
     },
-    bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0 },
+    bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0, blocked: [], unlocks: [] },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
@@ -1586,6 +1586,26 @@ export function applyIntent(
     case "BOUNTY_BUY": {
       if (!atStation(player, "bounty", "the bounty board", events)) break;
       buyBountyItem(player, content, intent.item, events);
+      break;
+    }
+    case "BOUNTY_SKIP": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
+      skipBountyTask(player, content, events);
+      break;
+    }
+    case "BOUNTY_BLOCK": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
+      blockBountyTask(player, content, events);
+      break;
+    }
+    case "BOUNTY_UNBLOCK": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
+      unblockBountyMonster(player, content, intent.monster, events);
+      break;
+    }
+    case "BOUNTY_UNLOCK": {
+      if (!atStation(player, "bounty", "the bounty board", events)) break;
+      buyBountyUnlock(player, content, intent.id, events);
       break;
     }
     case "SET_STYLE": {
@@ -3968,6 +3988,8 @@ function takeBountyTask(
       // Boss bounties are gated behind their unlock quest — never assign a task
       // for a boss the hunter can't yet reach.
       if (t.requiresFlag && !player.flags.includes(t.requiresFlag)) continue;
+      // Blocked monsters are never rolled.
+      if (player.bounty.blocked.includes(t.monster)) continue;
       pool.push(t);
     }
   }
@@ -4061,6 +4083,111 @@ function buyBountyItem(
   player.bounty.marks -= line.cost;
   addItem(player, item, line.qty, events);
   events.push({ type: "LOG", message: `Bought ${content.items[item]?.name ?? item}.` });
+}
+
+/** Hunt Marks to skip (reroll) the current task without breaking the streak. */
+const BOUNTY_SKIP_COST = 30;
+/** Block slots: a base allotment, widened by the "wider_net" unlock. */
+const BLOCK_SLOTS_BASE = 3;
+const BLOCK_SLOTS_WIDE = 6;
+function blockCap(player: Player): number {
+  return player.bounty.unlocks.includes("wider_net") ? BLOCK_SLOTS_WIDE : BLOCK_SLOTS_BASE;
+}
+
+/** Skip the current task for a Hunt-Marks fee — a fresh one can be taken, and
+ *  the hunt streak survives (unlike an abandon). */
+function skipBountyTask(player: Player, content: Content, events: WorldEvent[]): void {
+  const task = player.bounty.task;
+  if (!task) { events.push({ type: "LOG", message: "You have no task to skip." }); return; }
+  if (player.bounty.marks < BOUNTY_SKIP_COST) {
+    events.push({ type: "LOG", message: `Skipping a task costs ${BOUNTY_SKIP_COST} Hunt Marks.` });
+    return;
+  }
+  const name = content.monsters[task.monster]?.name ?? task.monster;
+  player.bounty.marks -= BOUNTY_SKIP_COST;
+  player.bounty.task = null;
+  events.push({ type: "LOG", message: `Task skipped (−${BOUNTY_SKIP_COST} Marks). Your ${name} hunt is off the books; take a new one.` });
+}
+
+/** Block the current task's monster — never assigned again — using a block slot.
+ *  Clears the task (streak survives) so a fresh one can be taken. */
+function blockBountyTask(player: Player, content: Content, events: WorldEvent[]): void {
+  const task = player.bounty.task;
+  if (!task) { events.push({ type: "LOG", message: "You have no task to block." }); return; }
+  if (player.bounty.blocked.includes(task.monster)) { player.bounty.task = null; return; }
+  if (player.bounty.blocked.length >= blockCap(player)) {
+    events.push({ type: "LOG", message: `Your block list is full (${blockCap(player)}). Un-block a monster first${player.bounty.unlocks.includes("wider_net") ? "" : ", or buy the Warden's Ledger for more slots"}.` });
+    return;
+  }
+  const name = content.monsters[task.monster]?.name ?? task.monster;
+  player.bounty.blocked.push(task.monster);
+  player.bounty.task = null;
+  events.push({ type: "LOG", message: `${name} blocked — you'll never be sent after them again.` });
+}
+
+/** Remove a monster from the block list, freeing its slot. */
+function unblockBountyMonster(player: Player, content: Content, monster: string, events: WorldEvent[]): void {
+  const i = player.bounty.blocked.indexOf(monster);
+  if (i < 0) return;
+  player.bounty.blocked.splice(i, 1);
+  const name = content.monsters[monster]?.name ?? monster;
+  events.push({ type: "LOG", message: `${name} un-blocked — they can be assigned again.` });
+}
+
+/** Buy a permanent Hunt-Marks unlock (owned forever). */
+function buyBountyUnlock(player: Player, content: Content, id: string, events: WorldEvent[]): void {
+  const unlock = content.bountyUnlocks.find((u) => u.id === id);
+  if (!unlock) return;
+  if (player.bounty.unlocks.includes(id)) { events.push({ type: "LOG", message: "You already own that unlock." }); return; }
+  // The Hunter's Eye sharpens Superior odds — it's meaningless without Superiors.
+  if (id === "keen_eye" && !player.bounty.unlocks.includes("superior")) {
+    events.push({ type: "LOG", message: "Unlock Bigger & Badder first — there are no Superiors to spot yet." });
+    return;
+  }
+  if (player.bounty.marks < unlock.cost) {
+    events.push({ type: "LOG", message: `${unlock.name} costs ${unlock.cost} Hunt Marks.` });
+    return;
+  }
+  player.bounty.marks -= unlock.cost;
+  player.bounty.unlocks.push(id);
+  events.push({ type: "LOG", message: `Unlocked: ${unlock.name}!` });
+}
+
+/** Superior encounters: while on a task and owning "superior", each on-task kill
+ *  has a slim chance to be a Superior — a burst of bonus Marks + Bounty XP, and a
+ *  rarer shot at an ultra-rare Hunter's trophy dropped where the creature fell. */
+const SUPERIOR_ODDS = 100;            // ~1/100 on-task kills (…/65 with keen_eye)
+const SUPERIOR_ODDS_KEEN = 65;
+const SUPERIOR_UNIQUE_ODDS = 12;      // …of Superiors yield an ultra-rare (~1/1200 base)
+const SUPERIOR_UNIQUES: ItemId[] = ["reckoners_charm", "pet_superior"];
+function rollSuperiorBounty(
+  state: WorldState,
+  content: Content,
+  monster: string | undefined,
+  x: number,
+  y: number,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const task = player.bounty.task;
+  if (!monster || !task || task.monster !== monster) return;
+  if (!player.bounty.unlocks.includes("superior")) return;
+  const odds = player.bounty.unlocks.includes("keen_eye") ? SUPERIOR_ODDS_KEEN : SUPERIOR_ODDS;
+  if (ctx.rng() >= 1 / odds) return;
+  // A Superior! Always a burst of Marks + Bounty XP…
+  const name = content.monsters[monster]?.name ?? monster;
+  const bonusMarks = Math.max(30, Math.round(task.marks * 0.4));
+  const bonusXp = Math.max(200, Math.round(task.xp * 0.5));
+  player.bounty.marks += bonusMarks;
+  grantXp(state, content, "bounty", bonusXp, events);
+  events.push({ type: "LOG", message: `A Superior ${name} rises! +${bonusMarks} Hunt Marks · +${bonusXp} Bounty XP.` });
+  // …and, more rarely, an ultra-rare trophy on the ground where it fell.
+  if (ctx.rng() < 1 / SUPERIOR_UNIQUE_ODDS) {
+    const unique = SUPERIOR_UNIQUES[Math.floor(ctx.rng() * SUPERIOR_UNIQUES.length)]!;
+    dropToGround(state, unique, 1, x, y, ctx);
+    events.push({ type: "LOG", message: `The Superior leaves something behind: ${content.items[unique]?.name ?? unique}!` });
+  }
 }
 
 /** Auto-advance any passive objective ("gather" / "reach") now satisfied. */
@@ -4459,6 +4586,7 @@ function checkKill(
   events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
   advanceKillQuests(state, content, def.monster, events);
   trackBountyKill(player, content, def.monster, events);
+  rollSuperiorBounty(state, content, def.monster, drop.x, drop.y, ctx, events);
   clearActivity(player);
 }
 
