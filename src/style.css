@@ -1140,6 +1140,17 @@ body {
 }
 .ctx-menu::-webkit-scrollbar { width: 6px; }
 .ctx-menu::-webkit-scrollbar-thumb { background: rgba(120, 100, 70, 0.5); border-radius: 3px; }
+/* The action list scrolls on its own (title/inspect stay put) so a long recipe
+   menu can be swiped through on touch as well as with the wheel. */
+.ctx-items {
+  max-height: 56vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.ctx-items::-webkit-scrollbar { width: 6px; }
+.ctx-items::-webkit-scrollbar-thumb { background: rgba(120, 100, 70, 0.5); border-radius: 3px; }
 
 /* --- Menu / pop-up entrance polish ----------------------------------------
    Backdrops toggle display:none, which re-triggers these animations every time
@@ -3265,6 +3276,8 @@ button.inv-slot {
   font-family: "Cinzel", serif; font-weight: 700; font-size: 16px;
   color: var(--gold, #caa05a); width: 18px; text-align: center; flex: none;
 }
+.records-fish { flex: none; width: 26px; height: 26px; display: inline-flex; }
+.records-fish .item-svg { width: 26px; height: 26px; }
 .records-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .records-species { font-weight: 600; color: #ece4d2; }
 .records-angler { font-size: 11px; color: #9a907c; font-style: italic; }

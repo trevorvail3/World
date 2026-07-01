@@ -80,6 +80,10 @@ export class ContextMenu {
       this.menu.appendChild(desc);
     }
 
+    // Actions live in a scroll region, so a long list (e.g. every cooking
+    // recipe) can be scrolled through instead of running off the screen.
+    const list = document.createElement("div");
+    list.className = "ctx-items";
     for (const item of items) {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -87,14 +91,22 @@ export class ContextMenu {
       btn.innerHTML = item.target
         ? `<span class="ctx-verb">${esc(item.label)}</span> <span class="ctx-target">${esc(item.target)}</span>`
         : `<span class="ctx-verb">${esc(item.label)}</span>`;
-      btn.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
+      // Tap-vs-drag: a drag scrolls the list (long recipe menus), a tap selects.
+      // Don't preventDefault the pointerdown, or touch scrolling is blocked.
+      let sy = 0, sx = 0, moved = false;
+      btn.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; moved = false; e.stopPropagation(); });
+      btn.addEventListener("pointermove", (e) => {
+        if (Math.abs(e.clientY - sy) > 8 || Math.abs(e.clientX - sx) > 8) moved = true;
+      });
+      btn.addEventListener("pointerup", (e) => {
         e.stopPropagation();
+        if (moved) return; // it was a scroll, not a pick
         this.close();
         item.onSelect();
       });
-      this.menu.appendChild(btn);
+      list.appendChild(btn);
     }
+    this.menu.appendChild(list);
 
     // Position, then nudge back on-screen if it would overflow.
     this.backdrop.classList.remove("hidden");

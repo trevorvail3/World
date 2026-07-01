@@ -142,12 +142,15 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   // 22 Forest Bear nearby is harmless at that range, and is a scatter-POI the
   // fixup table doesn't reach, so it's left where it is.)
   rd_orc_1: { x: 128, y: 126 },      // Ancient Orc (lvl 94) → SW wilds
-  rd_serpent_1: { x: 130, y: 108 },  // River Serpent (lvl 86) → up the Redrun
-  // The Smuggler's Landing outlaws (lvl 26–40) sat close enough to plink a fisher
-  // at the northern shoal — shift the camp NW toward the Landing, clear of the loop.
-  out_smugglers_landing_0: { x: 130, y: 110 },
-  out_smugglers_landing_1: { x: 131, y: 110 },
-  out_smugglers_landing_2: { x: 130, y: 109 },
+  // The Redrun waystone lands you at 135,112, right on the Saltreach village.
+  // These foes used to sit on top of that tile and jump you the instant you
+  // teleport in — move them well clear, north and east of the village, so you
+  // arrive safe and have to walk out to the wild country to find a fight.
+  rd_brigand_1: { x: 149, y: 97 },   // Redrun Brigand → NE of the village
+  rd_serpent_1: { x: 147, y: 96 },   // River Serpent (lvl 86) → NE
+  out_smugglers_landing_0: { x: 151, y: 96 }, // outlaw archers + marauder → NE
+  out_smugglers_landing_1: { x: 153, y: 97 },
+  out_smugglers_landing_2: { x: 150, y: 99 },
 };
 
 /** Re-home a legacy-coordinate object (and its teleport target) onto the new,

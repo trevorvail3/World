@@ -1841,7 +1841,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_ashfin",
     "skill": "cooking",
-    "name": "Ashfin (+10 HP)",
+    "name": "Ashfin (+3 HP)",
     "levelReq": 1,
     "xp": 30,
     "requires": {
@@ -1853,7 +1853,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_speckletrout",
     "skill": "cooking",
-    "name": "Speckletrout (+18 HP)",
+    "name": "Speckletrout (+5 HP)",
     "levelReq": 10,
     "xp": 55,
     "requires": {
@@ -1865,7 +1865,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_greyfin",
     "skill": "cooking",
-    "name": "Greyfin (+28 HP)",
+    "name": "Greyfin (+7 HP)",
     "levelReq": 20,
     "xp": 90,
     "requires": {
@@ -1877,7 +1877,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_ribperch",
     "skill": "cooking",
-    "name": "Ribperch (+40 HP)",
+    "name": "Ribperch (+9 HP)",
     "levelReq": 30,
     "xp": 130,
     "requires": {
@@ -1889,7 +1889,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_marsh_eel",
     "skill": "cooking",
-    "name": "Marsh Eel (+50 HP)",
+    "name": "Marsh Eel (+10 HP)",
     "levelReq": 45,
     "xp": 155,
     "requires": {
@@ -1901,7 +1901,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_moorhart",
     "skill": "cooking",
-    "name": "Moorhart Steak (+68 HP)",
+    "name": "Moorhart Steak (+13 HP)",
     "levelReq": 75,
     "xp": 245,
     "requires": {
@@ -1913,7 +1913,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_coldwater_eel",
     "skill": "cooking",
-    "name": "Coldwater Eel (+55 HP)",
+    "name": "Coldwater Eel (+11 HP)",
     "levelReq": 45,
     "xp": 185,
     "requires": {
@@ -1925,7 +1925,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_redgill",
     "skill": "cooking",
-    "name": "Redgill (+72 HP)",
+    "name": "Redgill (+14 HP)",
     "levelReq": 60,
     "xp": 250,
     "requires": {
@@ -1937,7 +1937,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_deepscale",
     "skill": "cooking",
-    "name": "Deepscale (+90 HP)",
+    "name": "Deepscale (+17 HP)",
     "levelReq": 75,
     "xp": 330,
     "requires": {
@@ -1949,7 +1949,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_eyeless_pike",
     "skill": "cooking",
-    "name": "Eyeless Pike (+110 HP)",
+    "name": "Eyeless Pike (+20 HP)",
     "levelReq": 90,
     "xp": 440,
     "requires": {
@@ -1961,7 +1961,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_silverdart",
     "skill": "cooking",
-    "name": "Silverdart (+12 HP)",
+    "name": "Silverdart (+4 HP)",
     "levelReq": 8,
     "xp": 42,
     "requires": {
@@ -1973,7 +1973,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_bramblecarp",
     "skill": "cooking",
-    "name": "Bramblecarp (+22 HP)",
+    "name": "Bramblecarp (+6 HP)",
     "levelReq": 15,
     "xp": 68,
     "requires": {
@@ -1985,7 +1985,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_copperling",
     "skill": "cooking",
-    "name": "Copperling (+34 HP)",
+    "name": "Copperling (+8 HP)",
     "levelReq": 25,
     "xp": 105,
     "requires": {
@@ -1997,7 +1997,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_bristlepike",
     "skill": "cooking",
-    "name": "Bristlepike (+48 HP)",
+    "name": "Bristlepike (+10 HP)",
     "levelReq": 38,
     "xp": 150,
     "requires": {
@@ -2009,7 +2009,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_gloomshad",
     "skill": "cooking",
-    "name": "Gloomshad (+62 HP)",
+    "name": "Gloomshad (+12 HP)",
     "levelReq": 52,
     "xp": 205,
     "requires": {
@@ -2021,7 +2021,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_runestout",
     "skill": "cooking",
-    "name": "Runestout (+82 HP)",
+    "name": "Runestout (+16 HP)",
     "levelReq": 68,
     "xp": 300,
     "requires": {
@@ -2033,7 +2033,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_frostgill",
     "skill": "cooking",
-    "name": "Frostgill (+100 HP)",
+    "name": "Frostgill (+19 HP)",
     "levelReq": 82,
     "xp": 380,
     "requires": {
@@ -2045,7 +2045,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_rat_meat",
     "skill": "cooking",
-    "name": "Rat Meat (+8 HP)",
+    "name": "Rat Meat (+4 HP)",
     "levelReq": 1,
     "xp": 25,
     "requires": {
@@ -2057,7 +2057,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_wolf_meat",
     "skill": "cooking",
-    "name": "Wolf Meat (+20 HP)",
+    "name": "Wolf Meat (+6 HP)",
     "levelReq": 12,
     "xp": 55,
     "requires": {
@@ -2069,7 +2069,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_meat",
     "skill": "cooking",
-    "name": "Meat (+26 HP)",
+    "name": "Meat (+7 HP)",
     "levelReq": 1,
     "xp": 70,
     "requires": {
@@ -2081,7 +2081,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_boar_meat",
     "skill": "cooking",
-    "name": "Boar Meat (+34 HP)",
+    "name": "Boar Meat (+8 HP)",
     "levelReq": 25,
     "xp": 95,
     "requires": {
@@ -2093,7 +2093,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_bear_meat",
     "skill": "cooking",
-    "name": "Bear Meat (+52 HP)",
+    "name": "Bear Meat (+11 HP)",
     "levelReq": 40,
     "xp": 145,
     "requires": {
@@ -2105,7 +2105,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_venison",
     "skill": "cooking",
-    "name": "Venison (+72 HP)",
+    "name": "Venison (+14 HP)",
     "levelReq": 55,
     "xp": 210,
     "baseTime": 4500,
@@ -2118,7 +2118,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_aurochs",
     "skill": "cooking",
-    "name": "Aurochs Steak (+100 HP)",
+    "name": "Aurochs Steak (+19 HP)",
     "levelReq": 80,
     "xp": 330,
     "baseTime": 5500,
@@ -2131,7 +2131,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_mushroom_broth",
     "skill": "cooking",
-    "name": "Mushroom Broth (+12 HP)",
+    "name": "Mushroom Broth (+4 HP)",
     "levelReq": 5,
     "xp": 40,
     "baseTime": 4000,
@@ -2144,7 +2144,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_thornberry_tonic",
     "skill": "cooking",
-    "name": "Thornberry Tonic (+22 HP)",
+    "name": "Thornberry Tonic (+6 HP)",
     "levelReq": 15,
     "xp": 65,
     "baseTime": 4000,
@@ -2157,7 +2157,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_hearthroot_tea",
     "skill": "cooking",
-    "name": "Hearthroot Tea (+38 HP)",
+    "name": "Hearthroot Tea (+9 HP)",
     "levelReq": 28,
     "xp": 100,
     "baseTime": 5000,
@@ -2170,7 +2170,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_nightshade_brew",
     "skill": "cooking",
-    "name": "Nightshade Brew (+55 HP)",
+    "name": "Nightshade Brew (+11 HP)",
     "levelReq": 44,
     "xp": 145,
     "baseTime": 6000,
@@ -2183,7 +2183,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_ashroot_elixir",
     "skill": "cooking",
-    "name": "Ashroot Elixir (+75 HP)",
+    "name": "Ashroot Elixir (+15 HP)",
     "levelReq": 62,
     "xp": 200,
     "baseTime": 6000,
@@ -2196,7 +2196,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_dawnspore_draught",
     "skill": "cooking",
-    "name": "Dawnspore Draught (+100 HP)",
+    "name": "Dawnspore Draught (+19 HP)",
     "levelReq": 82,
     "xp": 275,
     "baseTime": 7000,
@@ -2209,7 +2209,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_deepmoss_broth",
     "skill": "cooking",
-    "name": "Deepmoss Broth (+85 HP)",
+    "name": "Deepmoss Broth (+16 HP)",
     "levelReq": 58,
     "xp": 170,
     "baseTime": 7000,
@@ -2222,7 +2222,7 @@ export const actions: SkillAction[] = [
   {
     "id": "cook_ashbloom_tea",
     "skill": "cooking",
-    "name": "Ashbloom Tea (+130 HP)",
+    "name": "Ashbloom Tea (+24 HP)",
     "levelReq": 74,
     "xp": 220,
     "baseTime": 7000,

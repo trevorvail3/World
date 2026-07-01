@@ -18,6 +18,11 @@ const COMBAT_GEAR: Partial<Record<SkillId, { label: string; slots: string[] }>> 
   draw: { label: "Bows & Arrows", slots: ["ranged", "ammo"] },
 };
 
+/** Which gathering skill each tool type gates on, and the ladder heading to show
+ *  it under (Fishing lists Rods, Mining Pickaxes, Forestry Hatchets). */
+const TOOL_SKILL: Record<string, SkillId> = { rod: "fishing", pickaxe: "mining", hatchet: "forestry" };
+const TOOL_LABEL: Record<string, string> = { rod: "Rods", pickaxe: "Pickaxes", hatchet: "Hatchets" };
+
 /** Pretty-print a SkillAction group key ("arrows" -> "Arrows"). */
 function groupLabel(key: string): string {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -130,6 +135,26 @@ export class SkillDetailModal {
         byLevel.set(lvl, list);
       }
       if (byLevel.size) activities.set(gear.label, byLevel);
+    }
+
+    // Gathering tools gate on THIS skill — list each rod/pickaxe/hatchet at the
+    // level it can be wielded, so the tool-upgrade path shows beside the catches.
+    {
+      const toolType = (Object.keys(TOOL_SKILL) as string[]).find((t) => TOOL_SKILL[t] === skill);
+      if (toolType) {
+        const label = TOOL_LABEL[toolType]!;
+        const byLevel = activities.get(label) ?? new Map<number, string[]>();
+        for (const id of Object.keys(this.content.items) as ItemId[]) {
+          const def = this.content.items[id];
+          if (def.tool !== toolType) continue;
+          const req = equipRequirement(this.content, id);
+          const lvl = req ? req.level : 1;
+          const list = byLevel.get(lvl) ?? [];
+          if (!list.includes(def.name)) list.push(def.name);
+          byLevel.set(lvl, list);
+        }
+        if (byLevel.size) activities.set(label, byLevel);
+      }
     }
 
     // Bounty: the guides, each at the bounty level it opens up.

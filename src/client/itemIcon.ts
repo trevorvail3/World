@@ -278,6 +278,56 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
 // ── shape drawing (32×32 viewBox) ───────────────────────────────────────────
 const WOOD = "#7a5a3a", WOODX = "#3a2a1a";
 
+/**
+ * Fish get a species-shaped silhouette (plus the hashed colour) so a Redrun
+ * Greatpike doesn't read the same as a Saltgill: eels are long and wavy, pike
+ * are long-jawed predators, flounder lie flat, carp/bass/stout are deep-bodied,
+ * and darts/gills/fins are small and streamlined. Falls back to a hashed pick.
+ */
+function fishShape(p: Pal, id: string): string {
+  const s = id.toLowerCase();
+  const has = (...k: string[]) => k.some((w) => s.includes(w));
+  const eye = (x: number, y: number) => `<circle cx="${x}" cy="${y}" r="1.3" fill="#1a1a1a"/>`;
+  let kind: "eel" | "pike" | "flat" | "deep" | "slim" | "std";
+  if (has("eel")) kind = "eel";
+  else if (has("pike", "leviathan")) kind = "pike";
+  else if (has("flounder", "flat")) kind = "flat";
+  else if (has("carp", "bass", "perch", "bream", "stout", "shad", "trout")) kind = "deep";
+  else if (has("dart", "gill", "fin", "silver", "copper", "frost")) kind = "slim";
+  else kind = (["std", "deep", "slim"] as const)[hash(id) % 3]!;
+
+  switch (kind) {
+    case "eel": // a long wavy body, small head
+      return `<path d="M3,16 Q9,8 15,16 Q21,24 28,15" fill="none" stroke="${p.base}" stroke-width="4.6" stroke-linecap="round"/>`
+        + `<path d="M3,16 Q9,8 15,16 Q21,24 28,15" fill="none" stroke="${p.dark}" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>`
+        + eye(26, 14.5);
+    case "pike": // long torpedo with a pointed, jawed snout
+      return `<path d="M2,16 Q12,10 25,13 L29,15 L29,17 L25,19 Q12,22 2,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<polygon points="2,16 -1,11 0,16 -1,21" fill="${p.dark}"/>`
+        + `<line x1="24" y1="15.5" x2="29" y2="16" stroke="${p.dark}" stroke-width="0.7" opacity="0.7"/>`
+        + eye(23, 14.5);
+    case "flat": // a flounder lying flat, tail off to the side, two topside eyes
+      return `<ellipse cx="15" cy="17" rx="11" ry="6.2" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/>`
+        + `<polygon points="26,17 30,13 30,21" fill="${p.dark}"/>`
+        + `<path d="M6,14 Q15,11 24,14" fill="none" stroke="${p.dark}" stroke-width="0.7" opacity="0.5"/>`
+        + eye(12, 14) + eye(16, 13.5);
+    case "deep": // a deep, round-bodied carp/bass
+      return `<path d="M6,16 Q13,6 21,10 Q27,13 27,16 Q27,19 21,22 Q13,26 6,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<polygon points="6,16 1,10 2,16 1,22" fill="${p.dark}"/>`
+        + `<path d="M15,9 Q17,16 15,23" fill="none" stroke="${p.dark}" stroke-width="0.7" opacity="0.6"/>`
+        + eye(22, 14.5);
+    case "slim": // a small, streamlined dart
+      return `<path d="M6,16 Q13,11 22,13 Q26,14.5 26,16 Q26,17.5 22,19 Q13,21 6,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<polygon points="6,16 2,12 3,16 2,20" fill="${p.dark}"/>`
+        + eye(21, 15.2);
+    default: // the standard streamlined fish
+      return `<path d="M5,16 Q12,8 22,12 Q26,14 26,16 Q26,18 22,20 Q12,24 5,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<polygon points="5,16 1,11 2,16 1,21" fill="${p.dark}"/>`
+        + `<path d="M14,11 Q16,16 14,21" fill="none" stroke="${p.dark}" stroke-width="0.7" opacity="0.6"/>`
+        + eye(21, 15);
+  }
+}
+
 function draw(shape: Shape, p: Pal, id: string): string {
   const r = (hash(id) % 9) - 4; // gentle per-item rotation for lumpy shapes
   switch (shape) {
@@ -288,7 +338,17 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "shaft": return `<rect x="14" y="5" width="4" height="22" rx="2" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><line x1="16" y1="6" x2="16" y2="26" stroke="${p.light}" stroke-width="0.8" opacity="0.6"/>`;
     case "pickaxe": return `<rect x="14.5" y="8" width="3" height="19" rx="1.5" fill="${WOOD}" stroke="${WOODX}" stroke-width="0.6"/><path d="M5,11 Q16,6 27,11 L25,14 Q16,10 7,14 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`;
     case "hatchet": return `<rect x="14.5" y="7" width="3" height="20" rx="1.5" fill="${WOOD}" stroke="${WOODX}" stroke-width="0.6"/><path d="M17,8 Q26,9 26,16 Q26,21 17,20 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><path d="M17.5,10 Q23,11 23,16" fill="none" stroke="${p.light}" stroke-width="0.8" opacity="0.6"/>`;
-    case "rod": return `<line x1="8" y1="26" x2="24" y2="6" stroke="${WOOD}" stroke-width="2.4" stroke-linecap="round"/><line x1="24" y1="6" x2="20" y2="20" stroke="${p.light}" stroke-width="0.8"/><circle cx="20" cy="21.4" r="1.5" fill="none" stroke="${p.base}" stroke-width="1"/>`;
+    case "rod":
+      // Pole tinted to the rod's material, a wound reel at the butt, guides up the
+      // shaft and a bright line to the hook — so each tier of rod reads apart (a
+      // tier gem is added on the reel by the accent pass for the finest rods).
+      return `<line x1="7" y1="27" x2="25" y2="5" stroke="${p.dark}" stroke-width="3" stroke-linecap="round"/>`
+        + `<line x1="7" y1="27" x2="25" y2="5" stroke="${p.base}" stroke-width="1.6" stroke-linecap="round"/>`
+        + `<line x1="10" y1="23" x2="24" y2="7" stroke="${p.light}" stroke-width="0.5" opacity="0.7"/>`
+        + `<circle cx="11" cy="23" r="2.6" fill="${p.dark}" stroke="${p.edge}" stroke-width="0.7"/>`
+        + `<circle cx="11" cy="23" r="0.9" fill="${p.light}"/>`
+        + `<line x1="25" y1="5" x2="21" y2="19" stroke="#d8e4ec" stroke-width="0.7"/>`
+        + `<circle cx="21" cy="20.4" r="1.5" fill="none" stroke="#cfe0ea" stroke-width="1"/>`;
     case "sword": return `<polygon points="16,4 18,8 18,20 14,20 14,8" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="6" x2="16" y2="19" stroke="${p.light}" stroke-width="0.8" opacity="0.7"/><rect x="10" y="20" width="12" height="2.6" rx="1" fill="#caa24a"/><rect x="15" y="22" width="2" height="5" fill="${WOOD}"/><circle cx="16" cy="27.4" r="1.6" fill="#caa24a"/>`;
     case "dagger": return `<polygon points="16,7 18,10 18,19 14,19 14,10" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="9" x2="16" y2="18" stroke="${p.light}" stroke-width="0.7" opacity="0.7"/><rect x="11" y="19" width="10" height="2.2" rx="1" fill="#caa24a"/><rect x="15" y="21" width="2" height="5" fill="${WOOD}"/>`;
     case "claymore": return `<polygon points="16,3 19,8 19,21 13,21 13,8" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="5" x2="16" y2="20" stroke="${p.light}" stroke-width="1" opacity="0.6"/><rect x="8" y="21" width="16" height="2.8" rx="1" fill="#caa24a"/><rect x="15" y="23" width="2" height="6" fill="${WOOD}"/><circle cx="16" cy="29" r="1.7" fill="#caa24a"/>`;
@@ -325,7 +385,7 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "herb": return `<path d="M16,28 Q15,18 16,8" fill="none" stroke="#5a6a2a" stroke-width="1.6"/><path d="M16,20 Q9,18 8,12 Q15,13 16,18 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="0.6"/><path d="M16,16 Q23,14 24,8 Q17,9 16,14 Z" fill="${p.light}" stroke="${p.edge}" stroke-width="0.6"/><path d="M16,11 Q12,8 13,4 Q17,6 16,10 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="0.6"/>`;
     case "seed": return `<ellipse cx="13" cy="18" rx="3" ry="5" transform="rotate(-20 13 18)" fill="${p.base}" stroke="${p.edge}" stroke-width="0.8"/><ellipse cx="19" cy="15" rx="2.6" ry="4.4" transform="rotate(25 19 15)" fill="${p.light}" stroke="${p.edge}" stroke-width="0.8"/><ellipse cx="17" cy="22" rx="2.4" ry="4" transform="rotate(10 17 22)" fill="${p.dark}" stroke="${p.edge}" stroke-width="0.8"/>`;
     case "mushroom": return `<rect x="14" y="16" width="4" height="10" rx="1.5" fill="#e6dcc4" stroke="${p.edge}" stroke-width="0.8"/><path d="M7,16 Q7,8 16,8 Q25,8 25,16 Q16,19 7,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><circle cx="12" cy="13" r="1.3" fill="#ffffff" opacity="0.7"/><circle cx="19" cy="12" r="1" fill="#ffffff" opacity="0.6"/>`;
-    case "fish": return `<path d="M5,16 Q12,8 22,12 Q26,14 26,16 Q26,18 22,20 Q12,24 5,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><polygon points="5,16 1,11 2,16 1,21" fill="${p.dark}"/><circle cx="21" cy="15" r="1.3" fill="#1a1a1a"/><path d="M14,11 Q16,16 14,21" fill="none" stroke="${p.dark}" stroke-width="0.7" opacity="0.6"/>`;
+    case "fish": return fishShape(p, id);
     case "meat": return `<line x1="9" y1="22" x2="14" y2="17" stroke="#efe6d4" stroke-width="3.2" stroke-linecap="round"/><circle cx="8.5" cy="22.5" r="2.2" fill="#efe6d4"/><circle cx="11" cy="20" r="2.2" fill="#efe6d4"/><ellipse cx="18" cy="13" rx="8" ry="7.5" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><ellipse cx="15" cy="10" rx="2.5" ry="2" fill="${p.light}" opacity="0.55"/>`;
     case "bowl": return `<path d="M5,15 Q16,13 27,15 Q25,25 16,25 Q7,25 5,15 Z" fill="#7a5236" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><ellipse cx="16" cy="15" rx="11" ry="3" fill="${p.base}"/><circle cx="12" cy="15" r="1.2" fill="${p.light}"/><circle cx="19" cy="14.5" r="1" fill="${p.dark}"/>`;
     case "bread": return `<path d="M6,18 Q6,11 16,11 Q26,11 26,18 Q26,23 16,23 Q6,23 6,18 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><line x1="11" y1="13" x2="9" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="16" y1="12.5" x2="16" y2="22" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="21" y1="13" x2="23" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/>`;
@@ -350,7 +410,7 @@ function draw(shape: Shape, p: Pal, id: string): string {
 // as ornate at a glance, not just a different shade of the same silhouette.
 const TIER_SHAPES = new Set<Shape>([
   "sword", "dagger", "claymore", "spear", "hammer", "saw",
-  "helm", "body", "legs", "boot", "shield",
+  "helm", "body", "legs", "boot", "shield", "rod",
 ]);
 function itemTier(def: ItemDef): number {
   if (typeof def.tier === "number") return def.tier;
@@ -376,6 +436,7 @@ function tierAccent(shape: Shape, tier: number): string {
     : shape === "body" ? [16, 14]
     : shape === "legs" ? [16, 11]
     : shape === "boot" ? [18, 22]
+    : shape === "rod" ? [11, 23]   // set into the reel
     : weapon ? [16, 21]   // on the hilt / guard
     : [16, 16];
   const gx = cxcy[0], gy = cxcy[1];
@@ -391,6 +452,13 @@ function tierAccent(shape: Shape, tier: number): string {
 const cache = new Map<string, string>();
 
 /** Inline SVG markup for an item's icon (cached, deterministic). */
+/** A standalone fish badge for a species NAME (the pier records board has no
+ *  item id, only the species text) — same species silhouettes as the pack icon. */
+export function fishBadgeSVG(species: string): string {
+  const pal = shadeFrom(hashColor(species, 182, 56, 16, 26, 44, 18));
+  return `<svg viewBox="0 0 32 32" class="item-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${fishShape(pal, species)}</svg>`;
+}
+
 export function itemIconSVG(def: ItemDef): string {
   const hit = cache.get(def.id);
   if (hit) return hit;

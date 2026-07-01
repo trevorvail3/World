@@ -531,11 +531,21 @@ const GROUND_TTL = 90_000;
 // --- Shop stock: each listing has a finite number of units; buying depletes it
 //     and it tops back up on a timer, so a shop can't be bought out in one go. ---
 const SHOP_RESTOCK_MS = 12 * 60_000; // a full restock about every 12 minutes
+// Healing items (cooked food, potions) restock only every 30 minutes and never
+// hold more than a handful — so buying meals can't stand in for fishing,
+// hunting and cooking your own heals.
+const SHOP_FOOD_RESTOCK_MS = 30 * 60_000;
+const SHOP_FOOD_STOCK = 5;
 
-/** A listing's full stock, scaled by price: cheap staples sit deep (50), premium
- *  goods are scarce (20). Generous enough to carry a long play session between
- *  the ~12-minute restocks, while still gating a one-sitting buy-out. */
-function shopMaxStock(price: number): number {
+/** Is this listing a healing item (food or potion)? Those get the scarce shelf. */
+function isHealingItem(content: Content, item: string): boolean {
+  return typeof content.items[item as ItemId]?.heals === "number";
+}
+
+/** A listing's full stock. Healing items sit shallow (5); otherwise scaled by
+ *  price: cheap staples deep (50), premium goods scarce (20). */
+function shopMaxStock(content: Content, item: string, price: number): number {
+  if (isHealingItem(content, item)) return SHOP_FOOD_STOCK;
   if (price <= 50) return 50;
   if (price <= 200) return 40;
   if (price <= 800) return 30;
@@ -543,25 +553,34 @@ function shopMaxStock(price: number): number {
 }
 
 /** Lazily seed (and time-restock) per-shop stock. Runtime only — resets on a
- *  fresh session, which is fine; within a session it gates rapid buy-outs. */
+ *  fresh session, which is fine; within a session it gates rapid buy-outs.
+ *  Healing items refresh on their own longer cooldown. */
 function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
   if (!state.shopStock) {
     state.shopStock = {};
     for (const shop of content.shops) {
       const m: Record<string, number> = {};
-      for (const line of shop.stock) m[line.item] = shopMaxStock(line.price);
+      for (const line of shop.stock) m[line.item] = shopMaxStock(content, line.item, line.price);
       state.shopStock[shop.id] = m;
     }
     state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+    state.shopFoodRestockAt = ctx.now + SHOP_FOOD_RESTOCK_MS;
     return;
   }
-  if ((state.shopRestockAt ?? 0) <= ctx.now) {
-    // Full refresh on the timer — every shelf back to its max.
+  const doGeneral = (state.shopRestockAt ?? 0) <= ctx.now;
+  const doFood = (state.shopFoodRestockAt ?? 0) <= ctx.now;
+  if (doGeneral || doFood) {
     for (const shop of content.shops) {
       const m = state.shopStock[shop.id] ?? (state.shopStock[shop.id] = {});
-      for (const line of shop.stock) m[line.item] = shopMaxStock(line.price);
+      for (const line of shop.stock) {
+        const healing = isHealingItem(content, line.item);
+        // General items refresh on the 12-min timer; healing items only on the
+        // 30-min one — so each keeps its own cooldown.
+        if (healing ? doFood : doGeneral) m[line.item] = shopMaxStock(content, line.item, line.price);
+      }
     }
-    state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+    if (doGeneral) state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+    if (doFood) state.shopFoodRestockAt = ctx.now + SHOP_FOOD_RESTOCK_MS;
   }
 }
 

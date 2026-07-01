@@ -1280,6 +1280,9 @@ export interface WorldState {
   shopStock?: Record<string, Record<string, number>>;
   /** When the shops next top up their stock (ms, wall-clock via Ctx). */
   shopRestockAt?: number;
+  /** When healing items (food/potions) next top up — a longer, separate cooldown
+   *  so buying meals can't replace fishing/hunting/cooking for heals. */
+  shopFoodRestockAt?: number;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the

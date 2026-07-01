@@ -9,6 +9,7 @@
  */
 
 import type { WorldState } from "../core/types.ts";
+import { fishBadgeSVG } from "./itemIcon.ts";
 
 export class RecordsUI {
   private backdrop: HTMLElement;
@@ -71,6 +72,7 @@ export class RecordsUI {
       row.className = `records-row${mine ? " records-mine" : ""}`;
       row.innerHTML = `
         <span class="records-rank">${i + 1}</span>
+        <span class="records-fish">${fishBadgeSVG(r.species)}</span>
         <span class="records-main">
           <span class="records-species">${esc(r.species)}</span>
           <span class="records-angler">${esc(r.angler)}</span>

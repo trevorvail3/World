@@ -26,6 +26,20 @@ import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileA
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
+import { itemIconSVG } from "./itemIcon.ts";
+
+// Ground loot renders as the actual item's icon: rasterise each item's SVG badge
+// to an <img> once (async), cache by id, and draw it on the tile. Until an image
+// has decoded, the caller falls back to a small sack so nothing pops in blank.
+const groundImgCache = new Map<string, HTMLImageElement>();
+function groundItemImage(def: ItemDef): HTMLImageElement | null {
+  const cached = groundImgCache.get(def.id);
+  if (cached) return cached.complete && cached.naturalWidth > 0 ? cached : null;
+  const img = new Image();
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(itemIconSVG(def));
+  groundImgCache.set(def.id, img);
+  return img.complete && img.naturalWidth > 0 ? img : null;
+}
 
 // Which way the player last faced (kept across idle / vertical-only movement, so
 // the figure doesn't snap back to the default when you walk straight up or down).
@@ -843,13 +857,16 @@ function drawAgilityMarkers(
   }
 }
 
-/** A small glowing loot pile on the floor — a kill's spoils, waiting to be taken. */
+/** A dropped item on the floor — drawn as its own icon (a rod looks like a rod),
+ *  over a soft glow so it reads as loot. Falls back to a sack until the icon
+ *  image has decoded. */
 function drawGroundItem(
   g: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   now: number,
   qty: number,
+  def?: ItemDef,
 ): void {
   const pulse = 0.5 + 0.5 * Math.sin(now / 380);
   g.save();
@@ -861,18 +878,29 @@ function drawGroundItem(
   g.beginPath();
   g.arc(cx, cy, 13, 0, Math.PI * 2);
   g.fill();
-  // A little drawstring sack.
-  g.fillStyle = "#6e4f2c";
+  // A faint ground shadow the item sits on.
+  g.fillStyle = "rgba(0,0,0,0.22)";
   g.beginPath();
-  g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
+  g.ellipse(cx, cy + 7, 8, 3, 0, 0, Math.PI * 2);
   g.fill();
-  g.fillStyle = "#8a6a3a";
-  g.fillRect(cx - 3.5, cy - 4, 7, 3);
-  g.strokeStyle = "rgba(0,0,0,0.45)";
-  g.lineWidth = 1;
-  g.beginPath();
-  g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
-  g.stroke();
+  const img = def ? groundItemImage(def) : null;
+  if (img) {
+    const S = 22; // draw the 32×32 badge at 22px on the tile
+    g.drawImage(img, cx - S / 2, cy - S / 2 - 1, S, S);
+  } else {
+    // Fallback: a little drawstring sack until the icon decodes (or if unknown).
+    g.fillStyle = "#6e4f2c";
+    g.beginPath();
+    g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#8a6a3a";
+    g.fillRect(cx - 3.5, cy - 4, 7, 3);
+    g.strokeStyle = "rgba(0,0,0,0.45)";
+    g.lineWidth = 1;
+    g.beginPath();
+    g.ellipse(cx, cy + 2, 6, 5, 0, 0, Math.PI * 2);
+    g.stroke();
+  }
   if (qty > 1) {
     g.fillStyle = "#f2cf6b";
     g.font = "bold 10px 'Cinzel', serif";
@@ -960,7 +988,7 @@ export function drawWorld(
     // kill's loot reads as its own pile rather than one merged heap.
     const ox = ((gi.id % 3) - 1) * 7;
     const oy = ((Math.floor(gi.id / 3) % 3) - 1) * 6;
-    drawGroundItem(g, px + TILE / 2 + ox, py + TILE / 2 + oy, now, gi.qty);
+    drawGroundItem(g, px + TILE / 2 + ox, py + TILE / 2 + oy, now, gi.qty, content.items[gi.item]);
   }
 
   // OSRS-style floor-loot name labels, drawn in a second pass so they sit ON TOP
@@ -1504,23 +1532,30 @@ function drawWaterLife(
       const ax = cx * TILE - cam.x, ay = cy * TILE - cam.y;
 
       if (tile === "deep") {
-        // Whale: a big dark back rises out in the deep and throws a tall bright
-        // spout, then sounds again. Uses its OWN seed (independent of the fins) so
-        // it can be common enough to spot from the coast without stealing fin
-        // cells — most whale-cells are submerged (invisible) at any moment anyway.
-        const wseed = frac(cx * 2.71 + cy * 6.13);
-        if (wseed < 0.14) {
-          const period = 11000 + wseed * 60000;
-          const ph = ((now + wseed * 300000) % period) / period;
+        // Whale: a big dark back rises out in the deep, DRIFTS as it swims (so it
+        // never resurfaces in the exact same spot), throws a tall bright spout,
+        // then sounds again. The set of active whale-cells slowly rotates over
+        // time (`epoch`), so sightings move around the sea rather than repeating
+        // in one place. Non-active deep cells fall through to the shark fins.
+        const cellHash = frac(cx * 2.71 + cy * 6.13);
+        const epoch = Math.floor(now / 42000);
+        const active = frac(cx * 2.71 + cy * 6.13 + epoch * 3.71) < 0.16;
+        if (active) {
+          const period = 11000 + cellHash * 60000;
+          const ph = ((now + cellHash * 300000) % period) / period;
           if (ph < 0.3) {
-            const rise = Math.sin((ph / 0.3) * Math.PI); // surface → sound
-            const wx = ax + TILE * 1.5, wy = ay + TILE * 2 - rise * 6;
+            const s = ph / 0.3;
+            const rise = Math.sin(s * Math.PI); // surface → sound
+            const dir = cellHash > 0.08 ? 1 : -1;
+            // Swim across ~4 tiles over the surfacing, with a gentle bob.
+            const wx = ax + TILE * 1.5 + dir * (s - 0.5) * TILE * 4;
+            const wy = ay + TILE * 2 - rise * 6 + Math.sin(t * 0.3 + cellHash * 12) * 2;
             g.fillStyle = "#33414e";
             g.beginPath(); g.ellipse(wx, wy, 27, 8 + rise * 6, 0, Math.PI, 0); g.fill();
             g.fillStyle = "#465969"; // paler ridge along the back
             g.beginPath(); g.ellipse(wx, wy - 1, 18, 4 + rise * 4, 0, Math.PI, 0); g.fill();
             if (rise > 0.4) { // the blow — a tall bright spout
-              const sx = wx - 12, sy = wy - 6;
+              const sx = wx - dir * 12, sy = wy - 6;
               g.strokeStyle = `rgba(224,238,248,${(0.75 * rise).toFixed(2)})`;
               g.lineWidth = 2; g.lineCap = "round";
               for (const dx of [-4.5, 0, 4.5]) {

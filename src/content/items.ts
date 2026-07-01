@@ -799,7 +799,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Barely a meal, but warm. Better than nothing on a cold night.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 4,
+    "heals": 3,
     "sell": 8
   },
   "speckletrout_cooked": {
@@ -808,7 +808,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The standard trail food of Men. Reliable, filling, easy to prepare.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 18,
+    "heals": 5,
     "sell": 18
   },
   "greyfin_cooked": {
@@ -817,7 +817,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A decent meal. Salted and cooked well, it keeps a man going through a long day.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 28,
+    "heals": 7,
     "sell": 35
   },
   "ribperch_cooked": {
@@ -826,7 +826,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A proper meal. Worth the bones. First food worth stockpiling before hard work.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 40,
+    "heals": 9,
     "sell": 60
   },
   "coldwater_eel_cooked": {
@@ -835,7 +835,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Rich and dense. Hard to cook well; punishing when burnt.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 55,
+    "heals": 11,
     "sell": 100
   },
   "redgill_cooked": {
@@ -844,7 +844,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The benchmark meal for serious work. Good flesh, good recovery.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 72,
+    "heals": 14,
     "sell": 165
   },
   "deepscale_cooked": {
@@ -853,7 +853,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Time-consuming to prepare, but the effort shows in every bite.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 90,
+    "heals": 17,
     "sell": 260
   },
   "eyeless_pike_cooked": {
@@ -862,7 +862,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The finest meal in Varath. One fish, many servings, full recovery.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 110,
+    "heals": 20,
     "sell": 410
   },
 
@@ -881,7 +881,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A light, quick meal — a handful of these keeps a young angler moving.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 12,
+    "heals": 4,
     "sell": 14
   },
   "bramblecarp_raw": {
@@ -898,7 +898,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Earthy and filling once the mud's cooked out. Honest moorland fare.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 22,
+    "heals": 6,
     "sell": 24
   },
   "copperling_raw": {
@@ -915,7 +915,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Sweet-fleshed and reliable. A staple on the coast road.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 34,
+    "heals": 8,
     "sell": 44
   },
   "bristlepike_raw": {
@@ -932,7 +932,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Lean and firm. The meat rewards the fight it gave.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 48,
+    "heals": 10,
     "sell": 70
   },
   "gloomshad_raw": {
@@ -949,7 +949,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Rich, dark flesh with a smoky note from the peat. Prized by moor-folk.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 62,
+    "heals": 12,
     "sell": 100
   },
   "runestout_raw": {
@@ -966,7 +966,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Dense and satisfying — a meal that carries you through the hardest day.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 82,
+    "heals": 16,
     "sell": 185
   },
   "frostgill_raw": {
@@ -983,7 +983,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Clean, cold-water flesh that all but restores a body outright. A master angler's meal.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 100,
+    "heals": 19,
     "sell": 300
   },
   "sword_1": {
@@ -1166,7 +1166,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Game roasted over a fire. Honest food for the road.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 26,
+    "heals": 7,
     "sell": 30
   },
   "rat_meat_cooked": {
@@ -1175,7 +1175,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Charred and tough, but it fills a hole.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 8,
+    "heals": 4,
     "sell": 12
   },
   "wolf_meat_cooked": {
@@ -1184,7 +1184,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Gamey but satisfying. A hunter's staple.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 20,
+    "heals": 6,
     "sell": 28
   },
   "boar_meat_cooked": {
@@ -1193,7 +1193,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Roasted boar — one of the better meals a Man can want.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 34,
+    "heals": 8,
     "sell": 55
   },
   "bear_meat_cooked": {
@@ -1202,7 +1202,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Dense and restorative. Eaten before hard fights.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 52,
+    "heals": 11,
     "sell": 100
   },
   "venison_cooked": {
@@ -1211,7 +1211,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Roasted prime stag. Lean, rich, and deeply restorative.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 72,
+    "heals": 14,
     "sell": 160
   },
   "aurochs_cooked": {
@@ -1220,7 +1220,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A thick steak from the largest game on the moor. A feast in itself.",
     "icon": "🍗",
     "cat": "Food",
-    "heals": 100,
+    "heals": 19,
     "sell": 240
   },
   "wolf_pelt": {
@@ -1675,7 +1675,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Dense and restorative. Takes skill to prepare correctly.",
     "icon": "🧪",
     "cat": "Food",
-    "heals": 130,
+    "heals": 24,
     "sell": 180
   },
   "dawnspore_elixir": {
@@ -1684,7 +1684,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Extraordinarily rare. Tastes of morning air and cold stone.",
     "icon": "🧪",
     "cat": "Food",
-    "heals": 185,
+    "heals": 33,
     "sell": 300
   },
   "smoked_speckletrout": {
@@ -1693,7 +1693,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Slow-smoked over charcoal. Worth the wait.",
     "icon": "🥩",
     "cat": "Food",
-    "heals": 45,
+    "heals": 10,
     "buff": "xp_boost",
     "buffAmt": 0.05,
     "buffMs": 180000,
@@ -1705,7 +1705,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A coastal fish cured over hardwood coals.",
     "icon": "🥩",
     "cat": "Food",
-    "heals": 70,
+    "heals": 14,
     "buff": "xp_boost",
     "buffAmt": 0.05,
     "buffMs": 240000,
@@ -1717,7 +1717,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Smoked ribperch is considered a delicacy even by the well-fed.",
     "icon": "🥩",
     "cat": "Food",
-    "heals": 100,
+    "heals": 19,
     "buff": "xp_boost",
     "buffAmt": 0.08,
     "buffMs": 300000,
@@ -1729,7 +1729,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "The best sea fish improves markedly with smoke.",
     "icon": "🥩",
     "cat": "Food",
-    "heals": 145,
+    "heals": 26,
     "buff": "xp_boost",
     "buffAmt": 0.1,
     "buffMs": 360000,
@@ -1741,7 +1741,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Wolf meat and mushrooms, long-cooked. A proper hunter's meal. Better than the sum of its parts.",
     "icon": "🍲",
     "cat": "Food",
-    "heals": 65,
+    "heals": 13,
     "buff": "melee_dmg",
     "buffAmt": 3,
     "buffMs": 240000,
@@ -1753,7 +1753,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Boar and thornberries, slow-roasted. The kind of meal that turns a camp into a home.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 95,
+    "heals": 18,
     "buff": "melee_dmg",
     "buffAmt": 5,
     "buffMs": 300000,
@@ -1765,7 +1765,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Bear bones and hearthroot, simmered all day. Old medicine. Remarkable recovery.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 120,
+    "heals": 22,
     "buff": "defence",
     "buffAmt": 8,
     "buffMs": 360000,
@@ -1777,7 +1777,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Redgill and river greens, reduced over charcoal. The cook's version of the finest fish in Varath.",
     "icon": "🍲",
     "cat": "Food",
-    "heals": 160,
+    "heals": 28,
     "buff": "melee_acc",
     "buffAmt": 10,
     "buffMs": 360000,
@@ -1789,7 +1789,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Deepscale and ashroot, a difficult preparation that rewards serious cooks. Near-complete recovery.",
     "icon": "🍲",
     "cat": "Food",
-    "heals": 200,
+    "heals": 35,
     "buff": "melee_dmg",
     "buffAmt": 12,
     "buffMs": 480000,
@@ -1801,7 +1801,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A dense, purpose-made ration for sustained combat. Not pleasant, effective.",
     "icon": "🎒",
     "cat": "Food",
-    "heals": 40,
+    "heals": 9,
     "sell": 50
   },
   "warriors_draught": {
@@ -3863,7 +3863,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Smoked over moor-peat until the flesh flakes. Restores 50 HP.",
     "icon": "🍢",
     "cat": "Food",
-    "heals": 50,
+    "heals": 10,
     "sell": 60
   },
   "moorhart_raw": {
@@ -3880,7 +3880,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A dark, rich venison steak, seared through. Restores 68 HP.",
     "icon": "🍖",
     "cat": "Food",
-    "heals": 68,
+    "heals": 13,
     "sell": 78
   },
   "sigil_knuckle": {
@@ -4183,7 +4183,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A thin broth of wild mushrooms. Warming rather than filling.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 12,
+    "heals": 4,
     "sell": 25
   },
   "thornberry_tonic": {
@@ -4192,7 +4192,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A tart, staining tonic from thornberries. Clears the head.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 22,
+    "heals": 6,
     "sell": 40
   },
   "hearthroot_tea": {
@@ -4201,7 +4201,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A deep, earthy tea. Warm in the belly long after drinking.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 38,
+    "heals": 9,
     "sell": 70
   },
   "nightshade_brew": {
@@ -4210,7 +4210,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A dark brew of nightshade. Dangerous in the wrong hands. Effective in the right ones.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 55,
+    "heals": 11,
     "sell": 100
   },
   "ashroot_elixir": {
@@ -4219,7 +4219,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A rare elixir. Tastes of ash and cold smoke. Remarkable healing.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 75,
+    "heals": 15,
     "sell": 150
   },
   "dawnspore_draught": {
@@ -4228,7 +4228,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A luminous draught brewed at dawn. The finest foraged medicine in Varath.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 100,
+    "heals": 19,
     "sell": 220
   },
   "deepmoss_broth": {
@@ -4237,7 +4237,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A cold, dark broth of deepmoss. It should not taste good. It does.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 85,
+    "heals": 16,
     "sell": 160
   },
   "ashbloom_tea": {
@@ -4246,7 +4246,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "Brewed from pale ashbloom. Smells of old fires. Remarkable recovery for something so slight.",
     "icon": "🥣",
     "cat": "Food",
-    "heals": 130,
+    "heals": 24,
     "sell": 240
   },
   "health_elixir": {
@@ -4255,7 +4255,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A concentrated healing potion bought with Hunt Marks. Restores 50 HP instantly.",
     "icon": "🧪",
     "cat": "Combat Items",
-    "heals": 50,
+    "heals": 10,
     "sell": 150
   },
   "token_spine": {

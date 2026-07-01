@@ -441,16 +441,20 @@ export function hydratePlayer(
   //     from before the pier existed has none, so the createWorld seed stands. ---
   const savedRecords = raw["fishingRecords"];
   if (Array.isArray(savedRecords)) {
-    const clean: FishRecord[] = [];
+    // Keep only the player's OWN catches from the save; the rival seeds are
+    // re-injected fresh from content, so tuning the seed board (e.g. lowering
+    // the amounts) takes effect for existing saves, not just new characters.
+    const mine: FishRecord[] = [];
     for (const r of savedRecords) {
       if (
         isRecord(r) &&
         typeof r["species"] === "string" &&
         finiteNum(r["weight"]) && r["weight"] > 0 &&
         finiteNum(r["length"]) && r["length"] > 0 &&
-        typeof r["angler"] === "string"
+        typeof r["angler"] === "string" &&
+        r["angler"] === player.appearance.name
       ) {
-        clean.push({
+        mine.push({
           species: r["species"].slice(0, 40),
           weight: Math.round(r["weight"] * 10) / 10,
           length: Math.round(r["length"]),
@@ -458,9 +462,10 @@ export function hydratePlayer(
         });
       }
     }
-    clean.sort((a, b) => b.weight - a.weight);
-    if (clean.length > 5) clean.length = 5;
-    if (clean.length > 0) player.fishingRecords = clean;
+    const merged = [...mine, ...content.pierRecords.map((r) => ({ ...r }))];
+    merged.sort((a, b) => b.weight - a.weight);
+    if (merged.length > 5) merged.length = 5;
+    player.fishingRecords = merged;
   }
 
   // --- Max HP follows the loaded Vitality level, then HP clamps to it ---
