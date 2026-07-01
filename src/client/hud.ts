@@ -132,6 +132,9 @@ export class Hud {
   /** Set by main.ts to float an arriving nearby player's chat line over their
    *  ghost in the world (matched by name). */
   onRemoteSay: ((name: string, text: string) => void) | null = null;
+  /** Set by main.ts: are any other players nearby right now? Drives faster chat
+   *  polling while friends are around. */
+  nearbyPlayers: (() => boolean) | null = null;
   private chatLastId = -1;
   private chatSeeded = false;
 
@@ -909,10 +912,17 @@ export class Hud {
     if (nearBottom) el.scrollTop = el.scrollHeight;
   }
 
-  /** Poll the world-chat channel and fold new messages into the log. */
+  /** Poll the world-chat channel and fold new messages into the log. Adaptive:
+   *  polls quickly (~1.2s) while other players are nearby — so a friend's line and
+   *  their overhead bubble arrive promptly — and relaxes to a lazy ~3.5s when
+   *  you're alone, to avoid hammering the server for chatter no one's sending. */
   private startChatFeed(): void {
-    void this.pollChat();
-    window.setInterval(() => void this.pollChat(), 3500);
+    const tick = (): void => {
+      void this.pollChat();
+      const near = this.nearbyPlayers?.() ?? false;
+      window.setTimeout(tick, near ? 1200 : 3500);
+    };
+    tick();
   }
 
   private async pollChat(): Promise<void> {

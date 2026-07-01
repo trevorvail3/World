@@ -262,6 +262,7 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   // arriving nearby players' lines over their ghost.
   hud.onLocalSay = (text: string) => game.showSpeech(text);
   hud.onRemoteSay = (name: string, text: string) => game.showGhostSpeech(name, text);
+  hud.nearbyPlayers = () => game.hasNearbyPlayers();
 
   // A discreet "Saved" flash so the player knows progress persists on its own.
   const saveTag = document.createElement("div");

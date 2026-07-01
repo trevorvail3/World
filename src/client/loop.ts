@@ -1311,6 +1311,12 @@ export class Game {
     if (t) this.ghostSpeech.set(name, { text: t, until: performance.now() + 5000 });
   }
 
+  /** Are any other players nearby (visible as ghosts)? Lets the HUD poll chat
+   *  faster while friends are around. */
+  hasNearbyPlayers(): boolean {
+    return currentGhosts().length > 0;
+  }
+
   /** Draw the overhead chat bubbles: the local player's, plus any nearby ghost's.
    *  World space, so they track their speaker and scale with zoom. */
   private drawSpeech(now: number): void {
