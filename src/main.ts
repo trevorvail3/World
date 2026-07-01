@@ -159,7 +159,6 @@ function showCloudRetry(): void {
 function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   const startNow = performance.now();
   const state = createWorld(content, playerStart, ctxAt(startNow));
-  const walkable = buildWalkability(content, state);
 
   // Lay any saved progress back onto the fresh world (ignored if missing).
   const restored = hydratePlayer(state, content, readSave());
@@ -167,6 +166,21 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   if (newChar) {
     state.player.appearance = { ...newChar };
   }
+
+  // Walkability depends on story flags (a quest can remove a barrier — e.g. the
+  // pier gate). Rebuild it whenever the flag set changes so a gate opens the
+  // moment its quest completes, without a reload. Built AFTER hydrate so a loaded
+  // save's flags are already in place. Creature/seal changes are handled live
+  // inside the walkable function, so only flag changes need a rebuild.
+  let walkImpl = buildWalkability(content, state);
+  let walkFlags = state.player.flags.length;
+  const walkable = (x: number, y: number): boolean => {
+    if (state.player.flags.length !== walkFlags) {
+      walkImpl = buildWalkability(content, state);
+      walkFlags = state.player.flags.length;
+    }
+    return walkImpl(x, y);
+  };
 
   const bridge: CoreBridge = {
     state,

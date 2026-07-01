@@ -378,6 +378,11 @@ export function buildWalkability(
   // the wing opens for pathfinding the moment you build it (no rebuild needed).
   const seals = new Map<string, string>();
   for (const obj of content.objects) {
+    // Story-gated objects that aren't present for this player don't block — a
+    // barrier a quest removes (the pier gate) stops blocking once its flag is
+    // set, and a not-yet-revealed object (a quest lair's props) doesn't block
+    // before it appears. Rebuild walkability when flags change (see main.ts).
+    if (objectHidden(obj, state.player)) continue;
     // Rug footings are floor coverings — you walk over them, so they don't block.
     if (obj.kind === "build_hotspot" && obj.category === "rug") continue;
     if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
