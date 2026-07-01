@@ -428,6 +428,19 @@ const rawObjects: WorldObjectDef[] = [
   { id: "sawmill_1", kind: "sawmill", x: 49, y: 57, name: "Carpenter's Sawmill" },
 
   // --- Townsfolk going about the day (they wander the streets and squares) ---
+  // The Town Crier stands by the fountain, calling out the news of Varath. He
+  // shouts short bulletins on a timer (see src/client/crier.ts); talking to him
+  // gives the fuller "what's new + tips" rundown below. Placed at final (78,78).
+  {
+    id: "town_crier", kind: "npc", x: 58, y: 52, name: "The Town Crier",
+    lines: [
+      "Hear ye, hear ye! You've the look of someone who's been away — let me catch you up on the doings of Varath.",
+      "The roads: the wilds have been driven back from every town's gates. No more wolves nor cutthroats at your heels while you shop — a fight in the wilds is a thing you choose now, not a thing that chooses you.",
+      "The Faithful walk among us: Faith is prayer and magic as one skill now. Bury bones for its favour, wield a staff to cast, and fill your Grace at any shrine or altar — you'll see the bar under your health.",
+      "For the green and the wandering: talk to the folk you meet — reeves, wardens, delvers and fishwives all keep a task for a willing hand, though they'll not always wear it on their sleeve. And your own words carry now — speak, and the world sees you say it, over your very head.",
+      "That's the news! Toss a coin in the fountain for luck and mind the moon — she's watching, as she always is.",
+    ],
+  },
   {
     id: "town_fishwife", kind: "npc", x: 66, y: 55, name: "A Fishwife",
     lines: [

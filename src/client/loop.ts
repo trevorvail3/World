@@ -42,6 +42,7 @@ import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
+import { CRIER_SHOUTS } from "./crier.ts";
 import { audio } from "./audio.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
@@ -334,6 +335,12 @@ export class Game {
   private speech: { text: string; until: number } | null = null;
   /** Nearby players' latest chat lines, keyed by name, floated over their ghost. */
   private ghostSpeech = new Map<string, { text: string; until: number }>();
+  /** The Town Crier's shout cadence: which line is up, when it clears, and when
+   *  the next one fires. Advances globally; shown + logged only when you're near. */
+  private crierAt = 12000; // first bulletin ~12s after load
+  private crierIdx = 0;
+  private crierShout: { text: string; until: number } | null = null;
+  private crierLogged = false;
   /** A loot tile the player is walking toward to pick up, polled each frame. */
   private pickupTarget: (Vec2 & { id?: number; qty?: number }) | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
@@ -535,6 +542,7 @@ export class Game {
     this.drawSparks(now);
     this.drawFloats(now);
     this.drawSpeech(now);
+    this.updateCrier(now);
     this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
     this.drawHurtVignette(now);
     this.drawDeathOverlay(now);
@@ -1339,6 +1347,31 @@ export class Game {
       // Prune entries whose speaker has wandered out of range (no ghost) once stale.
       for (const [name, e] of this.ghostSpeech) if (now >= e.until) this.ghostSpeech.delete(name);
     }
+  }
+
+  /** The Town Crier calls out a bulletin on a timer, floated over his head and
+   *  logged — but only heard when you're near his square in Ironvale. */
+  private updateCrier(now: number): void {
+    const def = this.bridge.content.objects.find((o) => o.id === "town_crier");
+    if (!def) return;
+    const pos = this.bridge.state.objects["town_crier"]?.pos ?? { x: def.x, y: def.y };
+    const p = this.bridge.state.player.pos;
+    const near = Math.hypot(p.x - pos.x, p.y - pos.y) <= 16;
+    // Advance to the next bulletin on the cadence (whether or not you're near).
+    if (now >= this.crierAt) {
+      const text = CRIER_SHOUTS[this.crierIdx % CRIER_SHOUTS.length]!;
+      this.crierIdx++;
+      this.crierShout = { text, until: now + 7000 };
+      this.crierAt = now + 24000; // ~24s between bulletins
+      this.crierLogged = false;
+    }
+    if (!this.crierShout || now >= this.crierShout.until) { this.crierShout = null; return; }
+    if (!near) return; // heard only in the square
+    // Log it once (so you catch it even glancing away), then float it over his head.
+    if (!this.crierLogged) { this.hud.log(`Town Crier: “${this.crierShout.text}”`); this.crierLogged = true; }
+    const s = this.toScreen(pos.x, pos.y);
+    if (s.x < -TILE * 4 || s.x > this.viewW + TILE * 4 || s.y < -TILE * 4 || s.y > this.viewH + TILE * 4) return;
+    this.drawSpeechBubble(this.crierShout.text, s.x, s.y, Math.min(1, (this.crierShout.until - now) / 700));
   }
 
   /** One overhead bubble at a speaker's tile-centre screen position (sx, sy). */
