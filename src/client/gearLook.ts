@@ -178,6 +178,11 @@ export function resolveGear(
     // The Bonesaw is a sword in every system, but draws as a unique toothed saw.
     const shape = main.id === "bonesaw" ? "saw" : (main.wepType ?? "sword");
     out.weapon = { ...metal, type: shape, tier };
+  } else if (main && main.tool === "rod") {
+    // A wielded fishing rod rides in the hand like a weapon, so an angler reads
+    // as an angler even while walking about — the golden champion's rod glints.
+    const type = main.id === "rod_gold" ? "rod_gold" : "rod";
+    out.weapon = { base: "#7a5a36", edge: "#caa05a", type };
   }
   return out;
 }
