@@ -124,8 +124,10 @@ export class ExchangeUI {
         this.body.innerHTML = `<div class="ge-empty">No open offers anywhere right now.</div>`;
         return;
       }
-      this.body.innerHTML = `<div class="ge-offers">${orders.map((o) => {
+      this.body.innerHTML = `<div class="ge-offers">${orders.map((o, i) => {
         const remain = o.qty - o.filled;
+        // You can trade straight against an offer: BUY from a sell, SELL to a buy.
+        const act = o.side === "sell" ? "Buy" : "Sell";
         return `
           <div class="ge-offer">
             <div class="ge-offer-top">
@@ -133,12 +135,50 @@ export class ExchangeUI {
               <span class="ge-offer-name">${escapeHtml(this.itemName(o.item))}</span>
               <span class="ge-offer-price">@ ${fmt(o.price)}</span>
             </div>
-            <div class="ge-offer-bot"><span class="ge-dim">${fmt(remain)} left · ${fmt(remain * o.price)} total</span></div>
+            <div class="ge-offer-bot">
+              <span class="ge-dim">${fmt(remain)} left · ${fmt(remain * o.price)} total</span>
+              <button class="ge-btn small ge-match" data-oi="${i}" type="button">${act}</button>
+            </div>
           </div>`;
       }).join("")}</div>`;
+      this.body.querySelectorAll(".ge-match").forEach((b) => {
+        b.addEventListener("click", () => {
+          const o = orders[Number((b as HTMLElement).dataset.oi)];
+          if (o) void this.matchOffer(o);
+        });
+      });
     }).catch(() => {
       this.body.innerHTML = `<div class="ge-empty">Couldn't load the market.</div>`;
     });
+  }
+
+  /** Trade straight against an existing offer: place a matching order at its
+   *  price so the order book fills it immediately (buy a seller's stock, or sell
+   *  into a buyer's demand). Quantity is clamped to what you can afford / hold. */
+  private async matchOffer(o: GeOrder): Promise<void> {
+    const remain = o.qty - o.filled;
+    if (o.side === "sell") {
+      // You BUY from this seller at their price.
+      const affordable = Math.floor(this.bal / o.price);
+      const qty = Math.min(remain, affordable);
+      if (qty <= 0) { this.msg("Not enough Exchange gold — deposit more first (Account tab)."); return; }
+      await this.doMatch("buy", o.item, qty, o.price);
+    } else {
+      // You SELL into this buyer's demand at their price.
+      const have = this.bank.find((b) => b.item === o.item)?.qty ?? 0;
+      const qty = Math.min(remain, have);
+      if (qty <= 0) { this.msg("You've none of that in the Exchange — deposit some first (Account tab)."); return; }
+      await this.doMatch("sell", o.item, qty, o.price);
+    }
+  }
+
+  private async doMatch(side: "buy" | "sell", item: ItemId, qty: number, price: number): Promise<void> {
+    try {
+      await placeOrder(side, item, qty, price);
+      this.msg(`${side === "buy" ? "Bought" : "Sold"} ${qty}× ${this.itemName(item)} @ ${fmt(price)}.`, true);
+    } catch (e) { this.msg(errMsg(e)); }
+    await this.refresh();
+    if (this.tab === "market") this.renderMarket();
   }
 
   // --- helpers shared by the actions ---
