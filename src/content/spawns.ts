@@ -129,7 +129,7 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   rock_8: { x: 120, y: 31 },
   rock_10: { x: 53, y: 34 },
   spine_vault: { x: 62, y: 34 },
-  md_golem_1: { x: 130, y: 32 },
+  md_golem_1: { x: 132, y: 37 },
   md_rock_2: { x: 131, y: 31 },
   trail_bone_1: { x: 52, y: 35 },
   trail_bone_5: { x: 61, y: 109 },
@@ -158,6 +158,30 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   // tutorial spawn AND stacked on a Gallows Oak footpad. Push it east onto open
   // ground so the opening clearing stays calm and no two foes share a tile.
   farmer_knuckle: { x: 51, y: 47 },
+  // Settlement clearance: aggressive monsters that spawned right at a town's
+  // doorstep (waystone / shop / bank) would lock a player into a fight while
+  // they shopped or fast-travelled — you shouldn't meet a wolf or a wraith two
+  // tiles outside a settlement. Each is pushed ~10–13 tiles out onto walkable
+  // ground, into the wild where a fight is a choice. (Guards stay — they're the
+  // settlement's own defenders — and the far outlaw camps stay: the roads are
+  // meant to have danger, just not at the gates.)
+  cultist_ash_3: { x: 80, y: 154 },
+  cultist_ash_4: { x: 86, y: 151 },
+  cultist_heart_2: { x: 23, y: 148 },
+  gw_boar_1: { x: 5, y: 72 },
+  gw_boar_2: { x: 25, y: 73 },
+  gw_boar_3: { x: 5, y: 90 },
+  gw_greymane: { x: 18, y: 95 },
+  sp_wolf_1: { x: 64, y: 16 },
+  sp_wolf_2: { x: 62, y: 16 },
+  sp_crawler_1: { x: 57, y: 28 },
+  hm_serpent_1: { x: 25, y: 133 },
+  md_crawler_1: { x: 118, y: 12 },
+  md_crawler_2: { x: 140, y: 17 },
+  md_wraith_1: { x: 123, y: 37 },
+  out_burnt_waystation_2: { x: 104, y: 74 },
+  // De-stack: farmer_drover shared a tile with a Cutpurse Steps footpad.
+  farmer_drover: { x: 82, y: 98 },
 };
 
 /** Re-home a legacy-coordinate object (and its teleport target) onto the new,
