@@ -773,6 +773,14 @@ export interface ItemDef {
 export interface InventorySlot {
   item: ItemId;
   qty: number;
+  /**
+   * A "note" (bank slip): a stackable paper form of the item. Notes let you
+   * carry huge quantities in a single slot and trade/sell them, but they can't
+   * be used — not eaten, worn, buried, or crafted with. Withdraw as a note at a
+   * bank; deposit a note (or bank it) to turn it back into the item. Undefined
+   * ⇒ an ordinary item.
+   */
+  noted?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -1451,6 +1459,9 @@ export interface WithdrawIntent {
   item: ItemId;
   /** How many to withdraw; omitted = 1. (A big number = withdraw all.) */
   qty?: number;
+  /** Withdraw as a note (bank slip): the whole amount as one stackable slot,
+   *  instead of one pack slot per unit. */
+  noted?: boolean;
 }
 
 /**

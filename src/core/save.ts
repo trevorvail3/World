@@ -30,8 +30,8 @@ export interface SavedProgress {
   version: number;
   /** XP per skill. */
   skills: Partial<Record<SkillId, number>>;
-  /** Fixed-length inventory; null = empty slot. */
-  inventory: ({ item: string; qty: number } | null)[];
+  /** Fixed-length inventory; null = empty slot. `noted` marks a bank-slip stack. */
+  inventory: ({ item: string; qty: number; noted?: boolean } | null)[];
   /** Banked items: item id -> quantity. */
   bank: Record<string, number>;
   /** Worn gear: equip slot -> item id. */
@@ -124,7 +124,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     spawn: { x: Math.round(player.spawn.x), y: Math.round(player.spawn.y) },
     version: SAVE_VERSION,
     skills,
-    inventory: player.inventory.map((s) => (s ? { item: s.item, qty: s.qty } : null)),
+    inventory: player.inventory.map((s) => (s ? (s.noted ? { item: s.item, qty: s.qty, noted: true } : { item: s.item, qty: s.qty }) : null)),
     bank: { ...player.bank } as Record<string, number>,
     equipment: { ...player.equipment } as Record<string, string>,
     quiver: player.quiver,
@@ -200,7 +200,9 @@ export function hydratePlayer(
       ) {
         const rawQty = slot["qty"];
         const qty = finiteNum(rawQty) && rawQty > 0 ? Math.floor(rawQty) : 1;
-        inv[i] = { item: slot["item"] as ItemId, qty };
+        inv[i] = slot["noted"] === true
+          ? { item: slot["item"] as ItemId, qty, noted: true }
+          : { item: slot["item"] as ItemId, qty };
       }
     }
     player.inventory = inv;

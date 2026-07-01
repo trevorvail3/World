@@ -197,10 +197,12 @@ export class BankUI {
     this.menu.show(x, y, name, items, "Move into the bank chest.");
   }
 
-  /** Bank item: choose how much to take out — 1, a typed amount, or all. */
+  /** Bank item: choose how much to take out — 1, a typed amount, or all — and
+   *  whether to take it as a note (a bank slip: the whole amount in one slot). */
   private withdrawMenu(item: ItemId, have: number, x: number, y: number): void {
     const name = this.content.items[item]?.name ?? item;
-    const wd = (qty: number): void => this.dispatchAndRender({ type: "WITHDRAW", item, qty });
+    const wd = (qty: number, noted = false): void =>
+      this.dispatchAndRender({ type: "WITHDRAW", item, qty, ...(noted ? { noted: true } : {}) });
     if (!this.menu || have <= 1) { wd(1); return; }
     const items: MenuItem[] = [
       { label: "Withdraw", target: "1", tone: "action", onSelect: () => wd(1) },
@@ -209,8 +211,13 @@ export class BankUI {
         if (n > 0) wd(n);
       } },
       { label: "Withdraw", target: `all (${have})`, onSelect: () => wd(have) },
+      { label: "Withdraw", target: "as note — all", onSelect: () => wd(have, true) },
+      { label: "Withdraw", target: "as note — amount…", onSelect: () => {
+        const n = this.askAmount(name, have);
+        if (n > 0) wd(n, true);
+      } },
     ];
-    this.menu.show(x, y, name, items, "Take out of the bank chest.");
+    this.menu.show(x, y, name, items, "Take out of the bank chest. A note carries any amount in one slot.");
   }
 
   private askAmount(name: string, max: number): number {

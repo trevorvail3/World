@@ -1086,9 +1086,17 @@ function clearActivity(player: Player): void {
   player.activity = { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 };
 }
 
-/** Does the player hold at least one of this item? */
+/** Does the player hold at least one USABLE (un-noted) of this item? */
 function hasItem(player: Player, item: ItemId): boolean {
-  return player.inventory.some((slot) => slot?.item === item && slot.qty > 0);
+  return player.inventory.some((slot) => slot?.item === item && slot.qty > 0 && !slot.noted);
+}
+
+/** True (and logs a hint) when a slot holds a note — a note can't be used
+ *  directly (eaten, worn, buried, crushed). Bank or deposit it to un-note. */
+function notedGuard(player: Player, slot: number, events: WorldEvent[]): boolean {
+  if (!player.inventory[slot]?.noted) return false;
+  events.push({ type: "LOG", message: "That's a note — bank it to turn it back into the item first." });
+  return true;
 }
 
 /** Is there room in the pack for this item (a matching stack or an empty slot)? */
@@ -1254,9 +1262,13 @@ function consumeIngredients(player: Player, action: SkillAction): void {
 }
 
 /** Remove a single unit of an item from the inventory. */
+// Notes (bank slips) are NOT usable stock: the helpers below count and consume
+// only ordinary (un-noted) slots, so recipes, eating, quest hand-ins and shop
+// sales all correctly ignore notes. Banking and the Grand Exchange use the
+// noted-inclusive variants (removeAnyItem / countAnyItem) further down.
 function removeOneItem(player: Player, item: ItemId): void {
   const idx = player.inventory.findIndex(
-    (slot) => slot?.item === item && slot.qty > 0,
+    (slot) => slot?.item === item && slot.qty > 0 && !slot.noted,
   );
   if (idx === -1) return;
   const slot = player.inventory[idx]!;
@@ -1264,21 +1276,21 @@ function removeOneItem(player: Player, item: ItemId): void {
   if (slot.qty <= 0) player.inventory[idx] = null;
 }
 
-/** How many of an item the player is carrying (across all stacks). */
+/** How many usable (un-noted) of an item the player carries, across all stacks. */
 function countItem(player: Player, item: ItemId): number {
   let n = 0;
   for (const slot of player.inventory) {
-    if (slot?.item === item) n += slot.qty;
+    if (slot?.item === item && !slot.noted) n += slot.qty;
   }
   return n;
 }
 
-/** Remove up to `qty` of an item from the pack; returns how many were removed. */
+/** Remove up to `qty` usable (un-noted) of an item; returns how many were removed. */
 function removeItems(player: Player, item: ItemId, qty: number): number {
   let left = qty;
   for (let i = 0; i < player.inventory.length && left > 0; i++) {
     const slot = player.inventory[i];
-    if (slot?.item === item) {
+    if (slot?.item === item && !slot.noted) {
       const take = Math.min(slot.qty, left);
       slot.qty -= take;
       left -= take;
@@ -1286,6 +1298,44 @@ function removeItems(player: Player, item: ItemId, qty: number): number {
     }
   }
   return qty - left;
+}
+
+/** How many of an item the player carries INCLUDING notes (for bank + Exchange). */
+function countAnyItem(player: Player, item: ItemId): number {
+  let n = 0;
+  for (const slot of player.inventory) if (slot?.item === item) n += slot.qty;
+  return n;
+}
+
+/** Remove up to `qty` of an item taking un-noted first, then notes; returns how
+ *  many were removed. Used where a note IS spendable — banking and Exchange sales. */
+function removeAnyItem(player: Player, item: ItemId, qty: number): number {
+  let removed = removeItems(player, item, qty); // ordinary stock first
+  let left = qty - removed;
+  for (let i = 0; i < player.inventory.length && left > 0; i++) {
+    const slot = player.inventory[i];
+    if (slot?.item === item && slot.noted) {
+      const take = Math.min(slot.qty, left);
+      slot.qty -= take; left -= take; removed += take;
+      if (slot.qty <= 0) player.inventory[i] = null;
+    }
+  }
+  return removed;
+}
+
+/** Add `qty` of an item to the pack AS A NOTE (bank slip): merges into an
+ *  existing note stack of the same item, else takes one empty slot. Notes always
+ *  stack. Returns false (and flags a full pack) if there's no slot for a new note. */
+function addNoted(player: Player, item: ItemId, qty: number, events: WorldEvent[]): boolean {
+  const coll = (player.collection ??= []);
+  if (!coll.includes(item)) coll.push(item);
+  const existing = player.inventory.find((s) => s?.item === item && s.noted);
+  if (existing) { existing.qty += qty; events.push({ type: "ITEM_GAINED", item, qty }); return true; }
+  const empty = player.inventory.findIndex((s) => s === null);
+  if (empty === -1) { events.push({ type: "INVENTORY_FULL" }); return false; }
+  player.inventory[empty] = { item, qty, noted: true };
+  events.push({ type: "ITEM_GAINED", item, qty });
+  return true;
 }
 
 /**
@@ -1364,6 +1414,7 @@ export function applyIntent(
       break;
     }
     case "EAT": {
+      if (notedGuard(player, intent.slot, events)) break;
       eatSlot(player, content, intent.slot, ctx, events);
       break;
     }
@@ -1427,7 +1478,8 @@ export function applyIntent(
         else player.gold += amt;
       } else if (intent.item) {
         if (intent.dir === "take") {
-          if (countItem(player, intent.item) >= amt) removeItems(player, intent.item, amt);
+          // Selling can spend notes too, so take from noted stock as well.
+          if (countAnyItem(player, intent.item) >= amt) removeAnyItem(player, intent.item, amt);
         } else {
           addItem(player, intent.item, amt, events);
         }
@@ -1464,10 +1516,11 @@ export function applyIntent(
     }
     case "WITHDRAW": {
       if (!atStation(player, "bank", "the bank", events)) break;
-      withdrawItem(player, intent.item, intent.qty ?? 1, events);
+      withdrawItem(player, intent.item, intent.qty ?? 1, events, intent.noted ?? false);
       break;
     }
     case "EQUIP": {
+      if (notedGuard(player, intent.slot, events)) break;
       equipSlot(player, content, intent.slot, events);
       break;
     }
@@ -1556,10 +1609,12 @@ export function applyIntent(
       break;
     }
     case "BURY": {
+      if (notedGuard(player, intent.slot, events)) break;
       buryBones(state, content, intent.slot, events);
       break;
     }
     case "GRIND": {
+      if (notedGuard(player, intent.slot, events)) break;
       grindBones(state, content, intent.slot, events);
       break;
     }
@@ -2021,14 +2076,20 @@ function depositItem(player: Player, item: ItemId, want?: number): void {
   if (moved > 0) player.bank[item] = (player.bank[item] ?? 0) + moved;
 }
 
-/** Withdraw up to `want` of an item from the bank into the pack (room permitting). */
-function withdrawItem(player: Player, item: ItemId, want: number, events: WorldEvent[]): void {
-  let left = Math.min(player.bank[item] ?? 0, Math.max(1, Math.floor(want)));
+/** Withdraw up to `want` of an item from the bank into the pack (room permitting).
+ *  As a note, the whole amount lands in one stackable slot (a bank slip). */
+function withdrawItem(player: Player, item: ItemId, want: number, events: WorldEvent[], noted = false): void {
+  const avail = Math.min(player.bank[item] ?? 0, Math.max(1, Math.floor(want)));
   let pulled = 0;
-  while (left > 0) {
-    if (!addItem(player, item, 1, events)) break; // pack full; stop
-    pulled++;
-    left--;
+  if (noted) {
+    if (avail > 0 && addNoted(player, item, avail, events)) pulled = avail;
+  } else {
+    let left = avail;
+    while (left > 0) {
+      if (!addItem(player, item, 1, events)) break; // pack full; stop
+      pulled++;
+      left--;
+    }
   }
   if (pulled > 0) {
     const have = (player.bank[item] ?? 0) - pulled;
