@@ -657,6 +657,10 @@ export class Game {
               || (pl.bank["rod_gold"] ?? 0) > 0;
             this.levelUp.champion(ev.species, ev.weight, !ownsRod);
             audio.play("levelup");
+          } else {
+            // Every other catch gets its own popup revealing the size (kept secret
+            // during the fight).
+            this.levelUp.catch(ev.species, ev.weight, ev.length);
           }
           // A genuine takeover (not beating your own record) is broadcast to the
           // whole world in the chat feed.
@@ -1180,6 +1184,19 @@ export class Game {
         this.g.fillStyle = "#c43a23";
         this.g.fillRect(bx, by, w * pct, h);
       }
+      // The player's own HP bar over their head while fighting, so you can watch
+      // your health without glancing to the HUD.
+      const pl = this.bridge.state.player;
+      const { x: px, y: py } = this.toScreen(pl.pos.x, pl.pos.y);
+      const pw = TILE * 0.7, ph = 4;
+      const ppct = pl.maxHp > 0 ? Math.max(0, Math.min(1, pl.hp / pl.maxHp)) : 1;
+      const pbx = px - pw / 2, pby = py - TILE * 0.62;
+      this.g.fillStyle = "rgba(0,0,0,0.6)";
+      this.g.fillRect(pbx - 1, pby - 1, pw + 2, ph + 2);
+      this.g.fillStyle = "#123018";
+      this.g.fillRect(pbx, pby, pw, ph);
+      this.g.fillStyle = ppct > 0.5 ? "#5fbf5a" : ppct > 0.25 ? "#e0b54a" : "#d8453a";
+      this.g.fillRect(pbx, pby, pw * ppct, ph);
       return;
     }
 

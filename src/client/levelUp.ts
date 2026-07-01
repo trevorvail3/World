@@ -12,7 +12,8 @@ import { iconize } from "./glyph.ts";
 
 type Celebration =
   | { kind: "level"; skill: SkillId; level: number }
-  | { kind: "champion"; species: string; weight: number; needsPrize: boolean };
+  | { kind: "champion"; species: string; weight: number; needsPrize: boolean }
+  | { kind: "catch"; species: string; weight: number; length: number };
 
 export class LevelUp {
   private el: HTMLElement;
@@ -40,6 +41,12 @@ export class LevelUp {
     if (!this.showing) this.next();
   }
 
+  /** Reveal a landed catch — the size is only shown here, never during the fight. */
+  catch(species: string, weight: number, length: number): void {
+    this.queue.push({ kind: "catch", species, weight, length });
+    if (!this.showing) this.next();
+  }
+
   private next(): void {
     const item = this.queue.shift();
     if (!item) { this.showing = false; return; }
@@ -56,6 +63,17 @@ export class LevelUp {
           </div>
         </div>
         ${item.needsPrize ? `<div class="levelup-unlock">See <b>Jacob</b> at the pier to claim the <b>Golden Rod of Varath</b>.</div>` : ""}`;
+    } else if (item.kind === "catch") {
+      this.el.classList.remove("levelup-champion");
+      this.el.innerHTML = `
+        <div class="levelup-eyebrow">✦ Landed ✦</div>
+        <div class="levelup-row">
+          <span class="levelup-icon">${iconize("🎣")}</span>
+          <div>
+            <div class="levelup-skill">${esc(item.species)}</div>
+            <div class="levelup-level">${item.weight.toFixed(1)} kg &middot; ${Math.round(item.length)} cm</div>
+          </div>
+        </div>`;
     } else {
       this.el.classList.remove("levelup-champion");
       const meta = this.content.skills[item.skill];

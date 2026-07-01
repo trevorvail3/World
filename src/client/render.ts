@@ -2192,21 +2192,45 @@ function drawSignpost(g: CanvasRenderingContext2D, cx: number, cy: number): void
   g.fillRect(cx - 9, cy - 3.5, 7, 1); g.fillRect(cx + 1, cy + 2.5, 7, 1);
 }
 
-/** A Courier waystone: a carved standing stone with a painted rider-mark. */
+/** A Courier waystone: a tall carved standing stone crowned with a bright,
+ *  pulsing ember beacon and a ground glow, so a fast-travel node reads from
+ *  across the map. */
 function drawWaystone(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
-  shadow(g, cx, cy + 11, 9, 3);
+  const pulse = 0.55 + 0.45 * Math.sin(now / 500);
+  // Ground glow — a warm pool that draws the eye.
+  const glow = g.createRadialGradient(cx, cy + 14, 2, cx, cy + 14, 26);
+  glow.addColorStop(0, `rgba(240,150,60,${(0.34 + 0.14 * pulse).toFixed(2)})`);
+  glow.addColorStop(1, "rgba(240,150,60,0)");
+  g.fillStyle = glow;
+  g.beginPath(); g.ellipse(cx, cy + 14, 26, 11, 0, 0, Math.PI * 2); g.fill();
+
+  shadow(g, cx, cy + 17, 13, 4);
+  // The standing stone — ~1.7× the old size.
   g.fillStyle = "#5b5762";
   g.beginPath();
-  g.moveTo(cx - 7, cy + 11); g.lineTo(cx - 6, cy - 9); g.lineTo(cx, cy - 13);
-  g.lineTo(cx + 6, cy - 9); g.lineTo(cx + 7, cy + 11); g.closePath(); g.fill();
-  g.fillStyle = "#6c6775";
-  g.beginPath(); g.moveTo(cx - 6, cy - 9); g.lineTo(cx, cy - 13); g.lineTo(cx + 1, cy + 11); g.lineTo(cx - 7, cy + 11); g.closePath(); g.fill();
-  // The ember rider-mark, faintly pulsing.
-  const pulse = 0.55 + 0.45 * Math.sin(now / 500);
-  g.fillStyle = `rgba(210,116,44,${(0.5 + 0.4 * pulse).toFixed(2)})`;
-  g.beginPath(); g.arc(cx - 1, cy - 2, 4, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = "rgba(247,198,106,0.8)"; g.lineWidth = 1;
-  g.beginPath(); g.moveTo(cx - 4, cy - 2); g.lineTo(cx + 2, cy - 2); g.moveTo(cx - 1, cy - 5); g.lineTo(cx - 1, cy + 1); g.stroke();
+  g.moveTo(cx - 11, cy + 17); g.lineTo(cx - 10, cy - 15); g.lineTo(cx, cy - 21);
+  g.lineTo(cx + 10, cy - 15); g.lineTo(cx + 11, cy + 17); g.closePath(); g.fill();
+  g.fillStyle = "#6c6775"; // lit face
+  g.beginPath(); g.moveTo(cx - 10, cy - 15); g.lineTo(cx, cy - 21); g.lineTo(cx + 1, cy + 17); g.lineTo(cx - 11, cy + 17); g.closePath(); g.fill();
+  g.strokeStyle = "#403c46"; g.lineWidth = 1; // a couple of carved grooves
+  g.beginPath(); g.moveTo(cx - 8, cy + 6); g.lineTo(cx + 9, cy + 6); g.moveTo(cx - 8, cy + 11); g.lineTo(cx + 9, cy + 11); g.stroke();
+
+  // The ember rider-mark set in the stone, glowing.
+  g.fillStyle = `rgba(210,116,44,${(0.6 + 0.4 * pulse).toFixed(2)})`;
+  g.beginPath(); g.arc(cx - 1, cy - 4, 6, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(247,198,106,0.9)"; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(cx - 6, cy - 4); g.lineTo(cx + 3, cy - 4); g.moveTo(cx - 1, cy - 9); g.lineTo(cx - 1, cy + 1); g.stroke();
+
+  // A bright beacon flame on the crown + a soft light column rising off it.
+  const beam = g.createLinearGradient(cx, cy - 21, cx, cy - 46);
+  beam.addColorStop(0, `rgba(247,198,106,${(0.5 * pulse).toFixed(2)})`);
+  beam.addColorStop(1, "rgba(247,198,106,0)");
+  g.fillStyle = beam;
+  g.beginPath(); g.moveTo(cx - 4, cy - 21); g.lineTo(cx + 4, cy - 21); g.lineTo(cx + 2, cy - 46); g.lineTo(cx - 2, cy - 46); g.closePath(); g.fill();
+  g.fillStyle = "#f7c66a";
+  g.beginPath(); g.ellipse(cx, cy - 22, 3.4 + pulse, 4.6 + pulse, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#fff0c0";
+  g.beginPath(); g.ellipse(cx, cy - 22, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
 }
 
 /** Ambient wildlife — small, simple silhouettes by species. */

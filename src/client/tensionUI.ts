@@ -102,7 +102,11 @@ export class TensionUI {
     this.telegraph = 0;
     this.nextLungeIn = 1.4 + Math.random() * 1.6;
     this.title.textContent = `${fish.species} on the line!`;
-    this.sub.textContent = `${fish.weight.toFixed(1)} kg · ${Math.round(fish.length)} cm`;
+    // The size stays a mystery until it's landed — you only feel how hard it
+    // fights. The catch popup reveals the weight and length.
+    this.sub.textContent = fish.strength > 0.72 ? "It fights like a monster!"
+      : fish.strength > 0.45 ? "A strong pull — hold on!"
+      : "Reel it in — no telling how big…";
     this.open = true;
     this.backdrop.classList.remove("hidden");
     this.draw();
