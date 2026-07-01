@@ -34,6 +34,7 @@ import { BountyUI } from "./bountyUI.ts";
 import { RecordsUI } from "./recordsUI.ts";
 import { TensionUI } from "./tensionUI.ts";
 import { LevelUp } from "./levelUp.ts";
+import { ActiveSkill } from "./activeSkill.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
@@ -292,6 +293,7 @@ export class Game {
   /** Recent per-entity hits (id → when/direction), driving the hit-pop in render. */
   private combatHits: Map<string, HitFx> = new Map();
   private levelUp: LevelUp;
+  private activeSkill: ActiveSkill;
   private camInitialised = false;
 
   private menu: ContextMenu;
@@ -342,6 +344,7 @@ export class Game {
     this.records = new RecordsUI(uiRoot, () => this.bridge.state.player.appearance.name);
     this.tension = new TensionUI(uiRoot, (success) => this.dispatch({ type: "LAND_FISH", success }));
     this.levelUp = new LevelUp(uiRoot, bridge.content);
+    this.activeSkill = new ActiveSkill(uiRoot, bridge.content);
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -494,6 +497,7 @@ export class Game {
 
     // 4) Refresh the HUD readouts and the minimap.
     this.hud.update(this.bridge.state);
+    this.activeSkill.update(this.bridge.state, now);
     this.minimap.draw(this.bridge.state, this.bridge.content);
     if (this.worldMap.isOpen()) {
       this.worldMap.draw(
