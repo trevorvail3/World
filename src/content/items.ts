@@ -2400,7 +2400,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 5,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4000,
+    "speed": 3200,
     "twoHand": true,
     "sell": 32
   },
@@ -2416,7 +2416,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 17,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4200,
+    "speed": 3400,
     "twoHand": true,
     "sell": 165
   },
@@ -2432,7 +2432,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 25,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4200,
+    "speed": 3400,
     "twoHand": true,
     "sell": 320
   },
@@ -2448,7 +2448,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 48,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4400,
+    "speed": 3500,
     "twoHand": true,
     "sell": 890
   },
@@ -2464,7 +2464,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 80,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4600,
+    "speed": 3600,
     "twoHand": true,
     "sell": 1750
   },
@@ -2480,7 +2480,7 @@ export const items: Record<ItemId, ItemDef> = {
     "dmg": 86,
     "attackStyle": "slash",
     "wepType": "claymore",
-    "speed": 4600,
+    "speed": 3600,
     "twoHand": true,
     "sell": 2230
   },

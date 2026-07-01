@@ -292,9 +292,9 @@ const COMBAT = {
   playerMeleeSpeed: 2400,
   /** Fallback monster swing interval (ms) if a monster has no `speed`. */
   monsterSpeed: 3000,
-  /** Hit-chance = clamp(base + (att - def) * slope, floor, cap). */
-  hitBase: 0.5,
-  hitSlope: 0.012,
+  /** Hit-chance = clamp(att / (att + def·defWeight), floor, cap) — a ratio curve
+   *  (att==def·defWeight → 50%) so defence always matters and never saturates. */
+  defWeight: 1.35,
   hitFloor: 0.05,
   hitCap: 0.95,
   /** Exploiting a weakness multiplies accuracy / damage. */
@@ -4114,10 +4114,22 @@ function effectiveDef(obj: WorldObjectState, stats: MonsterStats, now: number): 
   return d;
 }
 
-/** The shared linear hit-chance: clamp(0.5 + (att - def) * 0.012, 0.05, 0.95). */
+/**
+ * Ratio hit-chance (replaces the old linear `0.5 + (att-def)*slope`, which
+ * saturated to the 0.95 cap the moment accuracy outgrew a monster's defence —
+ * making defence and the accuracy side of the triangle irrelevant at scale).
+ *
+ * This scales with the ATT/DEF *ratio*, so raising defence always lowers the
+ * chance to be hit, and out-levelling a foe raises but never trivially maxes your
+ * hit rate: att == def → ~0.5, att = 2·def → ~0.75, att = 4·def → ~0.87. Clamped
+ * to [floor, cap]. The same curve governs both your swings and the monster's.
+ */
 function hitChance(att: number, def: number): number {
-  const c = COMBAT.hitBase + (att - def) * COMBAT.hitSlope;
-  return Math.max(COMBAT.hitFloor, Math.min(COMBAT.hitCap, c));
+  const a = Math.max(1, att);
+  // Defence is weighted a little above raw accuracy so armour and Ward pull real
+  // weight — a heavily-armoured target is genuinely hard to land on.
+  const d = Math.max(0, def) * COMBAT.defWeight;
+  return Math.max(COMBAT.hitFloor, Math.min(COMBAT.hitCap, a / (a + d)));
 }
 
 /** A uniform integer in [lo, hi] inclusive, drawn from the injected RNG. */
