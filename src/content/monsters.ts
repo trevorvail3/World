@@ -260,7 +260,8 @@ export const monsters: Record<string, MonsterStats> = {
     "attackStyle": "crush",
     "weakness": [
       "stab",
-      "ranged"
+      "ranged",
+      "magic"
     ],
     "desc": "Slow. Extremely strong. Does not like being poked.",
     "drops": [
@@ -598,7 +599,8 @@ export const monsters: Record<string, MonsterStats> = {
     "attackStyle": "crush",
     "weakness": [
       "crush",
-      "ranged"
+      "ranged",
+      "magic"
     ],
     "desc": "An animated construct of compressed deeprock. Slow, almost unkillable, hits like a falling wall.",
     "drops": [
@@ -1342,7 +1344,7 @@ export const monsters: Record<string, MonsterStats> = {
   "town_guard": {
     id: "town_guard", name: "Settlement Guard", icon: "🛡️", level: 21, hp: 55,
     acc: 48, def: 26, maxHit: 9, speed: 2800, xp: 90, attackStyle: "stab",
-    weakness: ["crush"],
+    weakness: ["crush", "magic"],
     desc: "A local watchman keeping the peace at the settlement's edge. Leave them be and they'll leave you be — raise a hand, and they raise one back.",
     drops: [
       { item: "worn_coin", chance: 1, min: 8, max: 20, tier: "always" },
@@ -1363,7 +1365,7 @@ export const monsters: Record<string, MonsterStats> = {
   "ironvale_guard": {
     id: "ironvale_guard", name: "Ironvale Guard", icon: "⚔️", level: 38, hp: 90,
     acc: 84, def: 40, maxHit: 16, speed: 2600, xp: 240, attackStyle: "slash",
-    weakness: ["stab"],
+    weakness: ["stab", "magic"],
     desc: "A drilled soldier of the Ironvale watch, mail-clad and unbothered. The city's law made flesh — not to be picked at lightly, but worth the trouble if you can take one.",
     drops: [
       { item: "worn_coin", chance: 1, min: 20, max: 55, tier: "always" },

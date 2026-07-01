@@ -488,6 +488,9 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trap_hare_1", kind: "trap", x: 52, y: 31, name: "Snare", resource: "hunt_hare" },
   { id: "trap_hare_2", kind: "trap", x: 74, y: 32, name: "Snare", resource: "hunt_hare" },
 
+  // Altar of Orun — kneel here (or at any shrine) to refill Grace for Faith.
+  { id: "altar_ironvale", kind: "shrine", x: 56, y: 41, name: "Altar of Orun", lines: ["A worn stone altar to Orun. Kneel here to refill your Grace."] },
+
   // === SETTLEMENT GUARDS (Batch 7) =========================================
   // Attackable but never aggressive (see AGGRESSIVE in worldCore) — they hold
   // the watch at every named settlement. Ironvale, the capital, fields the

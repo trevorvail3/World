@@ -41,6 +41,8 @@ export interface SavedProgress {
   /** Run/walk toggle + current run energy. */
   running: boolean;
   energy: number;
+  /** Faith Grace pool (refilled at altars). Optional for pre-Faith saves. */
+  grace?: number;
   /** Selected melee combat style. */
   combatStyle: string;
   /** Active quests: id -> { step, killCount }. */
@@ -126,6 +128,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     quiver: player.quiver,
     running: player.running,
     energy: player.energy,
+    grace: player.grace,
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
@@ -245,6 +248,10 @@ export function hydratePlayer(
   const savedEnergy = raw["energy"];
   if (finiteNum(savedEnergy)) player.energy = Math.max(0, Math.min(100, savedEnergy));
   player.winded = player.energy <= 0;
+  // Faith Grace: clamp to the current pool; pre-Faith saves (no grace) start full.
+  const savedGrace = raw["grace"];
+  const gmax = Math.max(1, player.skills.faith.level);
+  player.grace = finiteNum(savedGrace) ? Math.max(0, Math.min(gmax, savedGrace)) : gmax;
   player.agilityLap = null; // lap progress is transient — start fresh on load
   // Tools are wielded in the mainhand now. Make sure the player still owns each
   // basic tool so saves from before this change can gather: if they hold no

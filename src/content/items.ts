@@ -4620,11 +4620,13 @@ export const items: Record<ItemId, ItemDef> = {
   // are the "rare drop table" spice shared across many foes.
   "bones": {
     "id": "bones", "name": "Bones", "icon": "🦴", "cat": "Drops", "sell": 3,
-    "description": "A pile of picked-clean bones. Not much, but a bonemeal trader will take them."
+    "buryXp": 12,
+    "description": "A pile of picked-clean bones. Bury them for Faith, or grind them into bonemeal for potions."
   },
   "big_bones": {
     "id": "big_bones", "name": "Big Bones", "icon": "🦴", "cat": "Drops", "sell": 14,
-    "description": "The heavy bones of a large beast. Worth a fair bit more than the common sort."
+    "buryXp": 40,
+    "description": "The heavy bones of a large beast. Bury for a big lump of Faith, or grind into bonemeal."
   },
   "chipped_tooth": {
     "id": "chipped_tooth", "name": "Chipped Tooth", "icon": "🦷", "cat": "Drops", "sell": 6,
@@ -4678,6 +4680,59 @@ export const items: Record<ItemId, ItemDef> = {
     "id": "scrap_cloth", "name": "Scrap of Cloth", "icon": "🧵", "cat": "Drops", "sell": 4,
     "description": "A torn strip of dirty cloth. Fit for rags, bandages, or a few coppers."
   },
+
+  // === FAITH: wooden staff ladder (2H mainhand casting weapons) ==============
+  // Rod-style tiers — each a flat casting boost (acc + dmg). Wielding one makes
+  // your basic attack a free magic bolt and routes combat XP to Faith. Gated by
+  // Faith level via equipLevel.
+  "staff_ashwood": {
+    "id": "staff_ashwood", "name": "Ashwood Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 1,
+    "acc": 6, "dmg": 4, "speed": 2600, "sell": 60,
+    "description": "A plain ashwood casting staff. Channels Orun's spark for the newly faithful."
+  },
+  "staff_coldpine": {
+    "id": "staff_coldpine", "name": "Coldpine Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 15,
+    "acc": 12, "dmg": 8, "speed": 2600, "sell": 180,
+    "description": "A pale coldpine staff, cool to the grip. Steadier channel than ashwood."
+  },
+  "staff_stonewood": {
+    "id": "staff_stonewood", "name": "Stonewood Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 30,
+    "acc": 20, "dmg": 13, "speed": 2600, "sell": 420,
+    "description": "A dense stonewood staff. Its weight lends real force to a bolt."
+  },
+  "staff_greyoak": {
+    "id": "staff_greyoak", "name": "Greyoak Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 45,
+    "acc": 30, "dmg": 19, "speed": 2600, "sell": 900,
+    "description": "An old-growth greyoak staff. A caster's proper working tool."
+  },
+  "staff_ruewood": {
+    "id": "staff_ruewood", "name": "Ruewood Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 60,
+    "acc": 42, "dmg": 26, "speed": 2600, "sell": 1800,
+    "description": "A dark ruewood staff that hums when Grace runs through it."
+  },
+  "staff_deeproot": {
+    "id": "staff_deeproot", "name": "Deeproot Staff", "icon": "🔮", "cat": "Weapons",
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 75,
+    "acc": 56, "dmg": 34, "speed": 2600, "sell": 3600,
+    "description": "Cut from the deeproot at the world's bottom. The finest staff a faithful hand can wield."
+  },
+
+  // === FAITH: bonemeal + the Grace (Faith) potion ===========================
+  "bonemeal": {
+    "id": "bonemeal", "name": "Bonemeal", "icon": "🦴", "cat": "Materials", "sell": 6,
+    "description": "Ground bone, pale and fine. The base of a Faith Potion."
+  },
+  "potion_grace": {
+    "id": "potion_grace", "name": "Faith Potion", "icon": "🙏", "cat": "Potions",
+    "graceRestore": 30, "sell": 120,
+    "description": "A bone-and-herb brew that restores a measure of Grace on the move — no shrine needed."
+  },
+
   "seed_ashweed": {
     "id": "seed_ashweed",
     "name": "Ashweed Seed",

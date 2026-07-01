@@ -56,6 +56,10 @@ export const shops: ShopDef[] = [
       // Better rods (Woodcraft makes its own once that bench is open).
       { item: "rod_2", price: 130, qty: 1 },
       { item: "rod_3", price: 240, qty: 1 },
+      // Faith casting staffs — the low tiers, so a new caster can get started.
+      { item: "staff_ashwood", price: 80, qty: 1 },
+      { item: "staff_coldpine", price: 235, qty: 1 },
+      { item: "staff_stonewood", price: 545, qty: 1 },
     ],
   },
   {

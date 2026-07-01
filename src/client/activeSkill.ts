@@ -113,6 +113,7 @@ export class ActiveSkill {
       }
       case "combat": {
         const main = p.equipment.mainhand;
+        if (main && this.content.items[main]?.magic) return "faith";
         if (main && this.content.items[main]?.ranged) return "draw";
         return p.combatStyle === "edge" ? "edge"
           : p.combatStyle === "ward" ? "ward" : "vigour";

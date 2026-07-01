@@ -68,7 +68,9 @@ export type SkillId =
   | "edge"
   | "vigour"
   | "ward"
-  | "draw";
+  | "draw"
+  // Faith: the fused magic/prayer skill. Trained by staff combat + burying bones.
+  | "faith";
 
 /**
  * The combat skills that train on every melee kill. Ward (defence) and Draw
@@ -538,6 +540,15 @@ export type ItemId =
   | "bent_nail"
   | "rusty_key"
   | "scrap_cloth"
+  // --- Faith skill: wooden staff ladder, bonemeal + the Grace (Faith) potion ---
+  | "staff_ashwood"
+  | "staff_coldpine"
+  | "staff_stonewood"
+  | "staff_greyoak"
+  | "staff_ruewood"
+  | "staff_deeproot"
+  | "bonemeal"
+  | "potion_grace"
   | "seed_ashweed"
   | "seed_thornroot"
   | "seed_bloodberry"
@@ -713,6 +724,13 @@ export interface ItemDef {
   twoHand?: boolean;
   /** A bow: worn in the mainhand but fired at range (uses Draw + the quiver). */
   ranged?: boolean;
+  /** A staff: worn in the mainhand but casts at range (uses Faith + Grace). The
+   *  basic bolt is free; `acc`/`dmg` are the flat casting boost of the tier. */
+  magic?: boolean;
+  /** Faith only: Grace restored when this is drunk (the Faith / Grace potion). */
+  graceRestore?: number;
+  /** Bones: Faith XP granted when this item is buried. */
+  buryXp?: number;
   /** Crafting tier for leather armour (1–4). */
   craftTier?: number;
   /** Rarity label, e.g. "legendary". */
@@ -1180,6 +1198,12 @@ export interface Player {
   /** Run energy, 0–100. Drains while sprinting, regenerates otherwise. */
   energy: number;
   /**
+   * Grace — the Faith resource that powers spellbook casts. Clamped to
+   * [0, Faith level]. Refills ONLY by praying at a shrine/altar or drinking a
+   * Faith Potion; it never regenerates in the field. The basic staff bolt is free.
+   */
+  grace: number;
+  /**
    * Progress on the current Agility circuit: the course id and the next
    * obstacle order expected. Null when not mid-lap. Transient (not persisted).
    */
@@ -1427,6 +1451,18 @@ export interface SetStyleIntent {
   style: CombatStyle;
 }
 
+/** "Cast this Faith spell" (spends Grace; must be wielding a staff). */
+export interface CastSpellIntent {
+  type: "CAST_SPELL";
+  spell: string;
+}
+
+/** "Bury the bones in this inventory slot" (grants Faith XP). */
+export interface BuryIntent {
+  type: "BURY";
+  slot: number;
+}
+
 /** Flip the run/walk toggle. */
 export interface ToggleRunIntent {
   type: "TOGGLE_RUN";
@@ -1592,6 +1628,8 @@ export type Intent =
   | UnequipIntent
   | CraftIntent
   | SetStyleIntent
+  | CastSpellIntent
+  | BuryIntent
   | ToggleRunIntent
   | ChooseIntent
   | SpendXpLampIntent
@@ -1984,6 +2022,34 @@ export interface HookedFish {
   gold: number;
 }
 
+/**
+ * One Faith spell. The single spellbook mixes attack and utility casts; each is
+ * gated by a Faith level and spends `cost` Grace. Effect fields are read by kind:
+ * attack → `dmgMult` (× magic max hit against the current target); heal → `heal`;
+ * ward → `wardAmt`/`wardMs` (a temporary defence buff); teleport → home shrine.
+ */
+export interface SpellDef {
+  id: string;
+  name: string;
+  icon: string;
+  /** Minimum Faith level to cast. */
+  faithReq: number;
+  /** Grace spent per cast. */
+  cost: number;
+  kind: "attack" | "heal" | "ward" | "teleport";
+  /** attack: fraction of magic max hit dealt as a burst (e.g. 1.5). */
+  dmgMult?: number;
+  /** heal: HP restored. */
+  heal?: number;
+  /** ward: defence bonus granted, and its duration (ms). */
+  wardAmt?: number;
+  wardMs?: number;
+  /** Faith XP granted on a successful cast. */
+  xp: number;
+  /** Short explainer for the spellbook. */
+  blurb: string;
+}
+
 export interface Content {
   map: WorldMap;
   /** Default respawn tile after death — the safe city hub (a home bed overrides
@@ -1997,6 +2063,8 @@ export interface Content {
   actions: SkillAction[];
   /** The quest chains (data). */
   quests: QuestDef[];
+  /** The Faith spellbook (data) — Grace-fuelled attack + utility casts. */
+  spells: SpellDef[];
   /** Discoverable lore fragments, revealed by reading relics in the world. */
   lore: LoreDef[];
   /** Shopkeeper wares (data). */

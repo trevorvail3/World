@@ -475,6 +475,7 @@ export function createWorld(
     combatStyle: "vigour",
     running: true,
     energy: ENERGY_MAX,
+    grace: 1, // Faith 1 → a 1-point Grace pool; grows with Faith, refilled at altars
     winded: false,
     agilityLap: null,
     agilityHop: null,
@@ -1539,6 +1540,14 @@ export function applyIntent(
       player.running = !player.running;
       break;
     }
+    case "CAST_SPELL": {
+      castSpell(state, content, intent.spell, ctx, events);
+      break;
+    }
+    case "BURY": {
+      buryBones(state, content, intent.slot, events);
+      break;
+    }
     case "CLAIM_PLOT": {
       const obj = state.objects[intent.plotId];
       const def = findObjectDef(content, intent.plotId);
@@ -1697,8 +1706,9 @@ export function equipRequirement(
     const level = TOOL_TIER_REQS[tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
-  // A bow sits in the mainhand but is a ranged weapon — it gates on Draw, not Edge.
-  const gearSkill = def.ranged ? "draw" : (def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined);
+  // A bow sits in the mainhand but is a ranged weapon — it gates on Draw, not
+  // Edge. A staff likewise gates on Faith rather than Edge.
+  const gearSkill = def.magic ? "faith" : def.ranged ? "draw" : (def.slot ? GEAR_SLOT_SKILL[def.slot] : undefined);
   if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
   // An explicit equipLevel (uniques like the dragon set) overrides the tier
   // table; otherwise the level comes from the material tier.
@@ -1922,17 +1932,23 @@ function eatSlot(
   const def = content.items[data.item];
   const canHeal = !!def.heals;
   const canBuff = !!(def.buff && def.buffMs);
-  if (!canHeal && !canBuff) {
+  const canGrace = !!def.graceRestore;
+  if (!canHeal && !canBuff && !canGrace) {
     events.push({ type: "LOG", message: `You can't use the ${def.name}.` });
     return;
   }
-  // Don't waste a pure-heal at full HP; a buffed item is still worth using.
-  if (canHeal && !canBuff && player.hp >= player.maxHp) {
+  // Don't waste a pure-heal at full HP; a buffed/Grace item is still worth using.
+  if (canHeal && !canBuff && !canGrace && player.hp >= player.maxHp) {
     events.push({ type: "LOG", message: "You are already at full health." });
     return;
   }
+  // Don't waste a pure Grace potion at a full Grace pool.
+  if (canGrace && !canHeal && !canBuff && player.grace >= graceMax(player)) {
+    events.push({ type: "LOG", message: "Your Grace is already full." });
+    return;
+  }
 
-  let msg = canHeal && def.buff ? `You drink the ${def.name}.` : `You ${def.cat === "Food" || canHeal ? "eat" : "drink"} the ${def.name}.`;
+  let msg = (canHeal && def.buff) || canGrace ? `You drink the ${def.name}.` : `You ${def.cat === "Food" || canHeal ? "eat" : "drink"} the ${def.name}.`;
   if (canHeal) {
     const before = player.hp;
     player.hp = Math.min(player.maxHp, player.hp + def.heals!);
@@ -1943,6 +1959,12 @@ function eatSlot(
   if (canBuff) {
     player.buffs[def.buff!] = { amount: def.buffAmt ?? 0, until: ctx.now + def.buffMs! };
     msg += ` ${BUFF_LABEL[def.buff!] ?? def.buff} for ${Math.round(def.buffMs! / 60000)} min.`;
+  }
+  if (canGrace) {
+    const before = player.grace;
+    player.grace = Math.min(graceMax(player), player.grace + def.graceRestore!);
+    const gained = Math.round(player.grace - before);
+    if (gained > 0) msg += ` (+${gained} Grace)`;
   }
   data.qty -= 1;
   if (data.qty <= 0) player.inventory[slot] = null;
@@ -2142,7 +2164,17 @@ function startInteraction(
       break;
     }
 
-    case "shrine":
+    case "shrine": {
+      // A shrine/altar of Orun: kneel and pray to refill Grace (the Faith fuel).
+      const gm = graceMax(player);
+      if (player.grace >= gm) {
+        events.push({ type: "LOG", message: `You kneel at the ${def.name}. Your Grace is already full.` });
+      } else {
+        player.grace = gm;
+        events.push({ type: "LOG", message: `You kneel at the ${def.name} and pray. Orun's grace fills you.` });
+      }
+      break;
+    }
     case "cart":
     case "fountain":
     case "critter":
@@ -4007,6 +4039,37 @@ function rangedMaxHit(player: Player, content: Content): number {
   return str + bd + ad + buffVal(player, "ranged_dmg");
 }
 
+/** The casting staff the player is wielding, if any (a magic weapon in mainhand). */
+function equippedStaff(player: Player, content: Content): ItemId | undefined {
+  const id = player.equipment.mainhand;
+  return id && content.items[id]?.magic ? id : undefined;
+}
+
+/** Is the player set to fight with magic? (a staff wielded in the mainhand). */
+function isMagic(player: Player, content: Content): boolean {
+  return !!equippedStaff(player, content);
+}
+
+/** The player's Grace ceiling — their Faith level (min 1). */
+function graceMax(player: Player): number {
+  return Math.max(1, skillLvl(player, "faith"));
+}
+
+/** Magic accuracy: Faith + staff acc + any magic-accuracy buff. */
+function magicAccuracy(player: Player, content: Content): number {
+  const st = equippedStaff(player, content);
+  const sa = st ? content.items[st].acc ?? 0 : 0;
+  return skillLvl(player, "faith") + sa + buffVal(player, "magic_acc");
+}
+
+/** Magic max hit: Faith + staff dmg + any magic-damage buff. */
+function magicMaxHit(player: Player, content: Content): number {
+  const st = equippedStaff(player, content);
+  const sd = st ? content.items[st].dmg ?? 0 : 0;
+  const str = Math.round(skillLvl(player, "faith") * COMBAT.dmgSkillScale);
+  return str + sd + buffVal(player, "magic_dmg");
+}
+
 /** Player defence rating: Ward + summed armour defence (+ any Defence buff). */
 function playerDefence(player: Player, content: Content): number {
   return skillLvl(player, "ward") + equipStat(player, content, "def") + buffVal(player, "defence");
@@ -4063,7 +4126,7 @@ function resolveCombat(
   // reaches `rangedReach`, and an archer/caster monster reaches its attackRange.
   // Out of reach, the clock still ticks (so neither side stockpiles free swings)
   // but the swing is skipped — closing the gap is the wander logic's job.
-  const playerReach = isRanged(player, content) ? COMBAT.rangedReach : 1;
+  const playerReach = isRanged(player, content) || isMagic(player, content) ? COMBAT.rangedReach : 1;
   const monsterReach = stats.attackRange ?? 1;
   const tileDist = () => {
     const mt = objectPos(def, obj);
@@ -4128,11 +4191,16 @@ function playerSwing(
   // "ranged" when fighting with a bow. Matching one of the monster's weaknesses
   // multiplies accuracy and damage — the heart of the combat triangle, and what
   // gives ranged a job: many fliers, wraiths and brutes are weak to it alone.
-  const wStyle = ranged ? "ranged" : weaponStyle(player, content);
+  // A staff in the mainhand fights with magic (its free basic bolt); the style is
+  // "magic", the ratings come off Faith + the staff, and the XP trains Faith.
+  const magic = isMagic(player, content);
+  const wStyle = ranged ? "ranged" : magic ? "magic" : weaponStyle(player, content);
   const exploits = wStyle !== undefined && (stats.weakness ?? []).includes(wStyle);
-  const baseAcc = ranged ? rangedAccuracy(player, content) : playerAccuracy(player, content);
+  const baseAcc = ranged ? rangedAccuracy(player, content)
+    : magic ? magicAccuracy(player, content) : playerAccuracy(player, content);
   const acc = exploits ? Math.round(baseAcc * COMBAT.weaknessAcc) : baseAcc;
-  const maxHit = ranged ? rangedMaxHit(player, content) : playerMaxHit(player, content);
+  const maxHit = ranged ? rangedMaxHit(player, content)
+    : magic ? magicMaxHit(player, content) : playerMaxHit(player, content);
 
   const mechs = stats.mechanics ?? [];
   if (ctx.rng() < hitChance(acc, stats.def ?? 0)) {
@@ -4160,11 +4228,12 @@ function playerSwing(
     // 3 xp to the attack skill (Draw for ranged, the chosen melee style else),
     // and 1 xp to Vitality. Trimmed from 4 + 1.33 so combat XP/hr sits nearer the
     // gathering skills instead of being far and away the fastest route to 99.
-    grantXp(state, content, ranged ? "draw" : player.combatStyle, dmg * 3, events);
+    grantXp(state, content, ranged ? "draw" : magic ? "faith" : player.combatStyle, dmg * 3, events);
     grantXp(state, content, "vitality", dmg, events);
     // Searing hide (recoil): a melee blow burns you back. Never lethal on its
     // own — it can't drop you below 1 — but it forces you to keep healing.
-    if (!ranged) {
+    // Ranged and magic strike from a distance, so they're spared the recoil.
+    if (!ranged && !magic) {
       const rec = mechs.find((m) => m.type === "recoil");
       if (rec && rec.type === "recoil" && player.hp > 1) {
         const burn = Math.min(player.hp - 1, Math.max(1, Math.round(dmg * rec.frac)));
@@ -4179,32 +4248,155 @@ function playerSwing(
     events.push({ type: "DAMAGE", targetId: obj.id, amount: 0 });
   }
 
-  if (obj.hp <= 0) {
-    obj.hp = 0;
-    obj.available = false;
-    obj.respawnAt = ctx.now + COMBAT.respawn;
-    obj.nextAttackAt = 0;
-    // Combat XP is granted per hit (see above), OSRS-style — not on the kill.
-    player.killsSinceShard += 1;
-    // Loot falls to the floor where the creature stood — the player walks over
-    // and picks it up (OSRS-style), it isn't auto-collected.
-    const drop = objectPos(def, obj);
-    rollDrops(state, drop.x, drop.y, stats, ctx, events); // resets killsSinceShard if the shard drops
-    // Pity guarantee: once the count crosses the threshold without a shard, the
-    // next kill yields one and the count resets — a rare drop that can't wall you.
-    if (player.killsSinceShard >= SHARD_PITY) {
-      dropToGround(state, SHARD_ID, 1, drop.x, drop.y, ctx);
-      player.killsSinceShard = 0;
-      events.push({ type: "LOG", message: `The ${def.name} drops a warm black Shard of Orun.` });
-    }
-    player.stats.monstersSlain += 1;
-    if (stats.boss) player.bossKills[stats.id] = (player.bossKills[stats.id] ?? 0) + 1;
-    events.push({ type: "MONSTER_KILLED", objId: obj.id });
-    events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
-    advanceKillQuests(state, content, def.monster, events);
-    trackBountyKill(player, content, def.monster, events);
-    clearActivity(player);
+  if (obj.hp <= 0) checkKill(state, content, def, obj, stats, ctx, events);
+}
+
+/**
+ * A monster has (maybe) dropped to 0 HP: finalise the kill — loot, respawn
+ * timer, shard pity, quest/bounty progress and the log. Shared by the auto-swing
+ * and by damaging spell casts, so a killing Emberbolt drops loot too.
+ */
+function checkKill(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  obj: WorldObjectState,
+  stats: MonsterStats,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  if (obj.hp === undefined || obj.hp > 0) return;
+  obj.hp = 0;
+  obj.available = false;
+  obj.respawnAt = ctx.now + COMBAT.respawn;
+  obj.nextAttackAt = 0;
+  // Combat XP is granted per hit (see above), OSRS-style — not on the kill.
+  player.killsSinceShard += 1;
+  // Loot falls to the floor where the creature stood — the player walks over
+  // and picks it up (OSRS-style), it isn't auto-collected.
+  const drop = objectPos(def, obj);
+  rollDrops(state, drop.x, drop.y, stats, ctx, events); // resets killsSinceShard if the shard drops
+  // Pity guarantee: once the count crosses the threshold without a shard, the
+  // next kill yields one and the count resets — a rare drop that can't wall you.
+  if (player.killsSinceShard >= SHARD_PITY) {
+    dropToGround(state, SHARD_ID, 1, drop.x, drop.y, ctx);
+    player.killsSinceShard = 0;
+    events.push({ type: "LOG", message: `The ${def.name} drops a warm black Shard of Orun.` });
   }
+  player.stats.monstersSlain += 1;
+  if (stats.boss) player.bossKills[stats.id] = (player.bossKills[stats.id] ?? 0) + 1;
+  events.push({ type: "MONSTER_KILLED", objId: obj.id });
+  events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
+  advanceKillQuests(state, content, def.monster, events);
+  trackBountyKill(player, content, def.monster, events);
+  clearActivity(player);
+}
+
+/**
+ * Cast a Faith spell: gate on a staff + Faith level + Grace, spend the Grace,
+ * apply the effect by kind, and train Faith. Attack spells hit the current combat
+ * target (and can finish it, dropping loot via checkKill).
+ */
+function castSpell(
+  state: WorldState,
+  content: Content,
+  spellId: string,
+  ctx: Ctx,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const spell = content.spells.find((s) => s.id === spellId);
+  if (!spell) return;
+  if (!isMagic(player, content)) {
+    events.push({ type: "LOG", message: "You need a staff in hand to cast." });
+    return;
+  }
+  if (skillLvl(player, "faith") < spell.faithReq) {
+    events.push({ type: "LOG", message: `You need Faith ${spell.faithReq} to cast ${spell.name}.` });
+    return;
+  }
+  if (player.grace < spell.cost) {
+    events.push({ type: "LOG", message: `Not enough Grace for ${spell.name}. Pray at a shrine or drink a Faith Potion.` });
+    return;
+  }
+
+  switch (spell.kind) {
+    case "attack": {
+      const targetId = player.activity.kind === "combat" ? player.activity.targetId : null;
+      const def = targetId ? content.objects.find((o) => o.id === targetId) : undefined;
+      const obj = targetId ? state.objects[targetId] : undefined;
+      const stats = def ? monsterFor(content, def) : undefined;
+      if (!def || !obj || !stats || obj.hp === undefined || !obj.available) {
+        events.push({ type: "LOG", message: "You have no target to strike." });
+        return;
+      }
+      player.grace -= spell.cost;
+      const top = Math.max(1, magicMaxHit(player, content));
+      const dmg = Math.max(1, Math.round(top * (spell.dmgMult ?? 1)));
+      obj.hp -= dmg;
+      events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: true });
+      events.push({ type: "LOG", message: `You cast ${spell.name}! (${dmg})` });
+      grantXp(state, content, "faith", spell.xp, events);
+      if (obj.hp <= 0) checkKill(state, content, def, obj, stats, ctx, events);
+      break;
+    }
+    case "heal": {
+      if (player.hp >= player.maxHp) {
+        events.push({ type: "LOG", message: "You are already at full health." });
+        return;
+      }
+      player.grace -= spell.cost;
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + (spell.heal ?? 0));
+      events.push({ type: "HEALED", amount: player.hp - before });
+      events.push({ type: "LOG", message: `You cast ${spell.name}.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      break;
+    }
+    case "ward": {
+      player.grace -= spell.cost;
+      player.buffs["defence"] = { amount: spell.wardAmt ?? 0, until: ctx.now + (spell.wardMs ?? 15000) };
+      events.push({ type: "LOG", message: `You cast ${spell.name}. A ward shimmers around you.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      break;
+    }
+    case "teleport": {
+      player.grace -= spell.cost;
+      player.path = [];
+      player.pendingInteractId = null;
+      player.pendingInteractMode = null;
+      player.station = null;
+      clearActivity(player);
+      const t = content.respawnPoint;
+      player.pos = { x: t.x, y: t.y };
+      player.aggroImmuneUntil = ctx.now + FLEE_GRACE_MS;
+      events.push({ type: "LOG", message: `You cast ${spell.name} and step through Orun's light.` });
+      grantXp(state, content, "faith", spell.xp, events);
+      break;
+    }
+  }
+}
+
+/** Bury the bones in a slot for Faith XP (Grace is untouched — bones are XP only). */
+function buryBones(
+  state: WorldState,
+  content: Content,
+  slot: number,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const data = player.inventory[slot];
+  if (!data) return;
+  const def = content.items[data.item];
+  if (!def.buryXp) {
+    events.push({ type: "LOG", message: `You can't bury the ${def.name}.` });
+    return;
+  }
+  data.qty -= 1;
+  if (data.qty <= 0) player.inventory[slot] = null;
+  events.push({ type: "LOG", message: `You bury the ${def.name}. You murmur a rite to Orun.` });
+  grantXp(state, content, "faith", def.buryXp, events);
 }
 
 function monsterSwing(

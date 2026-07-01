@@ -49,12 +49,13 @@ const MAX_CHAT_LINES = 80;
 const HERALD_NAME = "Herald";
 
 type TabId =
-  | "inventory" | "skills" | "character"
+  | "inventory" | "skills" | "spells" | "character"
   | "quests" | "social" | "factions" | "records" | "settings";
 
 const TABS: { id: TabId; icon: string; title: string }[] = [
   { id: "inventory", icon: "🎒", title: "Pack" },
   { id: "skills", icon: "📜", title: "Skills" },
+  { id: "spells", icon: "🔮", title: "Spells" },
   { id: "character", icon: "👤", title: "Character" },
   { id: "quests", icon: "📋", title: "Quests" },
   { id: "social", icon: "👥", title: "Social" },
@@ -108,9 +109,13 @@ const BUFF_DISPLAY: Record<string, { icon: string; label: string }> = {
 export class Hud {
   private content: Content;
   private skillRows = new Map<SkillId, HTMLElement>();
+  private spellRows = new Map<string, { row: HTMLElement; btn: HTMLButtonElement }>();
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
+  private graceRow!: HTMLElement;
+  private graceFill!: HTMLElement;
+  private graceText!: HTMLElement;
   private goldText!: HTMLElement;
   private vitals!: HTMLElement;
   private runControl!: HTMLElement;
@@ -253,9 +258,17 @@ export class Hud {
       <div class="vitals-row">
         <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
         <div class="hp-bar"><div class="hp-fill"></div></div>
+      </div>
+      <div class="grace-row" title="Grace — the Faith spell fuel. Refill at a shrine or altar.">
+        <span class="grace-ic">🔮</span>
+        <div class="grace-bar"><div class="grace-fill"></div></div>
+        <span class="grace-text">0 / 0</span>
       </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
+    this.graceRow = vitals.querySelector(".grace-row") as HTMLElement;
+    this.graceFill = vitals.querySelector(".grace-fill") as HTMLElement;
+    this.graceText = vitals.querySelector(".grace-text") as HTMLElement;
     this.vitals = vitals;
     // The boot orb: a ring that drains as energy spends; click toggles run/walk.
     const runCtl = vitals.querySelector(".run-control") as HTMLElement;
@@ -420,6 +433,32 @@ export class Hud {
         });
         p.appendChild(grid);
         p.appendChild(note("Tap a skill to see what it unlocks and the level of your next milestone."));
+        break;
+      }
+      case "spells": {
+        // The Faith spellbook: one mixed page of Grace-fuelled casts. Each row
+        // greys out if your Faith is too low; the Cast button dims if you can't
+        // afford the Grace. Wield a staff and cast attacks mid-fight.
+        const list = document.createElement("div");
+        list.className = "spellbook";
+        for (const spell of this.content.spells) {
+          const row = document.createElement("div");
+          row.className = "spell-row";
+          row.innerHTML = `
+            <span class="spell-ic">${iconize(spell.icon)}</span>
+            <div class="spell-body">
+              <div class="spell-top"><span class="spell-name">${escapeHtml(spell.name)}</span><span class="spell-cost">🔮 ${spell.cost}</span></div>
+              <div class="spell-blurb">${escapeHtml(spell.blurb)}</div>
+              <div class="spell-req">Faith ${spell.faithReq}</div>
+            </div>
+            <button class="spell-cast" type="button">Cast</button>`;
+          const btn = row.querySelector(".spell-cast") as HTMLButtonElement;
+          btn.addEventListener("click", () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }));
+          this.spellRows.set(spell.id, { row, btn });
+          list.appendChild(row);
+        }
+        p.appendChild(list);
+        p.appendChild(note("Wield a staff, then cast. Grace refills at any shrine or altar, or with a Faith Potion."));
         break;
       }
       case "character": {
@@ -893,6 +932,22 @@ export class Hud {
   }
 
   /** Active food/potion buffs as chips with a live countdown. */
+  /** Grey out spells above your Faith level; dim the Cast button when you can't
+   *  afford the Grace or aren't wielding a staff. */
+  private updateSpells(player: WorldState["player"]): void {
+    if (this.spellRows.size === 0) return;
+    const faith = player.skills.faith.level;
+    const hasStaff = !!(player.equipment.mainhand && this.content.items[player.equipment.mainhand]?.magic);
+    for (const spell of this.content.spells) {
+      const ref = this.spellRows.get(spell.id);
+      if (!ref) continue;
+      const known = faith >= spell.faithReq;
+      const affordable = known && hasStaff && player.grace >= spell.cost;
+      ref.row.classList.toggle("locked", !known);
+      ref.btn.disabled = !affordable;
+    }
+  }
+
   private renderBuffs(player: WorldState["player"]): void {
     const now = performance.now();
     const entries = Object.entries(player.buffs).filter(([, b]) => b.until > now);
@@ -943,12 +998,20 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "OPEN_NEST", slot: index }),
       });
     }
-    if (def.heals || def.buff) {
+    if (def.heals || def.buff || def.graceRestore) {
       items.push({
-        label: def.buff && !def.heals ? "Drink" : "Eat",
+        label: (def.buff || def.graceRestore) && !def.heals ? "Drink" : "Eat",
         target: def.name,
         tone: "action",
         onSelect: () => this.dispatch({ type: "EAT", slot: index }),
+      });
+    }
+    if (def.buryXp) {
+      items.push({
+        label: "Bury",
+        target: def.name,
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "BURY", slot: index }),
       });
     }
     if (def.slot && WEARABLE.has(def.slot)) {
@@ -1078,6 +1141,7 @@ export class Hud {
     this.lastState = state;
 
     this.renderBuffs(player);
+    this.updateSpells(player);
 
     // Keep the zoom slider in step with wheel/pinch changes (unless the player
     // is actively dragging it, in which case it's already the source of truth).
@@ -1174,6 +1238,18 @@ export class Hud {
     this.hpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
     this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
+
+    // Grace (Faith fuel): the bar shows only once Faith is trained past level 1
+    // (a caster's concern), and never regenerates in the field — only at altars.
+    const graceMax = Math.max(1, player.skills.faith.level);
+    const showGrace = player.skills.faith.level > 1 || player.grace > 0 ||
+      !!(player.equipment.mainhand && this.content.items[player.equipment.mainhand]?.magic);
+    this.graceRow.classList.toggle("hidden", !showGrace);
+    if (showGrace) {
+      const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
+      this.graceFill.style.width = `${gpct * 100}%`;
+      this.graceText.textContent = `${Math.floor(player.grace)} / ${graceMax}`;
+    }
 
     // Run/walk: bar width, percentage, on/off and low-energy styling.
     // Run orb: the ring depletes with energy (a CSS var drives the conic fill),

@@ -2512,6 +2512,31 @@ export const actions: SkillAction[] = [
     "group": "seeds"
   },
   {
+    // Faith: grind bones into bonemeal (the base of a Faith Potion). Done at the
+    // cauldron alongside the other brews.
+    "id": "grind_bonemeal",
+    "skill": "herblore",
+    "name": "Grind Bonemeal",
+    "levelReq": 1,
+    "xp": 6,
+    "baseTime": 2000,
+    "requires": { "bones": 1 },
+    "produces": "bonemeal",
+    "group": "potions"
+  },
+  {
+    // Faith: brew a Faith Potion — restores Grace on the move.
+    "id": "brew_faith_potion",
+    "skill": "herblore",
+    "name": "Faith Potion",
+    "levelReq": 15,
+    "xp": 45,
+    "baseTime": 4000,
+    "requires": { "glass_vial": 1, "bonemeal": 1, "herb_ashweed": 1 },
+    "produces": "potion_grace",
+    "group": "potions"
+  },
+  {
     "id": "herb_wildroot",
     "skill": "herblore",
     "name": "Wildroot Tincture",
