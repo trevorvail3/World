@@ -1620,11 +1620,20 @@ export class Game {
     const tst = tid ? player.quests[tid] : undefined;
     if (tid && tst) {
       const def = quests.find((q) => q.id === tid);
-      const step = def?.steps[tst.step] as { npc?: string; from?: string } | undefined;
-      const targetId = step?.npc ?? step?.from;
-      const tobj = targetId ? this.bridge.content.objects.find((o) => o.id === targetId) : undefined;
-      if (tobj) {
-        const tp = objectPos(tobj, this.bridge.state.objects[tobj.id]);
+      const step = def?.steps[tst.step] as
+        | { type?: string; npc?: string; from?: string; x?: number; y?: number }
+        | undefined;
+      // A "visit" step points at a raw tile; everything else points at an object
+      // (the target NPC, or a gather source) by id.
+      let tp: { x: number; y: number } | undefined;
+      if (step?.type === "visit" && typeof step.x === "number" && typeof step.y === "number") {
+        tp = { x: step.x, y: step.y };
+      } else {
+        const targetId = step?.npc ?? step?.from;
+        const tobj = targetId ? this.bridge.content.objects.find((o) => o.id === targetId) : undefined;
+        if (tobj) tp = objectPos(tobj, this.bridge.state.objects[tobj.id]);
+      }
+      if (tp) {
         const { x: sx, y: sy } = this.toScreen(tp.x, tp.y);
         const W = this.viewW, H = this.viewH, pad = 26;
         const g = this.g;

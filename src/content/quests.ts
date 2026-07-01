@@ -1459,4 +1459,119 @@ export const quests: QuestDef[] = [
       flags: ["pier_access"],
     },
   },
+
+  // ===========================================================================
+  // REGIONAL MID-GAME CONTRACTS — the outer settlements' own folk finally have
+  // work to give. Each is a self-contained side-quest that sends you out to see
+  // a place with your own eyes (the "visit" objective), thin what's grown too
+  // bold there, and decide what to carry back. Level ~28–48; no faction ties.
+  // ===========================================================================
+
+  {
+    id: "q_frostgate_streams",
+    name: "The Cold Streams",
+    giver: "npc_frostgate_trader",
+    intro: [
+      "Another porter didn't come down the pass last night. Third this season. Either the wolves have got bold, or something higher up is driving them onto the road.",
+      "I keep the gate; I can't go and look. You can. Climb to the Cold Streams where the melt runs — see the ground with your own eyes — then thin the ridge pack working that stretch. Come back and tell me straight what's up there.",
+    ],
+    steps: [
+      { type: "visit", x: 57, y: 14, text: "Climb to the Cold Streams, high on the pass" },
+      { type: "kill", monster: "ridge_wolf", count: 5, text: "Thin the ridge pack (0/5)" },
+      {
+        type: "choice",
+        npc: "npc_frostgate_trader",
+        text: "Tell Hesk what the pass keeps",
+        prompt: "You found a porter's pack in the snow — and no porter. What do you carry back to the gate?",
+        options: [
+          {
+            label: "The truth. Show him the pack.",
+            flags: ["frostgate_streams_done", "frostgate_truth"],
+            gold: 400,
+            reply: "Hesk turns the pack over once and sets it down gently. 'I'll send word to his people. Better a hard truth than a family that waits at a window. Thank you.'",
+          },
+          {
+            label: "Say the pass runs clear now.",
+            flags: ["frostgate_streams_done", "frostgate_kind"],
+            gold: 300,
+            reply: "'Clear,' Hesk repeats, wanting it. 'Then the next porter comes down whole.' You keep the pack, and the knowing, to yourself. Some kindnesses cost the truth.",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The road's safer up high for a while, and I know more than I did. That's the whole of the warden's job — knowing what walks the pass before it walks down onto the road.",
+    ],
+    reward: {
+      xp: [{ skill: "survivalist", amount: 420 }, { skill: "vigour", amount: 260 }],
+      items: [{ item: "warriors_draught", qty: 2 }],
+      gold: 150,
+    },
+  },
+
+  {
+    id: "q_deeplight_blackwater",
+    name: "Lights in the Deep",
+    giver: "npc_deeplight_trader",
+    intro: [
+      "Lamps keep going out in the far cut. Not guttering down — going out, all at once, like the dark itself takes a breath and blows them. My delvers won't work past the Black Water anymore.",
+      "You've a steady hand and steadier nerve. Go down to the Black Water, clear the crawlers nesting in the deep cut, and bring me up a couple of rough gems from the seams no one dares work. Prove the dark's just dark, and I'll pay you well for the proving.",
+    ],
+    steps: [
+      { type: "visit", x: 125, y: 28, text: "Descend to the Black Water in the far cut" },
+      { type: "kill", monster: "stone_crawler", count: 4, text: "Clear the crawlers from the deep cut (0/4)" },
+      { type: "gather", item: "rough_gem", count: 2, text: "Win 2 rough gems from the deep seams" },
+    ],
+    outro: [
+      "Two clean stones and the crawlers thinned — and you'll notice you came back up with your lamp still lit. So it's just bad air and worse rumour after all. Mostly. Probably.",
+      "Here's your pay, and a flask on top. My delvers will work the far cut again knowing someone walked it and came out. That's worth more than the gems.",
+    ],
+    reward: {
+      xp: [{ skill: "mining", amount: 480 }, { skill: "crafting", amount: 220 }],
+      items: [{ item: "cut_gem", qty: 1 }, { item: "glass_flask", qty: 2 }],
+      gold: 350,
+    },
+  },
+
+  {
+    id: "q_mirehold_sunkenline",
+    name: "The Sunken Line",
+    giver: "npc_mirehold_trader",
+    intro: [
+      "My cutting line's gone bad. The lurkers have crept up out of the deep pools onto the good peat, and a cutter won't set spade to ground a lurker's claimed. Can't say I blame him.",
+      "Walk the line first — the Peat Cuttings, down by the pools — see how far up they've come. Then drive enough of them back that the ground runs clean again. Do that and I'll pay you in more than peat.",
+    ],
+    steps: [
+      { type: "visit", x: 13, y: 146, text: "Walk Tam's line, down at the Peat Cuttings" },
+      { type: "kill", monster: "marsh_lurker", count: 5, text: "Drive the lurkers back to the pools (0/5)" },
+      {
+        type: "choice",
+        npc: "npc_mirehold_trader",
+        text: "Tell Tam what the spade turned up",
+        prompt: "Cutting clean ground, your spade struck something the bog kept whole — an old blade, black with age, no rust on it at all. What do you do with it?",
+        options: [
+          {
+            label: "Give it to Tam. It's his ground.",
+            flags: ["mirehold_line_done", "mirehold_gave_blade"],
+            gold: 300,
+            reply: "Tam holds it a long moment. 'No rust. A hundred years in the wet and no rust.' He wraps it in oilcloth. 'The bog gives things back when it's ready. I'll keep it ready. Take your pay, and my thanks.'",
+          },
+          {
+            label: "Keep it. The bog gave it to your hand.",
+            flags: ["mirehold_line_done", "mirehold_kept_blade"],
+            gold: 200,
+            reply: "Tam watches you pocket it and doesn't argue. 'Aye, your spade, your find. Mind how you carry a thing the bog kept — it kept it for a reason, and reasons in the moor are seldom kind.'",
+          },
+        ],
+      },
+    ],
+    outro: [
+      "The line runs clean and the cutters will work it again. The moor gives up peat, and swords, and older things — and you took the measure of all three today without flinching. That's rare out here.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 520 }, { skill: "survivalist", amount: 300 }],
+      items: [{ item: "redrun_chowder", qty: 2 }, { item: "bone_broth", qty: 1 }],
+      gold: 300,
+    },
+  },
 ];

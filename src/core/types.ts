@@ -1895,6 +1895,10 @@ export type QuestObjective =
   | { type: "gather"; item: ItemId; count: number; text: string; from?: string }
   | { type: "deliver"; npc: string; item: ItemId; count: number; text: string }
   | { type: "reach"; skill: SkillId; level: number; text: string }
+  /** Travel to a place: completes once the player comes within `radius` tiles
+   *  (default 3) of (x, y). An exploration objective — "scout the pass", "reach
+   *  the old ruin" — distinct from talking to an NPC standing there. */
+  | { type: "visit"; x: number; y: number; radius?: number; text: string }
   | { type: "choice"; npc: string; text: string; prompt: string; options: QuestChoice[] }
   /** Claim any homestead plot (introduces player housing). */
   | { type: "claim"; text: string }

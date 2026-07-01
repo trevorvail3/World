@@ -3995,6 +3995,11 @@ function checkGatherQuests(
       advanceQuest(state, content, def, st, events);
     } else if (obj.type === "reach" && skillLvl(player, obj.skill) >= obj.level) {
       advanceQuest(state, content, def, st, events);
+    } else if (
+      obj.type === "visit" &&
+      Math.hypot(player.pos.x - obj.x, player.pos.y - obj.y) <= (obj.radius ?? 3)
+    ) {
+      advanceQuest(state, content, def, st, events);
     } else if (obj.type === "claim" && ownsAnyPlot(state)) {
       advanceQuest(state, content, def, st, events);
     } else if (obj.type === "build" && hasBuilt(state, content, obj.category)) {
