@@ -437,7 +437,11 @@ export class Game {
    * back out, so input mapping is unaffected.
    */
   private resize(): void {
-    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+    // Cap the backing-store resolution: a hi-DPI screen at DPR 3 renders 9× the
+    // pixels of DPR 1, the biggest single cost of a stutter. Cap at 2 normally,
+    // and 1 in Performance mode — far smoother on slower machines.
+    const cap = localStorage.getItem("varath-perf") === "1" ? 1 : 2;
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), cap);
     // Prefer visualViewport: on mobile it reports the *settled* visible size
     // (excluding the URL bar) and updates correctly through a rotation.
     const cssW = Math.round(this.canvas.clientWidth || window.innerWidth);

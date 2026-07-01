@@ -102,9 +102,11 @@ body {
   right: 10px;
   width: 124px;
 }
-/* HP bar + run orb share one row under the minimap. */
+/* HP bar + run orb share one row under the minimap; the Grace bar stacks under
+   the HP bar in a column beside the orb, so the two bars line up. */
 .vitals-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.vitals-row .hp-bar { flex: 1; margin-top: 0; }
+.vitals-bars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.vitals-bars .hp-bar { width: 100%; margin-top: 0; }
 
 /* --- Buffs strip (top-left; the corner is otherwise free now) --- */
 .hud-topleft {
@@ -259,16 +261,16 @@ body {
 }
 
 /* --- Grace (Faith fuel) bar, under the HP row --- */
-.grace-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-}
+/* Grace bar: sits directly under the HP bar in the vitals-bars column, so the
+   two line up. Its value rides up in the label row (like HP's), right-aligned. */
+.grace-row { width: 100%; }
 .grace-row.hidden { display: none; }
-.grace-ic { font-size: 11px; line-height: 1; filter: drop-shadow(0 0 3px rgba(120, 170, 230, 0.5)); }
+.grace-label { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; color: #8fc0f0; }
+.grace-label.hidden { display: none; }
+.grace-ic { line-height: 1; filter: drop-shadow(0 0 3px rgba(120, 170, 230, 0.5)); }
+.grace-ic .g-ico { width: 12px; height: 12px; }
 .grace-bar {
-  flex: 1;
+  width: 100%;
   height: 7px;
   background: #171d2a;
   border: 1px solid #384a66;
@@ -282,11 +284,8 @@ body {
   transition: width 0.2s ease;
 }
 .grace-text {
-  font-size: 9px;
-  color: var(--ink-dim);
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
-  min-width: 34px;
-  text-align: right;
 }
 
 /* --- Faith spellbook (Spells tab): compact quick-cast grid + autocast strip --- */

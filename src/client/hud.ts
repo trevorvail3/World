@@ -26,6 +26,7 @@ import type {
 } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
+import { setPerfMode } from "./render.ts";
 import { audio } from "./audio.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { bossMilestones, equipRequirement, evalAchievement } from "../core/worldCore.ts";
@@ -115,6 +116,7 @@ export class Hud {
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
   private graceRow!: HTMLElement;
+  private graceLabel!: HTMLElement;
   private graceFill!: HTMLElement;
   private graceText!: HTMLElement;
   private goldText!: HTMLElement;
@@ -255,19 +257,21 @@ export class Hud {
     // compact row, so both fit neatly under the minimap's width.
     const vitals = panel("hud-panel hud-vitals");
     vitals.innerHTML = `
-      <div class="vitals-label"><span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span></div>
+      <div class="vitals-label">
+        <span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span>
+        <span class="grace-label" title="Grace — the Faith spell fuel. Refill at a shrine or altar."><span class="grace-ic">${glyph("orb")}</span><span class="grace-text">0 / 0</span></span>
+      </div>
       <div class="vitals-row">
         <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
-        <div class="hp-bar"><div class="hp-fill"></div></div>
-      </div>
-      <div class="grace-row" title="Grace — the Faith spell fuel. Refill at a shrine or altar.">
-        <span class="grace-ic">🔮</span>
-        <div class="grace-bar"><div class="grace-fill"></div></div>
-        <span class="grace-text">0 / 0</span>
+        <div class="vitals-bars">
+          <div class="hp-bar"><div class="hp-fill"></div></div>
+          <div class="grace-row"><div class="grace-bar"><div class="grace-fill"></div></div></div>
+        </div>
       </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
     this.graceRow = vitals.querySelector(".grace-row") as HTMLElement;
+    this.graceLabel = vitals.querySelector(".grace-label") as HTMLElement;
     this.graceFill = vitals.querySelector(".grace-fill") as HTMLElement;
     this.graceText = vitals.querySelector(".grace-text") as HTMLElement;
     this.vitals = vitals;
@@ -748,6 +752,26 @@ export class Hud {
         llText.textContent = "Show loot & fishing-spot names";
         llRow.append(llBox, llText);
         p.appendChild(llRow);
+
+        // --- Performance mode: fewer effects + lower render resolution for
+        //     smoother play on slower machines. Applied at startup too. ---
+        const perfOn = localStorage.getItem("varath-perf") === "1";
+        setPerfMode(perfOn);
+        const perfRow = document.createElement("label");
+        perfRow.className = "settings-toggle";
+        const perfBox = document.createElement("input");
+        perfBox.type = "checkbox";
+        perfBox.checked = perfOn;
+        perfBox.addEventListener("change", () => {
+          try { localStorage.setItem("varath-perf", perfBox.checked ? "1" : "0"); } catch { /* ignore */ }
+          setPerfMode(perfBox.checked);
+          // Re-run the loop's resize so the render resolution changes at once.
+          window.dispatchEvent(new Event("resize"));
+        });
+        const perfText = document.createElement("span");
+        perfText.textContent = "Performance mode (less lag)";
+        perfRow.append(perfBox, perfText);
+        p.appendChild(perfRow);
 
         // --- Audio: master volume + mute for the procedural dark-ambient score. ---
         const volRow = document.createElement("div");
@@ -1301,6 +1325,7 @@ export class Hud {
     const showGrace = player.skills.faith.level > 1 ||
       !!(player.equipment.mainhand && this.content.items[player.equipment.mainhand]?.magic);
     this.graceRow.classList.toggle("hidden", !showGrace);
+    this.graceLabel.classList.toggle("hidden", !showGrace);
     if (showGrace) {
       const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
       this.graceFill.style.width = `${gpct * 100}%`;

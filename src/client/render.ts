@@ -63,6 +63,12 @@ export function setDrawDistance(tiles: number): void {
 let lootLabels = true;
 export function setLootLabels(on: boolean): void { lootLabels = on; }
 
+// Performance mode: skip the purely-decorative ambient layers (birds,
+// butterflies, surfacing water life) that cost draw calls every frame but add
+// no gameplay. Paired with a lower render resolution in the loop.
+let perfMode = false;
+export function setPerfMode(on: boolean): void { perfMode = on; }
+
 /** How long the actual strike motion plays (ms). The rest of a weapon's interval
  *  is spent resting in a ready pose, so a swing reads as a quick chop + a pause
  *  rather than one slow continuous wind-up across the whole interval. */
@@ -1013,7 +1019,7 @@ export function drawWorld(
   // Ambient water wildlife on the surface: fins in the deep, leaping fish in the
   // rivers and lakes, the odd whale sounding out at sea. Drawn over the water but
   // under everything else, so the day/night veil tints it with the water.
-  drawWaterLife(g, map, cam, minX, maxX, minY, maxY, now, inRegion, outside);
+  if (!perfMode) drawWaterLife(g, map, cam, minX, maxX, minY, maxY, now, inRegion, outside);
 
   // Agility courses: worn track + fence, drawn under the obstacles themselves.
   drawAgilityTracks(g, content, cam, w, h, inRegion);
@@ -1227,7 +1233,7 @@ export function drawWorld(
   // the vignette is the very last layer. Fireflies and embers glow brighter
   // after dark (driven by the sun's night factor).
   if (outdoor) drawWeather(g, w, h, now, biome, sv.night);
-  if (outdoor) drawAmbientLife(g, w, h, now, biome, sv.night, cam);
+  if (outdoor && !perfMode) drawAmbientLife(g, w, h, now, biome, sv.night, cam);
   // Draw-distance falloff: fade the last ring of the circle to the void colour so
   // the culled edge reads as a soft horizon, not a hard pixel circle. Centred on
   // the player (who isn't always screen-centre once the camera clamps at edges).
@@ -1522,12 +1528,16 @@ function drawAmbientLife(g: CanvasRenderingContext2D, w: number, h: number, now:
   const day = 1 - night;
   if (day > 0.2 && (b === "hills" || b === "greyoak" || b === "heartmoor" || b === "city")) {
     const t = now / 1000;
-    const c0x = Math.floor(cam.x / TILE), c1x = Math.ceil((cam.x + w) / TILE);
-    const c0y = Math.floor(cam.y / TILE), c1y = Math.ceil((cam.y + h) / TILE);
+    // Sample cells on a FIXED world grid (snapped to multiples of 3, with a
+    // margin), NOT relative to the view edge — otherwise the set of sampled
+    // cells shifts as the camera moves and butterflies pop in and out each step.
+    const c0x = Math.floor(cam.x / TILE) - 3, c1x = Math.ceil((cam.x + w) / TILE) + 3;
+    const c0y = Math.floor(cam.y / TILE) - 3, c1y = Math.ceil((cam.y + h) / TILE) + 3;
+    const sx = Math.floor(c0x / 3) * 3, sy = Math.floor(c0y / 3) * 3;
     g.save();
     g.globalAlpha = 0.7 * day;
-    for (let cy = c0y; cy <= c1y; cy += 3) {
-      for (let cx = c0x; cx <= c1x; cx += 3) {
+    for (let cy = sy; cy <= c1y; cy += 3) {
+      for (let cx = sx; cx <= c1x; cx += 3) {
         const seed = frac(cx * 1.73 + cy * 3.11);
         if (seed > 0.16) continue; // sparse — only a few cells host one
         // World position: cell origin + a fixed in-cell offset + a slow wander.
