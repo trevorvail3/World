@@ -29,9 +29,22 @@ export class CharacterCreator {
   private t0 = performance.now();
   private raf = 0;
 
+  private checkSeq = 0;
+  private checkTimer: ReturnType<typeof setTimeout> | 0 = 0;
+
   constructor(
     root: HTMLElement,
-    private opts: { onCreate: (c: CreatedCharacter) => void; onBack?: () => void; takenNames: string[] },
+    private opts: {
+      onCreate: (c: CreatedCharacter) => void;
+      onBack?: () => void;
+      takenNames: string[];
+      /** Live availability check as the player types (cloud). Resolves true if
+       *  the name is free. Best-effort — failures resolve true. */
+      checkName?: (name: string) => Promise<boolean>;
+      /** Atomically claim the name on submit. "taken" blocks creation; "ok" and
+       *  "error" (offline / no backend) both let it proceed. */
+      reserveName?: (name: string) => Promise<"ok" | "taken" | "error">;
+    },
   ) {
     this.taken = new Set(opts.takenNames.map((n) => n.toLowerCase()));
     this.backdrop = document.createElement("div");
@@ -59,13 +72,32 @@ export class CharacterCreator {
 
     const nameEl = this.backdrop.querySelector(".creator-name") as HTMLInputElement;
     const hintEl = this.backdrop.querySelector(".creator-name-hint") as HTMLElement;
+    const goEl = this.backdrop.querySelector(".creator-go") as HTMLButtonElement;
+    const setHint = (text: string, state: "" | "warn" | "ok" | "busy"): void => {
+      hintEl.textContent = text;
+      hintEl.classList.toggle("warn", state === "warn");
+      hintEl.classList.toggle("ok", state === "ok");
+    };
     nameEl.addEventListener("input", () => {
       this.draft.name = nameEl.value.trim();
-      const clash = this.taken.has(this.draft.name.toLowerCase());
-      hintEl.textContent = clash ? "That name is already taken." : "1–16 characters.";
-      hintEl.classList.toggle("warn", clash);
-      (this.backdrop.querySelector(".creator-go") as HTMLButtonElement).disabled =
-        this.draft.name.length < 1 || clash;
+      const key = this.draft.name.toLowerCase();
+      const seq = ++this.checkSeq; // invalidate any in-flight remote check
+      if (this.checkTimer) { clearTimeout(this.checkTimer); this.checkTimer = 0; }
+      // Instant local rules first.
+      if (this.draft.name.length < 1) { setHint("1–16 characters.", ""); goEl.disabled = true; return; }
+      if (this.taken.has(key)) { setHint("That name is already taken.", "warn"); goEl.disabled = true; return; }
+      // No cloud check available — local rules are all we have.
+      if (!this.opts.checkName) { setHint("1–16 characters.", ""); goEl.disabled = false; return; }
+      // Debounced live availability check against the backend.
+      setHint("Checking availability…", "busy");
+      goEl.disabled = true;
+      this.checkTimer = setTimeout(() => {
+        void this.opts.checkName!(this.draft.name).then((free) => {
+          if (seq !== this.checkSeq) return; // a newer keystroke superseded this
+          if (free) { setHint("That name is available.", "ok"); goEl.disabled = false; }
+          else { setHint("That name is already taken.", "warn"); goEl.disabled = true; }
+        });
+      }, 350);
     });
 
     const rows = this.backdrop.querySelector(".creator-rows") as HTMLElement;
@@ -85,11 +117,25 @@ export class CharacterCreator {
     } else {
       backBtn.remove(); // nothing to go back to — this is the entry screen
     }
-    (this.backdrop.querySelector(".creator-go") as HTMLButtonElement).addEventListener("pointerdown", (e) => {
+    goEl.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
+      if (goEl.disabled) return;
       if (this.draft.name.length < 1 || this.taken.has(this.draft.name.toLowerCase())) return;
-      this.close();
-      this.opts.onCreate({ ...this.draft });
+      // No backend reservation — proceed as before (offline / local play).
+      if (!this.opts.reserveName) { this.close(); this.opts.onCreate({ ...this.draft }); return; }
+      // Atomically claim the name; only "taken" blocks — offline/no-table falls
+      // through so a network hiccup never traps the player at creation.
+      const label = goEl.textContent;
+      goEl.disabled = true; goEl.textContent = "Claiming name…";
+      void this.opts.reserveName(this.draft.name).then((result) => {
+        if (result === "taken") {
+          setHint("That name was just taken. Try another.", "warn");
+          goEl.textContent = label; goEl.disabled = true;
+          return;
+        }
+        this.close();
+        this.opts.onCreate({ ...this.draft });
+      });
     });
 
     // A gentle idle loop so the figure breathes (and its arms read) live.
@@ -177,6 +223,8 @@ export class CharacterCreator {
 
   private close(): void {
     if (this.raf) cancelAnimationFrame(this.raf);
+    if (this.checkTimer) { clearTimeout(this.checkTimer); this.checkTimer = 0; }
+    this.checkSeq++; // drop any pending availability check
     this.backdrop.remove();
   }
 }

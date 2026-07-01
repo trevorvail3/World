@@ -3066,6 +3066,7 @@ button.inv-slot {
 .creator-name:focus { outline: none; border-color: var(--ember); }
 .creator-name-hint { font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
 .creator-name-hint.warn { color: #b5564a; }
+.creator-name-hint.ok { color: #5a9e5a; }
 .creator-swatches { display: flex; gap: 6px; flex-wrap: wrap; }
 .creator-swatch {
   width: 24px; height: 24px;

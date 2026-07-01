@@ -146,6 +146,50 @@ Now when two signed-in players are in the same area, they'll see each other as
 faint figures with name labels. (Players inside their own house don't show to
 others — interiors are private instances.)
 
+## Unique character names (run this block too)
+
+Every character name is globally unique: the `world_names` table holds one row
+per taken name (lower-cased as the primary key, so "Rook" and "rook" collide),
+tied to the account that owns it. The client checks availability as you type and
+does an atomic claim when you press **Enter Varath** — the primary key is what
+actually enforces uniqueness, so two people racing for the same name can't both
+win. Until you run this block the game still works; names just aren't enforced
+unique yet. Same SQL editor, paste and **Run**:
+
+```sql
+-- One row per taken character name. `name` is lower-cased; the primary key is
+-- the uniqueness guarantee. `display` keeps the original casing for show.
+create table if not exists public.world_names (
+  name       text primary key,
+  display    text,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.world_names enable row level security;
+
+-- Anyone (even signed out) can check whether a name is free.
+drop policy if exists "world_names_read" on public.world_names;
+create policy "world_names_read"
+  on public.world_names for select
+  using (true);
+
+-- You may only claim a name for your own account.
+drop policy if exists "world_names_insert_own" on public.world_names;
+create policy "world_names_insert_own"
+  on public.world_names for insert
+  with check (auth.uid() = user_id);
+
+-- And only release one you own (for a future rename feature).
+drop policy if exists "world_names_delete_own" on public.world_names;
+create policy "world_names_delete_own"
+  on public.world_names for delete
+  using (auth.uid() = user_id);
+```
+
+Because the row references `auth.users` with `on delete cascade`, deleting an
+account automatically frees its name for someone else.
+
 ## Grand Exchange — the marketplace (run this block too)
 
 A player-driven order book with a server-held escrow: gold/items you list move

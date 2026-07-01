@@ -40,6 +40,7 @@ import {
   writeSave,
 } from "./client/storage.ts";
 import { CharacterCreator, type CreatedCharacter } from "./client/characterCreator.ts";
+import { isNameAvailable, reserveName } from "./client/nameRegistry.ts";
 import { LoginUI } from "./client/loginUI.ts";
 import { currentUser, signOut } from "./client/supabase.ts";
 import { loadCloud, saveCloud, deleteCloud } from "./client/cloudSave.ts";
@@ -130,6 +131,8 @@ async function afterLogin(): Promise<void> {
   }
   new CharacterCreator(app!, {
     takenNames: [],
+    checkName: isNameAvailable,
+    reserveName,
     onCreate: (c) => boot(c, true),
   });
 }
