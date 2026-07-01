@@ -1646,6 +1646,12 @@ const TOOL_TIER_REQS = [0, 1, 10, 15, 30, 40, 45, 55, 60, 60, 75];
  *  (top tier ≈ 2.2× the base rate), giving gathering room to scale with progress. */
 const TOOL_TIER_SPEED = [1, 1, 0.93, 0.86, 0.78, 0.72, 0.66, 0.6, 0.55, 0.5, 0.45];
 
+/** Material tier from a gear id's `_<n>` suffix (armor_3 → 3), or undefined. */
+function tierFromId(id: string): number | undefined {
+  const m = /_(\d+)$/.exec(id);
+  return m ? Number(m[1]) : undefined;
+}
+
 /**
  * The skill + level a piece of gear or a tool needs before it can be worn.
  * Tools gate on their gathering skill; weapons gate on Edge, armour on Ward,
@@ -1664,9 +1670,13 @@ export function equipRequirement(
   if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
     return { skill: capeSkill as SkillId, level: 100 };
   }
+  // Tier comes from an explicit `tier`, else the material `_<n>` id suffix — many
+  // ladder items (armor_3, sword_4 …) carry only the suffix, so relying on `tier`
+  // alone silently dropped their level gate (Ashiron Mail wieldable at any Ward).
+  const tier = def.tier ?? tierFromId(def.id);
   if (def.tool) {
-    if (def.tier === undefined) return null;
-    const level = TOOL_TIER_REQS[def.tier] ?? 1;
+    if (tier === undefined) return null;
+    const level = TOOL_TIER_REQS[tier] ?? 1;
     return level > 1 ? { skill: TOOL_SLOT_SKILL[def.tool], level } : null;
   }
   // A bow sits in the mainhand but is a ranged weapon — it gates on Draw, not Edge.
@@ -1674,7 +1684,7 @@ export function equipRequirement(
   if (!gearSkill) return null; // jewellery, capes, mounts: no level gate
   // An explicit equipLevel (uniques like the dragon set) overrides the tier
   // table; otherwise the level comes from the material tier.
-  const level = def.equipLevel ?? (def.tier !== undefined ? (GEAR_TIER_REQS[def.tier] ?? 0) : 0);
+  const level = def.equipLevel ?? (tier !== undefined ? (GEAR_TIER_REQS[tier] ?? 0) : 0);
   return level > 1 ? { skill: gearSkill, level } : null;
 }
 
