@@ -101,7 +101,7 @@ const MATS: ReadonlyArray<readonly [string, string]> = [
 // ── shape classification ────────────────────────────────────────────────────
 type Shape =
   | "ore" | "ingot" | "log" | "board" | "shaft" | "pickaxe" | "hatchet" | "rod"
-  | "sword" | "dagger" | "claymore" | "spear" | "hammer" | "saw" | "bow" | "bowU"
+  | "sword" | "dagger" | "claymore" | "spear" | "hammer" | "saw" | "staff" | "bow" | "bowU"
   | "arrow" | "arrowhead" | "shield" | "helm" | "body" | "legs" | "boot" | "cape"
   | "ring" | "amulet" | "gem" | "bead" | "vial" | "herb" | "seed" | "mushroom"
   | "fish" | "meat" | "cooked" | "bowl" | "bread" | "hide" | "pet" | "mount" | "coin"
@@ -122,6 +122,10 @@ function classify(def: ItemDef): Shape {
 
   // The Bonesaw is a sword in every system, but gets its own toothed-blade icon.
   if (has("bonesaw")) return "saw";
+
+  // Casting staves are mainhand weapons but read as an orb-topped pole, not a
+  // sword — catches every staff (magic flag) so devotion gear icons look right.
+  if (def.magic || (has("staff") && slot === "mainhand")) return "staff";
 
   // worn gear by slot (most reliable), with keyword refinements first
   if (slot === "ranged" || has("bow") || has("warbow")) return has("unstrung") ? "bowU" : "bow";
@@ -362,6 +366,7 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "dagger": return `<polygon points="16,7 18,10 18,19 14,19 14,10" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="9" x2="16" y2="18" stroke="${p.light}" stroke-width="0.7" opacity="0.7"/><rect x="11" y="19" width="10" height="2.2" rx="1" fill="#caa24a"/><rect x="15" y="21" width="2" height="5" fill="${WOOD}"/>`;
     case "claymore": return `<polygon points="16,3 19,8 19,21 13,21 13,8" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><line x1="16" y1="5" x2="16" y2="20" stroke="${p.light}" stroke-width="1" opacity="0.6"/><rect x="8" y="21" width="16" height="2.8" rx="1" fill="#caa24a"/><rect x="15" y="23" width="2" height="6" fill="${WOOD}"/><circle cx="16" cy="29" r="1.7" fill="#caa24a"/>`;
     case "spear": return `<rect x="15" y="6" width="2" height="22" fill="${WOOD}"/><path d="M16,2 L20,9 Q16,12 12,9 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`;
+    case "staff": return `<rect x="15" y="9" width="2" height="19" rx="1" fill="${WOOD}"/><rect x="13.4" y="9.5" width="5.2" height="2.2" rx="1" fill="#caa24a"/><circle cx="16" cy="6.5" r="5.4" fill="none" stroke="${p.light}" stroke-width="0.7" opacity="0.4"/><circle cx="16" cy="6.5" r="4" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><circle cx="14.6" cy="5.2" r="1.4" fill="${p.light}" opacity="0.85"/>`;
     case "hammer": return `<rect x="14.8" y="10" width="2.6" height="17" rx="1" fill="${WOOD}"/><rect x="9" y="6" width="14" height="8" rx="1.5" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><rect x="10" y="7" width="12" height="2" fill="${p.light}" opacity="0.6"/>`;
     case "saw": {
       // a long pale blade with saw-teeth down one edge and a wrapped grip

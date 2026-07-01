@@ -1649,6 +1649,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Boss Pets",
     "slot": "companion",
     "rarity": "legendary",
+    "lore": "green_baron",
     "meta": {
       "petBoss": "green_baron"
     }
@@ -1661,6 +1662,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Boss Pets",
     "slot": "companion",
     "rarity": "legendary",
+    "lore": "hollow_prophet",
     "meta": {
       "petBoss": "hollow_prophet"
     }
