@@ -2140,13 +2140,22 @@ export class Game {
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
-    if (this.groundAt(tile)) { this.pickupAt(tile); return; }
+    if (this.groundAt(tile)) { this.pickupTopAt(tile); return; }
     this.walkTo(tile);
   }
 
   /** Is there loot on this tile? */
   private groundAt(tile: Vec2): boolean {
     return this.bridge.state.ground.some((g) => g.x === tile.x && g.y === tile.y);
+  }
+
+  /** A tap on a loot tile takes just the TOP pile — the most recently dropped,
+   *  drawn on top — OSRS-style, rather than sweeping the whole tile. Long-hold
+   *  opens the full pile menu (take one, an amount, or all). */
+  private pickupTopAt(tile: Vec2): void {
+    const piles = this.bridge.state.ground.filter((g) => g.x === tile.x && g.y === tile.y);
+    if (!piles.length) return;
+    this.pickupAt(tile, { id: piles[piles.length - 1]!.id }); // last in array = on top
   }
 
   /** Walk to the loot tile (if needed) and pick it up on arrival. `opts` can

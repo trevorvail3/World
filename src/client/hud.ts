@@ -685,6 +685,21 @@ export class Hud {
         break;
       }
       case "settings": {
+        // Grouped into expandable sections (Gameplay, Audio) so the panel reads
+        // cleanly; Sign out sits on its own at the very bottom.
+        const section = (title: string, opened = false): HTMLElement => {
+          const d = document.createElement("details");
+          d.className = "settings-section";
+          d.open = opened;
+          const sum = document.createElement("summary");
+          sum.className = "settings-section-head";
+          sum.textContent = title;
+          d.appendChild(sum);
+          p.appendChild(d);
+          return d;
+        };
+        const gameplay = section("Gameplay", true);
+        const audioSec = section("Audio");
         // --- Zoom: drag the slider, scroll the wheel, or pinch on a touchscreen. ---
         const zoomRow = document.createElement("div");
         zoomRow.className = "settings-zoom";
@@ -709,10 +724,10 @@ export class Hud {
           syncReadout();
         });
         zoomRow.append(zoomLabel, zoomSlider);
-        p.appendChild(zoomRow);
+        gameplay.appendChild(zoomRow);
         this.zoomSlider = zoomSlider;
         this.zoomReadout = zoomReadout;
-        p.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
+        gameplay.appendChild(note("Or scroll the mouse wheel — or pinch on a touchscreen — to zoom the world."));
 
         // --- Draw distance: how far out the world is painted (a circle around
         //     you, OSRS-style). Lower it if a wide screen runs slow. ---
@@ -741,10 +756,10 @@ export class Hud {
           syncDd();
         });
         ddRow.append(ddLabel, ddSlider);
-        p.appendChild(ddRow);
+        gameplay.appendChild(ddRow);
         this.ddSlider = ddSlider;
         this.ddReadout = ddReadout;
-        p.appendChild(note("Lower the draw distance to render less of the map at once — a quick fix if the game feels laggy on a wide screen."));
+        gameplay.appendChild(note("Lower the draw distance to render less of the map at once — a quick fix if the game feels laggy on a wide screen."));
 
         // --- Floor-loot labels: show each dropped item's name above its pile. ---
         const llRow = document.createElement("label");
@@ -756,7 +771,7 @@ export class Hud {
         const llText = document.createElement("span");
         llText.textContent = "Show loot & fishing-spot names";
         llRow.append(llBox, llText);
-        p.appendChild(llRow);
+        gameplay.appendChild(llRow);
 
         // --- Performance mode: fewer effects + lower render resolution for
         //     smoother play on slower machines. Applied at startup too. ---
@@ -776,7 +791,7 @@ export class Hud {
         const perfText = document.createElement("span");
         perfText.textContent = "Performance mode (less lag)";
         perfRow.append(perfBox, perfText);
-        p.appendChild(perfRow);
+        gameplay.appendChild(perfRow);
 
         // --- Audio: master volume + mute for the procedural dark-ambient score. ---
         const volRow = document.createElement("div");
@@ -798,7 +813,7 @@ export class Hud {
           syncVol();
         });
         volRow.append(volLabel, volSlider);
-        p.appendChild(volRow);
+        audioSec.appendChild(volRow);
         const muteRow = document.createElement("label");
         muteRow.className = "settings-toggle";
         const muteBox = document.createElement("input");
@@ -808,7 +823,7 @@ export class Hud {
         const muteText = document.createElement("span");
         muteText.textContent = "Mute all sound";
         muteRow.append(muteBox, muteText);
-        p.appendChild(muteRow);
+        audioSec.appendChild(muteRow);
 
         const help = document.createElement("button");
         help.type = "button";
@@ -816,14 +831,14 @@ export class Hud {
         help.textContent = "How to play";
         help.title = "Show the controls primer again";
         help.addEventListener("click", () => this.onHelp());
-        p.appendChild(help);
+        gameplay.appendChild(help);
         const reset = document.createElement("button");
         reset.type = "button";
         reset.className = "settings-reset";
         reset.textContent = "⟲ Reset progress";
         reset.title = "Erase all saved progress and start over";
         reset.addEventListener("click", () => this.onReset());
-        p.appendChild(reset);
+        gameplay.appendChild(reset);
         const signout = document.createElement("button");
         signout.type = "button";
         signout.className = "settings-signout";

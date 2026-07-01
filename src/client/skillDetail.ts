@@ -188,6 +188,26 @@ export class SkillDetailModal {
       for (const sp of this.content.spells) addTo("Spells", sp.faithReq, sp.name);
     }
 
+    // Agility: its ladder is the courses, each at the Agility level it opens (the
+    // Varathian Trail included — it's also unlocked by talking to Cael).
+    if (skill === "agility") {
+      const courses = new Map<string, { lvl: number; name: string }>();
+      for (const o of this.content.objects) {
+        if (o.kind !== "agility_obstacle" || !o.course) continue;
+        const nm = (o.name ?? o.course).split(":")[0]!.trim();
+        const lvl = o.levelReq ?? 1;
+        const prev = courses.get(o.course);
+        if (!prev || lvl < prev.lvl) courses.set(o.course, { lvl, name: nm });
+      }
+      const byLevel = new Map<number, string[]>();
+      for (const { lvl, name } of courses.values()) {
+        const list = byLevel.get(lvl) ?? [];
+        if (!list.includes(name)) list.push(name);
+        byLevel.set(lvl, list);
+      }
+      if (byLevel.size) activities.set("Courses", byLevel);
+    }
+
     if (activities.size === 0) {
       // Action-less skills (combat, agility…) have no recipe ladder — the blurb
       // above already explains how they train, so nothing more is needed here.

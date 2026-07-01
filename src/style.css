@@ -1188,6 +1188,29 @@ body {
 }
 
 /* --- Reset button inside the Settings tab --- */
+/* Collapsible settings sections (Gameplay / Audio). */
+.settings-section {
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  margin-bottom: 10px;
+  padding: 0 12px;
+}
+.settings-section[open] { padding-bottom: 12px; }
+.settings-section-head {
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  padding: 10px 2px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.settings-section-head::-webkit-details-marker { display: none; }
+.settings-section-head::before { content: "▸ "; color: var(--ink-dim); }
+.settings-section[open] > .settings-section-head::before { content: "▾ "; }
+
 .settings-toggle {
   display: flex;
   align-items: center;
