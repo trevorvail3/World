@@ -70,9 +70,9 @@ export const PIER_FISH: PierFishDef[] = [
 /** Rival anglers already on the board — something to beat from day one. The
  *  player's heavier catches push these off, smallest first. */
 export const PIER_RECORDS: FishRecord[] = [
-  { species: "Eyeless Leviathan", weight: 51.4, length: 248, angler: "Old Coll" },
-  { species: "Redrun Greatpike", weight: 27.8, length: 139, angler: "Mirren the Net" },
-  { species: "Eyeless Bass", weight: 13.2, length: 88, angler: "The Saltreach Guild" },
-  { species: "Pale Flounder", weight: 6.9, length: 64, angler: "Brannoch Tide" },
-  { species: "Saltgill", weight: 3.8, length: 54, angler: "A Saltreach lad" },
+  { species: "Eyeless Bass", weight: 7.5, length: 62, angler: "Old Coll" },
+  { species: "Pale Flounder", weight: 5.5, length: 55, angler: "Mirren the Net" },
+  { species: "Pale Flounder", weight: 4.2, length: 48, angler: "The Saltreach Guild" },
+  { species: "Saltgill", weight: 3.0, length: 48, angler: "Brannoch Tide" },
+  { species: "Saltgill", weight: 2.0, length: 40, angler: "A Saltreach lad" },
 ];
