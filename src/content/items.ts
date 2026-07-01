@@ -865,6 +865,127 @@ export const items: Record<ItemId, ItemDef> = {
     "heals": 110,
     "sell": 410
   },
+
+  // --- Second wave of catches: more variety across every water and level band. ---
+  "silverdart_raw": {
+    "id": "silverdart_raw",
+    "name": "Raw Silverdart",
+    "description": "A quick, glinting minnow of the hill-streams. Darts faster than the eye, but a patient line lands plenty.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 5
+  },
+  "silverdart_cooked": {
+    "id": "silverdart_cooked",
+    "name": "Cooked Silverdart",
+    "description": "A light, quick meal — a handful of these keeps a young angler moving.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 12,
+    "sell": 14
+  },
+  "bramblecarp_raw": {
+    "id": "bramblecarp_raw",
+    "name": "Raw Bramblecarp",
+    "description": "A stout carp of the still moor-ponds, its scales snagged with weed. Muddy, but it fries up well.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 8
+  },
+  "bramblecarp_cooked": {
+    "id": "bramblecarp_cooked",
+    "name": "Cooked Bramblecarp",
+    "description": "Earthy and filling once the mud's cooked out. Honest moorland fare.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 22,
+    "sell": 24
+  },
+  "copperling_raw": {
+    "id": "copperling_raw",
+    "name": "Raw Copperling",
+    "description": "A coastal fish burnished copper along the flank. Schools thick where the tide turns.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 14
+  },
+  "copperling_cooked": {
+    "id": "copperling_cooked",
+    "name": "Cooked Copperling",
+    "description": "Sweet-fleshed and reliable. A staple on the coast road.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 34,
+    "sell": 44
+  },
+  "bristlepike_raw": {
+    "id": "bristlepike_raw",
+    "name": "Raw Bristlepike",
+    "description": "A spined river-hunter, all teeth and temper. Takes a firm hand to land.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 26
+  },
+  "bristlepike_cooked": {
+    "id": "bristlepike_cooked",
+    "name": "Cooked Bristlepike",
+    "description": "Lean and firm. The meat rewards the fight it gave.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 48,
+    "sell": 70
+  },
+  "gloomshad_raw": {
+    "id": "gloomshad_raw",
+    "name": "Raw Gloomshad",
+    "description": "A dark shad from the peat-black moor waters. Bites best under cloud.",
+    "icon": "🐟",
+    "cat": "Fish",
+    "sell": 40
+  },
+  "gloomshad_cooked": {
+    "id": "gloomshad_cooked",
+    "name": "Cooked Gloomshad",
+    "description": "Rich, dark flesh with a smoky note from the peat. Prized by moor-folk.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 62,
+    "sell": 100
+  },
+  "runestout_raw": {
+    "id": "runestout_raw",
+    "name": "Raw Runestout",
+    "description": "A heavy, deep-bodied sea fish marked with pale whorls the old fishers call runes. A real catch.",
+    "icon": "🐡",
+    "cat": "Fish",
+    "sell": 62
+  },
+  "runestout_cooked": {
+    "id": "runestout_cooked",
+    "name": "Cooked Runestout",
+    "description": "Dense and satisfying — a meal that carries you through the hardest day.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 82,
+    "sell": 185
+  },
+  "frostgill_raw": {
+    "id": "frostgill_raw",
+    "name": "Raw Frostgill",
+    "description": "A pallid fish from the coldest deep water, cool to the touch long after it's landed. Few anglers reach the depths it favours.",
+    "icon": "🦈",
+    "cat": "Fish",
+    "sell": 95
+  },
+  "frostgill_cooked": {
+    "id": "frostgill_cooked",
+    "name": "Cooked Frostgill",
+    "description": "Clean, cold-water flesh that all but restores a body outright. A master angler's meal.",
+    "icon": "🍖",
+    "cat": "Food",
+    "heals": 100,
+    "sell": 300
+  },
   "sword_1": {
     "id": "sword_1",
     "name": "Knucklestone Sword",

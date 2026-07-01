@@ -1756,6 +1756,89 @@ export const actions: SkillAction[] = [
     }
   },
   {
+    "id": "fish_silverdart",
+    "skill": "fishing",
+    "name": "Silverdart",
+    "levelReq": 8,
+    "xp": 30,
+    "produces": "silverdart_raw",
+    "location": "river",
+    "rareDrop": {
+      "item": "river_stone",
+      "chance": 0.06
+    }
+  },
+  {
+    "id": "fish_bramblecarp",
+    "skill": "fishing",
+    "name": "Bramblecarp",
+    "levelReq": 15,
+    "xp": 42,
+    "produces": "bramblecarp_raw",
+    "location": "moor"
+  },
+  {
+    "id": "fish_copperling",
+    "skill": "fishing",
+    "name": "Copperling",
+    "levelReq": 25,
+    "xp": 62,
+    "produces": "copperling_raw",
+    "location": "coast",
+    "rareDrop": {
+      "item": "waterlogged_coin",
+      "chance": 0.04
+    }
+  },
+  {
+    "id": "fish_bristlepike",
+    "skill": "fishing",
+    "name": "Bristlepike",
+    "levelReq": 38,
+    "xp": 95,
+    "produces": "bristlepike_raw",
+    "location": "river",
+    "rareDrop": {
+      "item": "old_hook",
+      "chance": 0.05
+    }
+  },
+  {
+    "id": "fish_gloomshad",
+    "skill": "fishing",
+    "name": "Gloomshad",
+    "levelReq": 52,
+    "xp": 130,
+    "produces": "gloomshad_raw",
+    "location": "moor"
+  },
+  {
+    "id": "fish_runestout",
+    "skill": "fishing",
+    "name": "Runestout",
+    "levelReq": 68,
+    "xp": 175,
+    "produces": "runestout_raw",
+    "location": "coast",
+    "rareDrop": {
+      "item": "waterlogged_coin",
+      "chance": 0.06
+    }
+  },
+  {
+    "id": "fish_frostgill",
+    "skill": "fishing",
+    "name": "Frostgill",
+    "levelReq": 82,
+    "xp": 232,
+    "produces": "frostgill_raw",
+    "location": "deep",
+    "rareDrop": {
+      "item": "redrun_pearl",
+      "chance": 0.03
+    }
+  },
+  {
     "id": "cook_ashfin",
     "skill": "cooking",
     "name": "Ashfin (+10 HP)",
@@ -1873,6 +1956,90 @@ export const actions: SkillAction[] = [
       "eyeless_pike_raw": 1
     },
     "produces": "eyeless_pike_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_silverdart",
+    "skill": "cooking",
+    "name": "Silverdart (+12 HP)",
+    "levelReq": 8,
+    "xp": 42,
+    "requires": {
+      "silverdart_raw": 1
+    },
+    "produces": "silverdart_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_bramblecarp",
+    "skill": "cooking",
+    "name": "Bramblecarp (+22 HP)",
+    "levelReq": 15,
+    "xp": 68,
+    "requires": {
+      "bramblecarp_raw": 1
+    },
+    "produces": "bramblecarp_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_copperling",
+    "skill": "cooking",
+    "name": "Copperling (+34 HP)",
+    "levelReq": 25,
+    "xp": 105,
+    "requires": {
+      "copperling_raw": 1
+    },
+    "produces": "copperling_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_bristlepike",
+    "skill": "cooking",
+    "name": "Bristlepike (+48 HP)",
+    "levelReq": 38,
+    "xp": 150,
+    "requires": {
+      "bristlepike_raw": 1
+    },
+    "produces": "bristlepike_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_gloomshad",
+    "skill": "cooking",
+    "name": "Gloomshad (+62 HP)",
+    "levelReq": 52,
+    "xp": 205,
+    "requires": {
+      "gloomshad_raw": 1
+    },
+    "produces": "gloomshad_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_runestout",
+    "skill": "cooking",
+    "name": "Runestout (+82 HP)",
+    "levelReq": 68,
+    "xp": 300,
+    "requires": {
+      "runestout_raw": 1
+    },
+    "produces": "runestout_cooked",
+    "group": "fish"
+  },
+  {
+    "id": "cook_frostgill",
+    "skill": "cooking",
+    "name": "Frostgill (+100 HP)",
+    "levelReq": 82,
+    "xp": 380,
+    "requires": {
+      "frostgill_raw": 1
+    },
+    "produces": "frostgill_cooked",
     "group": "fish"
   },
   {

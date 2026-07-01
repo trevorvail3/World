@@ -164,8 +164,32 @@ function remapObject(o: WorldObjectDef): WorldObjectDef {
 // OSRS-style mixed fishing spots: each catch rolls one fish (weighted) from the
 // pool that you meet the level for. River = the early waters around Ironvale.
 const POOL_RIVER = [
-  { action: "fish_ashfin", weight: 10 },  // lvl 1
-  { action: "fish_greyfin", weight: 4 },  // lvl 20
+  { action: "fish_ashfin", weight: 10 },     // lvl 1
+  { action: "fish_silverdart", weight: 7 },  // lvl 8
+  { action: "fish_greyfin", weight: 4 },     // lvl 20
+  { action: "fish_bristlepike", weight: 2 }, // lvl 38
+];
+
+// The moor ponds: a still-water pool of carp, eels and dark shad.
+const POOL_MOOR = [
+  { action: "fish_bramblecarp", weight: 8 }, // lvl 15
+  { action: "fish_marsh_eel", weight: 5 },   // lvl 45
+  { action: "fish_gloomshad", weight: 3 },   // lvl 52
+];
+
+// The open coast: schools of copperling up through the runed deep-body stout.
+const POOL_COAST = [
+  { action: "fish_copperling", weight: 8 }, // lvl 25
+  { action: "fish_ribperch", weight: 6 },   // lvl 30
+  { action: "fish_redgill", weight: 4 },    // lvl 60
+  { action: "fish_runestout", weight: 2 },  // lvl 68
+];
+
+// The Eyeless deep: armoured deepscale, cold frostgill, and the ancient pike.
+const POOL_DEEP = [
+  { action: "fish_deepscale", weight: 6 },     // lvl 75
+  { action: "fish_frostgill", weight: 3 },     // lvl 82
+  { action: "fish_eyeless_pike", weight: 1 },  // lvl 90
 ];
 
 /**
@@ -514,7 +538,8 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trap_stag_2", kind: "trap", x: 27, y: 93, name: "Stag Snare", resource: "hunt_stag" },
   { id: "trap_aurochs_1", kind: "trap", x: 22, y: 96, name: "Aurochs Snare", resource: "hunt_aurochs" },
   // Mid/high-tier gap fills: a marsh-eel pool (Fishing 45) and a moorhart snare (Hunter 75).
-  { id: "hm_fish_eel", kind: "fishing_spot", x: 24, y: 94, name: "Eel Pool", resource: "fish_marsh_eel" },
+  { id: "hm_fish_eel", kind: "fishing_spot", x: 24, y: 94, name: "Eel Pool", resource: "fish_bramblecarp", catches: POOL_MOOR },
+  { id: "hm_fish_shad", kind: "fishing_spot", x: 22, y: 96, name: "Peat Pool", resource: "fish_bramblecarp", catches: POOL_MOOR },
   { id: "trap_moorhart", kind: "trap", x: 16, y: 84, name: "Hart Snare", resource: "hunt_moorhart" },
   { id: "portal_bog", kind: "portal", x: 15, y: 98, name: "The Bog Barrow", dungeon: "bog_barrow", target: { x: 24, y: 118 }, lines: ["You wade down into the Bog Barrow."] },
 
@@ -542,9 +567,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "rd_rock_2", kind: "rock", x: 92, y: 72, name: "Bloodore Vein", resource: "mine_bloodore" },
   { id: "rd_fish_greyfin", kind: "fishing_spot", x: 96, y: 66, name: "Greyfin Pool", resource: "fish_greyfin" },
   { id: "rd_fish_1", kind: "fishing_spot", x: 96, y: 65, name: "Ribvault Shallows", resource: "fish_ribperch" },
-  { id: "rd_fish_2", kind: "fishing_spot", x: 100, y: 73, name: "The Estuary", resource: "fish_redgill" },
-  { id: "rd_fish_3", kind: "fishing_spot", x: 101, y: 80, name: "The Eyeless Sea", resource: "fish_deepscale" },
-  { id: "rd_fish_4", kind: "fishing_spot", x: 103, y: 83, name: "The Eyeless Deep", resource: "fish_eyeless_pike" },
+  { id: "rd_fish_2", kind: "fishing_spot", x: 100, y: 73, name: "The Estuary", resource: "fish_copperling", catches: POOL_COAST },
+  { id: "rd_fish_5", kind: "fishing_spot", x: 99, y: 70, name: "Coppertide Shallows", resource: "fish_copperling", catches: POOL_COAST },
+  { id: "rd_fish_3", kind: "fishing_spot", x: 101, y: 80, name: "The Eyeless Sea", resource: "fish_deepscale", catches: POOL_DEEP },
+  { id: "rd_fish_4", kind: "fishing_spot", x: 103, y: 83, name: "The Eyeless Deep", resource: "fish_deepscale", catches: POOL_DEEP },
   { id: "rd_brigand_1", kind: "monster", monster: "redrun_brigand", x: 92, y: 68, name: "Redrun Brigand" },
   { id: "rd_serpent_1", kind: "monster", monster: "river_serpent", x: 93, y: 76, name: "River Serpent" },
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 93, y: 80, name: "Ancient Orc" },
