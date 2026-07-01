@@ -129,6 +129,9 @@ export class Hud {
   /** Set by main.ts to route a sent chat line to the world's overhead-chat
    *  renderer (float it above the player's head). */
   onLocalSay: ((text: string) => void) | null = null;
+  /** Set by main.ts to float an arriving nearby player's chat line over their
+   *  ghost in the world (matched by name). */
+  onRemoteSay: ((name: string, text: string) => void) | null = null;
   private chatLastId = -1;
   private chatSeeded = false;
 
@@ -927,6 +930,9 @@ export class Hud {
     for (const m of msgs) {
       if (m.id > this.chatLastId) {
         this.chatLine(m.name, m.body, m.you);
+        // Float a nearby player's line over their head in the world (mine is
+        // already floated optimistically on send).
+        if (!m.you) this.onRemoteSay?.(m.name, m.body);
         this.chatLastId = m.id;
       }
     }

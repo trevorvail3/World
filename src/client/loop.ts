@@ -332,6 +332,8 @@ export class Game {
   /** OSRS-style overhead chat: the last thing the player said, floating over their
    *  head until `until` (performance.now() ms). Set by the HUD on send. */
   private speech: { text: string; until: number } | null = null;
+  /** Nearby players' latest chat lines, keyed by name, floated over their ghost. */
+  private ghostSpeech = new Map<string, { text: string; until: number }>();
   /** A loot tile the player is walking toward to pick up, polled each frame. */
   private pickupTarget: (Vec2 & { id?: number; qty?: number }) | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
@@ -1289,43 +1291,68 @@ export class Game {
     };
   }
 
+  private static clip(t: string): string {
+    const s = t.trim();
+    return s.length > 48 ? s.slice(0, 47) + "…" : s;
+  }
+
   /** Float what the player just typed over their head (OSRS overhead chat). Called
    *  by the HUD the moment a world-chat line is sent, for instant local feedback. */
   showSpeech(text: string): void {
-    const t = text.trim();
-    if (!t) return;
-    this.speech = { text: t.length > 48 ? t.slice(0, 47) + "…" : t, until: performance.now() + 5000 };
+    const t = Game.clip(text);
+    if (t) this.speech = { text: t, until: performance.now() + 5000 };
   }
 
-  /** Draw the overhead chat bubble above the player, fading out at the end. Drawn
-   *  in world space so it tracks the player and scales with zoom. */
+  /** Float a nearby player's chat line over THEIR head — matched to their ghost by
+   *  name — so friends playing near you see each other's words in the world, not
+   *  just in the log. Called by the HUD as remote chat arrives. */
+  showGhostSpeech(name: string, text: string): void {
+    const t = Game.clip(text);
+    if (t) this.ghostSpeech.set(name, { text: t, until: performance.now() + 5000 });
+  }
+
+  /** Draw the overhead chat bubbles: the local player's, plus any nearby ghost's.
+   *  World space, so they track their speaker and scale with zoom. */
   private drawSpeech(now: number): void {
-    if (!this.speech) return;
-    if (now >= this.speech.until) { this.speech = null; return; }
     const p = this.bridge.state.player;
-    if (!p.alive) return;
-    const { x: sx, y: sy } = this.toScreen(p.pos.x, p.pos.y);
-    const remain = this.speech.until - now;
-    const alpha = Math.max(0, Math.min(1, remain / 700)); // fade over the last 700ms
+    if (this.speech) {
+      if (now >= this.speech.until) this.speech = null;
+      else if (p.alive) {
+        const s = this.toScreen(p.pos.x, p.pos.y);
+        this.drawSpeechBubble(this.speech.text, s.x, s.y, Math.min(1, (this.speech.until - now) / 700));
+      }
+    }
+    if (this.ghostSpeech.size) {
+      for (const gh of currentGhosts()) {
+        const entry = this.ghostSpeech.get(gh.name);
+        if (!entry) continue;
+        if (now >= entry.until) { this.ghostSpeech.delete(gh.name); continue; }
+        const s = this.toScreen(gh.x, gh.y);
+        this.drawSpeechBubble(entry.text, s.x, s.y, Math.min(1, (entry.until - now) / 700));
+      }
+      // Prune entries whose speaker has wandered out of range (no ghost) once stale.
+      for (const [name, e] of this.ghostSpeech) if (now >= e.until) this.ghostSpeech.delete(name);
+    }
+  }
+
+  /** One overhead bubble at a speaker's tile-centre screen position (sx, sy). */
+  private drawSpeechBubble(text: string, sx: number, sy: number, alpha: number): void {
     const g = this.g;
     g.save();
-    g.globalAlpha = alpha;
+    g.globalAlpha = Math.max(0, alpha);
     g.font = "600 14px 'Segoe UI', system-ui, sans-serif";
     g.textAlign = "center";
     g.textBaseline = "middle";
-    const text = this.speech.text;
     const tw = g.measureText(text).width;
     const ty = sy - TILE * 1.15; // a comfortable gap above the head
-    // A soft rounded backing so the words read over any terrain.
-    g.fillStyle = "rgba(18, 14, 9, 0.66)";
+    g.fillStyle = "rgba(18, 14, 9, 0.66)"; // soft backing so words read over terrain
     g.beginPath();
     g.roundRect(sx - tw / 2 - 7, ty - 11, tw + 14, 22, 7);
     g.fill();
-    // Warm parchment text with a dark outline (OSRS overhead legibility).
     g.lineWidth = 3;
-    g.strokeStyle = "rgba(0, 0, 0, 0.75)";
+    g.strokeStyle = "rgba(0, 0, 0, 0.75)"; // dark outline for legibility
     g.strokeText(text, sx, ty);
-    g.fillStyle = "#fbeecb";
+    g.fillStyle = "#fbeecb"; // warm parchment
     g.fillText(text, sx, ty);
     g.restore();
   }
