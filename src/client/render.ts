@@ -1777,12 +1777,25 @@ function drawObject(
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
   switch (def.kind) {
-    case "tree":
+    case "tree": {
+      // Trees read taller now — scaled up about their base so canopies loom over
+      // the player instead of matching them tile-for-tile.
+      const s = def.species === "greyoak" ? 1.5 : def.species === "coldpine" ? 1.45 : 1.35;
+      const foot = cy + 11;
+      g.save();
+      g.translate(cx, foot); g.scale(s, s); g.translate(-cx, -foot);
       drawTree(g, cx, cy, available, def.species);
+      g.restore();
       break;
-    case "rock":
+    }
+    case "rock": {
+      const foot = cy + 8;
+      g.save();
+      g.translate(cx, foot); g.scale(1.15, 1.15); g.translate(-cx, -foot);
       drawRock(g, cx, cy, available, def.resource);
+      g.restore();
       break;
+    }
     case "fishing_spot":
       drawFishingSpot(g, cx, cy, now);
       break;
@@ -3356,11 +3369,39 @@ function drawMonster(
     g.save();
     g.translate(lunge.dx * push, lunge.dy * push);
     g.translate(cx, cy); g.scale(k, k); g.translate(-cx, -cy);
-    drawMonsterBody(g, monster, cx, cy, now, moving, undefined);
+    drawMonsterScaled(g, monster, cx, cy, now, moving, undefined);
     g.restore();
     return;
   }
-  drawMonsterBody(g, monster, cx, cy, now, moving, attack?.action);
+  drawMonsterScaled(g, monster, cx, cy, now, moving, attack?.action);
+}
+
+/** How much bigger than the base sprite a monster reads — bosses and the largest
+ *  brutes tower; the dragon most of all. 1 (default) means no scaling. */
+const MONSTER_SCALE: Record<string, number> = {
+  ashen_wyrm: 1.85,
+  boneman: 1.4, hollow_warden: 1.35, spine_warlord: 1.4, bog_warden: 1.4, marrow_keeper: 1.4,
+  mountain_troll: 1.3, deep_golem: 1.35, forest_bear: 1.22, mountain_lion: 1.1,
+  river_serpent: 1.25, mire_serpent: 1.15, marrow_wraith: 1.12,
+};
+
+/** Draw a monster, scaled up (about its planted foot) by MONSTER_SCALE. */
+function drawMonsterScaled(
+  g: CanvasRenderingContext2D,
+  monster: string | undefined,
+  cx: number,
+  cy: number,
+  now: number,
+  moving: boolean,
+  action?: AvatarAnim["action"],
+): void {
+  const s = (monster && MONSTER_SCALE[monster]) || 1;
+  if (s === 1) { drawMonsterBody(g, monster, cx, cy, now, moving, action); return; }
+  const foot = cy + 14; // grow up and out from the ground line, not the centre
+  g.save();
+  g.translate(cx, foot); g.scale(s, s); g.translate(-cx, -foot);
+  drawMonsterBody(g, monster, cx, cy, now, moving, action);
+  g.restore();
 }
 
 function drawMonsterBody(

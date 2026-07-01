@@ -101,6 +101,17 @@ interface Puff {
   kind: "dust" | "splash";
 }
 
+/** An arrow or magic bolt streaking from a shooter to its target (tile coords). */
+interface Projectile {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  born: number;
+  kind: "arrow" | "bolt";
+  color: string;
+}
+
 /** Impact-burst colour by the skill being trained (wood chips, stone, splash…). */
 const SPARK_COLOR: Record<string, string> = {
   forestry: "#9a7a4a",
@@ -292,6 +303,7 @@ export class Game {
   private sparks: Spark[] = [];
   private rings: Ring[] = [];
   private puffs: Puff[] = [];
+  private projectiles: Projectile[] = [];
   private lastPuff = 0;
   /** Recent per-entity hits (id → when/direction), driving the hit-pop in render. */
   private combatHits: Map<string, HitFx> = new Map();
@@ -510,6 +522,7 @@ export class Game {
     this.emitFootsteps(now);
     this.drawPuffs(now);
     this.drawRings(now);
+    this.drawProjectiles(now);
     this.drawSparks(now);
     this.drawFloats(now);
     this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
@@ -768,6 +781,9 @@ export class Game {
           break;
         }
         case "DAMAGE": {
+          // A ranged/magic blow sends a visible arrow or bolt streaking from the
+          // shooter to the struck target.
+          this.spawnProjectile(ev.targetId, now);
           // Taking a real hit flashes the screen edges red — the harder the hit
           // (relative to max HP), the stronger the flash, with a little shake.
           if (ev.targetId === "player") {
@@ -1753,6 +1769,79 @@ export class Game {
   }
 
   /** Short radiating impact bursts on the worked tile (chips, sparks, splash). */
+  /** On a ranged/magic hit, launch a projectile from the shooter to the target. */
+  private spawnProjectile(victimId: string, now: number): void {
+    const state = this.bridge.state;
+    const content = this.bridge.content;
+    let attackerId: string;
+    let kind: "arrow" | "bolt";
+    let color = "#8fbaf0";
+    if (victimId === "player") {
+      // A monster shooting the player — only ranged/caster foes fling anything.
+      const mid = state.player.activity.kind === "combat" ? state.player.activity.targetId : null;
+      if (!mid) return;
+      const def = content.objects.find((o) => o.id === mid);
+      const stats = def?.monster ? content.monsters[def.monster] : undefined;
+      if (!stats) return;
+      const style = stats.attackStyle;
+      const isRanged = (stats.attackRange ?? 1) >= 4 || style === "ranged" || style === "magic";
+      if (!isRanged) return;
+      attackerId = mid;
+      kind = style === "magic" ? "bolt" : "arrow";
+      color = style === "magic" ? "#c58cff" : "#8fbaf0";
+    } else {
+      // The player shooting a monster — a bow looses an arrow, a staff a bolt.
+      const main = state.player.equipment.mainhand;
+      const item = main ? content.items[main] : undefined;
+      if (item?.magic) { kind = "bolt"; color = "#8fd0ff"; }
+      else if (item?.ranged) { kind = "arrow"; }
+      else return;
+      attackerId = "player";
+    }
+    const from = this.positionOf(attackerId);
+    const to = this.positionOf(victimId);
+    if (!from || !to) return;
+    this.projectiles.push({ fromX: from.x, fromY: from.y, toX: to.x, toY: to.y, born: now, kind, color });
+  }
+
+  private drawProjectiles(now: number): void {
+    const LIFE = 170;
+    this.projectiles = this.projectiles.filter((p) => now - p.born < LIFE);
+    const g = this.g;
+    for (const p of this.projectiles) {
+      const t = Math.min(1, (now - p.born) / LIFE);
+      const x = p.fromX + (p.toX - p.fromX) * t;
+      const y = p.fromY + (p.toY - p.fromY) * t;
+      const sx = x * TILE + TILE / 2 - this.cam.x;
+      const sy = y * TILE + TILE / 2 - this.cam.y - 6;
+      const ang = Math.atan2(p.toY - p.fromY, p.toX - p.fromX);
+      g.save();
+      g.translate(sx, sy);
+      g.rotate(ang);
+      if (p.kind === "arrow") {
+        g.strokeStyle = "#6a4a2e"; g.lineWidth = 2; g.lineCap = "round";
+        g.beginPath(); g.moveTo(-9, 0); g.lineTo(6, 0); g.stroke();
+        g.strokeStyle = "#d6dae2"; g.lineWidth = 1.6; // head
+        g.beginPath(); g.moveTo(6, 0); g.lineTo(2, -2.4); g.moveTo(6, 0); g.lineTo(2, 2.4); g.stroke();
+        g.strokeStyle = "#b5564a"; g.lineWidth = 1.4; // fletching
+        g.beginPath(); g.moveTo(-9, 0); g.lineTo(-6, -2.2); g.moveTo(-9, 0); g.lineTo(-6, 2.2); g.stroke();
+        g.lineCap = "butt";
+      } else {
+        // A glowing magic bolt with a soft tail.
+        g.strokeStyle = p.color; g.lineWidth = 2; g.globalAlpha = 0.5; g.lineCap = "round";
+        g.beginPath(); g.moveTo(-11, 0); g.lineTo(0, 0); g.stroke();
+        g.globalAlpha = 1;
+        const grad = g.createRadialGradient(0, 0, 0, 0, 0, 6);
+        grad.addColorStop(0, p.color); grad.addColorStop(1, "rgba(120,170,240,0)");
+        g.fillStyle = grad; g.beginPath(); g.arc(0, 0, 6, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#eaf3ff"; g.beginPath(); g.arc(0, 0, 2.2, 0, Math.PI * 2); g.fill();
+        g.lineCap = "butt";
+      }
+      g.restore();
+    }
+    g.globalAlpha = 1;
+  }
+
   private drawSparks(now: number): void {
     const LIFE = 300;
     this.sparks = this.sparks.filter((s) => now - s.born < LIFE);
