@@ -256,6 +256,22 @@ const rawObjects: WorldObjectDef[] = [
       "The Ashforge Brotherhood doesn't recruit. We warn a man what the hammer costs, and then we wait to see if he picks it up anyway.",
       "Teach yourself on cold ash and guesswork long enough and the metal starts telling you things. Stay, and I'll tell you the rest.",
     ],
+    reactiveLines: [
+      { requiresFlags: ["endgame_shard_destroyed"], lines: [
+        "You burned it in the deepest fire. The only clean answer to a question that was never going to have one.",
+        "Good. Some things you don't seal, and you don't study, and you don't pray to. You put them in the forge and you let the forge decide. Brotherhood's proud of you — I'm proud of you.",
+      ] },
+      { requiresFlags: ["act2_berric_dealt_with"], lines: [
+        "Berric's answered for and the seam's ours again. You did that. The house knows it — even the ones too proud to say it to your face.",
+        "Whatever rank you carry now, you carry it honest. That's the only kind the fire respects.",
+      ] },
+      { requiresFlags: ["guild_ashforge_rank_2"], lines: [
+        "Rank Two, and still turning up to sweat. Good. The fire doesn't care what rank you are — only whether you keep feeding it.",
+      ] },
+      { requiresFlags: ["guild_ashforge_joined"], lines: [
+        "You picked the hammer up knowing the cost. That's all the Brotherhood ever asks. The rest is just work — and there's always work.",
+      ] },
+    ],
   },
   {
     id: "sera", kind: "npc", x: 49, y: 48, name: "Sera",
@@ -263,6 +279,22 @@ const rawObjects: WorldObjectDef[] = [
       "Careful with the dust — half of it is older than the kingdom.",
       "The Pale Record keeps what the world would rather forget. The Underloft. The warm stone they buried their dead with. The coins that keep surfacing.",
       "Bring me a thing with a question on it and I'll give it a home instead of a shelf over a hearth.",
+    ],
+    reactiveLines: [
+      { requiresFlags: ["endgame_shard_secured"], lines: [
+        "It's in the inner vault, unread, and it will stay unread. You kept the question open. Holy, by staying unknown.",
+        "People wanted you to answer it. You did the harder thing — you let it keep being a question. The Record will remember that longer than any answer.",
+      ] },
+      { requiresFlags: ["belief_finalized"], lines: [
+        "You settled your belief, once, out loud, and it held. That's rarer than any Shard I've catalogued. Most people die still deciding.",
+        "I won't ask which way you went. The settling is the thing. The rest is just the shelf you put it on.",
+      ] },
+      { requiresFlags: ["guild_pale_record_rank_1"], lines: [
+        "Chronicler. The Record keeps what it's given — and you've given it more than most who wear the seal. Come and read further, when the quiet suits you.",
+      ] },
+      { requiresFlags: ["guild_pale_record_contacted"], lines: [
+        "You gave the coin a home instead of a hearth-shelf. I knew then we'd work well. The Underloft's patient — it's waited this long for eyes like yours.",
+      ] },
     ],
   },
   {
@@ -374,12 +406,31 @@ const rawObjects: WorldObjectDef[] = [
       "Greyfin, fresh off the Redrun! Well — fresh enough. You'll not get better this side of the estuary.",
       "My man rows the river. Says the water's been running redder than it ought. I tell him it's the season. He doesn't argue, but he doesn't smile either.",
     ],
+    reactiveLines: [
+      { requiresFlags: ["sq_redriver_done"], lines: [
+        "You went and looked at the Redrun for me, when the watch wouldn't. Whatever you told me of it — I sleep now, and my man smiles again.",
+        "That's worth more than the whole morning's catch. Here — take a greyfin, and don't you dare offer me a coin for it.",
+      ] },
+    ],
   },
   {
     id: "town_guard", kind: "npc", x: 62, y: 47, name: "An Off-Duty Guard",
     lines: [
       "Long as the gates hold and the lamps are lit, Ironvale sleeps easy. Mostly.",
       "They've got me on the new watchtower come spring. Watching for what, nobody'll say. That's the part that keeps me up.",
+    ],
+    reactiveLines: [
+      { requiresFlags: ["q_boneman_complete"], lines: [
+        "The Boneman. Years I carried that one — the job the watch pretends isn't happening. You put it down and never asked to see it on the ledger.",
+        "I'll not forget that, whatever the record says. First full night's sleep I've had since I pinned on the badge. That's yours.",
+      ] },
+      { requiresFlags: ["varath_main_story_complete"], lines: [
+        "Whatever you did down in the deep dark, the roads have been quiet since. Quiet's the only thing a guard ever really prays for.",
+        "They'll not put your name in any watch-book. So I'll say it here, off the ledger: well done. Ironvale owes you a peace it'll never name.",
+      ] },
+      { requiresFlags: ["sq_roost_done"], lines: [
+        "The Roost's quiet for the first time in years, and I sleep the better for it. That was you. The watch won't say so — so I will, quietly. Thanks.",
+      ] },
     ],
   },
   {
@@ -388,12 +439,53 @@ const rawObjects: WorldObjectDef[] = [
       "Bet you can't toss a coin in the fountain and have it land flat. Nobody can. I've seen a hundred try.",
       "My gran says the old coins the rats dig up are unlucky. I keep one anyway. It's warm. Feel.",
     ],
+    reactiveLines: [
+      { requiresFlags: ["the_warmth_answered"], lines: [
+        "My gran says the ground's been warm all week, even up here where it's never warm. She says you did that. Did you? DID you?",
+        "The old coin in my pocket's warmer than ever. I'm keeping it. Nobody can make me put it in the fountain now.",
+      ] },
+      { requiresFlags: ["endgame_shard_destroyed"], lines: [
+        "The warm coins went cold. All of them, all at once, the same night. Mine too.",
+        "Gran said good riddance. I think I liked it better warm. Don't tell her.",
+      ] },
+      { requiresFlags: ["varath_main_story_complete"], lines: [
+        "You're the one everybody's on about! You went ALL the way down to the dark, past the crawlers and everything!",
+        "What's down there? Is it a monster? Is it a KING? Grown-ups won't say and that means it's good.",
+      ] },
+      { requiresFlags: ["q_boneman_complete"], lines: [
+        "The big folk stopped whispering about the Boneman. They say you got him. You don't look like much — no offence!",
+        "I'm allowed on the west road again now. Almost allowed. Nearly.",
+      ] },
+      { requiresFlags: ["sq_roost_done"], lines: [
+        "The guards say the Brigand's Roost got took. By YOU? Can I see your sword? I won't touch it. I'll only touch it a little.",
+      ] },
+    ],
   },
   {
     id: "town_pilgrim", kind: "npc", x: 51, y: 56, name: "A Pilgrim",
     lines: [
       "I walked from the Heartmoor to stand a day in a city that still has walls. It's a comfort, walls.",
       "They say the Spine is Orun's own back. I came to see it. I'll go home and say I saw a mountain. Both are true, I think.",
+    ],
+    reactiveLines: [
+      { requiresFlags: ["the_warmth_answered"], lines: [
+        "The warmth answered. I felt it in the fountain-stones this morning — I knelt and I wept, and I am not ashamed.",
+        "I walked all this way to see a mountain. I'll go home having felt a god move under the world. Or something. Something.",
+      ] },
+      { requiresFlags: ["endgame_shard_destroyed"], lines: [
+        "The stones went cold, and I felt the faith go out of me like a held breath let go. I don't know yet if it's grief or relief.",
+        "Maybe that's the mercy of it — no more waiting to know. Only the cold, and the walls, and the long road home.",
+      ] },
+      { requiresFlags: ["belief_finalized"], lines: [
+        "They say you stood at the bottom of it and settled your own belief, plainly, out loud. I've walked a hundred miles and I still can't. What did you decide?",
+        "No — don't tell me. A person's belief is theirs. I only wanted to know it could be done.",
+      ] },
+      { requiresFlags: ["hm_faithful"], lines: [
+        "You've the warm-stone about you — you've knelt at the moor's fire, same as me. Then we're the same road, you and I, however far apart we started it.",
+      ] },
+      { requiresFlags: ["act2_complete"], lines: [
+        "The whole country's talking about a contested seam, and the one who settled who got it. They mean you, don't they. I can tell by how you didn't answer.",
+      ] },
     ],
   },
   {
@@ -408,6 +500,21 @@ const rawObjects: WorldObjectDef[] = [
     lines: [
       "Riders out at dawn, riders in at dusk. The Courier never stops; the roads don't let us.",
       "Greyoak, the Spine, the Heartmoor — I've carried word to all of them. Everything in Varath runs through this market eventually.",
+    ],
+    reactiveLines: [
+      { requiresFlags: ["varath_main_story_complete"], lines: [
+        "Half my dispatches this month have your name in them, one way or another. The other half are about what you did down in the dark.",
+        "Whatever it was — the roads are calmer for it, and calm roads mean my riders come home. I'll carry your name gladly, wherever it needs going.",
+      ] },
+      { requiresFlags: ["act2_complete"], lines: [
+        "Word travels faster than my fastest rider these days, and near enough all of it's about you. The seam. The choice. Four houses, and you the one who settled it.",
+      ] },
+      { requiresFlags: ["guild_ashforge_joined"], lines: [
+        "You've the Brotherhood's soot about you now. Say what you like about the Ashforge — they send more letters than any three houses in Varath. Keeps me in work.",
+      ] },
+      { requiresFlags: ["sq_courier_done"], lines: [
+        "You went out on the Greyoak run when one of ours didn't come home. However that ended — you rode out, and most wouldn't. The Couriers remember that.",
+      ] },
     ],
   },
 
@@ -550,7 +657,14 @@ const rawObjects: WorldObjectDef[] = [
   { id: "gw_oak_3", kind: "tree", x: 27, y: 58, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
   { id: "gw_oak_4", kind: "tree", x: 29, y: 56, name: "Greyoak", resource: "fell_greyoak", species: "greyoak" },
   { id: "gw_oak_5", kind: "tree", x: 24, y: 60, name: "Greyoak (Old Growth)", resource: "fell_greyoak", species: "greyoak" },
-  { id: "maret", kind: "npc", x: 22, y: 53, name: "Maret", lines: ["Stranger on the Lodge road. You'll forgive the look — the wood teaches you to measure people.","This is Greyoak. Old before Ironvale was a name. The boar keep to the understory; give the deep wood its distance and it gives you yours.","Every season the old growth pulls back a little further. We mark the new treeline against the last. We do not ask what walks in the cleared ground.","Bring an axe worth the name and the greyoak will pay you in timber. Bring less and it will only blunt you."] },
+  { id: "maret", kind: "npc", x: 22, y: 53, name: "Maret", lines: ["Stranger on the Lodge road. You'll forgive the look — the wood teaches you to measure people.","This is Greyoak. Old before Ironvale was a name. The boar keep to the understory; give the deep wood its distance and it gives you yours.","Every season the old growth pulls back a little further. We mark the new treeline against the last. We do not ask what walks in the cleared ground.","Bring an axe worth the name and the greyoak will pay you in timber. Bring less and it will only blunt you."],
+    reactiveLines: [
+      { requiresFlags: ["endgame_shard_walked_away"], lines: ["You set it down and walked out of the story. Do you know how few could? Everyone else wanted to be the one who decided.","You chose the smaller, truer life. The wood understands that better than any of them. Come sit by the fire — you've earned a quiet one."] },
+      { requiresFlags: ["guild_lodge_rank_2"], lines: ["Warden. Full standing, full trust. The wood took its time deciding about you — it always does — but it decided, and it doesn't go back on that.","Caelwyn's longbow suits your hand. Carry it into the deep growth and it'll remember the way, even when you don't."] },
+      { requiresFlags: ["knows_forest_retreat"], lines: ["You've seen what pulls the treeline back. Carry it quiet a while yet. The wood will tell us what it means when it's ready — not before."] },
+      { requiresFlags: ["guild_lodge_contacted"], lines: ["You came back to this fire, and you came back clean. Not everyone manages both. The Lodge remembers a steady hand."] },
+      { blockedByFlags: ["guild_lodge_contacted"], requiresFlags: ["npc_maret_wolf_killed_by_player"], lines: ["I know what you did to the white wolf at the treeline. I'll trade with you, if I must. But don't mistake trade for trust. The wood hasn't forgotten, and neither have I."] },
+    ] },
   { id: "lenne", kind: "npc", x: 20, y: 52, name: "Lenne", lines: ["Quiet, now. You'll learn more standing still in this wood than talking in it.","I track for the Lodge. Maret keeps the fire; I keep the treeline. We both watch the same thing pulling back.","If the old growth ever decides you're worth its notice, you'll feel it before you see it. Don't run."] },
   { id: "gw_boar_1", kind: "monster", monster: "wild_boar", x: 15, y: 49, name: "Wild Boar" },
   { id: "gw_boar_2", kind: "monster", monster: "wild_boar", x: 24, y: 50, name: "Wild Boar" },
@@ -582,7 +696,13 @@ const rawObjects: WorldObjectDef[] = [
   { id: "portal_spine", kind: "portal", x: 50, y: 12, name: "The Spine Vault", dungeon: "spine_vault", target: { x: 40, y: 118 }, lines: ["You break the seal on the Spine Vault."] }, // high in the remote northern pass
 
   // === HEARTMOOR (south-west) ===============================================
-  { id: "calder", kind: "npc", x: 17, y: 82, name: "Calder", lines: ["Cold road, isn't it. Sit a moment — there's always a fire going at the moor's edge, and food for whoever the road gives out on.","We're the Heartmoor faithful. No, don't make the face. We feed people. What you do with the rest of it is your business.","The peat keeps things. Bog-bodies, old swords, older questions. And the warm seams — Hearthite, black and almost living. Rock, the miners say. We say otherwise. Both are true of the same stone.","Go careful past the pools. The bog knights don't sleep, and the serpents are patient."] },
+  { id: "calder", kind: "npc", x: 17, y: 82, name: "Calder", lines: ["Cold road, isn't it. Sit a moment — there's always a fire going at the moor's edge, and food for whoever the road gives out on.","We're the Heartmoor faithful. No, don't make the face. We feed people. What you do with the rest of it is your business.","The peat keeps things. Bog-bodies, old swords, older questions. And the warm seams — Hearthite, black and almost living. Rock, the miners say. We say otherwise. Both are true of the same stone.","Go careful past the pools. The bog knights don't sleep, and the serpents are patient."],
+    reactiveLines: [
+      { requiresFlags: ["the_warmth_answered"], lines: ["The warmth answered. Whatever you meant by the doing of it, the Heartmoor felt it move under the world — every one of us, at the same breath.","We always said it would answer, if someone only had the nerve to ask. You had the nerve. Sit at the fire, faithful. It's as much yours as mine now."] },
+      { requiresFlags: ["hm_faithful"], lines: ["You tended the seam, you broke the old watch at the Barrow, and you're still here at the fire. You're faithful now, in the only way that ever mattered — the staying.","The warmth keeps who it keeps. It kept you."] },
+      { requiresFlags: ["hm_joined"], lines: ["You came to the moor's edge to understand the warm stone instead of just selling it. That's the whole beginning of faith, right there. The rest is only time at the fire."] },
+      { requiresFlags: ["met_calder"], lines: ["The road keeps sending you back to my fire. It notices things like that, the road. So do I. There's always a meal here, whatever you believe."] },
+    ] },
   { id: "hm_lurker_1", kind: "monster", monster: "marsh_lurker", x: 16, y: 87, name: "Marsh Lurker" },
   { id: "hm_lurker_2", kind: "monster", monster: "marsh_lurker", x: 28, y: 90, name: "Marsh Lurker" },
   { id: "hm_hound_1", kind: "monster", monster: "heartmoor_hound", x: 14, y: 94, name: "Heartmoor Hound" },
@@ -1209,12 +1329,20 @@ const newPois: WorldObjectDef[] = [
   // --- Emberhearth (Ashfen): a warm-flats camp of cult miners ---
   { id: "sign_emberhearth", kind: "signpost", x: 77, y: 145, name: "Emberhearth", lines: ["EMBERHEARTH — the warm ground keeps the fires lit and the faithful close. Witness the heat, or move along."] },
   { id: "npc_emberhearth_trader", kind: "npc", x: 77, y: 142, name: "Sefa, a Flux-Trader", lines: ["Embercite for your flux, charcoal for your forge, a flask for whatever you brew. The warm ground gives plenty.", "We don't sell the faith. Only the goods. The faith you feel through your boots, free of charge."] },
-  { id: "npc_emberhearth_folk", kind: "npc", x: 79, y: 142, name: "A Sweating Digger", lines: ["Short shifts down the warm cuts. Any longer and a man starts hearing the ground breathe."] },
+  { id: "npc_emberhearth_folk", kind: "npc", x: 79, y: 142, name: "A Sweating Digger", lines: ["Short shifts down the warm cuts. Any longer and a man starts hearing the ground breathe."],
+    reactiveLines: [
+      { requiresFlags: ["the_warmth_answered"], lines: ["Don't tell the Tender I said it — but the ground doesn't just breathe now. It answers. Since you did whatever you did down deep, the seam pulses like a heart, and we all feel it through our boots.","Shortest shifts we've ever worked. Nobody can stand it long. Nobody wants to leave it either."] },
+      { requiresFlags: ["endgame_shard_destroyed"], lines: ["Warm cuts went cold, first time in living memory. Cold rock, plain and quiet. The Tender's not spoken a word in days.","Easier digging, cold. Truth be told, I miss the breathing. A man gets used to a strange thing, and then it's gone, and the quiet's worse."] },
+    ] },
   { id: "fire_emberhearth", kind: "fire", x: 75, y: 143, name: "Ember Pit" },
   // --- Mirehold (Heartmoor): a moor hamlet of cutters & trappers ---
   { id: "sign_mirehold", kind: "signpost", x: 15, y: 143, name: "Mirehold", lines: ["MIREHOLD — a few roofs on firm ground in a sea of bog. Keep to the boards and the moor keeps its temper."] },
   { id: "npc_mirehold_trader", kind: "npc", x: 15, y: 140, name: "Tam, a Peat-Cutter", lines: ["Eel, peat, snare-line and good moor boots — all a body needs out here. I'll trade you fair.", "The bog keeps things. Best not ask too closely what, or it keeps you too."] },
-  { id: "npc_mirehold_folk", kind: "npc", x: 13, y: 141, name: "A Moor-Wife", lines: ["My man went to check the snares at the pools this morning. The boards don't lie about where folk walk — but he strayed off them."] },
+  { id: "npc_mirehold_folk", kind: "npc", x: 13, y: 141, name: "A Moor-Wife", lines: ["My man went to check the snares at the pools this morning. The boards don't lie about where folk walk — but he strayed off them."],
+    reactiveLines: [
+      { requiresFlags: ["endgame_shard_destroyed"], lines: ["The warm pools went cold the same night the whole moor did. Quiet, now. Too quiet.","I keep half-thinking he'll come walking up out of them, now the warmth's gone. He won't. But I think it, every morning. That's the bog for you — it keeps what it takes, and it lets you keep the hoping."] },
+      { requiresFlags: ["the_warmth_answered"], lines: ["The pools ran warmer than ever the night the warmth answered. Warm enough I went down and stood in them, foolish as a girl, calling his name into the steam.","Nothing called back. But it was warm. After all these cold years — it was warm. I'll take that. I'll have to."] },
+    ] },
   { id: "fire_mirehold", kind: "fire", x: 17, y: 141, name: "Peat Fire" },
   // --- Lodgehold (Greyoak): a foresters' steading at the wood's heart ---
   { id: "sign_lodgehold", kind: "signpost", x: 13, y: 85, name: "Lodgehold", lines: ["LODGEHOLD — the Warden's steading in the old wood. Bring an axe worth the name, and leave the deep growth its peace."] },

@@ -3610,8 +3610,31 @@ function handleNpcTalk(
     ];
   }
 
-  // 4) Otherwise, ordinary chatter.
+  // 4) The world reacts: if any reactive-chatter entry's conditions are met, the
+  //    NPC acknowledges what the player has done instead of the static lines.
+  const reactive = pickReactiveLines(player, npcDef);
+  if (reactive) return reactive;
+
+  // 5) Otherwise, ordinary chatter.
   return npcDef.lines ?? ["..."];
+}
+
+/**
+ * Pick the first reactive-chatter entry whose conditions the player currently
+ * meets (flags present, flags absent, reputation floor), or null when none do.
+ * Pure and order-sensitive: author later story beats before earlier ones so the
+ * freshest acknowledgement wins.
+ */
+function pickReactiveLines(player: Player, npcDef: WorldObjectDef): string[] | null {
+  const entries = npcDef.reactiveLines;
+  if (!entries) return null;
+  for (const e of entries) {
+    if (e.requiresFlags && !e.requiresFlags.every((f) => player.flags.includes(f))) continue;
+    if (e.blockedByFlags && e.blockedByFlags.some((f) => player.flags.includes(f))) continue;
+    if (e.minRep && (player.reputation[e.minRep.faction] ?? 0) < e.minRep.amount) continue;
+    return e.lines;
+  }
+  return null;
 }
 
 /**

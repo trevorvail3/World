@@ -892,6 +892,24 @@ export type ObjKind =
   | "trail_board";
 
 /**
+ * One entry of reactive NPC chatter. When an NPC is talked to and has no quest
+ * business to conduct, the core speaks the FIRST reactive entry whose conditions
+ * the player currently meets (checked top to bottom), letting townsfolk and
+ * leaders acknowledge story beats, faction rank and reputation as the world
+ * changes. Falls through to the static `lines` when none match. Pure data.
+ */
+export interface ReactiveLine {
+  /** Every one of these story flags must be set. */
+  requiresFlags?: string[];
+  /** None of these flags may be set (lets a later beat supersede an earlier one). */
+  blockedByFlags?: string[];
+  /** Optional reputation gate: standing with `faction` must be at least `amount`. */
+  minRep?: { faction: FactionId; amount: number };
+  /** What the NPC says when this entry is the first one that matches. */
+  lines: string[];
+}
+
+/**
  * The *definition* of an object placed in the world: its kind and where it
  * sits. This is content (src/content/spawns.ts). The live, changing parts
  * (depleted? current HP? respawn timer?) live in WorldObjectState below so
@@ -927,6 +945,11 @@ export interface WorldObjectDef {
   catches?: { action: string; weight: number }[];
   /** NPC only: the lines spoken when talked to. */
   lines?: string[];
+  /** NPC only: reactive chatter that supersedes `lines` when its conditions are
+   *  met — the world acknowledging what the player has done. The core speaks the
+   *  FIRST matching entry (checked top to bottom), else falls through to `lines`.
+   *  See ReactiveLine. */
+  reactiveLines?: ReactiveLine[];
   /** A tree/rock species tag for rendering variety (e.g. "greyoak", "coldpine"). */
   species?: string;
   /** Portal only: the tile the player is teleported to. */
