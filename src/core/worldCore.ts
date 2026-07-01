@@ -1159,6 +1159,8 @@ function buyFromShop(
   const shop = content.shops.find((s) => s.id === shopId);
   const line = shop?.stock.find((s) => s.item === item);
   if (!line) return;
+  // Ending-gated wares: only sold once the story flag is set.
+  if (line.requiresFlag && !player.flags.includes(line.requiresFlag)) return;
   const def = content.items[item];
   // Capes are earned one-offs (level-gated below), so they're never stock-limited.
   const stocked = def.cat !== "Capes";
@@ -1667,6 +1669,10 @@ export function applyIntent(
       player.autocastSpell = intent.spell;
       const nm = intent.spell ? content.spells.find((s) => s.id === intent.spell)?.name : null;
       events.push({ type: "LOG", message: nm ? `Autocast set: ${nm}.` : "Autocast cleared." });
+      break;
+    }
+    case "START_DELVE": {
+      startDelve(state, content, ctx, events);
       break;
     }
     case "TOGGLE_BLESSING": {
@@ -3068,6 +3074,16 @@ export function tick(
     }
   }
 
+  // A death anywhere ends an active Delve run — the deep keeps its floor.
+  if (!player.alive && state.delve) {
+    clearDelve(state);
+    events.push({ type: "LOG", message: "The Delve claims your run. The Warden writes a second date." });
+  }
+
+  // The Greyback wanders: every so often it relocates along its patrol and the
+  // sighting is called in the chat feed — a live world event to chase down.
+  moveWorldBoss(state, content, ctx, events);
+
   // 1) Respawn the player if they're dead and their timer is up.
   if (!player.alive) {
     if (ctx.now >= player.respawnAt) {
@@ -3997,6 +4013,15 @@ function applyChoice(
     player.stats.goldEarned += pick.gold;
     events.push({ type: "LOG", message: `You're paid ${pick.gold}g.` });
   }
+  // A choice can hand something over (an ending's cape) — banked if the pack
+  // is full, so it can never be lost to a bad moment.
+  if (pick.giveItem) {
+    if (canAddItem(player, pick.giveItem)) addItem(player, pick.giveItem, 1, events);
+    else {
+      player.bank[pick.giveItem] = (player.bank[pick.giveItem] ?? 0) + 1;
+      events.push({ type: "LOG", message: `${content.items[pick.giveItem].name} was sent to your bank.` });
+    }
+  }
   applyRep(player, content, pick.rep, events);
   if (pick.reply) events.push({ type: "LOG", message: pick.reply });
   advanceQuest(state, content, def, st, events);
@@ -4670,6 +4695,11 @@ function checkKill(
   obj.nextAttackAt = 0;
   // Combat XP is granted per hit (see above), OSRS-style — not on the kill.
   player.killsSinceShard += 1;
+  // Delve monsters never respawn on their own — the run's waves control them.
+  if (def.id.startsWith("delve_")) {
+    obj.respawnAt = ctx.now + 1e12;
+    onDelveKill(state, content, ctx, events);
+  }
   // Loot falls to the floor where the creature stood — the player walks over
   // and picks it up (OSRS-style), it isn't auto-collected.
   const drop = objectPos(def, obj);
@@ -4684,7 +4714,8 @@ function checkKill(
   player.stats.monstersSlain += 1;
   if (stats.boss) player.bossKills[stats.id] = (player.bossKills[stats.id] ?? 0) + 1;
   events.push({ type: "MONSTER_KILLED", objId: obj.id });
-  events.push({ type: "LOG", message: `You defeat the ${def.name}.` });
+  // "the The Boneman" reads badly — names that carry their own article skip ours.
+  events.push({ type: "LOG", message: `You defeat ${/^The /.test(def.name) ? def.name : `the ${def.name}`}.` });
   advanceKillQuests(state, content, def.monster, events);
   trackBountyKill(player, content, def.monster, events);
   rollSuperiorBounty(state, content, def.monster, drop.x, drop.y, ctx, events);
@@ -5073,6 +5104,151 @@ function monsterSwing(
     events.push({ type: "LOG", message: `The ${def.name} knocks you out!${bits ? ` ${bits}.` : ""}` });
     events.push({ type: "PLAYER_DIED" });
   }
+}
+
+// How often the wandering world boss relocates along its patrol.
+const WORLD_BOSS_MOVE_MIN = 12 * 60_000, WORLD_BOSS_MOVE_MAX = 20 * 60_000;
+
+/** Relocate the wandering world boss along its patrol on a slow clock. Each
+ *  move heals it (a fresh sighting is a fresh fight) and is announced. */
+function moveWorldBoss(state: WorldState, content: Content, ctx: Ctx, events: WorldEvent[]): void {
+  const def = content.objects.find((o) => o.kind === "monster" && o.patrol && o.patrol.length > 1);
+  if (!def?.patrol) return;
+  const obj = state.objects[def.id];
+  if (!obj) return;
+  if (state.worldBossMoveAt === undefined) {
+    state.worldBossMoveAt = ctx.now + WORLD_BOSS_MOVE_MIN + ctx.rng() * (WORLD_BOSS_MOVE_MAX - WORLD_BOSS_MOVE_MIN);
+    return;
+  }
+  if (ctx.now < state.worldBossMoveAt) return;
+  state.worldBossMoveAt = ctx.now + WORLD_BOSS_MOVE_MIN + ctx.rng() * (WORLD_BOSS_MOVE_MAX - WORLD_BOSS_MOVE_MIN);
+  // Never teleport out from under an active fight — it moves when left alone.
+  if (state.player.activity.kind === "combat" && state.player.activity.targetId === def.id) return;
+  const cur = objectPos(def, obj);
+  const options = def.patrol.filter((p) => p.x !== Math.round(cur.x) || p.y !== Math.round(cur.y));
+  const next = options[Math.floor(ctx.rng() * options.length)]!;
+  state.creatureTiles.delete(`${Math.round(cur.x)},${Math.round(cur.y)}`);
+  obj.pos = { x: next.x, y: next.y };
+  obj.wanderTarget = null;
+  obj.nextWanderAt = ctx.now + 5000;
+  state.creatureTiles.add(`${next.x},${next.y}`);
+  const stats = monsterFor(content, def);
+  if (obj.available && stats) { obj.hp = stats.hp; obj.enraged = false; obj.slam = null; obj.swings = 0; }
+  events.push({ type: "WORLD_BOSS_MOVED", name: def.name, hint: compassHint(content, next) });
+}
+
+/** A coarse "where" for a world-boss sighting — a compass corner of the map. */
+function compassHint(content: Content, p: Vec2): string {
+  const { width, height } = content.map;
+  const ns = p.y < height / 3 ? "north" : p.y > (2 * height) / 3 ? "south" : "";
+  const ew = p.x < width / 3 ? "west" : p.x > (2 * width) / 3 ? "east" : "";
+  const dir = ns && ew ? `${ns}-${ew}` : ns || ew || "heart";
+  return dir === "heart" ? "the heart of Varath" : `the ${dir}ern wilds`;
+}
+
+// ---------------------------------------------------------------------------
+// The Marrow Delve: a four-wave gauntlet run inside the vault. Wave spawns are
+// flag-gated (delve_wave_N); the core sets/clears the flags as waves fall, and
+// the Delve Cache pays out when the Horror dies. Dying ends the run.
+// ---------------------------------------------------------------------------
+const DELVE_WAVES = 4;
+/** Full cache once per this much PLAYED time (can't be gamed by the clock). */
+const DELVE_FULL_LOCKOUT_MS = 90 * 60_000;
+
+function delveFlag(w: number): string { return `delve_wave_${w}`; }
+
+/** All spawn defs belonging to a delve wave. */
+function delveWaveDefs(content: Content, w: number): WorldObjectDef[] {
+  return content.objects.filter((o) => o.requiresFlag === delveFlag(w));
+}
+
+/** Arm a wave: set its flag and stand its monsters up fresh. */
+function armDelveWave(state: WorldState, content: Content, w: number, ctx: Ctx): number {
+  const { player } = state;
+  if (!player.flags.includes(delveFlag(w))) player.flags.push(delveFlag(w));
+  const defs = delveWaveDefs(content, w);
+  for (const d of defs) {
+    const obj = state.objects[d.id];
+    if (!obj) continue;
+    obj.available = true;
+    obj.hp = monsterFor(content, d)?.hp ?? 1;
+    obj.pos = { x: d.x, y: d.y };
+    obj.respawnAt = 0;
+    obj.nextAttackAt = 0;
+    obj.swings = 0;
+    obj.enraged = false;
+    obj.healed = false;
+    obj.slam = null;
+    obj.nextWanderAt = ctx.now + 1500;
+  }
+  return defs.length;
+}
+
+/** Tear the run down (finished, died, or restarting): clear every wave flag. */
+function clearDelve(state: WorldState): void {
+  state.delve = null;
+  for (let w = 1; w <= DELVE_WAVES; w++) {
+    const i = state.player.flags.indexOf(delveFlag(w));
+    if (i >= 0) state.player.flags.splice(i, 1);
+  }
+}
+
+function startDelve(state: WorldState, content: Content, ctx: Ctx, events: WorldEvent[]): void {
+  clearDelve(state); // restarting mid-run just resets to wave 1
+  const remaining = armDelveWave(state, content, 1, ctx);
+  state.delve = { wave: 1, remaining };
+  events.push({ type: "LOG", message: "The Warden opens the way down. WAVE 1 — the dark answers." });
+}
+
+/** A delve monster died: advance the wave, or pay the cache on the last one. */
+function onDelveKill(state: WorldState, content: Content, ctx: Ctx, events: WorldEvent[]): void {
+  const d = state.delve;
+  if (!d) return;
+  d.remaining -= 1;
+  if (d.remaining > 0) return;
+  if (d.wave < DELVE_WAVES) {
+    const done = d.wave;
+    const i = state.player.flags.indexOf(delveFlag(done));
+    if (i >= 0) state.player.flags.splice(i, 1);
+    d.wave += 1;
+    d.remaining = armDelveWave(state, content, d.wave, ctx);
+    events.push({ type: "LOG", message: `Wave ${done} falls. WAVE ${d.wave} rises from the deep…` });
+    return;
+  }
+  grantDelveCache(state, content, ctx, events);
+  clearDelve(state);
+}
+
+function grantDelveCache(state: WorldState, _content: Content, ctx: Ctx, events: WorldEvent[]): void {
+  const { player } = state;
+  const full = player.playMs - (player.delveLastFullPlayMs ?? -Infinity) >= DELVE_FULL_LOCKOUT_MS;
+  if (full) player.delveLastFullPlayMs = player.playMs;
+  const give = (item: ItemId, qty: number): void => {
+    if (canAddItem(player, item)) addItem(player, item, qty, events);
+    else {
+      player.bank[item] = (player.bank[item] ?? 0) + qty;
+      events.push({ type: "ITEM_GAINED", item, qty });
+    }
+  };
+  const gold = full ? 4000 + randInt(ctx, 0, 3000) : 800 + randInt(ctx, 0, 700);
+  player.gold += gold;
+  player.stats.goldEarned += gold;
+  give("voidstone_bar", full ? randInt(ctx, 2, 3) : 1);
+  give("cut_gem", full ? randInt(ctx, 2, 3) : 1);
+  if (full) {
+    give("hearthite_bar", randInt(ctx, 1, 2));
+    if (ctx.rng() < 1 / 12) { give("shard_of_orun", 1); player.killsSinceShard = 0; }
+    if (ctx.rng() < 1 / 25) {
+      give("horror_lantern", 1);
+      events.push({ type: "LOG", message: "Something in the cache still glows — the HORROR'S LANTERN is yours!" });
+    }
+  }
+  events.push({
+    type: "LOG",
+    message: full
+      ? `The Delve is cleared! The cache pays in full — ${gold}g and the deep's own goods.`
+      : `The Delve is cleared again. The cache pays light this soon (${gold}g) — its best waits for a rested delver.`,
+  });
 }
 
 /**

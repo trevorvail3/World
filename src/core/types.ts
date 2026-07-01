@@ -270,6 +270,12 @@ export type ItemId =
   | "pet_green_baron"
   | "pet_hollow_prophet"
   | "pet_superior"
+  | "horror_lantern"
+  | "cloak_greyback"
+  | "cape_ending_flame"
+  | "cape_ending_vault"
+  | "cape_ending_dawn"
+  | "cape_ending_road"
   | "reckoners_charm"
   | "ribstone_arrow"
   | "bloodore_arrow"
@@ -970,6 +976,10 @@ export interface WorldObjectDef {
    *  relative weight). On each catch the core rolls one you meet the level for.
    *  `resource` stays the lowest-level catch (gates starting + the cast anim). */
   catches?: { action: string; weight: number }[];
+  /** Wandering world boss only: the tiles it patrols between. The core moves it
+   *  from one to another on a slow clock and announces the sighting — a live
+   *  world event players chase down. */
+  patrol?: Vec2[];
   /** NPC only: the lines spoken when talked to. */
   lines?: string[];
   /** NPC only: reactive chatter that supersedes `lines` when its conditions are
@@ -1323,6 +1333,12 @@ export interface Player {
    */
   blessing?: string | null;
   /**
+   * The playMs stamp of the last FULL Delve Cache claimed. The cache pays in
+   * full once per ~90 minutes of play, reduced between — a lockout that can't
+   * be gamed by the system clock because it runs on played time. Persisted.
+   */
+  delveLastFullPlayMs?: number;
+  /**
    * Progress on the current Agility circuit: the course id and the next
    * obstacle order expected. Null when not mid-lap. Transient (not persisted).
    */
@@ -1460,6 +1476,12 @@ export interface WorldState {
   /** A player-lit campfire (Survivalist): burns for a while as a cooking source,
    *  then goes out. One at a time; runtime/session only — not persisted. */
   campfire?: { x: number; y: number; expiresAt: number } | null;
+  /** An active Marrow Delve run: the current wave and kills left in it. Waves
+   *  reveal flag-gated arena spawns; clearing the last pays the Delve Cache.
+   *  Session-only — dying or finishing ends the run. */
+  delve?: { wave: number; remaining: number } | null;
+  /** When the wandering world boss next relocates along its patrol (runtime). */
+  worldBossMoveAt?: number;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the
@@ -1586,6 +1608,11 @@ export interface SetStyleIntent {
 export interface CastSpellIntent {
   type: "CAST_SPELL";
   spell: string;
+}
+
+/** "Begin a Marrow Delve run" (spoken to the Delve Warden in the vault). */
+export interface StartDelveIntent {
+  type: "START_DELVE";
 }
 
 /** "Light (or douse) this protection blessing" — no staff needed; a prayer,
@@ -1814,6 +1841,7 @@ export type Intent =
   | CastSpellIntent
   | SetAutocastIntent
   | ToggleBlessingIntent
+  | StartDelveIntent
   | BuryIntent
   | GrindIntent
   | LightFireIntent
@@ -1887,6 +1915,7 @@ export type WorldEvent =
   /** A quest is asking the player to choose; the client shows the options. */
   | { type: "QUEST_CHOICE"; quest: string; prompt: string; options: string[] }
   | { type: "XP_LAMP"; amount: number; pending: number }
+  | { type: "WORLD_BOSS_MOVED"; name: string; hint: string }
   /** A companion has joined you (a rare pet drop). */
   | { type: "COMPANION_FOUND"; item: ItemId }
   /** An achievement just unlocked. */
@@ -2003,6 +2032,9 @@ export interface QuestChoice {
   gold?: number;
   /** One of this item is consumed when the option is taken (e.g. the shard sold). */
   takeItem?: ItemId;
+  /** One of this item is GRANTED when the option is taken (e.g. an ending's
+   *  cape) — banked if the pack is full, so it can never be lost. */
+  giveItem?: ItemId;
   /** Reputation changes with factions for picking this option. */
   rep?: RepChange[];
 }
@@ -2073,6 +2105,8 @@ export interface QuestState {
 /** One buyable line in a shop: a bundle of `qty` of `item` for `price` gold. */
 export interface ShopStock {
   item: ItemId;
+  /** Only offered once this story flag is set (e.g. an ending's wares). */
+  requiresFlag?: string;
   /** Total gold for the whole bundle (not per-unit). */
   price: number;
   /** How many units one purchase grants. */

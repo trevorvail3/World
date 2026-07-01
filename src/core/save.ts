@@ -68,6 +68,8 @@ export interface SavedProgress {
   bossMilestonesClaimed?: string[];
   /** Total active play time in milliseconds. */
   playMs: number;
+  /** playMs stamp of the last FULL Delve Cache (playtime-based lockout). */
+  delveLastFullPlayMs?: number;
   /** Kills since the last Shard of Orun (drives the pity guarantee). */
   killsSinceShard: number;
   /** Completed laps of the Varathian Trail. */
@@ -147,6 +149,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     bossKills: { ...player.bossKills },
     bossMilestonesClaimed: [...player.bossMilestonesClaimed],
     playMs: player.playMs,
+    delveLastFullPlayMs: player.delveLastFullPlayMs ?? 0,
     achievements: [...player.achievements],
     diariesClaimed: [...player.diariesClaimed],
     tradesApplied: [...player.tradesApplied],
@@ -339,6 +342,8 @@ export function hydratePlayer(
   }
   const savedPlay = raw["playMs"];
   if (finiteNum(savedPlay) && savedPlay >= 0) player.playMs = Math.floor(savedPlay);
+  const savedDelve = raw["delveLastFullPlayMs"];
+  if (finiteNum(savedDelve) && savedDelve > 0) player.delveLastFullPlayMs = Math.floor(savedDelve);
   const savedPity = raw["killsSinceShard"];
   if (finiteNum(savedPity) && savedPity >= 0) player.killsSinceShard = Math.floor(savedPity);
   const savedLaps = raw["trailLaps"];

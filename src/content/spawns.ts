@@ -196,6 +196,7 @@ function remapObject(o: WorldObjectDef): WorldObjectDef {
   const out: WorldObjectDef = { ...o, x: p.x, y: p.y };
   if (o.target) out.target = remap(o.target.x, o.target.y);   // portal/door teleport tile
   if (o.exit) out.exit = remap(o.exit.x, o.exit.y);           // agility obstacle far side
+  if (o.patrol) out.patrol = o.patrol.map((p) => remap(p.x, p.y)); // world-boss patrol stops
   return out;
 }
 
@@ -818,6 +819,19 @@ const rawObjects: WorldObjectDef[] = [
   { id: "rd_brigand_1", kind: "monster", monster: "redrun_brigand", x: 92, y: 68, name: "Redrun Brigand" },
   { id: "rd_serpent_1", kind: "monster", monster: "river_serpent", x: 93, y: 76, name: "River Serpent" },
   { id: "rd_orc_1", kind: "monster", monster: "ancient_orc", x: 93, y: 80, name: "Ancient Orc" },
+  // The Greyback — the wandering world boss. It relocates along its patrol on
+  // a slow clock (core), and the town crier calls each sighting in the chat
+  // feed. Patrol stops sit beside known wild camps across four regions.
+  {
+    id: "world_greyback", kind: "monster", monster: "greyback", x: 92, y: 70, name: "The Greyback",
+    patrol: [
+      { x: 92, y: 70 },  // the Redrun banks
+      { x: 22, y: 61 },  // Greyoak wood
+      { x: 56, y: 27 },  // the Spine passes
+      { x: 17, y: 87 },  // the Heartmoor edge
+      { x: 94, y: 79 },  // the old orc grounds
+    ],
+  },
   { id: "portal_ferryman", kind: "portal", x: 109, y: 59, name: "The Ferryman's Cave", dungeon: "ferryman_cave", target: { x: 72, y: 114 }, lines: ["A black slot in the rock, in the lonely hills north of the Redrun crossings. Cold river-air breathes up out of it, and far below something shifts its weight. You climb down."] },
 
   // === NAMED LANDMARKS — the gazetteer (discovery layer) ====================
@@ -1139,6 +1153,24 @@ const rawObjects: WorldObjectDef[] = [
   { id: "spine_add2", kind: "monster", monster: "mountain_troll", x: 43, y: 117, name: "Guard Troll" },
   { id: "ret_marrow", kind: "portal", x: 56, y: 119, name: "Vault Exit", target: { x: 91, y: 14 }, lines: ["The door closes behind you."] },
   { id: "boss_marrow", kind: "monster", monster: "marrow_keeper", x: 56, y: 115, name: "The Marrow Keeper" },
+  // --- The Marrow Delve: a wave gauntlet run inside the vault. The Warden
+  // starts a run (START_DELVE); each wave's spawns are flag-gated (the core
+  // sets/clears delve_wave_N as waves fall); wave 4 is the Horror, and the
+  // Delve Cache pays out on its death. ---
+  {
+    id: "delve_warden", kind: "npc", x: 55, y: 118, name: "The Delve Warden",
+    lines: [
+      "Below this floor there are older floors. The vault was built on something's ceiling.",
+      "I open the way down for those who ask, and I write their names in this book. Some of the names have a second date. Not all.",
+      "Four waves. The dark, the dead, the stone, and the thing they answer to. Clear all four and the Delve pays — the cache is richest once a rest, so don't waste your best hour.",
+    ],
+  },
+  { id: "delve_w1_a", kind: "monster", monster: "deep_bat", x: 54, y: 116, name: "Delve Shrieker", requiresFlag: "delve_wave_1" },
+  { id: "delve_w1_b", kind: "monster", monster: "deep_bat", x: 58, y: 116, name: "Delve Shrieker", requiresFlag: "delve_wave_1" },
+  { id: "delve_w2_a", kind: "monster", monster: "marrow_wraith", x: 54, y: 116, name: "Delve Revenant", requiresFlag: "delve_wave_2" },
+  { id: "delve_w2_b", kind: "monster", monster: "marrow_wraith", x: 58, y: 116, name: "Delve Revenant", requiresFlag: "delve_wave_2" },
+  { id: "delve_w3_a", kind: "monster", monster: "deep_golem", x: 56, y: 116, name: "Delve Sentinel", requiresFlag: "delve_wave_3" },
+  { id: "delve_w4_boss", kind: "monster", monster: "delve_horror", x: 56, y: 115, name: "The Delve Horror", requiresFlag: "delve_wave_4" },
   { id: "marrow_add1", kind: "monster", monster: "cave_crawler", x: 53, y: 117, name: "Deep Crawler" },
   { id: "marrow_add2", kind: "monster", monster: "marrow_wraith", x: 59, y: 117, name: "Vault Wraith" },
   // The Dread Ferryman's flooded cave (arena slot x=66). You climb down to him.

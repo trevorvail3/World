@@ -5660,6 +5660,68 @@ export const items: Record<ItemId, ItemDef> = {
     "sell": 120
   },
 
+  "horror_lantern": {
+    "id": "horror_lantern",
+    "name": "Horror's Lantern",
+    "description": "Cut from the Delve Horror's crown — it burns without fuel and without warmth. Proof you walked down all four waves and back out.",
+    "icon": "🏮",
+    "cat": "Armour",
+    "slot": "offhand",
+    "def": 8,
+    "magAcc": 6,
+    "lore": "delve",
+    "sell": 4200
+  },
+  "cloak_greyback": {
+    "id": "cloak_greyback",
+    "name": "Greyback Mantle",
+    "description": "A mantle cut from the wandering beast's grey hide. Warm as a hearth and heavy as a debt — you don't buy one, you catch one.",
+    "icon": "🧥",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 5,
+    "sell": 6500
+  },
+  "cape_ending_flame": {
+    "id": "cape_ending_flame",
+    "name": "Cape of the Unlit Flame",
+    "description": "Black cloth, ash-hemmed. For the one who broke the Shard rather than let anyone hold it. The moor is colder now, and freer.",
+    "icon": "🖤",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 3,
+    "sell": 0
+  },
+  "cape_ending_vault": {
+    "id": "cape_ending_vault",
+    "name": "Cape of the Sealed Vault",
+    "description": "Record-grey, clasped with a vault-key sigil. For the one who locked the warmth away where no faith or forge could spend it.",
+    "icon": "🗝️",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 3,
+    "sell": 0
+  },
+  "cape_ending_dawn": {
+    "id": "cape_ending_dawn",
+    "name": "Cape of the Answered Dawn",
+    "description": "Ember-orange, warm to the touch, always. For the one who used the Shard and heard the warmth answer back.",
+    "icon": "🌅",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 3,
+    "sell": 0
+  },
+  "cape_ending_road": {
+    "id": "cape_ending_road",
+    "name": "Cape of the Long Road",
+    "description": "Travel-worn wool, no sigil at all. For the one who set the Shard down and walked away with the only thing worth keeping — the question.",
+    "icon": "🛤️",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 3,
+    "sell": 0
+  },
   "cape_agility": {
     "id": "cape_agility",
     "name": "Free Runner's Cape",

@@ -125,6 +125,8 @@ export class ShopUI {
     for (const line of this.shop!.stock) {
       const def = this.content.items[line.item];
       if (!def) continue;
+      // Ending-gated wares only appear once their story flag is set.
+      if (line.requiresFlag && !this.state!.player.flags.includes(line.requiresFlag)) continue;
       const stocked = def.cat !== "Capes";
       const left = stocked ? shopStockLeft(this.state!, this.shop!.id, line.item) : Infinity;
       const inStock = left > 0;

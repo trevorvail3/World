@@ -665,21 +665,25 @@ export const quests: QuestDef[] = [
           {
             label: "Destroy it. End the question.",
             flags: ["chose_destroy", "endgame_shard_destroyed"],
+            giveItem: "cape_ending_flame",
             reply: "✦ NOTHING LASTS FOREVER ✦  You burn the Shard in the deepest fire. The warmth goes out forever, and the question can never be asked again.",
           },
           {
             label: "Secure it. Keep the question open.",
             flags: ["chose_secure", "endgame_shard_secured"],
+            giveItem: "cape_ending_vault",
             reply: "✦ KEEP THE RECORD ✦  You seal the unread Shard in the Order's inner vault. The mystery is kept, holy by staying unknown.",
           },
           {
             label: "Use it. Perform the rite.",
             flags: ["chose_use", "endgame_shard_used", "the_warmth_answered"],
+            giveItem: "cape_ending_dawn",
             reply: "✦ THE WARMTH BENEATH ✦  You speak the rite. The warmth moves down — and something deep answers. It is never named, and never explained.",
           },
           {
             label: "Walk away. Choose what's yours.",
             flags: ["chose_personal", "endgame_shard_walked_away"],
+            giveItem: "cape_ending_road",
             reply: "✦ A QUIET THING ✦  You set the Shard down and step out of the story, into a smaller, truer life.",
           },
         ],

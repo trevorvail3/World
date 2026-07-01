@@ -51,6 +51,9 @@ export const shops: ShopDef[] = [
       { item: "pestle", price: 12, qty: 1 },
       // Flint & Steel — strike logs to light a campfire for Survivalist & cooking.
       { item: "flint", price: 20, qty: 1 },
+      // With the Shard broken (the Unlit Flame ending) the roads calm and
+      // provisions flow again — field rations by the bundle.
+      { item: "battle_ration", price: 45, qty: 3, requiresFlag: "endgame_shard_destroyed" },
       // Sinew for stitching ranger leathers (also drops from beasts).
       { item: "sinew", price: 22, qty: 3 },
       // Starter gathering tools (round(sell × 1.3)).
@@ -118,6 +121,8 @@ export const shops: ShopDef[] = [
       { item: "ring_1", price: 46, qty: 1 },
       { item: "plant_fiber", price: 16, qty: 1 },
       { item: "battle_ration", price: 65, qty: 1 },
+      // Skritt respects the one who put the warm stone DOWN (Long Road ending).
+      { item: "cut_gem", price: 380, qty: 1, max: 2, restockMs: 1800000, requiresFlag: "endgame_shard_walked_away" },
     ],
   },
   {
@@ -137,6 +142,8 @@ export const shops: ShopDef[] = [
       { item: "plank_heartoak", price: 1325, qty: 3 },  // sell 260
       // --- Stone, mortar and frames ---
       { item: "stone_block", price: 130, qty: 5 },      // sell 15
+      // The Record pays to build over what it sealed (Sealed Vault ending).
+      { item: "stone_block", price: 90, qty: 10, requiresFlag: "endgame_shard_secured" },
       { item: "timber_frame", price: 215, qty: 5 },     // sell 25
       { item: "mortar_basic", price: 170, qty: 5 },     // sell 20
       { item: "mortar_spinite", price: 460, qty: 3 },   // sell 90
@@ -365,6 +372,8 @@ export const shops: ShopDef[] = [
       { item: "bonemeal", price: 15, qty: 5 },            // sell 6 — the potion's base
       // Rationed: one Devotion Potion on the table, one back every 15 minutes.
       { item: "potion_grace", price: 260, qty: 1, max: 1, restockMs: 900000 },
+      // Once the warmth answered (the Dawn ending), the shrine spares a second.
+      { item: "potion_grace", price: 220, qty: 1, max: 1, restockMs: 600000, requiresFlag: "endgame_shard_used" },
     ],
   },
 ];

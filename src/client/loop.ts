@@ -741,6 +741,10 @@ export class Game {
           }
           break;
         }
+        case "WORLD_BOSS_MOVED":
+          // A live-world event: the crier calls the sighting to everyone.
+          this.hud.worldAnnounce(`⚔️ ${ev.name} has been sighted in ${ev.hint} — hunters wanted!`);
+          break;
         case "OPEN_CRAFT":
           this.openCraft(ev.station, ev.objId);
           break;
@@ -2156,6 +2160,11 @@ export class Game {
         this.guideMenu(obj, sx, sy);
         return;
       }
+      // The Delve Warden offers to open the way down (or Talk).
+      if (obj.id === "delve_warden") {
+        this.delveMenu(obj, sx, sy);
+        return;
+      }
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
@@ -2535,6 +2544,22 @@ export class Game {
     const tile = this.liveTile(obj);
     this.menu.show(sx, sy, obj.name, [
       { label: "Get a bounty from", target: obj.name, tone: "action", onSelect: () => this.interactObject(obj.id, tile) },
+      { label: "Talk to", target: obj.name, onSelect: () => this.interactObject(obj.id, tile, "talk") },
+      { label: "Walk here", onSelect: () => this.walkBeside(tile) },
+    ], this.examineObject(obj));
+  }
+
+  /** The Delve Warden's menu: start a run, or hear the pitch. */
+  private delveMenu(obj: WorldObjectDef, sx: number, sy: number): void {
+    const tile = this.liveTile(obj);
+    const running = !!this.bridge.state.delve;
+    this.menu.show(sx, sy, obj.name, [
+      {
+        label: running ? "Restart the Delve" : "Enter the Delve",
+        target: "four waves, one cache",
+        tone: "action",
+        onSelect: () => this.dispatch({ type: "START_DELVE" }),
+      },
       { label: "Talk to", target: obj.name, onSelect: () => this.interactObject(obj.id, tile, "talk") },
       { label: "Walk here", onSelect: () => this.walkBeside(tile) },
     ], this.examineObject(obj));

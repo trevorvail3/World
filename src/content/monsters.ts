@@ -1570,5 +1570,45 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "uncut_diamond", chance: 0.01, tier: "rare" },
       { item: "shard_of_orun", chance: 0.008, tier: "legendary" },
     ],
+  },
+
+  // === THE DELVE HORROR — the Marrow Delve's final wave. No drop table: the
+  // Delve Cache pays the run. Magic at range, slams underfoot; bring a bow,
+  // a blessing, and working feet. ===========================================
+  "delve_horror": {
+    id: "delve_horror", name: "The Delve Horror", icon: "👁️", level: 95, hp: 1250,
+    acc: 330, def: 62, maxHit: 52, speed: 2600, attackRange: 5, xp: 1800, attackStyle: "magic",
+    weakness: ["ranged", "stab"],
+    boss: true,
+    bossHint: "The last thing the Delve keeps. It has no name the Record will print. Waves of the deep answer to it — clear them, and it comes itself.",
+    desc: "It was here before the vault had a door. The dark doesn't frighten it; the dark reports to it.",
+    mechanics: [
+      { type: "slam", every: 4, mult: 2.2, radius: 1, windupMs: 2000, tell: "The Horror's eye fixes on the ground beneath you — the stone begins to scream. MOVE!" },
+      { type: "enrage", below: 0.3, mult: 1.4, tell: "The Horror's eye splits open wider — the dark itself leans in!" },
+    ],
+    drops: [],
+  },
+
+  // === THE GREYBACK — the wandering world boss. It patrols the wild edges of
+  // Varath on a slow clock (see `patrol` on its spawn); the chat feed calls
+  // the sighting and hunters converge. =======================================
+  "greyback": {
+    id: "greyback", name: "The Greyback", icon: "🐻", level: 88, hp: 1500,
+    acc: 320, def: 70, maxHit: 46, speed: 3200, xp: 1600, attackStyle: "slash",
+    weakness: ["stab"],
+    boss: true,
+    bossHint: "A beast older than the roads, seen once a season and lied about all year. It wanders — the crier calls where. Bring friends' courage and a spear of your own.",
+    desc: "Grey as weathered stone and half as slow. Every settlement has a wall it broke and a hunter it outlived.",
+    mechanics: [
+      { type: "slam", every: 5, mult: 2.4, radius: 1, windupMs: 2200, tell: "The Greyback rears to its full height — its shadow swallows the ground you stand on. MOVE!" },
+      { type: "enrage", below: 0.25, mult: 1.5, tell: "The Greyback bleeds, and remembers how to be furious." },
+    ],
+    drops: [
+      { item: "worn_coin", chance: 1, min: 400, max: 900, tier: "always" },
+      { item: "cloak_greyback", chance: 0.025, tier: "legendary" },
+      { item: "hearthite_bar", chance: 0.35, min: 1, max: 2, tier: "uncommon" },
+      { item: "cut_gem", chance: 0.4, min: 1, max: 2, tier: "uncommon" },
+      { item: "shard_of_orun", chance: 0.03, tier: "legendary" },
+    ],
   }
 };
