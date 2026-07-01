@@ -96,6 +96,9 @@ const AGGRESSIVE = new Set<string>([
   "hollow_warden", "bog_warden", "spine_warlord", "marrow_keeper",
   "cult_zealot", "cult_magus",
 ]);
+// A staff's free basic bolt hits for this fraction of magic max hit — weak
+// sustain, so magic's damage comes from autocasting spells (which spend Grace).
+const BASIC_BOLT_FACTOR = 0.7;
 const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
 const FLEE_GRACE_MS = 2500; // after a move, aggressive monsters hold off this long
 // On death you drop a tenth of your coin (a real but gentle setback).
@@ -4223,15 +4226,22 @@ function playerSwing(
   let maxHit = ranged ? rangedMaxHit(player, content)
     : magic ? magicMaxHit(player, content) : playerMaxHit(player, content);
 
-  // Autocast: while a staff is wielded and an attack spell is selected, each
-  // swing fires that spell (spending Grace) for a bigger hit — falling back to
-  // the free basic bolt once Grace runs dry.
-  if (magic && player.autocastSpell) {
-    const sp = content.spells.find((s) => s.id === player.autocastSpell);
-    if (sp && sp.kind === "attack" && skillLvl(player, "faith") >= sp.faithReq && player.grace >= sp.cost) {
-      player.grace -= sp.cost;
-      maxHit = Math.max(1, Math.round(maxHit * (sp.dmgMult ?? 1)));
+  // Magic damage: the FREE basic bolt is deliberately weak sustain (BASIC_BOLT
+  // factor), so magic's real damage comes from AUTOCASTING a spell — which spends
+  // Grace. Autocast fires the selected attack spell (×dmgMult) each swing until
+  // Grace runs dry, then drops back to the free bolt. This keeps magic's sustained
+  // DPS under melee unless you're spending Grace, and makes the altar loop matter.
+  if (magic) {
+    let cast = false;
+    if (player.autocastSpell) {
+      const sp = content.spells.find((s) => s.id === player.autocastSpell);
+      if (sp && sp.kind === "attack" && skillLvl(player, "faith") >= sp.faithReq && player.grace >= sp.cost) {
+        player.grace -= sp.cost;
+        maxHit = Math.max(1, Math.round(maxHit * (sp.dmgMult ?? 1)));
+        cast = true;
+      }
     }
+    if (!cast) maxHit = Math.max(1, Math.round(maxHit * BASIC_BOLT_FACTOR));
   }
 
   const mechs = stats.mechanics ?? [];
