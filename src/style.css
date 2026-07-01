@@ -1142,6 +1142,22 @@ body {
 .ctx-menu::-webkit-scrollbar-thumb { background: rgba(120, 100, 70, 0.5); border-radius: 3px; }
 /* The action list scrolls on its own (title/inspect stay put) so a long recipe
    menu can be swiped through on touch as well as with the wheel. */
+/* Category tabs for long station recipe lists. */
+.ctx-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 2px 2px 6px; margin-bottom: 2px;
+  border-bottom: 1px solid var(--panel-edge);
+}
+.ctx-tab {
+  font-family: "Cinzel", serif; font-size: 11px;
+  color: var(--ink-dim); background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-edge); border-radius: 7px;
+  padding: 3px 9px; cursor: pointer; white-space: nowrap;
+}
+.ctx-tab:hover { color: var(--ink); }
+.ctx-tab.on {
+  color: #1a140f; background: var(--gold, #c9a24a); border-color: #f2cf6b;
+}
 .ctx-items {
   max-height: 56vh;
   overflow-y: auto;

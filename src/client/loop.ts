@@ -36,7 +36,7 @@ import { RecordsUI } from "./recordsUI.ts";
 import { TensionUI } from "./tensionUI.ts";
 import { LevelUp } from "./levelUp.ts";
 import { ActiveSkill } from "./activeSkill.ts";
-import type { ContextMenu, MenuItem } from "./contextMenu.ts";
+import type { ContextMenu, MenuItem, MenuTab } from "./contextMenu.ts";
 import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
@@ -842,7 +842,7 @@ export class Game {
       .filter((a) => a.produces)
       .sort((a, b) => a.levelReq - b.levelReq || content.items[a.produces!].name.localeCompare(content.items[b.produces!].name));
 
-    const items: MenuItem[] = recipes.map((a) => {
+    const toItem = (a: SkillAction): MenuItem => {
       const out = content.items[a.produces!];
       const lvl = player.skills[a.skill].level;
       const leveled = lvl >= a.levelReq;
@@ -864,21 +864,39 @@ export class Game {
           this.dispatch({ type: "CRAFT", actionId: a.id, objId });
         },
       };
-    });
+    };
+    const items: MenuItem[] = recipes.map(toItem);
 
     if (items.length === 0) {
       this.hud.log("You've nothing to make here yet.");
       return;
     }
+
+    // Group recipes into category TABS (by the action's `group`, else the
+    // produced item's category) so a long list — every cooking or smithing
+    // recipe — reads as tidy tabs instead of one endless scroll. Tabs sorted by
+    // the lowest level each opens at.
+    const cap = (s: string): string => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const groups = new Map<string, SkillAction[]>();
+    for (const a of recipes) {
+      const key = a.group ? cap(a.group) : (content.items[a.produces!].cat ?? "Other");
+      (groups.get(key) ?? groups.set(key, []).get(key)!).push(a);
+    }
+    const tabs: MenuTab[] = [...groups.entries()]
+      .sort((x, y) => Math.min(...x[1].map((a) => a.levelReq)) - Math.min(...y[1].map((a) => a.levelReq)))
+      .map(([label, as]) => ({ label, items: as.map(toItem) }));
+
     // At the cooking fire, a "Cook all" shortcut chains through every raw food
     // you can cook, so a full pack of mixed catch cooks in one tap.
     if (station === "fire" && this.cookableNow().length > 0) {
-      items.unshift({
+      const cookAll: MenuItem = {
         label: "Cook all",
         target: "everything you can",
         tone: "action",
         onSelect: () => { this.cookAll = { objId }; this.startNextCook(); },
-      });
+      };
+      items.unshift(cookAll);
+      if (tabs[0]) tabs[0].items.unshift(cookAll);
     }
     const title = VERB[station].replace(/ at$/, "");
     this.menu.show(
@@ -887,6 +905,8 @@ export class Game {
       title,
       items,
       "Pick a recipe — you'll keep making it until the materials run out.",
+      undefined,
+      tabs.length > 1 ? tabs : undefined,
     );
   }
 

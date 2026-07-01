@@ -15,6 +15,12 @@ export interface MenuItem {
   tone?: "action" | "normal" | "locked" | "danger";
 }
 
+/** A category of menu items, shown behind a tab (for long station recipe lists). */
+export interface MenuTab {
+  label: string;
+  items: MenuItem[];
+}
+
 export class ContextMenu {
   private backdrop: HTMLElement;
   private menu: HTMLElement;
@@ -55,6 +61,9 @@ export class ContextMenu {
     description?: string,
     /** Optional value chip shown right next to the name (e.g. "120g"). */
     titleValue?: string,
+    /** Optional category tabs — when present, `items` is ignored and each tab's
+     *  items show behind its tab (for long station recipe lists). */
+    tabs?: MenuTab[],
   ): void {
     this.menu.innerHTML = "";
 
@@ -84,6 +93,53 @@ export class ContextMenu {
     // recipe) can be scrolled through instead of running off the screen.
     const list = document.createElement("div");
     list.className = "ctx-items";
+
+    // Category tabs for long lists: a tab bar swaps which group's items show.
+    const useTabs = tabs && tabs.length > 1;
+    if (useTabs) {
+      const bar = document.createElement("div");
+      bar.className = "ctx-tabs";
+      const chips: HTMLElement[] = [];
+      const paint = (idx: number): void => {
+        chips.forEach((c, i) => c.classList.toggle("on", i === idx));
+        this.fillItems(list, tabs![idx]!.items);
+        list.scrollTop = 0;
+      };
+      tabs!.forEach((tab, i) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "ctx-tab";
+        chip.textContent = tab.label;
+        chip.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); paint(i); });
+        bar.appendChild(chip);
+        chips.push(chip);
+      });
+      this.menu.appendChild(bar);
+      this.menu.appendChild(list);
+      paint(0);
+    } else {
+      this.fillItems(list, items);
+      this.menu.appendChild(list);
+    }
+
+    // Position, then nudge back on-screen if it would overflow.
+    this.backdrop.classList.remove("hidden");
+    this.open = true;
+    this.openedAt = performance.now();
+    this.menu.style.left = `${screenX}px`;
+    this.menu.style.top = `${screenY}px`;
+    const rect = this.menu.getBoundingClientRect();
+    let x = screenX;
+    let y = screenY;
+    if (rect.right > window.innerWidth - 8) x = window.innerWidth - rect.width - 8;
+    if (rect.bottom > window.innerHeight - 8) y = window.innerHeight - rect.height - 8;
+    this.menu.style.left = `${Math.max(8, x)}px`;
+    this.menu.style.top = `${Math.max(8, y)}px`;
+  }
+
+  /** (Re)fill a scroll container with action buttons (used per tab). */
+  private fillItems(list: HTMLElement, items: MenuItem[]): void {
+    list.innerHTML = "";
     for (const item of items) {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -106,21 +162,6 @@ export class ContextMenu {
       });
       list.appendChild(btn);
     }
-    this.menu.appendChild(list);
-
-    // Position, then nudge back on-screen if it would overflow.
-    this.backdrop.classList.remove("hidden");
-    this.open = true;
-    this.openedAt = performance.now();
-    this.menu.style.left = `${screenX}px`;
-    this.menu.style.top = `${screenY}px`;
-    const rect = this.menu.getBoundingClientRect();
-    let x = screenX;
-    let y = screenY;
-    if (rect.right > window.innerWidth - 8) x = window.innerWidth - rect.width - 8;
-    if (rect.bottom > window.innerHeight - 8) y = window.innerHeight - rect.height - 8;
-    this.menu.style.left = `${Math.max(8, x)}px`;
-    this.menu.style.top = `${Math.max(8, y)}px`;
   }
 
   close(): void {
