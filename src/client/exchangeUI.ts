@@ -164,12 +164,40 @@ export class ExchangeUI {
       if (qty <= 0) { this.msg("Not enough Exchange gold — deposit more first (Account tab)."); return; }
       await this.doMatch("buy", o.item, qty, o.price);
     } else {
-      // You SELL into this buyer's demand at their price.
-      const have = this.bank.find((b) => b.item === o.item)?.qty ?? 0;
+      // You SELL into this buyer's demand at their price — STRAIGHT FROM YOUR
+      // PACK. No need to pre-deposit into the Exchange: one click deposits what
+      // you're selling, fills the buy order, and returns the coin to your pocket.
+      const have = this.packCount(o.item) + (this.bank.find((b) => b.item === o.item)?.qty ?? 0);
       const qty = Math.min(remain, have);
-      if (qty <= 0) { this.msg("You've none of that in the Exchange — deposit some first (Account tab)."); return; }
-      await this.doMatch("sell", o.item, qty, o.price);
+      if (qty <= 0) { this.msg(`You've no ${this.itemName(o.item)} to sell.`); return; }
+      await this.sellFromPack(o.item, qty, o.price);
     }
+  }
+
+  /** Instant-sell from the pack into a standing buy offer: top up the Exchange
+   *  from the pack for anything not already escrowed, place the matching sell
+   *  (which fills immediately), then sweep the proceeds back to the pocket — so
+   *  "I have it, I click Sell" just works. */
+  private async sellFromPack(item: ItemId, qty: number, price: number): Promise<void> {
+    try {
+      const escrowed = this.bank.find((b) => b.item === item)?.qty ?? 0;
+      const needDeposit = Math.max(0, qty - escrowed); // move this much pack -> Exchange
+      if (needDeposit > 0) {
+        await depositItem(item, needDeposit);
+        this.take("item", needDeposit, item); // remove the deposited stack from the pack
+      }
+      const goldBefore = this.bal;
+      await placeOrder("sell", item, qty, price); // matches the buy order right away
+      await this.refresh(); // pulls the new wallet balance (sale proceeds)
+      const gained = Math.max(0, this.bal - goldBefore);
+      if (gained > 0) {
+        await withdrawGold(gained);
+        this.give("gold", gained); // proceeds land in the pocket
+      }
+      this.msg(`Sold ${qty}× ${this.itemName(item)} @ ${fmt(price)} — ${fmt(gained)} gold to your pocket.`, true);
+      await this.refresh();
+    } catch (e) { this.msg(errMsg(e)); await this.refresh(); }
+    if (this.tab === "market") this.renderMarket();
   }
 
   private async doMatch(side: "buy" | "sell", item: ItemId, qty: number, price: number): Promise<void> {
@@ -374,8 +402,9 @@ export class ExchangeUI {
       if (!(q > 0)) return this.msg("Enter a quantity.");
       if (!(p > 0)) return this.msg("Enter a price.");
       if (side === "buy" && q * p > this.bal) return this.msg("Not enough Exchange gold — deposit more first.");
-      if (side === "sell" && (this.bank.find((b) => b.item === id)?.qty ?? 0) < q) {
-        return this.msg("Deposit the item into your Exchange first (Account tab).");
+      if (side === "sell") {
+        const escrowed = this.bank.find((b) => b.item === id)?.qty ?? 0;
+        if (escrowed + this.packCount(id) < q) return this.msg(`You've not ${q}× ${this.itemName(id)} to sell.`);
       }
       void this.doPlace(side, id, q, p);
     });
@@ -403,6 +432,13 @@ export class ExchangeUI {
 
   private async doPlace(side: "buy" | "sell", item: ItemId, qty: number, price: number): Promise<void> {
     try {
+      // Selling? Top up the Exchange from the pack for whatever isn't escrowed,
+      // so placing a sell offer works straight from your pack (no Account detour).
+      if (side === "sell") {
+        const escrowed = this.bank.find((b) => b.item === item)?.qty ?? 0;
+        const needDeposit = Math.max(0, qty - escrowed);
+        if (needDeposit > 0) { await depositItem(item, needDeposit); this.take("item", needDeposit, item); }
+      }
       await placeOrder(side, item, qty, price);
       this.msg(`Offer placed: ${side} ${qty}× ${this.itemName(item)} @ ${fmt(price)}.`, true);
       this.tab = "offers";
