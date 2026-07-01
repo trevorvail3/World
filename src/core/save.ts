@@ -22,6 +22,7 @@ import type {
   SkillId,
   WorldState,
 } from "./types.ts";
+import { LEVEL_CAP } from "../content/xpCurve.ts";
 
 /** Bump this whenever the save shape changes; older saves are then ignored. */
 export const SAVE_VERSION = 1;
@@ -582,7 +583,9 @@ function finiteNum(v: unknown): v is number {
 }
 
 function levelFromTable(table: number[], xp: number): number {
-  for (let L = table.length - 1; L >= 1; L--) {
+  // Never read above the level cap — the table is built past it, but the orb
+  // freezes at LEVEL_CAP (XP keeps climbing beyond, to the 100M ceiling).
+  for (let L = Math.min(table.length - 1, LEVEL_CAP); L >= 1; L--) {
     if (xp >= (table[L] ?? Infinity)) return L;
   }
   return 1;

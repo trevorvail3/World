@@ -112,7 +112,11 @@ const SHARD_ID = "shard_of_orun" as ItemId;
 // Playable level ceiling. The XP table (content) is built a little past this so
 // look-ups never fall off the end, but a skill never *reads* above the cap.
 // Keep in step with LEVEL_CAP in src/content/xpCurve.ts.
-const LEVEL_CAP = 110;
+const LEVEL_CAP = 100;
+
+// XP ceiling per skill. Level freezes at 100 (12M XP), but XP keeps accruing
+// past that as a prestige/ranking grind — OSRS-style — up to this hard cap.
+const XP_CAP = 100_000_000;
 
 // Idle wandering for npcs + monsters. They drift one tile at a time within a
 // small box around their spawn, pausing between steps, and hold still when the
@@ -1029,7 +1033,7 @@ function grantXp(
   }
   // A smoked-fish XP boost lifts all XP gains while it lasts.
   amount = amount * (1 + buffVal(state.player, "xp_boost"));
-  s.xp += amount;
+  s.xp = Math.min(s.xp + amount, XP_CAP); // level caps at 100; XP still climbs to 100M
   events.push({ type: "XP_GAINED", skill, amount });
   const after = levelFromXp(content.xpForLevel, s.xp);
   if (after > before) {

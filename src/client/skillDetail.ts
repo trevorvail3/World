@@ -9,6 +9,7 @@
 import type { Content, ItemId, SkillId, WorldState } from "../core/types.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { equipRequirement } from "../core/worldCore.ts";
+import { LEVEL_CAP, XP_CAP } from "../content/xpCurve.ts";
 
 /** Which gear each combat skill gates: weapons need Edge, armour needs Ward,
  *  bows & arrows need Draw. Membership is decided by the skill that actually
@@ -86,11 +87,14 @@ export class SkillDetailModal {
     (this.backdrop.querySelector(".skilldetail-title") as HTMLElement).innerHTML =
       `<span class="skilldetail-ic">${iconize(meta.icon)}</span> ${meta.name}`;
 
-    const cur = table[s.level] ?? 0;
-    const next = table[s.level + 1];
+    // At the level cap the orb freezes at 100 but XP climbs to 100M — show that
+    // prestige progress rather than a phantom next level.
+    const atCap = s.level >= LEVEL_CAP;
+    const cur = atCap ? (table[LEVEL_CAP] ?? 0) : (table[s.level] ?? 0);
+    const next = atCap ? XP_CAP : table[s.level + 1];
     const pct = next && next > cur ? (s.xp - cur) / (next - cur) : 1;
     const xpLine = next
-      ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp`
+      ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp${atCap ? " (max level)" : ""}`
       : "max level";
 
     // A plain-language explainer at the top: what the skill is and how it trains.

@@ -16,6 +16,7 @@
 
 import type { Content, SkillId, WorldState } from "../core/types.ts";
 import { iconize } from "./glyph.ts";
+import { LEVEL_CAP, XP_CAP } from "../content/xpCurve.ts";
 
 const XP_LINGER_MS = 2800; // how long a burst of XP keeps the bar up
 const FLASH_MS = 1100; // how long the "+N" flash stays before fading
@@ -132,9 +133,12 @@ export class ActiveSkill {
     }
     this.levelEl.textContent = `Lv ${s.level}`;
     const table = this.content.xpForLevel;
-    const cur = table[s.level] ?? 0;
-    const next = table[s.level + 1];
-    if (next && next > cur) {
+    // Past the level cap the orb freezes at 100, but XP keeps climbing to 100M —
+    // so the bar shows that prestige progress instead of a phantom next level.
+    const atCap = s.level >= LEVEL_CAP;
+    const cur = atCap ? (table[LEVEL_CAP] ?? 0) : (table[s.level] ?? 0);
+    const next = atCap ? XP_CAP : table[s.level + 1];
+    if (next && next > cur && Math.floor(s.xp) < next) {
       const into = Math.floor(s.xp) - cur;
       const span = next - cur;
       this.fill.style.width = `${Math.max(0, Math.min(1, into / span)) * 100}%`;

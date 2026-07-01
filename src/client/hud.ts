@@ -31,6 +31,7 @@ import { audio } from "./audio.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { bossMilestones, equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
+import { LEVEL_CAP, XP_CAP } from "../content/xpCurve.ts";
 import { HiscoresUI } from "./hiscoresUI.ts";
 import { ExchangeUI } from "./exchangeUI.ts";
 import { PlayersUI } from "./playersUI.ts";
@@ -1288,10 +1289,13 @@ export class Hud {
       const s = player.skills[id];
       const el = this.skillRows.get(id);
       if (el) el.textContent = String(s.level);
+      // At the level cap the orb freezes, but XP keeps climbing to 100M — so the
+      // bar (and hover) show that prestige progress instead of a phantom next level.
+      const atCap = s.level >= LEVEL_CAP;
       const fill = this.skillFills.get(id);
       if (fill) {
-        const cur = table[s.level] ?? 0;
-        const next = table[s.level + 1];
+        const cur = atCap ? (table[LEVEL_CAP] ?? 0) : (table[s.level] ?? 0);
+        const next = atCap ? XP_CAP : table[s.level + 1];
         const pct = next && next > cur ? (s.xp - cur) / (next - cur) : 1;
         fill.style.width = `${Math.max(0, Math.min(1, pct)) * 100}%`;
       }
@@ -1299,8 +1303,9 @@ export class Hud {
       const cell = el?.parentElement;
       if (cell) {
         const meta = this.content.skills[id];
-        const next = table[s.level + 1];
-        const xpLine = next ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp` : "max level";
+        const next = atCap ? XP_CAP : table[s.level + 1];
+        const suffix = atCap ? " (max level)" : "";
+        const xpLine = next ? `${Math.floor(s.xp).toLocaleString()} / ${next.toLocaleString()} xp${suffix}` : "max level";
         cell.title = `${meta.name} · Lv ${s.level} · ${xpLine}`;
       }
     });

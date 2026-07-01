@@ -12,7 +12,7 @@
  * looks numbers up in it.
  */
 
-export const LEVEL_CAP = 110; // playable ceiling; the table is built past it
+export const LEVEL_CAP = 100; // level freezes here (12M XP); XP still climbs to 100M
 const TABLE_MAX = 125;
 
 function buildXpTable(): number[] {
@@ -32,6 +32,11 @@ function buildXpTable(): number[] {
 
 /** xpForLevel[L] = total XP required to reach level L. */
 export const xpForLevel: number[] = buildXpTable();
+
+/** Hard XP ceiling per skill. The level orb freezes at LEVEL_CAP (12M XP), but
+ *  XP keeps climbing past that as a prestige grind up to here — OSRS-style.
+ *  Keep in step with XP_CAP in src/core/worldCore.ts. */
+export const XP_CAP = 100_000_000;
 
 /** Given a total XP amount, return the level it corresponds to. */
 export function levelForXp(xp: number): number {
