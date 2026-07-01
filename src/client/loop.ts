@@ -302,6 +302,8 @@ export class Game {
   private bounty: BountyUI;
   private records: RecordsUI;
   private tension: TensionUI;
+  /** Active "Cook all" run: keep cooking every cookable dish at this fire. */
+  private cookAll: { objId: string } | null = null;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -452,6 +454,11 @@ export class Game {
     this.handleEvents(events, now);
     this.guide.update(this.bridge.state);
     this.checkPickup();
+    // "Cook all": once the current dish finishes (activity idle), start the next
+    // cookable recipe, until nothing's left to cook.
+    if (this.cookAll && this.bridge.state.player.activity.kind !== "crafting") {
+      if (!this.startNextCook()) this.cookAll = null;
+    }
 
     // 2) Camera follows the player.
     this.followCamera();
@@ -595,6 +602,7 @@ export class Game {
         }
         case "INVENTORY_FULL":
           this.hud.log("Your pack is full.");
+          this.cookAll = null; // a full pack stops a "Cook all" run
           break;
         case "DIALOGUE":
           this.dialogue.show(ev.npc, ev.lines);
@@ -849,6 +857,16 @@ export class Game {
       this.hud.log("You've nothing to make here yet.");
       return;
     }
+    // At the cooking fire, a "Cook all" shortcut chains through every raw food
+    // you can cook, so a full pack of mixed catch cooks in one tap.
+    if (station === "fire" && this.cookableNow().length > 0) {
+      items.unshift({
+        label: "Cook all",
+        target: "everything you can",
+        tone: "action",
+        onSelect: () => { this.cookAll = { objId }; this.startNextCook(); },
+      });
+    }
     const title = VERB[station].replace(/ at$/, "");
     this.menu.show(
       window.innerWidth / 2,
@@ -857,6 +875,30 @@ export class Game {
       items,
       "Pick a recipe — you'll keep making it until the materials run out.",
     );
+  }
+
+  /** Recipes at the cooking fire the player can make right now (level + stock). */
+  private cookableNow(): SkillAction[] {
+    const player = this.bridge.state.player;
+    const have = (id: string): number =>
+      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
+    const has = (a: SkillAction): boolean => {
+      if (a.requires) for (const [it, q] of Object.entries(a.requires)) if (have(it) < (q ?? 0)) return false;
+      if (a.requiresAny?.length && !a.requiresAny.some((it) => have(it) > 0)) return false;
+      return true;
+    };
+    return this.bridge.stationRecipes("fire")
+      .filter((a) => a.produces && player.skills[a.skill].level >= a.levelReq && has(a));
+  }
+
+  /** Start the next cookable dish for an active "Cook all"; false if none/no room. */
+  private startNextCook(): boolean {
+    if (!this.cookAll) return false;
+    const player = this.bridge.state.player;
+    const next = this.cookableNow()[0];
+    if (!next || !player.inventory.some((s) => s === null)) return false;
+    this.dispatch({ type: "CRAFT", actionId: next.id, objId: this.cookAll.objId });
+    return true;
   }
 
   /** A homestead footing: pick a furniture piece to build (or clear it). */
@@ -1726,6 +1768,7 @@ export class Game {
 
   /** A plain tap: do the obvious thing for whatever was under the finger. */
   private defaultAction(tile: Vec2, sx: number, sy: number): void {
+    this.cookAll = null; // any deliberate tap ends a "Cook all" run
     const obj = this.objectAt(tile);
     const st = obj ? this.bridge.state.objects[obj.id] : undefined;
     // A felled monster's body lingers on its tile while it respawns; don't try to
