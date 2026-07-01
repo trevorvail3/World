@@ -1176,6 +1176,10 @@ export interface Player {
   /** How many full laps of the Varathian Trail have been completed (persisted;
    *  drives the trail billboard and each lap's single Agility Mark). */
   trailLaps?: number;
+  /** Pending XP rewards awaiting a skill choice (an "XP lamp" queue). Each quest
+   *  that pays XP drops its amount here; the player picks the skill to pour it
+   *  into. Persisted so an unspent lamp survives a reload. */
+  xpLamps?: number[];
   /**
    * Set when energy hits 0; forces walking until energy recovers a little, so
    * the player doesn't micro-stutter between sprint and walk on an empty bar.
@@ -1412,6 +1416,12 @@ export interface ChooseIntent {
   option: number;
 }
 
+/** "Pour the next pending XP reward (an XP lamp) into this skill." */
+export interface SpendXpLampIntent {
+  type: "SPEND_XP_LAMP";
+  skill: SkillId;
+}
+
 /** "Pay the toll and fast-travel to this waystone." */
 export interface TravelIntent {
   type: "TRAVEL";
@@ -1561,6 +1571,7 @@ export type Intent =
   | SetStyleIntent
   | ToggleRunIntent
   | ChooseIntent
+  | SpendXpLampIntent
   | ClaimPlotIntent
   | BuildFurnitureIntent
   | RemoveFurnitureIntent
@@ -1627,6 +1638,7 @@ export type WorldEvent =
   | { type: "QUEST_COMPLETED"; quest: string }
   /** A quest is asking the player to choose; the client shows the options. */
   | { type: "QUEST_CHOICE"; quest: string; prompt: string; options: string[] }
+  | { type: "XP_LAMP"; amount: number; pending: number }
   /** A companion has joined you (a rare pet drop). */
   | { type: "COMPANION_FOUND"; item: ItemId }
   /** An achievement just unlocked. */

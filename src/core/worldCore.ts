@@ -478,6 +478,7 @@ export function createWorld(
     agilityLap: null,
     agilityHop: null,
     trailLaps: 0,
+    xpLamps: [],
     quests: {},
     questsDone: [],
     lore: [],
@@ -1466,6 +1467,15 @@ export function applyIntent(
     }
     case "CHOOSE": {
       applyChoice(state, content, intent.quest, intent.option, events);
+      break;
+    }
+    case "SPEND_XP_LAMP": {
+      const lamps = player.xpLamps;
+      if (!lamps || lamps.length === 0) break;
+      if (!content.skills[intent.skill]) break; // unknown skill — ignore
+      const amount = lamps.shift()!;
+      grantXp(state, content, intent.skill, amount, events);
+      events.push({ type: "LOG", message: `You pour ${amount.toLocaleString()} XP into ${content.skills[intent.skill].name}.` });
       break;
     }
     case "BUY": {
@@ -3580,8 +3590,12 @@ function grantQuestReward(
   events: WorldEvent[],
 ): void {
   const { player } = state;
+  // Quest XP is paid as an XP lamp: the player chooses which skill to pour it
+  // into (OSRS-style), rather than it landing in a fixed skill. Each reward
+  // entry becomes one lamp of its amount.
   for (const x of def.reward.xp ?? []) {
-    grantXp(state, content, x.skill, x.amount, events);
+    (player.xpLamps ??= []).push(x.amount);
+    events.push({ type: "XP_LAMP", amount: x.amount, pending: player.xpLamps.length });
   }
   for (const it of def.reward.items ?? []) {
     // A reward must never be lost to a full pack — if it won't fit, bank it.

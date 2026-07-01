@@ -67,6 +67,8 @@ export interface SavedProgress {
   killsSinceShard: number;
   /** Completed laps of the Varathian Trail. */
   trailLaps?: number;
+  /** Pending quest XP rewards awaiting a skill choice. */
+  xpLamps?: number[];
   /** Unlocked achievement ids. */
   achievements: string[];
   /** Claimed Area Diary ids. */
@@ -138,6 +140,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     tradesApplied: [...player.tradesApplied],
     killsSinceShard: player.killsSinceShard,
     trailLaps: player.trailLaps ?? 0,
+    xpLamps: [...(player.xpLamps ?? [])],
     appearance: { ...player.appearance },
     bounty: {
       marks: player.bounty.marks,
@@ -316,6 +319,10 @@ export function hydratePlayer(
   if (finiteNum(savedPity) && savedPity >= 0) player.killsSinceShard = Math.floor(savedPity);
   const savedLaps = raw["trailLaps"];
   if (finiteNum(savedLaps) && savedLaps >= 0) player.trailLaps = Math.floor(savedLaps);
+  const savedLamps = raw["xpLamps"];
+  if (Array.isArray(savedLamps)) {
+    player.xpLamps = savedLamps.filter((n) => finiteNum(n) && n > 0).map((n) => Math.floor(n));
+  }
   const savedAch = raw["achievements"];
   if (Array.isArray(savedAch)) {
     player.achievements = savedAch.filter(

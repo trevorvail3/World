@@ -22,6 +22,7 @@ import type {
   MonsterStats,
   ObjKind,
   SkillAction,
+  SkillId,
   TileType,
   Vec2,
   WorldEvent,
@@ -387,6 +388,9 @@ export class Game {
 
   start(): void {
     this.hud.log("Welcome to The Knuckle Hills.");
+    // An XP reward left unspent last session? Prompt for its skill now.
+    const lamps = this.bridge.state.player.xpLamps;
+    if (lamps && lamps.length > 0) this.openXpLamp(lamps[0]!);
     // Publish our presence and watch for nearby ghosts (online players only).
     startPresence(() => {
       const p = this.bridge.state.player;
@@ -711,6 +715,9 @@ export class Game {
         }
         case "QUEST_CHOICE":
           this.openChoice(ev.quest, ev.prompt, ev.options);
+          break;
+        case "XP_LAMP":
+          this.openXpLamp(ev.amount);
           break;
         case "QUEST_STARTED":
         case "QUEST_ADVANCED":
@@ -1058,6 +1065,31 @@ export class Game {
       prompt,
       items,
       "Choose carefully — this answer is remembered.",
+    );
+  }
+
+  /** An XP-lamp chooser: pour a quest's XP reward into any skill you like. */
+  private openXpLamp(amount: number): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const ids = Object.keys(content.skills) as SkillId[];
+    const items: MenuItem[] = ids.map((id) => ({
+      label: content.skills[id].name,
+      target: `Lv ${player.skills[id].level}`,
+      tone: "action",
+      onSelect: () => {
+        this.dispatch({ type: "SPEND_XP_LAMP", skill: id });
+        // More rewards still waiting? Chain straight into the next chooser.
+        const left = this.bridge.state.player.xpLamps;
+        if (left && left.length > 0) this.openXpLamp(left[0]!);
+      },
+    }));
+    this.menu.show(
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      `Quest reward: ${amount.toLocaleString()} XP`,
+      items,
+      "Choose the skill to pour this reward into.",
     );
   }
 
