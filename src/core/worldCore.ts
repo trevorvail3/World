@@ -1706,8 +1706,11 @@ function tryPetDrop(
   }
 }
 
-/** Skill level needed to equip each gear tier (index = tier 1–10). */
-const GEAR_TIER_REQS = [0, 1, 10, 20, 30, 40, 50, 55, 60, 65, 72];
+/** Skill level needed to equip each gear tier (index = tier 1–10). The craftable
+ *  ladder is deliberately compressed — Ashiron 10, Ribstone 20, Bloodore 30,
+ *  Voidstone 40, Hearthite 50 — so bone (60) and wyrm (75) uniques sit clearly
+ *  above everything smithable, and there's headroom for future 50–75 gear. */
+const GEAR_TIER_REQS = [0, 1, 5, 10, 20, 25, 30, 35, 40, 40, 50];
 
 /** Which combat skill gates each wearable slot: weapons train/need Edge, armour
  *  needs Ward, bows and arrows need Draw. Other slots (jewellery, capes, mount,

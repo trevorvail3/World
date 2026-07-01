@@ -623,6 +623,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 1,
     "acc": 2,
     "dmg": 1,
     "sell": 20
@@ -636,6 +637,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 10,
     "acc": 5,
     "dmg": 2,
     "sell": 50
@@ -649,6 +651,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 20,
     "acc": 9,
     "dmg": 4,
     "sell": 100
@@ -662,6 +665,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 30,
     "acc": 16,
     "dmg": 7,
     "sell": 200
@@ -675,6 +679,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 40,
     "acc": 24,
     "dmg": 10,
     "sell": 380
@@ -688,6 +693,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 45,
     "acc": 36,
     "dmg": 15,
     "sell": 600
@@ -701,6 +707,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 50,
     "acc": 48,
     "dmg": 21,
     "sell": 950
@@ -1970,7 +1977,7 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🦿",
     "cat": "Armour",
     "slot": "legs",
-    "tier": 8,
+    "tier": 10,
     "def": 63,
     "sell": 1350
   },
@@ -4383,6 +4390,7 @@ export const items: Record<ItemId, ItemDef> = {
     "slot": "mainhand",
     "ranged": true,
     "twoHand": true,
+    "equipLevel": 60,
     "acc": 40,
     "dmg": 22,
     "lore": "spine",
@@ -4693,31 +4701,31 @@ export const items: Record<ItemId, ItemDef> = {
   },
   "staff_coldpine": {
     "id": "staff_coldpine", "name": "Coldpine Staff", "icon": "🔮", "cat": "Weapons",
-    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 15,
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 10,
     "acc": 12, "dmg": 8, "speed": 2600, "sell": 180,
     "description": "A pale coldpine staff, cool to the grip. Steadier channel than ashwood."
   },
   "staff_stonewood": {
     "id": "staff_stonewood", "name": "Stonewood Staff", "icon": "🔮", "cat": "Weapons",
-    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 30,
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 20,
     "acc": 20, "dmg": 13, "speed": 2600, "sell": 420,
     "description": "A dense stonewood staff. Its weight lends real force to a bolt."
   },
   "staff_greyoak": {
     "id": "staff_greyoak", "name": "Greyoak Staff", "icon": "🔮", "cat": "Weapons",
-    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 45,
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 30,
     "acc": 30, "dmg": 19, "speed": 2600, "sell": 900,
     "description": "An old-growth greyoak staff. A caster's proper working tool."
   },
   "staff_ruewood": {
     "id": "staff_ruewood", "name": "Ruewood Staff", "icon": "🔮", "cat": "Weapons",
-    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 60,
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 40,
     "acc": 42, "dmg": 26, "speed": 2600, "sell": 1800,
     "description": "A dark ruewood staff that hums when Grace runs through it."
   },
   "staff_deeproot": {
     "id": "staff_deeproot", "name": "Deeproot Staff", "icon": "🔮", "cat": "Weapons",
-    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 75,
+    "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 50,
     "acc": 56, "dmg": 34, "speed": 2600, "sell": 3600,
     "description": "Cut from the deeproot at the world's bottom. The finest staff a faithful hand can wield."
   },
@@ -4759,9 +4767,9 @@ export const items: Record<ItemId, ItemDef> = {
   "rng_hood_3": { "id": "rng_hood_3", "name": "Hardened Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 7, "def": 7, "sell": 400, "description": "Boiled, hardened leather, light and strong." },
   "rng_body_3": { "id": "rng_body_3", "name": "Hardened Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 10, "rngDmg": 4, "def": 11, "sell": 800, "description": "A hardened hide coat prized by marksmen." },
   "rng_legs_3": { "id": "rng_legs_3", "name": "Hardened Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 40, "rngAcc": 8, "def": 8, "sell": 560, "description": "Hardened chaps, quiet and quick." },
-  "rng_hood_4": { "id": "rng_hood_4", "name": "Master Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 11, "def": 11, "sell": 1200, "description": "The hood of a master archer — supple and deadly." },
-  "rng_body_4": { "id": "rng_body_4", "name": "Master Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 15, "rngDmg": 6, "def": 16, "sell": 2400, "description": "Master-worked hide, the finest a bowyer can wear." },
-  "rng_legs_4": { "id": "rng_legs_4", "name": "Master Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 60, "rngAcc": 12, "def": 12, "sell": 1600, "description": "Master chaps for the surest hunter in Varath." },
+  "rng_hood_4": { "id": "rng_hood_4", "name": "Master Ranger Hood", "icon": "🪖", "cat": "Ranged Armour", "slot": "helmet", "equipSkill": "draw", "equipLevel": 50, "rngAcc": 11, "def": 11, "sell": 1200, "description": "The hood of a master archer — supple and deadly." },
+  "rng_body_4": { "id": "rng_body_4", "name": "Master Ranger Body", "icon": "🥋", "cat": "Ranged Armour", "slot": "armor", "equipSkill": "draw", "equipLevel": 50, "rngAcc": 15, "rngDmg": 6, "def": 16, "sell": 2400, "description": "Master-worked hide, the finest a bowyer can wear." },
+  "rng_legs_4": { "id": "rng_legs_4", "name": "Master Ranger Chaps", "icon": "🩲", "cat": "Ranged Armour", "slot": "legs", "equipSkill": "draw", "equipLevel": 50, "rngAcc": 12, "def": 12, "sell": 1600, "description": "Master chaps for the surest hunter in Varath." },
 
   // === MAGIC ROBES (gate on Faith) — Acolyte → Adept → Warden → Archon ======
   "mag_hood_1": { "id": "mag_hood_1", "name": "Acolyte Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 1, "magAcc": 2, "def": 1, "sell": 40, "description": "A plain hood for a novice of Orun." },
@@ -4773,9 +4781,9 @@ export const items: Record<ItemId, ItemDef> = {
   "mag_hood_3": { "id": "mag_hood_3", "name": "Warden Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 40, "magAcc": 7, "def": 4, "sell": 400, "description": "A warden's hood, heavy with woven power." },
   "mag_robe_3": { "id": "mag_robe_3", "name": "Warden Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 40, "magAcc": 10, "magDmg": 4, "def": 6, "sell": 800, "description": "Warden robes that pour Orun's light into every bolt." },
   "mag_skirt_3": { "id": "mag_skirt_3", "name": "Warden Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 40, "magAcc": 8, "def": 4, "sell": 560, "description": "Warden lower robes, thick with hex cloth." },
-  "mag_hood_4": { "id": "mag_hood_4", "name": "Archon Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 60, "magAcc": 11, "def": 6, "sell": 1200, "description": "The crowning hood of an archon of Orun." },
-  "mag_robe_4": { "id": "mag_robe_4", "name": "Archon Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 60, "magAcc": 15, "magDmg": 6, "def": 9, "sell": 2400, "description": "Archon robes — the finest vessel for a caster's will." },
-  "mag_skirt_4": { "id": "mag_skirt_4", "name": "Archon Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 60, "magAcc": 12, "def": 6, "sell": 1600, "description": "Archon lower robes, woven for the highest devotion." },
+  "mag_hood_4": { "id": "mag_hood_4", "name": "Archon Hood", "icon": "🎓", "cat": "Magic Robes", "slot": "helmet", "equipSkill": "faith", "equipLevel": 50, "magAcc": 11, "def": 6, "sell": 1200, "description": "The crowning hood of an archon of Orun." },
+  "mag_robe_4": { "id": "mag_robe_4", "name": "Archon Robe", "icon": "🥋", "cat": "Magic Robes", "slot": "armor", "equipSkill": "faith", "equipLevel": 50, "magAcc": 15, "magDmg": 6, "def": 9, "sell": 2400, "description": "Archon robes — the finest vessel for a caster's will." },
+  "mag_skirt_4": { "id": "mag_skirt_4", "name": "Archon Skirt", "icon": "🩲", "cat": "Magic Robes", "slot": "legs", "equipSkill": "faith", "equipLevel": 50, "magAcc": 12, "def": 6, "sell": 1600, "description": "Archon lower robes, woven for the highest devotion." },
 
   "seed_ashweed": {
     "id": "seed_ashweed",

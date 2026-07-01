@@ -15,7 +15,7 @@ import { equipRequirement } from "../core/worldCore.ts";
 const COMBAT_GEAR: Partial<Record<SkillId, { label: string; slots: string[] }>> = {
   edge: { label: "Weapons", slots: ["mainhand"] },
   ward: { label: "Armour", slots: ["helmet", "armor", "legs", "boots", "offhand"] },
-  draw: { label: "Bows & Arrows", slots: ["ranged", "ammo"] },
+  draw: { label: "Bows & Arrows", slots: ["mainhand", "ranged", "ammo"] },
 };
 
 /** Which gathering skill each tool type gates on, and the ladder heading to show
