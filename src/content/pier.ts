@@ -22,7 +22,7 @@ export const PIER_FISH: PierFishDef[] = [
     minLevel: 1,
     weight: [0.6, 4.5],
     length: [28, 58],
-    xpPerKg: 26,
+    xpPerKg: 100,
     goldPerKg: 9,
   },
   {
@@ -32,7 +32,7 @@ export const PIER_FISH: PierFishDef[] = [
     minLevel: 15,
     weight: [2, 8],
     length: [34, 70],
-    xpPerKg: 24,
+    xpPerKg: 94,
     goldPerKg: 10,
   },
   {
@@ -42,7 +42,7 @@ export const PIER_FISH: PierFishDef[] = [
     minLevel: 35,
     weight: [4, 16],
     length: [45, 95],
-    xpPerKg: 22,
+    xpPerKg: 86,
     goldPerKg: 11,
   },
   {
@@ -52,7 +52,7 @@ export const PIER_FISH: PierFishDef[] = [
     minLevel: 55,
     weight: [9, 32],
     length: [70, 150],
-    xpPerKg: 20,
+    xpPerKg: 78,
     goldPerKg: 13,
   },
   {
@@ -62,7 +62,7 @@ export const PIER_FISH: PierFishDef[] = [
     minLevel: 75,
     weight: [22, 62],
     length: [130, 280],
-    xpPerKg: 18,
+    xpPerKg: 70,
     goldPerKg: 16,
   },
 ];

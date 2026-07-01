@@ -645,7 +645,9 @@ export class Game {
           // A rising banner over the player; the core already logs the weigh-in.
           const p = this.bridge.state.player.pos;
           const label = ev.rank > 0 ? `${ev.species} — #${ev.rank}!` : `${ev.species} ${ev.weight.toFixed(1)}kg`;
-          this.floats.push({ x: p.x, y: p.y, text: label, color: ev.rank > 0 ? "#f4d98b" : "#9fd0d8", born: now });
+          // Sits a touch above the "+N XP" drop (which spawns at the player) so
+          // the catch and the XP gain read as two separate lines, not a mush.
+          this.floats.push({ x: p.x, y: p.y - 0.9, text: label, color: ev.rank > 0 ? "#f4d98b" : "#9fd0d8", born: now });
           // Topping the board is a big moment — a level-up-style fanfare. If the
           // champion doesn't yet hold the Golden Rod, point them to Jacob.
           if (ev.rank === 1) {
