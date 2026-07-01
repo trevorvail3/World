@@ -436,7 +436,7 @@ const rawObjects: WorldObjectDef[] = [
     lines: [
       "Hear ye, hear ye! You've the look of someone who's been away — let me catch you up on the doings of Varath.",
       "The roads: the wilds have been driven back from every town's gates. No more wolves nor cutthroats at your heels while you shop — a fight in the wilds is a thing you choose now, not a thing that chooses you.",
-      "The Faithful walk among us: Faith is prayer and magic as one skill now. Bury bones for its favour, wield a staff to cast, and fill your Grace at any shrine or altar — you'll see the bar under your health.",
+      "The Faithful walk among us: Devotion is prayer and magic as one skill now. Bury bones for its favour, wield a staff to cast, and fill your Grace at any shrine or altar — you'll see the bar under your health.",
       "For the green and the wandering: talk to the folk you meet — reeves, wardens, delvers and fishwives all keep a task for a willing hand, though they'll not always wear it on their sleeve. And your own words carry now — speak, and the world sees you say it, over your very head.",
       "That's the news! Toss a coin in the fountain for luck and mind the moon — she's watching, as she always is.",
     ],

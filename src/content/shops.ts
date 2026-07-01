@@ -47,7 +47,7 @@ export const shops: ShopDef[] = [
       // (blow your own once Crafting's glassblowing is open; buy them meanwhile).
       { item: "glass_vial", price: 25, qty: 2 },
       { item: "glass_flask", price: 45, qty: 1 },
-      // Pestle & Mortar — crush bones into bonemeal for Faith Potions.
+      // Pestle & Mortar — crush bones into bonemeal for Devotion Potions.
       { item: "pestle", price: 12, qty: 1 },
       // Sinew for stitching ranger leathers (also drops from beasts).
       { item: "sinew", price: 22, qty: 3 },

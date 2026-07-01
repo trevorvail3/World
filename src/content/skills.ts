@@ -37,5 +37,5 @@ export const skills: Record<SkillId, { name: string; icon: string; blurb: string
   vigour: { name: "Vigour", icon: "💪", blurb: "Melee power. Trained on the Vigour attack style — raises the damage your hits deal." },
   ward: { name: "Ward", icon: "🛡️", blurb: "Melee defence. Trained on the Ward attack style — lowers your chance of being hit." },
   draw: { name: "Draw", icon: "🏹", blurb: "Archery. Trained by attacking with a bow — raises your ranged accuracy and damage." },
-  faith: { name: "Faith", icon: "🔮", blurb: "Magic and prayer, fused. Trained by fighting with a staff and by burying bones. Raises your casting power and your Grace pool — the fuel for spells, refilled at shrines and altars." },
+  faith: { name: "Devotion", icon: "🔮", blurb: "Magic and prayer, fused. Trained by fighting with a staff and by burying bones. Raises your casting power and your Grace pool — the fuel for spells, refilled at shrines and altars. Each level adds one to your Grace." },
 };

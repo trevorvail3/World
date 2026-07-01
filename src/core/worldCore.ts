@@ -4160,7 +4160,9 @@ function isMagic(player: Player, content: Content): boolean {
 /** The player's Grace ceiling — their Faith level, floored at 10 so a new caster
  *  can get a few casts off before Faith is trained. */
 function graceMax(player: Player): number {
-  return Math.max(10, skillLvl(player, "faith"));
+  // Start with 10 Grace (like Vitality's opening HP); each Devotion level adds
+  // one more — level 2 = 11, level 50 = 59, and so on.
+  return 9 + Math.max(1, skillLvl(player, "faith"));
 }
 
 /** Magic accuracy: Faith + staff acc + any magic-accuracy buff. */

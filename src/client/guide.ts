@@ -73,19 +73,19 @@ const TIPS: Tip[] = [
   {
     id: "faith_bones",
     test: (s) => packHas(s.player, (id) => id === "bones" || id === "big_bones"),
-    text: "Bones! Hold them in your Pack and choose Bury for Faith XP — or Crush them with a Pestle into bonemeal for potions. Faith is Varath's prayer-and-magic skill.",
+    text: "Bones! Hold them in your Pack and choose Bury for Devotion XP — or Crush them with a Pestle into bonemeal for potions. Faith is Varath's prayer-and-magic skill.",
   },
   {
     id: "magic_staff",
     test: (s, c) =>
       packHas(s.player, (id) => !!c.items[id as keyof typeof c.items]?.magic) ||
       !!(s.player.equipment.mainhand && c.items[s.player.equipment.mainhand]?.magic),
-    text: "A staff casts Faith spells. Wield it, open the Devotion tab and pick a spell to autocast — the basic bolt costs no Grace. Higher staves hit harder.",
+    text: "A staff casts Devotion spells. Wield it, open the Devotion tab and pick a spell to autocast — the basic bolt costs no Grace. Higher staves hit harder.",
   },
   {
     id: "grace_empty",
     test: (s) => s.player.grace <= 0 && s.player.skills.faith.level > 1,
-    text: "Out of Grace. It never refills in the field — pray at a shrine or altar to top it up, or drink a Faith Potion (bonemeal + a herb) to restore it on the move.",
+    text: "Out of Grace. It never refills in the field — pray at a shrine or altar to top it up, or drink a Devotion Potion (bonemeal + a herb) to restore it on the move.",
   },
   {
     id: "ranged_bow",

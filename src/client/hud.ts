@@ -266,7 +266,7 @@ export class Hud {
     vitals.innerHTML = `
       <div class="vitals-label">
         <span class="vitals-heart">${glyph("heart")}</span><span class="hp-text">10 / 10</span>
-        <span class="grace-label" title="Grace — the Faith spell fuel. Refill at a shrine or altar."><span class="grace-ic">${glyph("orb")}</span><span class="grace-text">0 / 0</span></span>
+        <span class="grace-label" title="Grace — the Devotion spell fuel. Refill at a shrine or altar."><span class="grace-ic">${glyph("orb")}</span><span class="grace-text">0 / 0</span></span>
       </div>
       <div class="vitals-row">
         <div class="hud-control run-control"><button class="run-toggle" type="button" title="Toggle run / walk"><span class="run-face">${glyph("boot")}</span></button></div>
@@ -993,7 +993,7 @@ export class Hud {
   }
 
   /** Active food/potion buffs as chips with a live countdown. */
-  /** Grey out spells above your Faith level; dim the button when you can't afford
+  /** Grey out spells above your Devotion level; dim the button when you can't afford
    *  the Grace or aren't wielding a staff; highlight the autocast selection. */
   private updateSpells(player: WorldState["player"]): void {
     if (this.spellRows.size === 0) return;
@@ -1341,7 +1341,7 @@ export class Hud {
     // everyone starts with a small pool, and it never regenerates in the field,
     // only at a shrine or altar. Keeping it visible even at 0 is the point: you
     // need to see when it's empty.
-    const graceMax = Math.max(10, player.skills.faith.level);
+    const graceMax = 9 + Math.max(1, player.skills.faith.level);
     const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
     this.graceFill.style.width = `${gpct * 100}%`;
     this.graceText.textContent = `${Math.floor(player.grace)} / ${graceMax}`;

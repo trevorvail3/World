@@ -4621,12 +4621,12 @@ export const items: Record<ItemId, ItemDef> = {
   "bones": {
     "id": "bones", "name": "Bones", "icon": "🦴", "cat": "Drops", "sell": 3,
     "buryXp": 12,
-    "description": "A pile of picked-clean bones. Bury them for Faith, or grind them into bonemeal for potions."
+    "description": "A pile of picked-clean bones. Bury them for Devotion, or grind them into bonemeal for potions."
   },
   "big_bones": {
     "id": "big_bones", "name": "Big Bones", "icon": "🦴", "cat": "Drops", "sell": 14,
     "buryXp": 40,
-    "description": "The heavy bones of a large beast. Bury for a big lump of Faith, or grind into bonemeal."
+    "description": "The heavy bones of a large beast. Bury for a big lump of Devotion, or grind into bonemeal."
   },
   "chipped_tooth": {
     "id": "chipped_tooth", "name": "Chipped Tooth", "icon": "🦷", "cat": "Drops", "sell": 6,
@@ -4684,7 +4684,7 @@ export const items: Record<ItemId, ItemDef> = {
   // === FAITH: wooden staff ladder (2H mainhand casting weapons) ==============
   // Rod-style tiers — each a flat casting boost (acc + dmg). Wielding one makes
   // your basic attack a free magic bolt and routes combat XP to Faith. Gated by
-  // Faith level via equipLevel.
+  // Devotion level via equipLevel.
   "staff_ashwood": {
     "id": "staff_ashwood", "name": "Ashwood Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 1,
@@ -4725,19 +4725,19 @@ export const items: Record<ItemId, ItemDef> = {
   // === FAITH: bonemeal + the Grace (Faith) potion ===========================
   "bonemeal": {
     "id": "bonemeal", "name": "Bonemeal", "icon": "🦴", "cat": "Materials", "sell": 6,
-    "description": "Ground bone, pale and fine. The base of a Faith Potion."
+    "description": "Ground bone, pale and fine. The base of a Devotion Potion."
   },
   "pestle": {
     "id": "pestle", "name": "Pestle & Mortar", "icon": "🥣", "cat": "Tools", "sell": 8,
     "description": "A stone bowl and grinder. Crush bones in your pack into bonemeal with it."
   },
   "potion_grace": {
-    "id": "potion_grace", "name": "Faith Potion", "icon": "🙏", "cat": "Potions",
+    "id": "potion_grace", "name": "Devotion Potion", "icon": "🙏", "cat": "Potions",
     "graceRestore": 30, "sell": 120,
     "description": "A bone-and-herb brew that restores a measure of Grace on the move — no shrine needed."
   },
   "potion_grace_greater": {
-    "id": "potion_grace_greater", "name": "Greater Faith Potion", "icon": "🙏", "cat": "Potions",
+    "id": "potion_grace_greater", "name": "Greater Devotion Potion", "icon": "🙏", "cat": "Potions",
     "graceRestore": 70, "sell": 320,
     "description": "A potent flask of bonemeal and rare herb — restores a deep draught of Grace anywhere."
   },

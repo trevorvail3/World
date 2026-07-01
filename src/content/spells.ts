@@ -1,9 +1,9 @@
 /**
  * src/content/spells.ts
  * ---------------------
- * The Faith spellbook — one page, mixing attack and utility casts. Every spell
- * spends Grace (refilled only at shrines/altars or via a Faith Potion) and is
- * gated by a Faith level. The basic staff bolt is free and handled in combat;
+ * The Devotion spellbook — one page, mixing attack and utility casts. Every spell
+ * spends Grace (refilled only at shrines/altars or via a Devotion Potion) and is
+ * gated by a Devotion level. The basic staff bolt is free and handled in combat;
  * these are the Grace-fuelled specials you layer on top.
  *
  * Pure DATA. The core (src/core/worldCore.ts `castSpell`) reads `kind` and the

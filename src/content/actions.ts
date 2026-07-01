@@ -2548,11 +2548,11 @@ export const actions: SkillAction[] = [
     "group": "seeds"
   },
   {
-    // Faith: brew a Faith Potion — restores Grace on the move. (Bonemeal comes
+    // Devotion: brew a Devotion Potion — restores Grace on the move. (Bonemeal comes
     // from crushing bones with a Pestle & Mortar in the pack — see the GRIND intent.)
     "id": "brew_faith_potion",
     "skill": "herblore",
-    "name": "Faith Potion",
+    "name": "Devotion Potion",
     "levelReq": 15,
     "xp": 45,
     "baseTime": 4000,
@@ -2561,10 +2561,10 @@ export const actions: SkillAction[] = [
     "group": "potions"
   },
   {
-    // Faith: the greater brew — a flask, more bonemeal and a rarer herb.
+    // Devotion: the greater brew — a flask, more bonemeal and a rarer herb.
     "id": "brew_greater_faith_potion",
     "skill": "herblore",
-    "name": "Greater Faith Potion",
+    "name": "Greater Devotion Potion",
     "levelReq": 45,
     "xp": 95,
     "baseTime": 5000,

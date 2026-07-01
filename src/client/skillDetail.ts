@@ -169,6 +169,25 @@ export class SkillDetailModal {
       activities.set("Guides", byLevel);
     }
 
+    // Devotion (faith): its ladder is the staff tiers you can wield, the magic
+    // robes you can wear, and the spells you can cast — each at its level.
+    if (skill === "faith") {
+      const addTo = (label: string, lvl: number, name: string): void => {
+        const m = activities.get(label) ?? new Map<number, string[]>();
+        const list = m.get(lvl) ?? [];
+        if (!list.includes(name)) list.push(name);
+        m.set(lvl, list);
+        activities.set(label, m);
+      };
+      for (const id of Object.keys(this.content.items) as ItemId[]) {
+        const def = this.content.items[id];
+        const req = equipRequirement(this.content, id);
+        if (def.magic) addTo("Staves", req ? req.level : 1, def.name);
+        else if (req && req.skill === "faith") addTo("Robes", req.level, def.name);
+      }
+      for (const sp of this.content.spells) addTo("Spells", sp.faithReq, sp.name);
+    }
+
     if (activities.size === 0) {
       // Action-less skills (combat, agility…) have no recipe ladder — the blurb
       // above already explains how they train, so nothing more is needed here.
