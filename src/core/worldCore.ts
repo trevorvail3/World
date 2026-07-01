@@ -479,6 +479,7 @@ export function createWorld(
     agilityHop: null,
     trailLaps: 0,
     xpLamps: [],
+    collection: ["hatchet_1", "pickaxe_1", "rod_1"],
     quests: {},
     questsDone: [],
     lore: [],
@@ -1042,6 +1043,9 @@ function addItem(
   qty: number,
   events: WorldEvent[],
 ): boolean {
+  // Log the item in the collection the first time it's ever obtained.
+  const coll = (player.collection ??= []);
+  if (!coll.includes(item)) coll.push(item);
   if (isStackable(item)) {
     const existing = player.inventory.find((slot) => slot?.item === item);
     if (existing) {

@@ -17,6 +17,7 @@ import type {
   EquipSlot,
   Intent,
   InventorySlot,
+  ItemDef,
   ItemId,
   MonsterStats,
   Player,
@@ -1330,6 +1331,7 @@ export class Hud {
       player.achievements.length, achTotal, player.lore.length, loreTotal,
       bossKillSig, player.bossMilestonesClaimed.length,
       capeMaxed, capeOwned ? 1 : 0,
+      (player.collection ?? []).length,
       [...this.openSecs].sort().join(","),
     ].join("|");
     if (!force && sig === this.recordsSig) return;
@@ -1447,6 +1449,26 @@ export class Hud {
       `<div class="char-cape-bar"><div class="char-cape-fill" style="width:${capePct}%"></div></div>` +
       `<div class="char-cape-note">${escapeHtml(capeNote)}</div></div>`;
 
+    // Collection Log (OSRS-style): every item grouped by category, obtained ones
+    // shown in colour with a count, the rest a greyed silhouette to chase.
+    const owned = new Set<ItemId>(player.collection ?? []);
+    const collItems = (Object.values(this.content.items) as ItemDef[])
+      .filter((d) => d.cat && d.cat !== "Quest");
+    const collCats: string[] = [];
+    for (const d of collItems) { const c = d.cat!; if (!collCats.includes(c)) collCats.push(c); }
+    collCats.sort();
+    let collDone = 0, collTotal = 0;
+    const collBody = collCats.map((cat) => {
+      const rows = collItems.filter((d) => d.cat === cat).sort((a, b) => a.name.localeCompare(b.name));
+      const have = rows.filter((d) => owned.has(d.id)).length;
+      collDone += have; collTotal += rows.length;
+      return subSection(`coll:${cat}`, cat, `${have}/${rows.length}`, () =>
+        `<div class="coll-grid">` + rows.map((d) => {
+          const got = owned.has(d.id);
+          return `<span class="coll-cell ${got ? "got" : "locked"}" title="${escapeHtml(got ? d.name : "???")}">${itemIconSVG(d)}</span>`;
+        }).join("") + `</div>`);
+    }).join("");
+
     // The top-level sections.
     const section = (key: string, title: string, count: string, body: string): string => {
       const open = this.openSecs.has(key);
@@ -1455,6 +1477,7 @@ export class Hud {
 
     this.recordsEl.innerHTML =
       section("bosslog", "Boss Log", `${bossSlain}/${bosses.length}`, bossBody) +
+      section("collection", "Collection Log", `${collDone}/${collTotal}`, collBody) +
       section("cape", "Cape of Varath", capeOwned ? "Earned" : `${capeMaxed}/${skillIds.length}`, capeBody) +
       section("companions", "Companions", `${compOwned}/${comps.length}`, compBody) +
       section("achievements", "Achievements", `${player.achievements.length}/${achTotal}`, achBody) +

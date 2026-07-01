@@ -1180,6 +1180,9 @@ export interface Player {
    *  that pays XP drops its amount here; the player picks the skill to pour it
    *  into. Persisted so an unspent lamp survives a reload. */
   xpLamps?: number[];
+  /** Collection log: every item id the player has ever obtained (deduped), for
+   *  the OSRS-style collection log under the Records tab. Persisted. */
+  collection?: ItemId[];
   /**
    * Set when energy hits 0; forces walking until energy recovers a little, so
    * the player doesn't micro-stutter between sprint and walk on an empty bar.

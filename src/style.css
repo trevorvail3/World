@@ -2785,6 +2785,17 @@ button.inv-slot {
 .rec-subname { flex: 1; color: var(--ink); }
 .rec-subbody { padding: 1px 0 5px 6px; }
 
+/* Collection log — a grid of item icons: obtained in colour, the rest greyed. */
+.coll-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 2px; }
+.coll-cell {
+  width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.28); border: 1px solid var(--panel-edge); border-radius: 6px;
+}
+.coll-cell .item-svg { width: 24px; height: 24px; }
+.coll-cell.locked { opacity: 0.9; }
+.coll-cell.locked .item-svg { filter: grayscale(1) brightness(0.35); opacity: 0.7; }
+.coll-cell.got { border-color: rgba(201, 162, 74, 0.4); }
+
 /* === Login + Character Creator (startup overlays) ======================== */
 .login-backdrop, .creator-backdrop {
   position: absolute;

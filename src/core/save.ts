@@ -69,6 +69,8 @@ export interface SavedProgress {
   trailLaps?: number;
   /** Pending quest XP rewards awaiting a skill choice. */
   xpLamps?: number[];
+  /** Collection log: item ids ever obtained. */
+  collection?: string[];
   /** Unlocked achievement ids. */
   achievements: string[];
   /** Claimed Area Diary ids. */
@@ -141,6 +143,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     killsSinceShard: player.killsSinceShard,
     trailLaps: player.trailLaps ?? 0,
     xpLamps: [...(player.xpLamps ?? [])],
+    collection: [...(player.collection ?? [])],
     appearance: { ...player.appearance },
     bounty: {
       marks: player.bounty.marks,
@@ -322,6 +325,19 @@ export function hydratePlayer(
   const savedLamps = raw["xpLamps"];
   if (Array.isArray(savedLamps)) {
     player.xpLamps = savedLamps.filter((n) => finiteNum(n) && n > 0).map((n) => Math.floor(n));
+  }
+  // Collection log: load saved ids, then fold in whatever the player currently
+  // holds (pack + bank + worn) so an existing character's log isn't empty.
+  {
+    const set = new Set<ItemId>(player.collection ?? []);
+    const savedColl = raw["collection"];
+    if (Array.isArray(savedColl)) {
+      for (const id of savedColl) if (typeof id === "string" && content.items[id as ItemId]) set.add(id as ItemId);
+    }
+    for (const s of player.inventory) if (s) set.add(s.item);
+    for (const id of Object.keys(player.bank) as ItemId[]) if ((player.bank[id] ?? 0) > 0) set.add(id);
+    for (const id of Object.values(player.equipment)) if (id) set.add(id);
+    player.collection = [...set];
   }
   const savedAch = raw["achievements"];
   if (Array.isArray(savedAch)) {
