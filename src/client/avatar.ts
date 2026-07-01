@@ -122,6 +122,28 @@ export function drawAvatar(
   anim: AvatarAnim = {},
   gear: GearLook = {},
 ): void {
+  // A soft dark contour around every stroke of the figure — the cheap trick
+  // that pops the avatar off any terrain (only the player + ghosts draw with
+  // this function, so the shadow cost is negligible).
+  g.save();
+  g.shadowColor = "rgba(8,8,12,0.55)";
+  g.shadowBlur = Math.max(1.5, s * 0.9);
+  try {
+    drawAvatarInner(g, cx, cy, s, look, anim, gear);
+  } finally {
+    g.restore();
+  }
+}
+
+function drawAvatarInner(
+  g: Ctx,
+  cx: number,
+  cy: number,
+  s: number,
+  look: Appearance,
+  anim: AvatarAnim = {},
+  gear: GearLook = {},
+): void {
   const t = anim.now ?? 0;
   const action = anim.action;
   const acting = !!action;

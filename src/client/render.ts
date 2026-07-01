@@ -108,7 +108,7 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   dirt: ["#52412e", "#5e4b36"],
   path: ["#6a5b45", "#77654c"],
   stone: ["#41424b", "#4b4d57"],
-  water: ["#1f3346", "#26415a"],
+  water: ["#22496b", "#356a94"],
   // Greyoak Wood's floor — deeper, cooler green than hill grass.
   moss: ["#2c3a2a", "#354733"],
   // The Spine: dark rock peaks and pale high snow.
@@ -119,7 +119,7 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   ash: ["#4a3b34", "#574740"],
   cave: ["#1c1a22", "#26232e"],
   cave_wall: ["#0e0d12", "#15131a"],
-  deep: ["#14233a", "#1a2c46"],
+  deep: ["#132e4d", "#1d4066"],
   // Ironvale's dressed-stone walls and buildings — warm masonry, lit.
   wall: ["#6b6157", "#7c7165"],
   // Player-home interiors — a warm timber plank floor.
@@ -130,6 +130,89 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
 function hash(x: number, y: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return n - Math.floor(n);
+}
+
+// --- Organic ground painting -------------------------------------------------
+// The map assigns terrain PER TILE, so painting each tile a flat colour reads as
+// a hard checkerboard. Instead, ground is painted Gouraud-style: each tile
+// corner takes the average colour of the four tiles that share it (plus a dab
+// of lattice noise), and the tile is filled as four sub-quads keyed to its
+// corners. Corners are shared with neighbours, so terrain melts together with
+// no seams and no per-tile flatness — at zero texture-memory cost.
+
+/** Parsed [r,g,b] per tile type (base colour), computed once. */
+const TILE_RGB: Partial<Record<TileType, [number, number, number]>> = {};
+function tileRGB(t: TileType): [number, number, number] {
+  let c = TILE_RGB[t];
+  if (!c) {
+    const hex = TILE_COLORS[t][0];
+    c = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    TILE_RGB[t] = c;
+  }
+  return c;
+}
+
+/** Ground types that blend into one another (organic terrain). Masonry, water
+ *  and walls keep crisp edges — their borders are drawn deliberately. */
+const BLEND_GROUND = new Set<TileType>(["grass", "dirt", "moss", "ash", "snow", "bog", "path", "cave", "stone"]);
+/** Open water blends within itself (shallows → deep) for smooth depth. */
+const BLEND_WATER = new Set<TileType>(["water", "deep"]);
+
+/** Two-octave lattice noise at integer corner coords — shared by the four
+ *  tiles that meet at the corner, so shading is seamless across the grid. */
+function cornerNoise(X: number, Y: number): number {
+  return hash(X, Y) * 0.55 + hash(Math.floor(X / 3) * 7 + 13, Math.floor(Y / 3) * 7 - 5) * 0.45;
+}
+
+/** The blended colour at a tile corner: average of the same-family neighbours
+ *  meeting there (others count as self), lifted/dropped by corner noise. */
+function cornerColor(
+  map: WorldMap,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  self: TileType,
+  family: Set<TileType>,
+  noiseAmp: number,
+): string {
+  const selfC = tileRGB(self);
+  let r = 0, gg = 0, b = 0;
+  for (const dy of [cy - 1, cy]) {
+    for (const dx of [cx - 1, cx]) {
+      const tx = x + dx, ty = y + dy;
+      let c = selfC;
+      if (tx >= 0 && ty >= 0 && tx < map.width && ty < map.height) {
+        const t = map.tiles[ty * map.width + tx]!;
+        if (family.has(t)) c = tileRGB(t);
+      }
+      r += c[0]; gg += c[1]; b += c[2];
+    }
+  }
+  const n = (cornerNoise(x + cx, y + cy) - 0.5) * noiseAmp;
+  const cl = (v: number) => Math.max(0, Math.min(255, Math.round(v / 4 + n)));
+  return `rgb(${cl(r)},${cl(gg)},${cl(b)})`;
+}
+
+/** Fill a tile as four corner-keyed sub-quads — the seamless organic base. */
+function paintBlendedBase(
+  g: CanvasRenderingContext2D,
+  map: WorldMap,
+  tile: TileType,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+  family: Set<TileType>,
+  noiseAmp: number,
+): void {
+  const half = TILE / 2;
+  for (const cy of [0, 1] as const) {
+    for (const cx of [0, 1] as const) {
+      g.fillStyle = cornerColor(map, x, y, cx, cy, tile, family, noiseAmp);
+      g.fillRect(px + cx * half, py + cy * half, half, half);
+    }
+  }
 }
 
 /** Small wild-flower colours — a little life against all the green. */
@@ -330,8 +413,14 @@ function paintTile(
   map: WorldMap,
 ): void {
   const [base, accent] = TILE_COLORS[tile];
-  g.fillStyle = base;
-  g.fillRect(px, py, TILE, TILE);
+  // Organic ground and open water get the seamless corner-blended base (the
+  // fix for the old per-tile checkerboard); built surfaces stay flat + crisp.
+  if (BLEND_GROUND.has(tile)) paintBlendedBase(g, map, tile, px, py, x, y, BLEND_GROUND, 26);
+  else if (BLEND_WATER.has(tile)) paintBlendedBase(g, map, tile, px, py, x, y, BLEND_WATER, 12);
+  else {
+    g.fillStyle = base;
+    g.fillRect(px, py, TILE, TILE);
+  }
   const hv = hash(x, y);
 
   switch (tile) {
@@ -343,16 +432,39 @@ function paintTile(
     }
     case "water":
     case "deep": {
-      // Layered ripples that drift, plus a hashed glint.
-      g.fillStyle = accent;
-      for (let i = 0; i < 2; i++) {
-        const sh = 0.5 + 0.5 * Math.sin(now / 620 + x * 1.3 + y * 0.7 + i * 2);
-        g.globalAlpha = 0.18 + 0.16 * sh;
-        g.fillRect(px, py + TILE * (0.18 + 0.3 * i + 0.12 * hv), TILE, 2.5);
+      // Living water: a dark under-swell that drifts, two WAVY highlight crests
+      // (sine-bent curves, phase-shifted per tile so they read as one surface
+      // across the lake), and an occasional sun-sparkle.
+      const t = now / 900;
+      g.strokeStyle = "rgba(8,20,34,0.35)"; // under-swell shadow
+      g.lineWidth = 3;
+      g.beginPath();
+      for (let i = 0; i <= 4; i++) {
+        const wx = px + (i / 4) * TILE;
+        const wy = py + TILE * 0.62 + Math.sin(t * 2 + (x + i / 4) * 1.7 + y * 0.9) * 3.5;
+        if (i === 0) g.moveTo(wx, wy); else g.lineTo(wx, wy);
       }
-      g.globalAlpha = 0.5 + 0.3 * Math.sin(now / 500 + x + y);
-      g.fillStyle = tile === "deep" ? "#2b4a6e" : "#3f6488";
-      g.fillRect(px + TILE * (0.3 + 0.4 * hv), py + TILE * 0.4, 3, 3);
+      g.stroke();
+      g.strokeStyle = accent; // twin crests
+      g.lineWidth = 1.6;
+      for (let c = 0; c < 2; c++) {
+        const sh = 0.5 + 0.5 * Math.sin(t * 2.4 + x * 1.3 + y * 0.7 + c * 2.6);
+        g.globalAlpha = 0.25 + 0.35 * sh;
+        g.beginPath();
+        for (let i = 0; i <= 4; i++) {
+          const wx = px + (i / 4) * TILE;
+          const wy = py + TILE * (0.25 + 0.38 * c + 0.1 * hv) + Math.sin(t * 2.2 + (x + i / 4) * 2.1 + y * 1.3 + c * 3) * 2.8;
+          if (i === 0) g.moveTo(wx, wy); else g.lineTo(wx, wy);
+        }
+        g.stroke();
+      }
+      // A cold sun-glint that winks on a few tiles at a time.
+      const wink = Math.sin(now / 700 + hv * 19 + x * 2 + y * 3);
+      if (wink > 0.75) {
+        g.globalAlpha = (wink - 0.75) * 3;
+        g.fillStyle = "#bfe0f2";
+        g.fillRect(px + TILE * (0.2 + 0.55 * hv), py + TILE * (0.3 + 0.35 * hash(x * 9, y * 4)), 3, 1.6);
+      }
       g.globalAlpha = 1;
       // Foam where the water laps against land — a soft, breathing highlight on
       // any edge facing a walkable tile (completes the shoreline from both sides).
@@ -374,21 +486,59 @@ function paintTile(
       return;
     }
     case "mountain": {
-      // A raised peak: dark rock pyramid with a pale, snow-lit crown.
-      const cxp = px + TILE / 2;
-      g.fillStyle = "#2a2a31";
-      g.beginPath();
-      g.moveTo(cxp, py + 4); g.lineTo(px + TILE - 3, py + TILE - 3); g.lineTo(px + 3, py + TILE - 3);
-      g.closePath(); g.fill();
-      g.fillStyle = "#5a5b66";
-      g.beginPath();
-      g.moveTo(cxp, py + 4); g.lineTo(cxp, py + TILE - 3); g.lineTo(px + 3, py + TILE - 3);
-      g.closePath(); g.fill();
-      g.fillStyle = "#d8dde6";
-      g.beginPath();
-      g.moveTo(cxp, py + 4); g.lineTo(cxp + 5, py + 12); g.lineTo(cxp - 5, py + 12);
-      g.closePath(); g.fill();
-      return; // no grid on busy peaks
+      // High rock, varied by noise so the range reads as one massif instead of
+      // wallpaper: talus fields, cracked slabs, and only the occasional true
+      // peak — each with an off-centre apex, a lit west face, a shadowed east
+      // face, and a snow crown only where the noise says the air is thin.
+      const n = cornerNoise(x, y);
+      // Base rock mass: corner-shaded like ground, but on its own dark ramp.
+      const rr = 46 + Math.round(n * 18), gg2 = rr + 2, bb = rr + 10;
+      for (const cy2 of [0, 1] as const) {
+        for (const cx2 of [0, 1] as const) {
+          const cn = (cornerNoise(x + cx2, y + cy2) - 0.5) * 26;
+          g.fillStyle = `rgb(${Math.round(rr + cn)},${Math.round(gg2 + cn)},${Math.round(bb + cn)})`;
+          g.fillRect(px + cx2 * TILE / 2, py + cy2 * TILE / 2, TILE / 2, TILE / 2);
+        }
+      }
+      if (n > 0.62) {
+        // A true peak: irregular apex, split-lit faces, hard ridge line.
+        const ax = px + TILE * (0.35 + 0.3 * hash(x * 3, y * 5)); // apex x
+        const ay = py + 3 + 5 * hash(x * 7, y * 2);               // apex y
+        const bl = px + 2, br = px + TILE - 2, byy = py + TILE - 2;
+        g.fillStyle = "#232329"; // shadowed east face
+        g.beginPath(); g.moveTo(ax, ay); g.lineTo(br, byy); g.lineTo(ax, byy); g.closePath(); g.fill();
+        g.fillStyle = "#585a68"; // lit west face
+        g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax, byy); g.lineTo(bl, byy); g.closePath(); g.fill();
+        g.strokeStyle = "rgba(200,206,220,0.5)"; g.lineWidth = 1.2; // sunlit ridge
+        g.beginPath(); g.moveTo(ax, ay); g.lineTo(bl + 3, byy); g.stroke();
+        if (n > 0.8) { // snow crown on the tallest
+          g.fillStyle = "#dde3ec";
+          g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax + 6, ay + 9); g.lineTo(ax + 1, ay + 7); g.lineTo(ax - 5, ay + 10); g.closePath(); g.fill();
+        }
+      } else if (n > 0.38) {
+        // A cracked slab: one big facet edge + a couple of fissures.
+        g.strokeStyle = "rgba(0,0,0,0.35)"; g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(px + TILE * hash(x, y * 9), py + 4);
+        g.lineTo(px + TILE * (0.3 + 0.5 * hv), py + TILE - 6);
+        g.stroke();
+        g.strokeStyle = "rgba(255,255,255,0.10)";
+        g.beginPath();
+        g.moveTo(px + 4, py + TILE * (0.3 + 0.4 * hv));
+        g.lineTo(px + TILE - 4, py + TILE * (0.35 + 0.4 * hash(x * 5, y)));
+        g.stroke();
+      } else {
+        // Talus: scattered chunk-shadows and one pale scree glint.
+        g.fillStyle = "rgba(0,0,0,0.28)";
+        for (let i = 0; i < 3; i++) {
+          const sx = px + hash(x * 4 + i, y * 6 - i) * (TILE - 8);
+          const sy = py + hash(x * 2 - i, y * 8 + i) * (TILE - 8);
+          g.beginPath(); g.ellipse(sx + 4, sy + 4, 4 + 2 * hash(x + i, y), 2.6, 0.4, 0, Math.PI * 2); g.fill();
+        }
+        g.fillStyle = "rgba(190,195,210,0.20)";
+        g.fillRect(px + TILE * hv, py + TILE * hash(x * 9, y * 3), 4, 2);
+      }
+      return; // rock handles its own edges
     }
     case "grass":
     case "moss": {
@@ -475,11 +625,23 @@ function paintTile(
       break;
     }
     case "snow": {
-      // Bright with a couple of sparkle flecks.
-      g.fillStyle = "rgba(255,255,255,0.7)";
+      // Wind-shaped drifts: a soft blue shadow pooled on the lee side, a bright
+      // crest, and cold sparkle. The corner-blended base does the big shapes.
+      if (hv > 0.45) {
+        const dx2 = px + TILE * (0.25 + 0.5 * hash(x * 3, y * 7));
+        const dy2 = py + TILE * (0.3 + 0.45 * hash(x * 5, y * 2));
+        const grd = g.createRadialGradient(dx2, dy2, 1, dx2, dy2, 12);
+        grd.addColorStop(0, "rgba(120,140,180,0.22)");
+        grd.addColorStop(1, "rgba(120,140,180,0)");
+        g.fillStyle = grd;
+        g.beginPath(); g.arc(dx2, dy2, 12, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 1.4; // crest
+        g.beginPath(); g.arc(dx2 - 2, dy2 - 3, 8, Math.PI * 1.05, Math.PI * 1.75); g.stroke();
+      }
+      g.fillStyle = "rgba(255,255,255,0.9)";
       for (let i = 0; i < 3; i++) {
         const hx = hash(x * 6 + i, y * 4 + i);
-        if (hx > 0.5) g.fillRect(px + hx * (TILE - 4), py + hash(x, y + i) * (TILE - 4), 2, 2);
+        if (hx > 0.45) g.fillRect(px + hx * (TILE - 4), py + hash(x, y + i) * (TILE - 4), 2, 2);
       }
       break;
     }
@@ -584,10 +746,9 @@ function paintTile(
     g.globalAlpha = 1;
   }
 
-  // Faint grid for ground tiles (walls/mountain/water handle their own look).
-  g.strokeStyle = "rgba(0,0,0,0.1)";
-  g.lineWidth = 1;
-  g.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
+  // (No per-tile grid stroke: organic ground reads as continuous terrain now —
+  // the old faint grid was a big part of the "checkerboard" look. Masonry
+  // draws its own mortar lines above.)
 }
 
 /**
@@ -693,13 +854,30 @@ function drawRoof(
   g.fillStyle = grad;
   g.fillRect(px, py, TILE, roofBottom - py);
 
-  // Shingle / thatch texture: rows of short strokes.
+  // Shingle / thatch texture: rows of course lines with STAGGERED tile ticks
+  // (offset every other row, keyed to the map coords so neighbouring roof
+  // tiles continue the bond) — reads as laid shingles, not ruled paper.
   g.strokeStyle = "rgba(0,0,0,0.22)";
   g.lineWidth = 1;
   const rows = style === "thatch" ? 5 : 3;
   for (let r = 1; r < rows; r++) {
     const ry = py + (r / rows) * (roofBottom - py);
     g.beginPath(); g.moveTo(px, ry); g.lineTo(px + TILE, ry); g.stroke();
+  }
+  if (style !== "thatch") {
+    g.strokeStyle = "rgba(0,0,0,0.16)";
+    for (let r = 0; r < rows; r++) {
+      const ry0 = py + (r / rows) * (roofBottom - py);
+      const ry1 = py + ((r + 1) / rows) * (roofBottom - py);
+      const shift = ((x + y + r) % 2) * (TILE / 6);
+      for (let i = 0; i < 3; i++) {
+        const tx = px + shift + (i + 0.5) * (TILE / 3);
+        g.beginPath(); g.moveTo(tx, ry0 + 1); g.lineTo(tx, ry1 - 1); g.stroke();
+      }
+    }
+    // a sun-caught shingle or two
+    g.fillStyle = "rgba(255,235,200,0.10)";
+    g.fillRect(px + ((x * 7 + y * 3) % 3) * (TILE / 3) + 2, py + 2, TILE / 3 - 4, (roofBottom - py) / rows - 2);
   }
   if (style === "thatch") { // vertical straw hints
     g.strokeStyle = "rgba(255,240,200,0.10)";
@@ -3187,13 +3365,28 @@ const TREE_PAL: Record<string, TreePal> = {
   heartoak:  { trunk: "#7a5a2e", lit: "#a07b3e", dark: "#5a4a14", mid: "#7d6a1e", light: "#a89030", hi: "rgba(242,216,120,0.55)" },
 };
 
-// A layered broadleaf canopy in the given palette.
+// A layered broadleaf canopy in the given palette: dark silhouette rim →
+// shaded mass → lit crown → leaf-cluster texture → sun dapples. The rim is
+// what separates the tree from the terrain; the clusters are what make it
+// read as foliage instead of stacked circles.
 function drawBroadleaf(g: CanvasRenderingContext2D, cx: number, cy: number, p: TreePal): void {
   shadow(g, cx, cy + 12, 12, 4);
+  // trunk with a root flare and a bark seam
   g.fillStyle = p.trunk;
-  g.fillRect(cx - 3, cy, 6, TILE / 2 - 2);
+  g.beginPath();
+  g.moveTo(cx - 3, cy - 2); g.lineTo(cx + 3, cy - 2);
+  g.lineTo(cx + 5, cy + TILE / 2 - 2); g.lineTo(cx - 5, cy + TILE / 2 - 2);
+  g.closePath(); g.fill();
   g.fillStyle = p.lit;
-  g.fillRect(cx - 3, cy, 2, TILE / 2 - 2);
+  g.fillRect(cx - 3, cy - 2, 2, TILE / 2 - 1);
+  g.strokeStyle = "rgba(0,0,0,0.25)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 2, cy + TILE / 2 - 4); g.stroke();
+  // silhouette rim: the canopy shape, slightly larger, in deep shade
+  g.fillStyle = "rgba(12,18,10,0.45)";
+  circle(g, cx - 7, cy - 2, 10.5);
+  circle(g, cx + 7, cy - 2, 10.5);
+  circle(g, cx, cy - 8, 13.5);
+  // canopy mass
   g.fillStyle = p.dark;
   circle(g, cx - 7, cy - 2, 9);
   circle(g, cx + 7, cy - 2, 9);
@@ -3201,39 +3394,70 @@ function drawBroadleaf(g: CanvasRenderingContext2D, cx: number, cy: number, p: T
   circle(g, cx, cy - 8, 12);
   g.fillStyle = p.light;
   circle(g, cx - 3, cy - 11, 7);
+  // leaf clusters: lit tufts on the sun side, deep tufts under the boughs
+  g.fillStyle = p.light;
+  circle(g, cx + 8, cy - 7, 3.4);
+  circle(g, cx - 10, cy - 5, 3.0);
+  circle(g, cx + 2, cy - 14, 3.2);
+  g.fillStyle = p.dark;
+  circle(g, cx + 4, cy + 2, 3.4);
+  circle(g, cx - 5, cy + 3, 3.0);
+  // sun dapples
   g.fillStyle = p.hi;
   circle(g, cx - 4, cy - 12, 3);
+  circle(g, cx + 5, cy - 10, 1.8);
+  circle(g, cx - 8, cy - 7, 1.5);
 }
 
-// Coldpine: a tall, cold blue-green conifer in stacked tiers.
+// Coldpine: a tall, cold blue-green conifer — each tier split into a shaded
+// west half and a lit east half, with snow settled on the windward edges.
 function drawColdpine(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   shadow(g, cx, cy + 12, 8, 3);
   g.fillStyle = "#5a4a36"; // narrow trunk
   g.fillRect(cx - 2, cy + 2, 4, TILE / 2 - 4);
-  const tier = (baseY: number, w: number, h: number, col: string) => {
-    g.fillStyle = col;
-    g.beginPath();
-    g.moveTo(cx, baseY - h);
-    g.lineTo(cx - w, baseY);
-    g.lineTo(cx + w, baseY);
-    g.closePath();
-    g.fill();
+  g.fillStyle = "#6e5c46";
+  g.fillRect(cx - 2, cy + 2, 1.5, TILE / 2 - 4);
+  const tier = (baseY: number, w: number, h: number, dark: string, lit: string) => {
+    // silhouette rim under each tier so the boughs stack with depth
+    g.fillStyle = "rgba(8,14,12,0.4)";
+    g.beginPath(); g.moveTo(cx, baseY - h); g.lineTo(cx - w - 1.4, baseY + 1.4); g.lineTo(cx + w + 1.4, baseY + 1.4); g.closePath(); g.fill();
+    g.fillStyle = dark; // shaded half
+    g.beginPath(); g.moveTo(cx, baseY - h); g.lineTo(cx - w, baseY); g.lineTo(cx, baseY); g.closePath(); g.fill();
+    g.fillStyle = lit;  // lit half
+    g.beginPath(); g.moveTo(cx, baseY - h); g.lineTo(cx + w, baseY); g.lineTo(cx, baseY); g.closePath(); g.fill();
   };
-  tier(cy + 6, 11, 12, "#27412f");
-  tier(cy + 1, 9, 11, "#2f4d38");
-  tier(cy - 4, 7, 10, "#386044");
-  g.fillStyle = "rgba(180,205,190,0.35)"; // frost highlight
-  circle(g, cx - 2, cy - 9, 2);
+  tier(cy + 6, 11, 12, "#22392a", "#2d4a35");
+  tier(cy + 1, 9, 11, "#294433", "#35553e");
+  tier(cy - 4, 7, 10, "#31543b", "#3e6a49");
+  // snow settled on the bough tips
+  g.fillStyle = "rgba(216,228,236,0.75)";
+  g.fillRect(cx - 10, cy + 4.5, 5, 1.6);
+  g.fillRect(cx + 4, cy - 0.5, 4.5, 1.5);
+  g.fillRect(cx - 6, cy - 5.5, 4, 1.4);
+  circle(g, cx, cy - 14, 1.6); // snowy crown
 }
 
-// Greyoak: a thick grey trunk under a broad, heavy grey-green crown.
+// Greyoak: a thick grey trunk under a broad, heavy grey-green crown — rimmed,
+// clustered and dappled like the broadleaf, but wider and older.
 function drawGreyoak(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   shadow(g, cx, cy + 13, 14, 4);
-  g.fillStyle = "#6e6a62"; // thick grey bark
-  g.fillRect(cx - 4, cy - 1, 8, TILE / 2);
+  // gnarled trunk with a root flare
+  g.fillStyle = "#6e6a62";
+  g.beginPath();
+  g.moveTo(cx - 4, cy - 1); g.lineTo(cx + 4, cy - 1);
+  g.lineTo(cx + 6, cy + TILE / 2); g.lineTo(cx - 6, cy + TILE / 2);
+  g.closePath(); g.fill();
   g.fillStyle = "#827d73";
   g.fillRect(cx - 4, cy - 1, 3, TILE / 2);
-  g.fillStyle = "#33402a"; // wide canopy, layered
+  g.strokeStyle = "rgba(0,0,0,0.3)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx + 1, cy + 2); g.lineTo(cx + 3, cy + TILE / 2 - 2); g.stroke();
+  // silhouette rim
+  g.fillStyle = "rgba(10,14,8,0.45)";
+  circle(g, cx - 10, cy - 3, 11.5);
+  circle(g, cx + 10, cy - 3, 11.5);
+  circle(g, cx, cy - 9, 13.5);
+  // crown mass
+  g.fillStyle = "#33402a";
   circle(g, cx - 10, cy - 3, 10);
   circle(g, cx + 10, cy - 3, 10);
   circle(g, cx - 4, cy - 6, 11);
@@ -3242,8 +3466,16 @@ function drawGreyoak(g: CanvasRenderingContext2D, cx: number, cy: number): void 
   circle(g, cx, cy - 11, 12);
   g.fillStyle = "#54663a";
   circle(g, cx - 4, cy - 13, 6);
+  // leaf clusters + dapples
+  g.fillStyle = "#54663a";
+  circle(g, cx + 11, cy - 8, 3.6);
+  circle(g, cx - 12, cy - 6, 3.2);
+  g.fillStyle = "#2a3522";
+  circle(g, cx + 6, cy + 1, 3.6);
+  circle(g, cx - 7, cy + 2, 3.2);
   g.fillStyle = "rgba(150,165,120,0.4)";
   circle(g, cx - 5, cy - 14, 3);
+  circle(g, cx + 4, cy - 12, 1.8);
 }
 
 // Rock + ore-vein colours per mineable type, so a knucklestone rock reads
@@ -3298,19 +3530,33 @@ function drawRock(
   g.lineTo(cx + 1, cy + 1);
   g.lineTo(cx + 9, cy + 5);
   g.stroke();
-  // Ore vein — flecks/streaks in the ore's own colour.
-  g.fillStyle = p.vein;
-  circle(g, cx + 6, cy + 1, 1.7);
-  circle(g, cx - 4, cy - 4, 1.3);
-  g.strokeStyle = p.vein;
-  g.lineWidth = 1;
-  g.globalAlpha = 0.8;
+  // Grounding rim: a dark edge along the base so the boulder sits IN the
+  // ground instead of floating on it.
+  g.strokeStyle = "rgba(0,0,0,0.4)";
+  g.lineWidth = 1.5;
   g.beginPath();
-  g.moveTo(cx - 6, cy + 3);
+  g.moveTo(cx - 13, cy + 6);
+  g.lineTo(cx - 2, cy + 8);
+  g.lineTo(cx + 13, cy + 7);
+  g.stroke();
+  // Ore vein — a bold seam with satellite chips, bright enough to read the
+  // metal at a glance, plus a cold specular chip on the lit facet.
+  g.strokeStyle = p.vein;
+  g.lineWidth = 2;
+  g.globalAlpha = 0.9;
+  g.beginPath();
+  g.moveTo(cx - 7, cy + 4);
   g.lineTo(cx - 2, cy - 3);
-  g.lineTo(cx + 4, cy - 6);
+  g.lineTo(cx + 5, cy - 7);
   g.stroke();
   g.globalAlpha = 1;
+  g.fillStyle = p.vein;
+  circle(g, cx + 6, cy + 1, 2.0);
+  circle(g, cx - 4, cy - 4, 1.5);
+  circle(g, cx + 1, cy + 5, 1.3);
+  circle(g, cx + 9, cy - 2, 1.1);
+  g.fillStyle = "rgba(255,255,255,0.5)";
+  g.fillRect(cx - 5, cy - 8, 3, 1.4); // specular chip
 }
 
 // --- Fishing spot: animated ripples with a fish glint ---
@@ -3542,6 +3788,10 @@ function drawMonsterBody(
       return drawDragon(g, cx, cy, now);
     case "boneman":
       return drawBoneman(g, cx, cy, now);
+    case "greyback":
+      return drawGreyback(g, cx, cy, now);
+    case "delve_horror":
+      return drawDelveHorror(g, cx, cy, now);
     case "green_baron":
       return H("#2f5233", "#5c8a3a"); // outlaw forest greens
     case "hollow_prophet":
@@ -3880,28 +4130,48 @@ function drawHumanoid(
   g.fillStyle = "#2b2620";
   g.fillRect(cx - 5, cy + 6 - a.liftL, 4, 8);
   g.fillRect(cx + 1, cy + 6 - a.liftR, 4, 8);
+  g.fillStyle = "rgba(0,0,0,0.35)"; // boot shadow grounds the feet
+  g.fillRect(cx - 5, cy + 12 - a.liftL, 4, 2);
+  g.fillRect(cx + 1, cy + 12 - a.liftR, 4, 2);
   // far arm (behind the torso), sleeved in the body colour
   limbArm(g, cx + 6, cy - 4 + bob, farAngle, body, skin);
-  g.fillStyle = body; // torso / cloak
+  // torso silhouette outline — the dark rim that pops the figure off terrain
+  g.strokeStyle = "rgba(0,0,0,0.45)";
+  g.lineWidth = 2.5;
   g.beginPath();
   g.moveTo(cx - 7, cy + 8 + bob);
   g.lineTo(cx - 6, cy - 7 + bob);
   g.quadraticCurveTo(cx, cy - 11 + bob, cx + 6, cy - 7 + bob);
   g.lineTo(cx + 7, cy + 8 + bob);
   g.closePath();
+  g.stroke();
+  g.fillStyle = body; // torso / cloak
   g.fill();
+  // cloth shading: lit left panel, shaded right panel, a belt at the waist
+  g.fillStyle = "rgba(255,255,255,0.10)";
+  g.fillRect(cx - 6, cy - 6 + bob, 4, 13);
+  g.fillStyle = "rgba(0,0,0,0.18)";
+  g.fillRect(cx + 2, cy - 6 + bob, 5, 13);
+  g.fillStyle = "rgba(20,14,8,0.7)"; // belt
+  g.fillRect(cx - 7, cy + 2 + bob, 14, 2);
   g.fillStyle = trim; // shoulder trim
   g.fillRect(cx - 7, cy - 6 + bob, 14, 3);
   // near arm (in front of the torso), holding any weapon while attacking
   limbArm(g, cx - 6, cy - 4 + bob, nearAngle, body, skin, nearTool);
   g.fillStyle = skin; // head / hood-shadow
   circle(g, cx, cy - 11 + bob, 4.5);
+  g.strokeStyle = "rgba(0,0,0,0.4)"; // head rim
+  g.lineWidth = 1.2;
+  g.beginPath(); g.arc(cx, cy - 11 + bob, 4.5, 0, Math.PI * 2); g.stroke();
   g.fillStyle = body; // hood / helm over the head
   g.beginPath();
   g.arc(cx, cy - 12 + bob, 5, Math.PI, 0);
   g.fill();
   g.fillStyle = "#1a140f";
   g.fillRect(cx - 4, cy - 12 + bob, 8, 2); // brow shadow
+  g.fillStyle = "rgba(255,240,220,0.9)"; // eye glints under the brow
+  g.fillRect(cx - 2.6, cy - 11.4 + bob, 1.4, 1.2);
+  g.fillRect(cx + 1.2, cy - 11.4 + bob, 1.4, 1.2);
 }
 
 // --- Moor Rat: small, long-tailed ---
@@ -4090,6 +4360,87 @@ function drawBear(g: CanvasRenderingContext2D, cx: number, cy: number, now: numb
   g.fillStyle = "#15100b"; // nose + eye
   circle(g, cx - 20, cy - 1 + bob, 1.4);
   circle(g, cx - 12, cy - 4 + bob, 1.1);
+}
+
+// --- The Greyback: the wandering world boss — a huge stone-grey bear with a
+// pale silver mane, old scars, and eyes that have outlived hunters. Drawn at
+// ~1.8× bear bulk so the sighting reads as an EVENT. ---
+function drawGreyback(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const bob = Math.sin(now / 300) * 0.8;
+  const s = 1.8;
+  shadow(g, cx, cy + 15, 24, 8);
+  g.save();
+  g.translate(cx, cy + bob);
+  g.scale(s, s);
+  g.fillStyle = "#2e2f33"; // legs
+  g.fillRect(-9, 5, 4.5, 9);
+  g.fillRect(5, 5, 4.5, 9);
+  g.strokeStyle = "rgba(0,0,0,0.5)"; g.lineWidth = 1.4; // silhouette rim
+  g.beginPath(); g.ellipse(0, 0, 14.8, 9.8, 0, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = "#4b4e55"; // stone-grey bulk
+  g.beginPath(); g.ellipse(0, 0, 14, 9, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#6a6e78"; // the pale grey back — its name
+  g.beginPath(); g.ellipse(2, -4.5, 9.5, 5, -0.1, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#82868f"; // mane crest
+  g.beginPath(); g.ellipse(4, -6.5, 6, 2.6, -0.15, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#2a2225"; g.lineWidth = 1.1; // old scars
+  g.beginPath(); g.moveTo(-3, -4); g.lineTo(1, 1); g.stroke();
+  g.beginPath(); g.moveTo(6, -2); g.lineTo(9, 3); g.stroke();
+  g.fillStyle = "#4b4e55"; // head
+  circle(g, -12, -3, 7);
+  g.fillStyle = "#5d616a"; // muzzle
+  g.beginPath(); g.ellipse(-17.5, -1, 4.4, 3.2, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#2e2f33"; // ears
+  circle(g, -15.5, -8.5, 2.6);
+  circle(g, -8.5, -8.5, 2.6);
+  g.fillStyle = "#15100b"; // nose
+  circle(g, -20.5, -1, 1.6);
+  g.fillStyle = "#e8d9b0"; // pale old eye — it has seen you before
+  circle(g, -12, -4.4, 1.5);
+  g.fillStyle = "#15100b";
+  circle(g, -11.7, -4.4, 0.8);
+  g.restore();
+}
+
+// --- The Delve Horror: the gauntlet's final wave — a hovering shroud of dark
+// around one huge unblinking eye, trailing tatters, ringed by orbiting motes. ---
+function drawDelveHorror(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
+  const hover = Math.sin(now / 420) * 2.2;
+  const y = cy - 6 + hover;
+  shadow(g, cx, cy + 13, 14, 4);
+  // trailing tatters
+  g.fillStyle = "rgba(18,14,26,0.85)";
+  for (let i = -2; i <= 2; i++) {
+    const sway = Math.sin(now / 300 + i * 1.7) * 2;
+    g.beginPath();
+    g.moveTo(cx + i * 5 - 3, y + 8);
+    g.quadraticCurveTo(cx + i * 5 + sway, y + 17, cx + i * 5 + sway * 1.5, y + 21);
+    g.lineTo(cx + i * 5 + 3, y + 8);
+    g.closePath(); g.fill();
+  }
+  // the shroud body
+  g.strokeStyle = "rgba(120,90,200,0.35)"; g.lineWidth = 2.5;
+  g.beginPath(); g.ellipse(cx, y, 13.5, 12, 0, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = "#161020";
+  g.beginPath(); g.ellipse(cx, y, 13, 11.5, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#221a34";
+  g.beginPath(); g.ellipse(cx - 3, y - 3, 8, 7, 0, 0, Math.PI * 2); g.fill();
+  // THE EYE — the whole boss, staring
+  const blink = Math.sin(now / 1400) > 0.96 ? 0.2 : 1;
+  g.fillStyle = "#e8e2d2";
+  g.beginPath(); g.ellipse(cx, y - 1, 7, 5.6 * blink, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#7a3af0";
+  circle(g, cx, y - 1, 3.4 * blink);
+  g.fillStyle = "#12081e";
+  circle(g, cx, y - 1, 1.7 * blink);
+  g.fillStyle = "rgba(255,255,255,0.85)";
+  circle(g, cx - 1.3, y - 2.4, 0.9);
+  // orbiting motes
+  for (let i = 0; i < 3; i++) {
+    const a = now / 800 + (i * Math.PI * 2) / 3;
+    g.fillStyle = `rgba(150,110,240,${0.5 + 0.3 * Math.sin(a * 2)})`;
+    circle(g, cx + Math.cos(a) * 17, y + Math.sin(a) * 9, 1.6);
+  }
 }
 
 // --- Stone Crawler: a low, armoured stone-shelled creature ---

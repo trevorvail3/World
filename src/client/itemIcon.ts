@@ -270,8 +270,8 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
     case "bread": return shadeFrom(hashColor(id, 22, 26, 38, 20, 50, 16));
     case "hide": return shadeFrom(hashColor(id, 14, 34, 30, 22, 32, 18));
     case "cape": return shadeFrom(hashColor(id, 0, 360, 44, 22, 38, 16));
-    case "mount": return shadeFrom(hashColor(id, 8, 44, 26, 22, 32, 18));
-    case "pet": return shadeFrom(hashColor(id, 70, 100, 30, 24, 40, 18));
+    case "mount": return shadeFrom(hashColor(id, 10, 140, 26, 24, 34, 20));
+    case "pet": return shadeFrom(hashColor(id, 0, 360, 32, 26, 42, 20));
     case "ring":
     case "amulet": return shadeFrom(tweak("#d2b24a", id, 6, 8, 8), hslHex(hash(id) % 360, 62, 56));
     case "coin": return shadeFrom(hashColor(id, 36, 18, 48, 18, 44, 16));
