@@ -110,6 +110,7 @@ export class Hud {
   private content: Content;
   private skillRows = new Map<SkillId, HTMLElement>();
   private spellRows = new Map<string, { row: HTMLElement; btn: HTMLButtonElement }>();
+  private autocastChips = new Map<string, HTMLElement>();
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
@@ -436,29 +437,47 @@ export class Hud {
         break;
       }
       case "spells": {
-        // The Faith spellbook: one mixed page of Grace-fuelled casts. Each row
-        // greys out if your Faith is too low; the Cast button dims if you can't
-        // afford the Grace. Wield a staff and cast attacks mid-fight.
-        const list = document.createElement("div");
-        list.className = "spellbook";
+        // Compact quick-cast grid: tap a spell to cast it now, long-press for its
+        // details. Attack spells can be set to autocast from the strip below.
+        const grid = document.createElement("div");
+        grid.className = "spell-grid";
         for (const spell of this.content.spells) {
-          const row = document.createElement("div");
-          row.className = "spell-row";
-          row.innerHTML = `
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "spell-btn";
+          cell.innerHTML = `
             <span class="spell-ic">${iconize(spell.icon)}</span>
-            <div class="spell-body">
-              <div class="spell-top"><span class="spell-name">${escapeHtml(spell.name)}</span><span class="spell-cost">🔮 ${spell.cost}</span></div>
-              <div class="spell-blurb">${escapeHtml(spell.blurb)}</div>
-              <div class="spell-req">Faith ${spell.faithReq}</div>
-            </div>
-            <button class="spell-cast" type="button">Cast</button>`;
-          const btn = row.querySelector(".spell-cast") as HTMLButtonElement;
-          btn.addEventListener("click", () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }));
-          this.spellRows.set(spell.id, { row, btn });
-          list.appendChild(row);
+            <span class="spell-nm">${escapeHtml(spell.name)}</span>
+            <span class="spell-co">${glyph("orb")} ${spell.cost}</span>`;
+          this.attachLongPress(
+            cell,
+            (x, y) => this.showSpellInfo(spell, x, y),
+            () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }),
+          );
+          this.spellRows.set(spell.id, { row: cell, btn: cell });
+          grid.appendChild(cell);
         }
-        p.appendChild(list);
-        p.appendChild(note("Wield a staff, then cast. Grace refills at any shrine or altar, or with a Faith Potion."));
+        p.appendChild(grid);
+
+        // Autocast strip: pick the attack spell your staff fires each swing.
+        p.appendChild(subhead("Autocast"));
+        const strip = document.createElement("div");
+        strip.className = "autocast-strip";
+        const mkChip = (id: string | null, label: string, icon: string): void => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "autocast-chip";
+          chip.innerHTML = `${icon ? iconize(icon) : ""}<span>${escapeHtml(label)}</span>`;
+          chip.addEventListener("click", () => this.dispatch({ type: "SET_AUTOCAST", spell: id }));
+          this.autocastChips.set(id ?? "none", chip);
+          strip.appendChild(chip);
+        };
+        mkChip(null, "Off", "");
+        for (const spell of this.content.spells) {
+          if (spell.kind === "attack") mkChip(spell.id, spell.name, spell.icon);
+        }
+        p.appendChild(strip);
+        p.appendChild(note("Tap to cast · long-press for details. Autocast fires the chosen spell each staff swing until Grace runs out."));
         break;
       }
       case "character": {
@@ -932,8 +951,8 @@ export class Hud {
   }
 
   /** Active food/potion buffs as chips with a live countdown. */
-  /** Grey out spells above your Faith level; dim the Cast button when you can't
-   *  afford the Grace or aren't wielding a staff. */
+  /** Grey out spells above your Faith level; dim the button when you can't afford
+   *  the Grace or aren't wielding a staff; highlight the autocast selection. */
   private updateSpells(player: WorldState["player"]): void {
     if (this.spellRows.size === 0) return;
     const faith = player.skills.faith.level;
@@ -946,6 +965,34 @@ export class Hud {
       ref.row.classList.toggle("locked", !known);
       ref.btn.disabled = !affordable;
     }
+    const active = player.autocastSpell ?? "none";
+    for (const [id, chip] of this.autocastChips) {
+      chip.classList.toggle("on", id === active);
+    }
+  }
+
+  /** A small info popup for a spell (long-press) — blurb, level, cost, effect. */
+  private showSpellInfo(spell: Content["spells"][number], x: number, y: number): void {
+    if (!this.menu) return;
+    const effect = spell.kind === "attack" ? `Deals ~${Math.round((spell.dmgMult ?? 1) * 100)}% of your magic max hit`
+      : spell.kind === "heal" ? `Heals ${spell.heal} HP`
+      : spell.kind === "ward" ? `+${spell.wardAmt} defence for ${Math.round((spell.wardMs ?? 0) / 1000)}s`
+      : spell.kind === "curse" ? `Drops the target's defence by ${spell.curseAmt}`
+      : spell.kind === "teleport" ? "Teleports you to the city hub"
+      : spell.kind === "kindle" ? "Superheats an ore in your pack into a bar"
+      : spell.kind === "enchant" ? "Cuts a rough/uncut gem into a cut gem"
+      : "";
+    const items: MenuItem[] = [{
+      label: "Cast", target: spell.name, tone: "action",
+      onSelect: () => this.dispatch({ type: "CAST_SPELL", spell: spell.id }),
+    }];
+    if (spell.kind === "attack") {
+      items.push({
+        label: "Autocast this", target: spell.name,
+        onSelect: () => this.dispatch({ type: "SET_AUTOCAST", spell: spell.id }),
+      });
+    }
+    this.menu.show(x, y, spell.name, items, `${spell.blurb} · Faith ${spell.faithReq} · ${spell.cost} Grace · ${effect}`);
   }
 
   private renderBuffs(player: WorldState["player"]): void {

@@ -43,6 +43,8 @@ export interface SavedProgress {
   energy: number;
   /** Faith Grace pool (refilled at altars). Optional for pre-Faith saves. */
   grace?: number;
+  /** The attack spell selected for autocast (or null/absent). */
+  autocastSpell?: string | null;
   /** Selected melee combat style. */
   combatStyle: string;
   /** Active quests: id -> { step, killCount }. */
@@ -129,6 +131,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     running: player.running,
     energy: player.energy,
     grace: player.grace,
+    autocastSpell: player.autocastSpell ?? null,
     combatStyle: player.combatStyle,
     quests: JSON.parse(JSON.stringify(player.quests)) as SavedProgress["quests"],
     questsDone: [...player.questsDone],
@@ -252,6 +255,8 @@ export function hydratePlayer(
   const savedGrace = raw["grace"];
   const gmax = Math.max(10, player.skills.faith.level);
   player.grace = finiteNum(savedGrace) ? Math.max(0, Math.min(gmax, savedGrace)) : gmax;
+  const ac = raw["autocastSpell"];
+  player.autocastSpell = typeof ac === "string" ? ac : null;
   player.agilityLap = null; // lap progress is transient — start fresh on load
   // Tools are wielded in the mainhand now. Make sure the player still owns each
   // basic tool so saves from before this change can gather: if they hold no

@@ -476,6 +476,7 @@ export function createWorld(
     running: true,
     energy: ENERGY_MAX,
     grace: 10, // start with a small Grace pool (floored at 10); grows with Faith
+    autocastSpell: null,
     winded: false,
     agilityLap: null,
     agilityHop: null,
@@ -1542,6 +1543,12 @@ export function applyIntent(
     }
     case "CAST_SPELL": {
       castSpell(state, content, intent.spell, ctx, events);
+      break;
+    }
+    case "SET_AUTOCAST": {
+      player.autocastSpell = intent.spell;
+      const nm = intent.spell ? content.spells.find((s) => s.id === intent.spell)?.name : null;
+      events.push({ type: "LOG", message: nm ? `Autocast set: ${nm}.` : "Autocast cleared." });
       break;
     }
     case "BURY": {
@@ -4211,8 +4218,19 @@ function playerSwing(
   const baseAcc = ranged ? rangedAccuracy(player, content)
     : magic ? magicAccuracy(player, content) : playerAccuracy(player, content);
   const acc = exploits ? Math.round(baseAcc * COMBAT.weaknessAcc) : baseAcc;
-  const maxHit = ranged ? rangedMaxHit(player, content)
+  let maxHit = ranged ? rangedMaxHit(player, content)
     : magic ? magicMaxHit(player, content) : playerMaxHit(player, content);
+
+  // Autocast: while a staff is wielded and an attack spell is selected, each
+  // swing fires that spell (spending Grace) for a bigger hit — falling back to
+  // the free basic bolt once Grace runs dry.
+  if (magic && player.autocastSpell) {
+    const sp = content.spells.find((s) => s.id === player.autocastSpell);
+    if (sp && sp.kind === "attack" && skillLvl(player, "faith") >= sp.faithReq && player.grace >= sp.cost) {
+      player.grace -= sp.cost;
+      maxHit = Math.max(1, Math.round(maxHit * (sp.dmgMult ?? 1)));
+    }
+  }
 
   const mechs = stats.mechanics ?? [];
   if (ctx.rng() < hitChance(acc, effectiveDef(obj, stats, ctx.now))) {

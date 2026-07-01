@@ -1209,6 +1209,12 @@ export interface Player {
    */
   grace: number;
   /**
+   * The attack spell set to autocast while wielding a staff: each swing fires it
+   * (spending Grace) instead of the free basic bolt, falling back to the free
+   * bolt when Grace runs out. Null = just the free bolt. Persisted preference.
+   */
+  autocastSpell?: string | null;
+  /**
    * Progress on the current Agility circuit: the course id and the next
    * obstacle order expected. Null when not mid-lap. Transient (not persisted).
    */
@@ -1462,6 +1468,12 @@ export interface CastSpellIntent {
   spell: string;
 }
 
+/** "Set (or clear) the attack spell I autocast with a staff." */
+export interface SetAutocastIntent {
+  type: "SET_AUTOCAST";
+  spell: string | null;
+}
+
 /** "Bury the bones in this inventory slot" (grants Faith XP). */
 export interface BuryIntent {
   type: "BURY";
@@ -1640,6 +1652,7 @@ export type Intent =
   | CraftIntent
   | SetStyleIntent
   | CastSpellIntent
+  | SetAutocastIntent
   | BuryIntent
   | GrindIntent
   | ToggleRunIntent
