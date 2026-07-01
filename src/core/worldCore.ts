@@ -1707,8 +1707,12 @@ const EQUIP_SLOTS = new Set<string>([
   "mount",
 ]);
 
-/** Chance, per successful skill action, of a matching skilling-pet companion. */
-const PET_DROP_CHANCE = 0.002;
+/** Chance, per successful skill action, of a matching skilling-pet companion.
+ *  Skilling pets roll on EVERY action, and maxing a skill is ~100k+ actions, so
+ *  this is deliberately OSRS-rare — far rarer than a boss pet (1/500 per kill).
+ *  At 1/500,000 per action a full grind to 100 (~120k actions) is only a ~21%
+ *  shot, so each skilling pet stays a genuine prestige flex. */
+const PET_DROP_CHANCE = 0.000002;
 
 /** The companion currently summoned, or undefined. */
 function activeCompanion(player: Player, content: Content): ItemDef | undefined {
