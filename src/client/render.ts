@@ -1497,6 +1497,41 @@ export function drawWorld(
       mountId ? { id: mountId, gold: ownsCosmetic("saddle_gold"), barding: ownsCosmetic("horse_armor") } : undefined,
     );
     if (php) g.restore();
+    // Strike particles: at the moment a swing lands (the activity clock just
+    // rolled), chips and sparks burst off the TARGET — wood chips under a
+    // hatchet, stone sparks under a pick, gold-white flecks on a combat hit.
+    const act = pl.activity;
+    const striking = act.kind === "woodcutting" || act.kind === "mining" || act.kind === "combat";
+    if (striking && act.targetId && act.actionInterval > 0) {
+      const strikeT = act.nextActionAt - act.actionInterval; // when the last strike landed
+      const age = now - strikeT;
+      if (age >= 0 && age < 320) {
+        const tdef = content.objects.find((o) => o.id === act.targetId);
+        const tobj = tdef ? state.objects[tdef.id] : undefined;
+        if (tdef && tobj) {
+          const tp = objectPos(tdef, tobj);
+          const tx = tp.x * TILE + TILE / 2 - cam.x;
+          const ty = tp.y * TILE + TILE / 2 - cam.y;
+          const fade = 1 - age / 320;
+          const kindCol = act.kind === "combat"
+            ? ["#f2e2a0", "#e8c45a", "#fff6d8"]
+            : tdef.kind === "tree"
+              ? ["#c9a56a", "#a5824c", "#8a6a3c"]
+              : ["#d8d8e0", "#b9bcc4", "#f2f2f6"];
+          for (let i = 0; i < 6; i++) {
+            const hh = hash(i * 7.3, Math.floor(strikeT / 100));
+            const ang = -Math.PI * 0.9 + hh * Math.PI * 0.8;
+            const dist = (6 + hh * 16) * (age / 320);
+            const gx = tx + Math.cos(ang) * dist * 1.4;
+            const gy = ty - 6 + Math.sin(ang) * dist + (age / 320) * (age / 320) * 14; // gravity
+            g.globalAlpha = fade * (0.5 + 0.5 * hh);
+            g.fillStyle = kindCol[i % 3]!;
+            g.fillRect(gx - 1.2, gy - 1.2, 2.4, 2.4);
+          }
+          g.globalAlpha = 1;
+        }
+      }
+    }
     // A warm light the player carries — added after the bloom pass so it only
     // punches a night pool (no daytime halo), via drawDaylight's light list.
     if (!region) playerGlow = [plCx, plCy - 4];
@@ -1688,6 +1723,42 @@ function drawBiomeGrade(g: CanvasRenderingContext2D, w: number, h: number, b: Bi
 /** Per-biome ambient weather/particles, animated by wall-clock `now`. `night`
  *  (0 by day … 1 at midnight) makes glowing motes read brighter after dark. */
 function drawWeather(g: CanvasRenderingContext2D, w: number, h: number, now: number, b: Biome, night = 0): void {
+  // Passing showers over the green country: deterministic 5-minute weather
+  // windows (hash of the wall-clock window index), so rain arrives, soaks the
+  // hills for a few minutes, and moves on — with the rare white crack of
+  // lightning at the height of a storm.
+  if (b === "city" || b === "hills" || b === "greyoak" || b === "redrun") {
+    const win = Math.floor(Date.now() / 300_000);
+    const wet = frac(win * 17.31 + (b === "city" ? 0.13 : b === "hills" ? 0.41 : b === "greyoak" ? 0.67 : 0.89));
+    if (wet > 0.62) {
+      const heavy = wet > 0.85;
+      const drops = heavy ? 110 : 60;
+      g.strokeStyle = `rgba(180,205,230,${heavy ? 0.38 : 0.26})`;
+      g.lineWidth = 1.1;
+      g.beginPath();
+      for (let i = 0; i < drops; i++) {
+        const sp = 260 + frac(i * 3.7) * 160;
+        const x = (frac(i * 12.9) * (w + 60) + now * 28 / 1000) % (w + 60) - 30;
+        const y = ((frac(i * 7.7) * h + now * sp / 1000) % (h + 24)) - 12;
+        g.moveTo(x, y);
+        g.lineTo(x - 2.4, y + 7.5);
+      }
+      g.stroke();
+      // splash ticks on the ground
+      g.fillStyle = "rgba(190,215,235,0.22)";
+      for (let i = 0; i < (heavy ? 26 : 12); i++) {
+        const x = (frac(i * 5.3) * w + now * 11 / 1000) % w;
+        const y = (frac(i * 9.1) * h + now * 17 / 1000) % h;
+        const ph = (now / 260 + i) % 1;
+        g.beginPath(); g.ellipse(x, y, 2 + ph * 3, 0.8 + ph, 0, 0, Math.PI * 2); g.fill();
+      }
+      // a storm's lightning: a rare frame-long white wash
+      if (heavy && Math.sin(now / 90) > 0 && frac(Math.floor(now / 4200) * 3.3) > 0.86) {
+        g.fillStyle = "rgba(235,240,255,0.16)";
+        g.fillRect(0, 0, w, h);
+      }
+    }
+  }
   switch (b) {
     case "spine": { // drifting snow
       g.fillStyle = "rgba(240,247,255,0.85)";

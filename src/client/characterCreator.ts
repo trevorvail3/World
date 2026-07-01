@@ -216,9 +216,47 @@ export class CharacterCreator {
     const g = this.preview.getContext("2d");
     if (!g) return;
     const w = this.preview.width, h = this.preview.height;
+    const t = performance.now() - this.t0;
     g.clearRect(0, 0, w, h);
-    // Centre the figure (it spans roughly -20..+13 base units tall) and scale up.
-    drawAvatar(g, w / 2, h / 2 + 22, 3.7, this.draft, { now: performance.now() - this.t0 });
+    // A little stage: dusk-sky gradient, distant hills, a grass apron under
+    // the figure and a warm key light — so the first thing a new player sees
+    // of their character is a portrait, not a paper doll on a void.
+    const sky = g.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, "#25314e");
+    sky.addColorStop(0.55, "#3a4a64");
+    sky.addColorStop(1, "#2c3830");
+    g.fillStyle = sky;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = "#222f28"; // far hills
+    g.beginPath();
+    g.moveTo(0, h * 0.62);
+    g.quadraticCurveTo(w * 0.3, h * 0.52, w * 0.55, h * 0.60);
+    g.quadraticCurveTo(w * 0.8, h * 0.67, w, h * 0.58);
+    g.lineTo(w, h); g.lineTo(0, h);
+    g.closePath(); g.fill();
+    g.fillStyle = "#31402f"; // grass apron
+    g.beginPath(); g.ellipse(w / 2, h - 22, w * 0.46, 20, 0, 0, Math.PI * 2); g.fill();
+    // drifting motes for life
+    for (let i = 0; i < 6; i++) {
+      const mx = (i * 37 + t / 60 + i * i * 13) % w;
+      const my = 20 + ((i * 53 + t / 90) % (h * 0.5));
+      g.fillStyle = `rgba(235,238,180,${(0.10 + 0.10 * Math.sin(t / 500 + i)).toFixed(3)})`;
+      g.beginPath(); g.arc(mx, my, 1.2, 0, Math.PI * 2); g.fill();
+    }
+    // warm key light behind the figure
+    const key = g.createRadialGradient(w / 2, h / 2 + 8, 6, w / 2, h / 2 + 8, w * 0.55);
+    key.addColorStop(0, "rgba(240,200,130,0.16)");
+    key.addColorStop(1, "rgba(240,200,130,0)");
+    g.fillStyle = key;
+    g.fillRect(0, 0, w, h);
+    // The figure idles (breathing bob comes from the shared avatar's own clock).
+    drawAvatar(g, w / 2, h / 2 + 22, 3.7, this.draft, { now: t });
+    // soft vignette frame
+    const vg = g.createRadialGradient(w / 2, h / 2, h * 0.36, w / 2, h / 2, h * 0.72);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(6,8,12,0.55)");
+    g.fillStyle = vg;
+    g.fillRect(0, 0, w, h);
   }
 
   private close(): void {
