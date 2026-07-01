@@ -15,6 +15,7 @@
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import { iconize } from "./glyph.ts";
+import { equipRequirement } from "../core/worldCore.ts";
 
 export class BountyUI {
   private backdrop: HTMLElement;
@@ -37,8 +38,10 @@ export class BountyUI {
           <button class="shop-close" type="button">✕</button>
         </div>
         <div class="bounty-body"></div>
-      </div>`;
+      </div>
+      <div class="shop-info hidden"></div>`;
     this.body = this.backdrop.querySelector(".bounty-body") as HTMLElement;
+    this.infoEl = this.backdrop.querySelector(".shop-info") as HTMLElement;
     root.appendChild(this.backdrop);
 
     (this.backdrop.querySelector(".shop-close") as HTMLElement).addEventListener(
@@ -48,6 +51,71 @@ export class BountyUI {
     this.backdrop.addEventListener("pointerdown", (e) => {
       if (e.target === this.backdrop) this.close();
     });
+    this.infoEl.addEventListener("pointerdown", (e) => {
+      if (e.target === this.infoEl) this.hideInfo();
+    });
+  }
+
+  private infoEl!: HTMLElement;
+  private pressTimer = 0;
+
+  private hideInfo(): void { this.infoEl.classList.add("hidden"); }
+
+  /** Fire `onHold` after a long press on `el` (cancelled by release or a drag). */
+  private onLongPress(el: HTMLElement, onHold: () => void): void {
+    let sx = 0, sy = 0;
+    const cancel = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
+    el.addEventListener("pointerdown", (e) => {
+      sx = e.clientX; sy = e.clientY;
+      if (e.button === 2) { onHold(); return; }
+      cancel();
+      this.pressTimer = window.setTimeout(() => { this.pressTimer = 0; onHold(); }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) cancel();
+    });
+    el.addEventListener("pointerup", cancel);
+    el.addEventListener("pointercancel", cancel);
+    el.addEventListener("pointerleave", cancel);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
+  /** A one-line combat/utility stat summary for the inspect box. */
+  private itemStats(def: Content["items"][ItemId]): string {
+    const bits: string[] = [];
+    if (def.acc) bits.push(`+${def.acc} accuracy`);
+    if (def.dmg) bits.push(`+${def.dmg} damage`);
+    if (def.rngAcc) bits.push(`+${def.rngAcc} ranged acc`);
+    if (def.rngDmg) bits.push(`+${def.rngDmg} ranged dmg`);
+    if (def.magAcc) bits.push(`+${def.magAcc} magic acc`);
+    if (def.magDmg) bits.push(`+${def.magDmg} magic dmg`);
+    if (def.def) bits.push(`+${def.def} defence`);
+    if (def.heals) bits.push(`heals ${def.heals}`);
+    return bits.join(" · ");
+  }
+
+  /** Long-press inspect for a Hunt-Marks ware: what it is, its stats + cost. */
+  private showItemInfo(item: ItemId, cost: number, qty: number): void {
+    const def = this.content.items[item];
+    if (!def) return;
+    const stats = this.itemStats(def);
+    const req = equipRequirement(this.content, item);
+    const reqLine = req ? `<div class="shop-info-req">Requires ${this.content.skills[req.skill]?.name ?? req.skill} ${req.level}</div>` : "";
+    const bundle = qty > 1 ? ` (×${qty})` : "";
+    this.infoEl.innerHTML = `
+      <div class="shop-info-box">
+        <button class="shop-info-x" type="button">✕</button>
+        <div class="shop-info-icon">${itemIconSVG(def)}</div>
+        <div class="shop-info-name">${def.name}</div>
+        <div class="shop-info-desc">${def.description}</div>
+        ${stats ? `<div class="shop-info-gear">${stats}</div>` : ""}
+        ${reqLine}
+        <div class="shop-info-stats">Costs ${cost.toLocaleString()} Hunt Marks${bundle}</div>
+      </div>`;
+    (this.infoEl.querySelector(".shop-info-x") as HTMLElement).addEventListener(
+      "pointerdown", (e) => { e.stopPropagation(); this.hideInfo(); },
+    );
+    this.infoEl.classList.remove("hidden");
   }
 
   isOpen(): boolean {
@@ -174,7 +242,9 @@ export class BountyUI {
     html += `</div>`;
 
     // --- 5) Hunt-Marks shop ---
-    html += `<div class="bounty-section-label">Hunt-Marks Shop</div><div class="bounty-shop">`;
+    html += `<div class="bounty-section-label">Hunt-Marks Shop</div>`;
+    html += `<div class="bounty-empty-mini">Hold an item to inspect it before you buy.</div>`;
+    html += `<div class="bounty-shop">`;
     for (const line of this.content.bountyShop) {
       const def = this.content.items[line.item];
       if (!def) continue;
@@ -182,8 +252,8 @@ export class BountyUI {
       const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
       html += `
         <div class="bounty-shop-row">
-          <span class="bounty-shop-swatch">${itemIconSVG(def)}</span>
-          <span class="bounty-shop-info">
+          <span class="bounty-shop-swatch" data-inspect="${line.item}" data-cost="${line.cost}" data-qty="${line.qty}">${itemIconSVG(def)}</span>
+          <span class="bounty-shop-info" data-inspect="${line.item}" data-cost="${line.cost}" data-qty="${line.qty}">
             <span class="bounty-shop-name">${line.label}${bundle}</span>
             <span class="bounty-shop-desc">${line.desc}</span>
           </span>
@@ -253,6 +323,13 @@ export class BountyUI {
         const item = el.dataset["item"];
         if (item) this.act({ type: "BOUNTY_BUY", item: item as ItemId });
       });
+    }
+    // Long-hold a Hunt-Marks ware to inspect it (stats + mark cost) before buying.
+    for (const el of Array.from(this.body.querySelectorAll<HTMLElement>("[data-inspect]"))) {
+      const item = el.dataset["inspect"] as ItemId;
+      const cost = Number(el.dataset["cost"]) || 0;
+      const qty = Number(el.dataset["qty"]) || 1;
+      this.onLongPress(el, () => this.showItemInfo(item, cost, qty));
     }
   }
 
