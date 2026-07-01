@@ -1738,7 +1738,7 @@ function drawObject(
       drawBountyBoard(g, cx, cy);
       break;
     case "forage_spot":
-      drawForageSpot(g, cx, cy, available);
+      drawForageSpot(g, cx, cy, available, def.resource);
       break;
     case "cauldron":
       drawCauldron(g, cx, cy, now);
@@ -2684,28 +2684,126 @@ function drawGrandExchange(g: CanvasRenderingContext2D, cx: number, cy: number):
   g.beginPath(); g.arc(cx + 5, cy - 3, 2, 0, Math.PI); g.fill(); // right pan
 }
 
-/** A wild forage clump: a low leafy bush with a few berries/buds. Dims and
- *  thins out while picked clean (respawning). */
-function drawForageSpot(g: CanvasRenderingContext2D, cx: number, cy: number, available: boolean): void {
+/**
+ * A wild forage clump. Each survivalist find has its own silhouette and palette
+ * so a glance tells a Mushroom Cluster from a Thornberry Bramble from a glowing
+ * Dawnspore Ring — no more identical green blobs. Keyed off the spot's resource
+ * action id (`surv_forage_<type>`). While picked clean it fades and drops its
+ * ripe accents (respawning), matching the old dim behaviour.
+ */
+function drawForageSpot(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  available: boolean,
+  resource?: string,
+): void {
   shadow(g, cx, cy + 9, 11, 4);
-  const leaf = available ? "#5d7e3e" : "#46503a";
-  const leafLit = available ? "#79a04e" : "#566048";
-  // A cluster of rounded leaves.
-  g.fillStyle = leaf;
-  for (const [dx, dy, r] of [[-6, 4, 6], [6, 4, 6], [0, 1, 7], [-3, -3, 5], [3, -3, 5]] as const) {
+  const kind = (resource ?? "").replace(/^surv_forage_/, "");
+  if (!available) g.globalAlpha = 0.5; // picked clean — thin and greyed
+  const disc = (dx: number, dy: number, r: number, fill: string): void => {
+    g.fillStyle = fill;
     g.beginPath(); g.arc(cx + dx, cy + dy, r, 0, Math.PI * 2); g.fill();
-  }
-  g.fillStyle = leafLit;
-  for (const [dx, dy, r] of [[-3, -4, 3], [3, -4, 3], [0, -1, 3]] as const) {
-    g.beginPath(); g.arc(cx + dx, cy + dy, r, 0, Math.PI * 2); g.fill();
-  }
-  // A few ripe specks (only when ready to pick).
-  if (available) {
-    g.fillStyle = "#d2604a";
-    for (const [dx, dy] of [[-4, 0], [5, -1], [1, 4]] as const) {
-      g.beginPath(); g.arc(cx + dx, cy + dy, 1.6, 0, Math.PI * 2); g.fill();
+  };
+  switch (kind) {
+    case "mushroom": {
+      // A cluster of capped mushrooms: pale stems under warm brown-red caps.
+      const caps = [[-5, 3, 5, 2.6], [4, 4, 4.2, 2.2], [0, -1, 6, 3]] as const;
+      for (const [dx, dy, , ch] of caps) {
+        g.fillStyle = "#d8cbb0"; // stem
+        g.fillRect(cx + dx - 1.3, cy + dy, 2.6, ch + 3);
+      }
+      for (const [dx, dy, cw] of caps) {
+        g.fillStyle = "#9c4a34"; // cap
+        g.beginPath(); g.ellipse(cx + dx, cy + dy, cw, cw * 0.7, 0, Math.PI, 0); g.fill();
+        g.fillStyle = "#e7d7c2"; // speckles
+        disc(dx - cw * 0.35, dy - cw * 0.25, 0.9, "#e7d7c2");
+        disc(dx + cw * 0.3, dy - cw * 0.15, 0.8, "#e7d7c2");
+      }
+      break;
+    }
+    case "thornberry": {
+      // A dark thorny bramble hung with red berries.
+      g.strokeStyle = "#3f5230"; g.lineWidth = 1.6; g.lineCap = "round";
+      for (const [x0, y0, x1, y1] of [[-7, 6, 2, -6], [7, 6, -2, -5], [-5, 5, 6, 2]] as const) {
+        g.beginPath(); g.moveTo(cx + x0, cy + y0);
+        g.quadraticCurveTo(cx, cy - 2, cx + x1, cy + y1); g.stroke();
+      }
+      disc(-4, 3, 4.5, "#4a6338"); disc(4, 2, 4, "#4a6338"); disc(0, -2, 4.2, "#587544");
+      if (available) for (const [dx, dy] of [[-5, 0], [3, -1], [5, 3], [-1, 4]] as const) disc(dx, dy, 1.7, "#c02f2a");
+      break;
+    }
+    case "nightshade": {
+      // Dark waxy leaves with glossy purple-black berries.
+      disc(-5, 3, 5.5, "#2f4436"); disc(5, 3, 5, "#2f4436"); disc(0, 0, 6, "#3a5442");
+      disc(-2, -3, 3.5, "#46654e");
+      if (available) for (const [dx, dy] of [[-3, 1], [4, 0], [0, 4], [2, -2]] as const) {
+        disc(dx, dy, 2, "#3a1f52"); disc(dx - 0.6, dy - 0.6, 0.7, "#b48fe0");
+      }
+      break;
+    }
+    case "hearthroot":
+    case "ashroot": {
+      // A snarl of interlocking roots — hearthroot glows ember-warm, ashroot is
+      // cold grey.
+      const warm = kind === "hearthroot";
+      g.strokeStyle = warm ? "#7a4326" : "#6a6560"; g.lineWidth = 2.4; g.lineCap = "round";
+      for (const [x0, y0, x1, y1] of [[-7, 7, 5, 0], [7, 7, -5, 1], [-4, 8, 3, -4], [4, 8, -3, -3]] as const) {
+        g.beginPath(); g.moveTo(cx + x0, cy + y0);
+        g.quadraticCurveTo(cx, cy + 2, cx + x1, cy + y1); g.stroke();
+      }
+      g.strokeStyle = warm ? "#c86a2e" : "#938d86"; g.lineWidth = 1.1;
+      for (const [x0, y0, x1, y1] of [[-6, 6, 4, 0], [6, 6, -4, 1]] as const) {
+        g.beginPath(); g.moveTo(cx + x0, cy + y0);
+        g.quadraticCurveTo(cx, cy + 2, cx + x1, cy + y1); g.stroke();
+      }
+      if (available && warm) { disc(0, 1, 3, "rgba(240,150,60,0.35)"); disc(0, 1, 1.4, "#f0b85a"); }
+      break;
+    }
+    case "fiber": {
+      // Fibreweed: a tuft of tall grassy blades.
+      g.strokeStyle = available ? "#6f9a44" : "#647052"; g.lineWidth = 1.5; g.lineCap = "round";
+      for (const [dx, sway] of [[-6, -3], [-3, -1], [0, 0], [3, 1], [6, 3]] as const) {
+        g.beginPath(); g.moveTo(cx + dx, cy + 8);
+        g.quadraticCurveTo(cx + dx + sway, cy - 2, cx + dx + sway * 1.6, cy - 9); g.stroke();
+      }
+      g.strokeStyle = available ? "#89b85c" : "#74805e"; g.lineWidth = 1;
+      for (const [dx, sway] of [[-4, -2], [1, 0], [5, 2]] as const) {
+        g.beginPath(); g.moveTo(cx + dx, cy + 8);
+        g.quadraticCurveTo(cx + dx + sway, cy - 3, cx + dx + sway * 1.7, cy - 10); g.stroke();
+      }
+      break;
+    }
+    case "deepmoss": {
+      // A low, flat bed of blue-green moss — overlapping soft mounds.
+      disc(-6, 5, 5, "#3a5f52"); disc(6, 5, 5, "#3a5f52"); disc(-2, 4, 5.5, "#456e5f");
+      disc(3, 3, 5, "#456e5f"); disc(0, 2, 4, "#568373");
+      if (available) for (const [dx, dy] of [[-3, 3], [3, 2], [0, 5]] as const) disc(dx, dy, 0.9, "#8fc0ad");
+      break;
+    }
+    case "ashbloom":
+    case "dawnspore": {
+      // Pale flowering stalks — ashbloom is ashen white, dawnspore glows softly.
+      const glow = kind === "dawnspore";
+      g.strokeStyle = "#7d8a72"; g.lineWidth = 1.3; g.lineCap = "round";
+      const stalks = [[-5, 8], [-2, 8], [2, 8], [5, 8]] as const;
+      for (const [dx] of stalks) { g.beginPath(); g.moveTo(cx + dx, cy + 8); g.lineTo(cx + dx * 0.6, cy - 6); g.stroke(); }
+      for (const [dx] of stalks) {
+        const hx = cx + dx * 0.6, hy = cy - 6;
+        if (glow) disc(dx * 0.6, -6, 3, "rgba(230,220,160,0.3)");
+        g.fillStyle = glow ? "#f0e4a6" : "#e6e2d6";
+        g.beginPath(); g.arc(hx, hy, 1.8, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    default: {
+      // Generic leafy clump (the old look) for any unlabelled forage spot.
+      for (const [dx, dy, r] of [[-6, 4, 6], [6, 4, 6], [0, 1, 7], [-3, -3, 5], [3, -3, 5]] as const) disc(dx, dy, r, "#5d7e3e");
+      for (const [dx, dy, r] of [[-3, -4, 3], [3, -4, 3], [0, -1, 3]] as const) disc(dx, dy, r, "#79a04e");
+      if (available) for (const [dx, dy] of [[-4, 0], [5, -1], [1, 4]] as const) disc(dx, dy, 1.6, "#d2604a");
     }
   }
+  g.globalAlpha = 1;
 }
 
 // --- Cooking fire: logs with animated flame ---
