@@ -115,8 +115,6 @@ export class Hud {
   private invSlots: HTMLElement[] = [];
   private hpFill!: HTMLElement;
   private hpText!: HTMLElement;
-  private graceRow!: HTMLElement;
-  private graceLabel!: HTMLElement;
   private graceFill!: HTMLElement;
   private graceText!: HTMLElement;
   private goldText!: HTMLElement;
@@ -270,8 +268,6 @@ export class Hud {
       </div>`;
     this.hpFill = vitals.querySelector(".hp-fill") as HTMLElement;
     this.hpText = vitals.querySelector(".hp-text") as HTMLElement;
-    this.graceRow = vitals.querySelector(".grace-row") as HTMLElement;
-    this.graceLabel = vitals.querySelector(".grace-label") as HTMLElement;
     this.graceFill = vitals.querySelector(".grace-fill") as HTMLElement;
     this.graceText = vitals.querySelector(".grace-text") as HTMLElement;
     this.vitals = vitals;
@@ -1319,18 +1315,14 @@ export class Hud {
     this.goldText.textContent = player.gold.toLocaleString();
     this.vitals.classList.toggle("low", player.alive && pct <= 0.35);
 
-    // Grace (Faith fuel): the bar shows once you've taken up Faith (trained it or
-    // hold a staff), and never regenerates in the field — only at altars.
+    // Grace (Faith fuel): always shown under the HP bar (like a prayer orb) —
+    // everyone starts with a small pool, and it never regenerates in the field,
+    // only at a shrine or altar. Keeping it visible even at 0 is the point: you
+    // need to see when it's empty.
     const graceMax = Math.max(10, player.skills.faith.level);
-    const showGrace = player.skills.faith.level > 1 ||
-      !!(player.equipment.mainhand && this.content.items[player.equipment.mainhand]?.magic);
-    this.graceRow.classList.toggle("hidden", !showGrace);
-    this.graceLabel.classList.toggle("hidden", !showGrace);
-    if (showGrace) {
-      const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
-      this.graceFill.style.width = `${gpct * 100}%`;
-      this.graceText.textContent = `${Math.floor(player.grace)} / ${graceMax}`;
-    }
+    const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
+    this.graceFill.style.width = `${gpct * 100}%`;
+    this.graceText.textContent = `${Math.floor(player.grace)} / ${graceMax}`;
 
     // Run/walk: bar width, percentage, on/off and low-energy styling.
     // Run orb: the ring depletes with energy (a CSS var drives the conic fill),
