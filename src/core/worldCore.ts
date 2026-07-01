@@ -77,8 +77,8 @@ const AGILITY_REGEN_AT_CAP = 2.2;
 const AGILITY_LAP_BONUS_MULT = 1.0;
 // The Varathian Trail (whole-map circuit): a lap pays this flat XP dump on top of
 // the standard lap bonus, plus this many Agility Marks toward the Trailblazer kit.
-const TRAIL_LAP_XP = 6000;
-const TRAIL_LAP_MARKS = 3;
+const TRAIL_LAP_XP = 7000;
+const TRAIL_LAP_MARKS = 1;
 // The Trailblazer outfit: each worn piece eases run-energy this much (drain scaled
 // down, regen scaled up); wearing the full set adds a bonus on top.
 const TRAIL_PIECES: ItemId[] = ["trail_hood", "trail_vest", "trail_legs", "trail_boots"];
@@ -361,6 +361,7 @@ const BLOCKING_KINDS = new Set([
   "build_hotspot",
   "house_door",
   "record_board",
+  "trail_board",
   "pier_gate",
 ]);
 
@@ -475,6 +476,7 @@ export function createWorld(
     winded: false,
     agilityLap: null,
     agilityHop: null,
+    trailLaps: 0,
     quests: {},
     questsDone: [],
     lore: [],
@@ -2053,6 +2055,11 @@ function startInteraction(
       break;
     }
 
+    case "trail_board": {
+      events.push({ type: "DIALOGUE", npc: "The Varathian Trail", lines: trailBoardLines(player, content) });
+      break;
+    }
+
     case "pier_gate": {
       events.push({ type: "LOG", message: "A rope bars the planks. Jacob the Pier-Warden hasn't given you leave — speak with him first." });
       break;
@@ -2589,6 +2596,13 @@ function traverseObstacle(
   if (!course) return;
   if (player.agilityHop) return; // already mid-climb
 
+  // The Varathian Trail is sealed until you've spoken with Cael the Trailkeeper
+  // at the trail head and learned its story (mirrors the pier's warden gate).
+  if (course === "course_varath_trail" && !player.flags.includes("trail_unlocked")) {
+    events.push({ type: "LOG", message: "The Varathian Trail is not yours to run yet — speak with Cael the Trailkeeper at the trail head first." });
+    return;
+  }
+
   // Course-wide level gate (every obstacle carries the requirement).
   const req = def.levelReq ?? 1;
   if (skillLvl(player, "agility") < req) {
@@ -2639,10 +2653,14 @@ function finishObstacle(
     // dump and a purse of Agility Marks for the Trailkeeper's outfit.
     if (course === "course_varath_trail") {
       bonus += TRAIL_LAP_XP;
-      if (canAddItem(player, "agility_mark")) {
-        addItem(player, "agility_mark", TRAIL_LAP_MARKS, events);
-      }
-      events.push({ type: "LOG", message: `Varathian Trail lap complete! A grand run of the whole country — you earn ${TRAIL_LAP_MARKS} Agility Marks.` });
+      player.trailLaps = (player.trailLaps ?? 0) + 1;
+      // One hard-won Mark per full lap — a full outfit is the work of many laps.
+      const gotMark = canAddItem(player, "agility_mark");
+      if (gotMark) addItem(player, "agility_mark", TRAIL_LAP_MARKS, events);
+      const markLine = gotMark
+        ? `You earn ${TRAIL_LAP_MARKS} Agility Mark.`
+        : "Your pack is full — no room for the Mark!";
+      events.push({ type: "LOG", message: `Varathian Trail lap ${player.trailLaps} complete! A grand run of the whole country. ${markLine}` });
     } else {
       events.push({ type: "LOG", message: "Lap complete! You catch your breath, pleased with the run." });
     }
@@ -3362,6 +3380,31 @@ function questStepTargets(
  * Decide what an NPC says when talked to, handling quest accept / progress /
  * turn-in along the way. Returns the dialogue lines to show.
  */
+/** The four Trailblazer outfit pieces, in wearing order. */
+const TRAIL_OUTFIT: ItemId[] = ["trail_hood", "trail_vest", "trail_legs", "trail_boots"];
+
+/** The billboard's read-out: laps run, Marks in hand, and outfit progress. */
+function trailBoardLines(player: Player, content: Content): string[] {
+  const laps = player.trailLaps ?? 0;
+  const marks = countItem(player, "agility_mark");
+  const owns = (id: ItemId): boolean =>
+    hasItem(player, id) || Object.values(player.equipment).includes(id) || (player.bank[id] ?? 0) > 0;
+  const shop = content.shops.find((s) => s.id === "shop_trailkeeper");
+  const setCost = shop?.stock.reduce((s, l) => s + (l.costQty ?? 0), 0) ?? 0;
+  const ownedPieces = TRAIL_OUTFIT.filter(owns).length;
+  const lines = [
+    "— THE VARATHIAN TRAIL —",
+    laps === 0 ? "No laps run yet. A single Mark waits at the end of your first."
+      : `Laps run: ${laps}. Each was struck for one Agility Mark.`,
+  ];
+  if (ownedPieces >= TRAIL_OUTFIT.length) {
+    lines.push("The full Trailblazer set is yours. Run on for the joy of it.");
+  } else {
+    lines.push(`Agility Marks in hand: ${marks}. The full Trailblazer set costs ${setCost} Marks (${ownedPieces}/${TRAIL_OUTFIT.length} pieces earned).`);
+  }
+  return lines;
+}
+
 function handleNpcTalk(
   state: WorldState,
   content: Content,
@@ -3428,6 +3471,19 @@ function handleNpcTalk(
     return [
       "Word came down the coast — your catch tops the board. The heaviest the Drowned Pier has ever weighed.",
       "Then this is yours: the Golden Rod of Varath. Hold the record and you hold the rod; lose it, and it passes to whoever beats you. Wear it well, champion.",
+    ];
+  }
+
+  // 3c) Cael the Trailkeeper opens the Varathian Trail the first time you speak
+  //     with him, telling its story — until then the circuit refuses you.
+  if (npcId === "trail_keeper" && !player.flags.includes("trail_unlocked")) {
+    player.flags.push("trail_unlocked");
+    events.push({ type: "LOG", message: "The Varathian Trail is open to you. Run a full lap for a Mark." });
+    return [
+      "So you'd run the Varathian Trail. Good. Few finish it, fewer come back for more.",
+      "It's no yard circuit — eight marks set around the whole of the country: the Spine snows, the Marrow climbs, the Redrun coast, the Estuary, the Ashfen flats, the moor, Greyoak, and home again by the northreach. Clear them in order and you've run a lap.",
+      "Every lap the old wardens struck a single Mark for — one, no more, no matter how you ran it. Bring me enough of them and the Trailblazer's gear is yours: gear that a runner scarcely tires in.",
+      "The path is open now. Watch the marker — it'll point you to the next leg. Off you go.",
     ];
   }
 

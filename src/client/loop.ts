@@ -202,6 +202,7 @@ const VERB: Record<ObjKind, string> = {
   relic: "Read",
   pier_spot: "Cast at",
   record_board: "Read",
+  trail_board: "Read",
   pier_gate: "Examine",
 };
 
@@ -242,6 +243,7 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   relic: "Something was left here to be found — a page, a rubbing, a mark. Read it.",
   pier_spot: "Open deep water at the pier's end, where the big fish run. Cast, then hold the line.",
   record_board: "A weathered board at the pier head, every great catch chalked up with its angler's name.",
+  trail_board: "The Varathian Trail's standings board — your laps run and your progress toward the Trailblazer set.",
   pier_gate: "A rope strung across the planks. The pier-warden hasn't given you leave to pass.",
 };
 

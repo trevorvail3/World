@@ -829,7 +829,10 @@ export type ObjKind =
   | "record_board"
   /** A roped-off barrier at the pier's landward end, present only until the
    *  pier-warden's quest grants access (an inverse `hiddenByFlag` gate). */
-  | "pier_gate";
+  | "pier_gate"
+  /** The Varathian Trail's billboard at the trail head: examine to read your
+   *  lap tally and progress toward the Trailblazer set. */
+  | "trail_board";
 
 /**
  * The *definition* of an object placed in the world: its kind and where it
@@ -1169,6 +1172,9 @@ export interface Player {
    * climb finishes (a short delay so a hop "takes a second"). Transient.
    */
   agilityHop?: { objId: string; at: number } | null;
+  /** How many full laps of the Varathian Trail have been completed (persisted;
+   *  drives the trail billboard and each lap's single Agility Mark). */
+  trailLaps?: number;
   /**
    * Set when energy hits 0; forces walking until energy recovers a little, so
    * the player doesn't micro-stutter between sprint and walk on an empty bar.

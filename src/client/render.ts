@@ -1792,10 +1792,32 @@ function drawObject(
     case "record_board":
       drawRecordBoard(g, cx, cy);
       break;
+    case "trail_board":
+      drawTrailBoard(g, cx, cy);
+      break;
     case "pier_gate":
       drawPierGate(g, cx, cy);
       break;
   }
+}
+
+/** The Varathian Trail's billboard: a tall standings board topped with a green
+ *  runner's pennant, distinct from the pier's brass records board. */
+function drawTrailBoard(g: CanvasRenderingContext2D, cx: number, cy: number): void {
+  shadow(g, cx, cy + 11, 12, 4);
+  g.fillStyle = "#3a2c1e"; // two stout posts
+  g.fillRect(cx - 11, cy - 6, 2.4, 18);
+  g.fillRect(cx + 8.6, cy - 6, 2.4, 18);
+  g.fillStyle = "#7a5a36"; // the board face
+  g.fillRect(cx - 12, cy - 15, 24, 16);
+  g.strokeStyle = "#3a2c1e"; g.lineWidth = 1.2; g.strokeRect(cx - 12, cy - 15, 24, 16);
+  // Chalked tally rows.
+  g.strokeStyle = "rgba(230,226,208,0.7)"; g.lineWidth = 1;
+  for (const yy of [-11, -8, -5, -2]) { g.beginPath(); g.moveTo(cx - 9, cy + yy); g.lineTo(cx + 9, cy + yy); g.stroke(); }
+  // A green runner's pennant on the crown.
+  g.fillStyle = "#2f7d5a";
+  g.beginPath(); g.moveTo(cx - 2, cy - 15); g.lineTo(cx - 2, cy - 23); g.lineTo(cx + 8, cy - 19.5); g.closePath(); g.fill();
+  g.fillStyle = "#6fce9c"; g.beginPath(); g.arc(cx - 2, cy - 23, 1.4, 0, Math.PI * 2); g.fill();
 }
 
 /** The deep-water cast point at the pier's end: a moored buoy bobbing over wide,

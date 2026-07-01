@@ -945,10 +945,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "trail_cp5", kind: "agility_obstacle", x: 14, y: 146, name: "Varathian Trail: Moor Wall", course: "course_varath_trail", order: 5, exit: { x: 15, y: 146 }, xp: 250, levelReq: 50, obstacle: "wall" },
   { id: "trail_cp6", kind: "agility_obstacle", x: 12, y: 80, name: "Varathian Trail: Greyoak Log", course: "course_varath_trail", order: 6, exit: { x: 13, y: 80 }, xp: 250, levelReq: 50, obstacle: "log" },
   { id: "trail_cp7", kind: "agility_obstacle", x: 24, y: 40, name: "Varathian Trail: Northreach Net", course: "course_varath_trail", order: 7, exit: { x: 25, y: 40 }, xp: 250, levelReq: 50, obstacle: "net" },
+  { id: "trail_board", kind: "trail_board", x: 54, y: 11, name: "Trail Standings", lines: ["A weathered board at the head of the Varathian Trail, tallying every runner's laps."] },
   { id: "trail_keeper", kind: "npc", x: 55, y: 11, name: "Cael the Trailkeeper", lines: [
-    "You've the look of a runner. This is the head of the Varathian Trail — eight marks set around the whole of the country, north to moor to coast and back.",
-    "Clear them in order and come round to a full lap. It's a hard run, but the country pays for it — and I keep a set of running-gear for those who bring me the Marks a lap earns.",
-    "Tap me to see what the Marks will buy.",
+    "Fair running out there. Come back with the Marks and the Trailblazer gear is yours — tap me to see what they'll buy.",
+    "The next leg's marked with a green ring; follow it round and you'll not lose the way.",
   ] },
 
   // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===

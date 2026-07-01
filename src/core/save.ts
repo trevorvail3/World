@@ -65,6 +65,8 @@ export interface SavedProgress {
   playMs: number;
   /** Kills since the last Shard of Orun (drives the pity guarantee). */
   killsSinceShard: number;
+  /** Completed laps of the Varathian Trail. */
+  trailLaps?: number;
   /** Unlocked achievement ids. */
   achievements: string[];
   /** Claimed Area Diary ids. */
@@ -135,6 +137,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     diariesClaimed: [...player.diariesClaimed],
     tradesApplied: [...player.tradesApplied],
     killsSinceShard: player.killsSinceShard,
+    trailLaps: player.trailLaps ?? 0,
     appearance: { ...player.appearance },
     bounty: {
       marks: player.bounty.marks,
@@ -311,6 +314,8 @@ export function hydratePlayer(
   if (finiteNum(savedPlay) && savedPlay >= 0) player.playMs = Math.floor(savedPlay);
   const savedPity = raw["killsSinceShard"];
   if (finiteNum(savedPity) && savedPity >= 0) player.killsSinceShard = Math.floor(savedPity);
+  const savedLaps = raw["trailLaps"];
+  if (finiteNum(savedLaps) && savedLaps >= 0) player.trailLaps = Math.floor(savedLaps);
   const savedAch = raw["achievements"];
   if (Array.isArray(savedAch)) {
     player.achievements = savedAch.filter(

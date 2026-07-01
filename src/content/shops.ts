@@ -299,12 +299,13 @@ export const shops: ShopDef[] = [
     npc: "trail_keeper",
     name: "The Trailkeeper's Kit",
     greeting: "Run the whole country and the Marks are yours to spend. Four pieces of running-gear — wear them all and you'll scarcely tire.",
-    // Bought with Agility Marks (earned per Varathian Trail lap), not gold.
+    // Bought with Agility Marks — one per Varathian Trail lap, so the full set is
+    // the work of many laps (60 Marks all told). A long-haul prestige reward.
     stock: [
-      { item: "trail_hood", price: 0, qty: 1, costItem: "agility_mark", costQty: 6 },
-      { item: "trail_vest", price: 0, qty: 1, costItem: "agility_mark", costQty: 10 },
-      { item: "trail_legs", price: 0, qty: 1, costItem: "agility_mark", costQty: 8 },
-      { item: "trail_boots", price: 0, qty: 1, costItem: "agility_mark", costQty: 5 },
+      { item: "trail_hood", price: 0, qty: 1, costItem: "agility_mark", costQty: 12 },
+      { item: "trail_vest", price: 0, qty: 1, costItem: "agility_mark", costQty: 20 },
+      { item: "trail_legs", price: 0, qty: 1, costItem: "agility_mark", costQty: 16 },
+      { item: "trail_boots", price: 0, qty: 1, costItem: "agility_mark", costQty: 12 },
     ],
   },
 ];

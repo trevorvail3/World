@@ -108,6 +108,7 @@ const MM_OBJ: Record<ObjKind, string> = {
   relic: "#e8d49a", // pale parchment — a found-lore marker, to draw the curious
   pier_spot: "#6fa0c0", // a deep-water cast point, like a fishing spot
   record_board: "#c8a24a", // a board, like the bounty board
+  trail_board: "#5fae7a", // runner's green for the trail standings board
   pier_gate: "", // the barrier itself isn't marked
 };
 
