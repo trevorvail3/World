@@ -568,9 +568,13 @@ function shopMaxStock(content: Content, item: string, price: number): number {
 function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
   if (!state.shopStock) {
     state.shopStock = {};
+    state.shopLineRestockAt = {};
     for (const shop of content.shops) {
       const m: Record<string, number> = {};
-      for (const line of shop.stock) m[line.item] = shopMaxStock(content, line.item, line.price);
+      for (const line of shop.stock) {
+        m[line.item] = line.restockMs ? (line.max ?? 1) : shopMaxStock(content, line.item, line.price);
+        if (line.restockMs) state.shopLineRestockAt[`${shop.id}:${line.item}`] = ctx.now + line.restockMs;
+      }
       state.shopStock[shop.id] = m;
     }
     state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
@@ -579,19 +583,28 @@ function ensureShopStock(state: WorldState, content: Content, ctx: Ctx): void {
   }
   const doGeneral = (state.shopRestockAt ?? 0) <= ctx.now;
   const doFood = (state.shopFoodRestockAt ?? 0) <= ctx.now;
-  if (doGeneral || doFood) {
-    for (const shop of content.shops) {
-      const m = state.shopStock[shop.id] ?? (state.shopStock[shop.id] = {});
-      for (const line of shop.stock) {
-        const healing = isHealingItem(content, line.item);
-        // General items refresh on the 12-min timer; healing items only on the
-        // 30-min one — so each keeps its own cooldown.
-        if (healing ? doFood : doGeneral) m[line.item] = shopMaxStock(content, line.item, line.price);
+  const lineAt = state.shopLineRestockAt ?? (state.shopLineRestockAt = {});
+  for (const shop of content.shops) {
+    const m = state.shopStock[shop.id] ?? (state.shopStock[shop.id] = {});
+    for (const line of shop.stock) {
+      // A rationed listing (restockMs) ignores the shared timers and refills to
+      // its cap on its own clock — the Devotion Potion's one-every-15-minutes.
+      if (line.restockMs) {
+        const key = `${shop.id}:${line.item}`;
+        if ((lineAt[key] ?? 0) <= ctx.now) {
+          m[line.item] = line.max ?? 1;
+          lineAt[key] = ctx.now + line.restockMs;
+        }
+        continue;
       }
+      const healing = isHealingItem(content, line.item);
+      // General items refresh on the 12-min timer; healing items only on the
+      // 30-min one — so each keeps its own cooldown.
+      if (healing ? doFood : doGeneral) m[line.item] = shopMaxStock(content, line.item, line.price);
     }
-    if (doGeneral) state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
-    if (doFood) state.shopFoodRestockAt = ctx.now + SHOP_FOOD_RESTOCK_MS;
   }
+  if (doGeneral) state.shopRestockAt = ctx.now + SHOP_RESTOCK_MS;
+  if (doFood) state.shopFoodRestockAt = ctx.now + SHOP_FOOD_RESTOCK_MS;
 }
 
 /** Units of a listing currently on the shelf (full if stock hasn't seeded yet). */

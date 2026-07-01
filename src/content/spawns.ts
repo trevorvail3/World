@@ -638,6 +638,16 @@ const rawObjects: WorldObjectDef[] = [
 
   // Altar of Orun — kneel here (or at any shrine) to refill Grace for Faith.
   { id: "altar_ironvale", kind: "shrine", x: 56, y: 41, name: "Altar of Orun", lines: ["A worn stone altar to Orun. Kneel here to refill your Grace."] },
+  // The Shrinekeeper — a starter Devotion vendor beside the altar: a first staff,
+  // Acolyte robes, and a rationed Devotion Potion (one every 15 minutes).
+  {
+    id: "devotion_keeper", kind: "npc", x: 57, y: 41, name: "Yorwin, the Shrinekeeper",
+    lines: [
+      "Peace of Orun on you. New to the light, or just cold and looking for a fire? Either's welcome at the altar.",
+      "I keep the Shrinekeeper's Table for those starting on Devotion — a plain staff, an acolyte's robes, and a draught of Grace when the shrine spares one. It only ever spares one at a time; the seam gives slowly.",
+      "Bury bones for Orun's favour, kneel at the altar to fill your Grace, and when you've the coin, the deeper staves are cut far from here. Start small. Everyone does.",
+    ],
+  },
 
   // === SETTLEMENT GUARDS (Batch 7) =========================================
   // Attackable but never aggressive (see AGGRESSIVE in worldCore) — they hold

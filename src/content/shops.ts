@@ -316,4 +316,24 @@ export const shops: ShopDef[] = [
       { item: "trail_boots", price: 0, qty: 1, costItem: "agility_mark", costQty: 12 },
     ],
   },
+  {
+    id: "shop_devotion",
+    npc: "devotion_keeper",
+    name: "The Shrinekeeper's Table",
+    greeting: "Orun's light for the newly faithful — a first staff, plain robes, and a draught of Grace for the road. The potion I can only spare one at a time; the shrine gives it back slowly.",
+    // A starter kit for the Devotion skill: the lowest staff + Acolyte robes, so a
+    // new caster can leave Ironvale equipped. The Devotion Potion is rationed —
+    // one on the table, one back every 15 minutes — so it never replaces bonemeal
+    // brewing at a cauldron, just tides you over.
+    stock: [
+      { item: "staff_ashwood", price: 120, qty: 1 },      // sell 60
+      { item: "staff_coldpine", price: 420, qty: 1 },     // sell 180 (Faith 10)
+      { item: "mag_hood_1", price: 90, qty: 1 },          // sell 40
+      { item: "mag_robe_1", price: 180, qty: 1 },         // sell 80
+      { item: "mag_skirt_1", price: 120, qty: 1 },        // sell 55
+      { item: "bonemeal", price: 15, qty: 5 },            // sell 6 — the potion's base
+      // Rationed: one Devotion Potion on the table, one back every 15 minutes.
+      { item: "potion_grace", price: 260, qty: 1, max: 1, restockMs: 900000 },
+    ],
+  },
 ];

@@ -1434,6 +1434,9 @@ export interface WorldState {
   /** When healing items (food/potions) next top up — a longer, separate cooldown
    *  so buying meals can't replace fishing/hunting/cooking for heals. */
   shopFoodRestockAt?: number;
+  /** Per-line restock clocks for rationed listings (key "shopId:item" → next
+   *  top-up ms). Runtime/session only. Used by the Devotion Potion (one/15min). */
+  shopLineRestockAt?: Record<string, number>;
   /**
    * Tiles ("x,y") currently occupied by a wandering creature (its standing tile
    * and the tile it's stepping into). Rebuilt each tick so walkability — and the
@@ -2039,6 +2042,11 @@ export interface ShopStock {
    *  `costItem` from the pack instead of gold (e.g. Agility Marks). */
   costItem?: ItemId;
   costQty?: number;
+  /** A rationed listing: cap on the shelf, refilled to that cap on its own
+   *  `restockMs` cadence (independent of the general/food restock). Used for the
+   *  Devotion Potion — one on the table, one back every 15 minutes. */
+  max?: number;
+  restockMs?: number;
 }
 
 /** One crop (a plant or a tree) the player can farm. growthMs is REAL ms. */
