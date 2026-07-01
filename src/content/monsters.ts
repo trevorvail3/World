@@ -19,7 +19,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Moor Rat",
     "icon": "🐀",
     "level": 1,
-    "hp": 5,
+    "hp": 10,
     "acc": 4,
     "def": 1,
     "maxHit": 3,
@@ -49,7 +49,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Hill Wolf",
     "icon": "🐺",
     "level": 5,
-    "hp": 14,
+    "hp": 30,
     "acc": 8,
     "def": 4,
     "maxHit": 3,
@@ -78,7 +78,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Wild Boar",
     "icon": "🐗",
     "level": 12,
-    "hp": 28,
+    "hp": 60,
     "acc": 15,
     "def": 9,
     "maxHit": 5,
@@ -109,7 +109,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Forest Bear",
     "icon": "🐻",
     "level": 22,
-    "hp": 50,
+    "hp": 110,
     "acc": 47,
     "def": 16,
     "maxHit": 15,
@@ -139,7 +139,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Red Deer",
     "icon": "🦌",
     "level": 8,
-    "hp": 20,
+    "hp": 45,
     "acc": 10,
     "def": 6,
     "maxHit": 3,
@@ -163,7 +163,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Mountain Lion",
     "icon": "🦁",
     "level": 26,
-    "hp": 54,
+    "hp": 120,
     "acc": 30,
     "def": 18,
     "maxHit": 9,
@@ -190,7 +190,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Ridge Wolf",
     "icon": "🐺",
     "level": 28,
-    "hp": 38,
+    "hp": 85,
     "acc": 53,
     "def": 18,
     "maxHit": 17,
@@ -220,7 +220,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Stone Crawler",
     "icon": "🦎",
     "level": 35,
-    "hp": 55,
+    "hp": 120,
     "acc": 78,
     "def": 30,
     "maxHit": 23,
@@ -253,7 +253,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Mountain Troll",
     "icon": "👹",
     "level": 42,
-    "hp": 90,
+    "hp": 200,
     "acc": 85,
     "def": 22,
     "maxHit": 22,
@@ -289,7 +289,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Spine Wraith",
     "icon": "👻",
     "level": 45,
-    "hp": 50,
+    "hp": 110,
     "acc": 88,
     "def": 10,
     "maxHit": 24,
@@ -322,7 +322,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Marsh Lurker",
     "icon": "🐊",
     "level": 48,
-    "hp": 70,
+    "hp": 155,
     "acc": 91,
     "def": 28,
     "maxHit": 26,
@@ -355,7 +355,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Heartmoor Hound",
     "icon": "🐕",
     "level": 55,
-    "hp": 65,
+    "hp": 145,
     "acc": 154,
     "def": 20,
     "maxHit": 36,
@@ -386,7 +386,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Bog Knight",
     "icon": "🧟",
     "level": 61,
-    "hp": 100,
+    "hp": 220,
     "acc": 189,
     "def": 35,
     "maxHit": 41,
@@ -420,7 +420,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Mire Serpent",
     "icon": "🐍",
     "level": 64,
-    "hp": 85,
+    "hp": 185,
     "acc": 192,
     "def": 25,
     "maxHit": 43,
@@ -453,7 +453,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Cave Crawler",
     "icon": "🕷️",
     "level": 68,
-    "hp": 80,
+    "hp": 175,
     "acc": 265,
     "def": 30,
     "maxHit": 49,
@@ -485,7 +485,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Deep Bat",
     "icon": "🦇",
     "level": 72,
-    "hp": 55,
+    "hp": 120,
     "acc": 290,
     "def": 15,
     "maxHit": 52,
@@ -517,7 +517,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Marrow Wraith",
     "icon": "💀",
     "level": 78,
-    "hp": 70,
+    "hp": 155,
     "acc": 296,
     "def": 20,
     "maxHit": 55,
@@ -554,7 +554,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Marrow Keeper",
     "icon": "💀",
     "level": 72,
-    "hp": 350,
+    "hp": 770,
     "acc": 292,
     "def": 55,
     "maxHit": 52,
@@ -577,14 +577,18 @@ export const monsters: Record<string, MonsterStats> = {
       },
       {
         "item": "marrow_keep_plate",
-        "chance": 0.08,
+        "chance": 0.05,
         "tier": "rare"
       },
       {
         "item": "shard_of_orun",
         "chance": 0.02,
         "tier": "legendary"
-      }
+      },
+      { "item": "armor_9", "chance": 0.04, "tier": "rare" },
+      { "item": "boot_9", "chance": 0.04, "tier": "rare" },
+      { "item": "worn_coin", "chance": 1, "min": 200, "max": 450, "tier": "always" },
+      { "item": "voidstone_bar", "chance": 0.4, "min": 1, "max": 2, "tier": "uncommon" }
     ]
   },
   "deep_golem": {
@@ -592,7 +596,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Deepstone Golem",
     "icon": "🗿",
     "level": 83,
-    "hp": 165,
+    "hp": 365,
     "acc": 303,
     "def": 55,
     "maxHit": 57,
@@ -625,7 +629,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "River Serpent",
     "icon": "🐲",
     "level": 86,
-    "hp": 130,
+    "hp": 285,
     "acc": 304,
     "def": 42,
     "maxHit": 58,
@@ -657,7 +661,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Redrun Brigand",
     "icon": "🗡️",
     "level": 90,
-    "hp": 115,
+    "hp": 255,
     "acc": 308,
     "def": 50,
     "maxHit": 60,
@@ -692,7 +696,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Ancient Orc",
     "icon": "👹",
     "level": 94,
-    "hp": 160,
+    "hp": 350,
     "acc": 314,
     "def": 55,
     "maxHit": 63,
@@ -724,7 +728,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Dread Ferryman",
     "icon": "⛵",
     "level": 98,
-    "hp": 250,
+    "hp": 1055,
     "acc": 318,
     "def": 60,
     "maxHit": 63,
@@ -740,6 +744,8 @@ export const monsters: Record<string, MonsterStats> = {
       {
         "item": "worn_coin",
         "chance": 1,
+        "min": 250,
+        "max": 550,
         "tier": "always"
       },
       {
@@ -750,18 +756,21 @@ export const monsters: Record<string, MonsterStats> = {
       {
         "item": "hearthite_bar",
         "chance": 0.4,
+        "min": 1,
+        "max": 2,
         "tier": "uncommon"
       },
       {
         "item": "redrun_pearl",
-        "chance": 0.08,
+        "chance": 0.12,
         "tier": "rare"
       },
       {
         "item": "shard_of_orun",
         "chance": 0.02,
         "tier": "legendary"
-      }
+      },
+      { "item": "ring_8", "chance": 0.04, "tier": "rare" }
     ],
     "boss": true,
     "bossHint": "Climb down into the Ferryman's Cave — a black slot in the lonely hills NORTH of the Redrun crossings, well off the road. He fights you alone in the flooded dark; come well-fed, and bring stab or crush."
@@ -771,7 +780,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Aelveth White Wolf",
     "icon": "🐺",
     "level": 15,
-    "hp": 35,
+    "hp": 75,
     "acc": 18,
     "def": 10,
     "maxHit": 6,
@@ -789,7 +798,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Berric",
     "icon": "🔨",
     "level": 20,
-    "hp": 45,
+    "hp": 100,
     "acc": 45,
     "def": 14,
     "maxHit": 13,
@@ -807,7 +816,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Greymane Boar",
     "icon": "🐗",
     "level": 25,
-    "hp": 65,
+    "hp": 145,
     "acc": 50,
     "def": 18,
     "maxHit": 13,
@@ -839,7 +848,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Cult Devotee",
     "icon": "🧙",
     "level": 32,
-    "hp": 55,
+    "hp": 120,
     "acc": 75,
     "def": 20,
     "maxHit": 22,
@@ -857,7 +866,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Ashforge Enforcer",
     "icon": "⚔️",
     "level": 38,
-    "hp": 70,
+    "hp": 155,
     "acc": 81,
     "def": 26,
     "maxHit": 22,
@@ -875,7 +884,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "Lodge Warden",
     "icon": "🏹",
     "level": 35,
-    "hp": 65,
+    "hp": 145,
     "acc": 78,
     "def": 24,
     "maxHit": 22,
@@ -895,7 +904,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Hollow Warden",
     "icon": "💀",
     "level": 38,
-    "hp": 120,
+    "hp": 265,
     "acc": 81,
     "def": 28,
     "maxHit": 18,
@@ -918,27 +927,27 @@ export const monsters: Record<string, MonsterStats> = {
       },
       {
         "item": "blade_of_graves",
-        "chance": 0.12,
+        "chance": 0.05,
         "tier": "legendary"
       },
       {
         "item": "marrow_flail",
-        "chance": 0.1,
+        "chance": 0.05,
         "tier": "legendary"
       },
       {
         "item": "ashward_shield",
-        "chance": 0.1,
+        "chance": 0.05,
         "tier": "legendary"
       },
       {
         "item": "greymail_plate",
-        "chance": 0.08,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "barrow_helm",
-        "chance": 0.1,
+        "chance": 0.05,
         "tier": "legendary"
       },
       {
@@ -972,7 +981,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Spine Warlord",
     "icon": "👹",
     "level": 60,
-    "hp": 200,
+    "hp": 440,
     "acc": 190,
     "def": 45,
     "maxHit": 31,
@@ -995,39 +1004,39 @@ export const monsters: Record<string, MonsterStats> = {
       },
       {
         "item": "orun_reaver",
-        "chance": 0.1,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "coldbone_bow",
-        "chance": 0.1,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "stoneguard_plate",
-        "chance": 0.08,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "ironveil_legs",
-        "chance": 0.1,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "warden_ring",
-        "chance": 0.12,
+        "chance": 0.05,
         "tier": "legendary"
       },
       {
         "item": "shard_of_orun",
-        "chance": 0.08,
+        "chance": 0.04,
         "tier": "legendary"
       },
       {
         "item": "worn_coin",
         "chance": 1,
-        "min": 200,
-        "max": 500,
+        "min": 100,
+        "max": 250,
         "tier": "always"
       },
       {
@@ -1044,7 +1053,7 @@ export const monsters: Record<string, MonsterStats> = {
     "name": "The Bog Warden",
     "icon": "🧟",
     "level": 42,
-    "hp": 220,
+    "hp": 485,
     "acc": 87,
     "def": 38,
     "maxHit": 16,
@@ -1084,7 +1093,7 @@ export const monsters: Record<string, MonsterStats> = {
       },
       {
         "item": "bog_ward_helm",
-        "chance": 0.1,
+        "chance": 0.05,
         "tier": "rare"
       },
       {
@@ -1100,7 +1109,7 @@ export const monsters: Record<string, MonsterStats> = {
   // regions. OSRS-style loot, drawn entirely from existing items: coins (worn
   // coins), stolen low-tier weapons, arrows, food, herbs, leather and gems.
   "footpad": {
-    id: "footpad", name: "Footpad", icon: "🗡️", level: 4, hp: 12,
+    id: "footpad", name: "Footpad", icon: "🗡️", level: 4, hp: 25,
     acc: 7, def: 3, maxHit: 2, speed: 2800, xp: 16, attackStyle: "stab",
     weakness: ["slash", "ranged"],
     desc: "A nervy cutpurse working the hill roads — quick with a knife, quicker to run.",
@@ -1117,7 +1126,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "cutpurse": {
-    id: "cutpurse", name: "Cutpurse", icon: "🗡️", level: 7, hp: 18,
+    id: "cutpurse", name: "Cutpurse", icon: "🗡️", level: 7, hp: 40,
     acc: 10, def: 5, maxHit: 4, speed: 2700, xp: 26, attackStyle: "stab",
     weakness: ["slash"],
     desc: "A pickpocket turned to the blade when purses got scarce. Light fingers, lighter conscience.",
@@ -1134,7 +1143,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "bandit": {
-    id: "bandit", name: "Bandit", icon: "🗡️", level: 12, hp: 30,
+    id: "bandit", name: "Bandit", icon: "🗡️", level: 12, hp: 65,
     acc: 15, def: 9, maxHit: 5, speed: 2600, xp: 48, attackStyle: "slash",
     weakness: ["stab"],
     desc: "A road bandit, armed with whatever the last traveller was carrying. They work in numbers.",
@@ -1153,7 +1162,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "poacher": {
-    id: "poacher", name: "Poacher", icon: "🏹", level: 16, hp: 38,
+    id: "poacher", name: "Poacher", icon: "🏹", level: 16, hp: 85,
     acc: 19, def: 11, maxHit: 6, speed: 2500, xp: 74, attackStyle: "stab",
     weakness: ["crush"],
     desc: "A wood-thief who hunts the Lodge's game and the Lodge's purse alike. Deadly with a bow.",
@@ -1170,7 +1179,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "highwayman": {
-    id: "highwayman", name: "Highwayman", icon: "🗡️", level: 22, hp: 52,
+    id: "highwayman", name: "Highwayman", icon: "🗡️", level: 22, hp: 115,
     acc: 47, def: 16, maxHit: 11, speed: 2500, xp: 120, attackStyle: "slash",
     weakness: ["stab", "ranged"],
     desc: "A mounted robber fallen on hard times and harder methods. Stands his ground for a fat purse.",
@@ -1190,7 +1199,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "outlaw_archer": {
-    id: "outlaw_archer", name: "Outlaw Archer", icon: "🏹", level: 26, hp: 56,
+    id: "outlaw_archer", name: "Outlaw Archer", icon: "🏹", level: 26, hp: 125,
     acc: 51, def: 18, maxHit: 11, speed: 2300, attackRange: 4, xp: 150, attackStyle: "ranged",
     weakness: ["crush"],
     desc: "A marksman gone over to the road gangs. Picks off the careless from cover.",
@@ -1211,7 +1220,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "cutthroat": {
-    id: "cutthroat", name: "Cutthroat", icon: "🗡️", level: 32, hp: 72,
+    id: "cutthroat", name: "Cutthroat", icon: "🗡️", level: 32, hp: 160,
     acc: 75, def: 24, maxHit: 18, speed: 2400, xp: 210, attackStyle: "slash",
     weakness: ["stab"],
     desc: "A killer the other outlaws step around. Past robbery now — does it for the doing.",
@@ -1232,7 +1241,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "marauder": {
-    id: "marauder", name: "Marauder", icon: "🪓", level: 40, hp: 96,
+    id: "marauder", name: "Marauder", icon: "🪓", level: 40, hp: 210,
     acc: 83, def: 30, maxHit: 15, speed: 2500, xp: 320, attackStyle: "crush",
     weakness: ["stab", "ranged"],
     desc: "A raider who rides the lawless edges of the map, taking whole carts and the drovers with them.",
@@ -1254,7 +1263,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "outlaw_captain": {
-    id: "outlaw_captain", name: "Outlaw Captain", icon: "🗡️", level: 48, hp: 140,
+    id: "outlaw_captain", name: "Outlaw Captain", icon: "🗡️", level: 48, hp: 310,
     acc: 91, def: 38, maxHit: 18, speed: 2300, xp: 520, attackStyle: "slash",
     weakness: ["stab", "ranged"],
     desc: "The one the camp answers to. Better armed, better fed, and worth the trouble — if you can take him.",
@@ -1277,8 +1286,8 @@ export const monsters: Record<string, MonsterStats> = {
   },
   // === The flagship boss: the toughest thing in Varath. ===================
   "ashen_wyrm": {
-    id: "ashen_wyrm", name: "Cindrath, the Ashen Wyrm", level: 90, hp: 620,
-    acc: 360, def: 80, maxHit: 72, speed: 3000, xp: 3200, attackStyle: "crush",
+    id: "ashen_wyrm", name: "Cindrath, the Ashen Wyrm", level: 90, hp: 1365,
+    acc: 360, def: 80, maxHit: 58, speed: 3000, xp: 3200, attackStyle: "crush",
     weakness: ["stab"],
     boss: true,
     bossHint: "Varath's deadliest. Cindrath lairs in the deepest gallery of the Marrow Deeps, the cave country far in the northeast — Cindrath's Roost. Bring a stabbing weapon for its hide, and more food than you think you'll need.",
@@ -1297,13 +1306,13 @@ export const monsters: Record<string, MonsterStats> = {
       // A hatchling that imprints on its parent's killer — the rarest drop.
       { item: "pet_ashen_wyrm", chance: 0.001, tier: "legendary" },
       // The Wyrmscale set + Wyrmfang: equal, high rates (Barrows-style).
-      { item: "wyrm_helm", chance: 0.12, tier: "legendary" },
-      { item: "wyrm_body", chance: 0.12, tier: "legendary" },
-      { item: "wyrm_legs", chance: 0.12, tier: "legendary" },
-      { item: "wyrm_shield", chance: 0.12, tier: "legendary" },
-      { item: "wyrm_blade", chance: 0.12, tier: "legendary" },
+      { item: "wyrm_helm", chance: 0.03, tier: "legendary" },
+      { item: "wyrm_body", chance: 0.03, tier: "legendary" },
+      { item: "wyrm_legs", chance: 0.03, tier: "legendary" },
+      { item: "wyrm_shield", chance: 0.03, tier: "legendary" },
+      { item: "wyrm_blade", chance: 0.03, tier: "legendary" },
       // A dry streak still pays: coin, bars, gems, and the story shard.
-      { item: "worn_coin", chance: 1, min: 1500, max: 4000, tier: "always" },
+      { item: "worn_coin", chance: 1, min: 600, max: 1500, tier: "always" },
       { item: "hearthite_bar", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
       { item: "cut_gem", chance: 0.4, min: 1, max: 2, tier: "uncommon" },
       { item: "shard_of_orun", chance: 0.05, tier: "legendary" },
@@ -1311,7 +1320,7 @@ export const monsters: Record<string, MonsterStats> = {
   },
   // === The Boneman: a mid-tier quest boss — a serial killer's lair. ==========
   "boneman": {
-    id: "boneman", name: "The Boneman", level: 69, hp: 340,
+    id: "boneman", name: "The Boneman", level: 69, hp: 750,
     acc: 210, def: 58, maxHit: 30, speed: 3600, xp: 1400, attackStyle: "slash",
     weakness: ["crush"],
     boss: true,
@@ -1327,13 +1336,13 @@ export const monsters: Record<string, MonsterStats> = {
       // A grim little echo of him that follows the victor — the rarest drop.
       { item: "pet_boneman", chance: 0.002, tier: "legendary" },
       // The Bonewrought set + the Bonesaw, equal Barrows-style rates.
-      { item: "bone_helm", chance: 0.13, tier: "rare" },
-      { item: "bone_body", chance: 0.13, tier: "rare" },
-      { item: "bone_legs", chance: 0.13, tier: "rare" },
-      { item: "bone_shield", chance: 0.13, tier: "rare" },
-      { item: "bonesaw", chance: 0.13, tier: "rare" },
+      { item: "bone_helm", chance: 0.04, tier: "rare" },
+      { item: "bone_body", chance: 0.04, tier: "rare" },
+      { item: "bone_legs", chance: 0.04, tier: "rare" },
+      { item: "bone_shield", chance: 0.04, tier: "rare" },
+      { item: "bonesaw", chance: 0.04, tier: "rare" },
       // A dry run still pays: coin, a bone trophy, gems, and seeds to sell.
-      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "worn_coin", chance: 1, min: 200, max: 500, tier: "always" },
       { item: "marrow_shard", chance: 0.6, min: 1, max: 3, tier: "uncommon" },
       { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
       { item: "hearthite_bar", chance: 0.25, min: 1, max: 2, tier: "uncommon" },
@@ -1344,7 +1353,7 @@ export const monsters: Record<string, MonsterStats> = {
   // hero. Once the greenwood's protector, now a robber-king who bleeds the poor
   // he claims to shield. Fights from range; weak to a crushing rush up close. ==
   "green_baron": {
-    id: "green_baron", name: "The Green Baron", icon: "🏹", level: 58, hp: 240,
+    id: "green_baron", name: "The Green Baron", icon: "🏹", level: 58, hp: 530,
     acc: 185, def: 48, maxHit: 27, speed: 2500, attackRange: 5, xp: 850, attackStyle: "ranged",
     weakness: ["crush"],
     boss: true,
@@ -1359,12 +1368,12 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "pet_green_baron", chance: 0.002, tier: "legendary" },
       // The Greenhood set + the Baron's Yew, Barrows-style equal rates.
-      { item: "greenhood_hood", chance: 0.13, tier: "rare" },
-      { item: "greenhood_cloak", chance: 0.13, tier: "rare" },
-      { item: "greenhood_chaps", chance: 0.13, tier: "rare" },
-      { item: "greenhood_boots", chance: 0.13, tier: "rare" },
-      { item: "baron_longbow", chance: 0.13, tier: "rare" },
-      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "greenhood_hood", chance: 0.04, tier: "rare" },
+      { item: "greenhood_cloak", chance: 0.04, tier: "rare" },
+      { item: "greenhood_chaps", chance: 0.04, tier: "rare" },
+      { item: "greenhood_boots", chance: 0.04, tier: "rare" },
+      { item: "baron_longbow", chance: 0.04, tier: "rare" },
+      { item: "worn_coin", chance: 1, min: 150, max: 400, tier: "always" },
       { item: "arrow_hearthite", chance: 0.5, min: 15, max: 40, tier: "uncommon" },
       { item: "marrow_shard", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
       { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
@@ -1375,7 +1384,7 @@ export const monsters: Record<string, MonsterStats> = {
   // cult's founder, hollowed out by the power he stole from Orun's seam. He
   // smites from range; weak to a fast bow that never lets him settle. ==========
   "hollow_prophet": {
-    id: "hollow_prophet", name: "The Hollow Prophet", icon: "🔮", level: 62, hp: 280,
+    id: "hollow_prophet", name: "The Hollow Prophet", icon: "🔮", level: 62, hp: 615,
     acc: 200, def: 52, maxHit: 32, speed: 2600, attackRange: 5, xp: 950, attackStyle: "magic",
     weakness: ["ranged"],
     boss: true,
@@ -1390,14 +1399,14 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "pet_hollow_prophet", chance: 0.002, tier: "legendary" },
       // The Prophet's Regalia + the Hollow Staff, Barrows-style equal rates.
-      { item: "prophet_hood", chance: 0.13, tier: "rare" },
-      { item: "prophet_robe", chance: 0.13, tier: "rare" },
-      { item: "prophet_skirt", chance: 0.13, tier: "rare" },
-      { item: "prophet_sandals", chance: 0.13, tier: "rare" },
-      { item: "prophet_staff", chance: 0.13, tier: "rare" },
-      { item: "worn_coin", chance: 1, min: 400, max: 1100, tier: "always" },
+      { item: "prophet_hood", chance: 0.04, tier: "rare" },
+      { item: "prophet_robe", chance: 0.04, tier: "rare" },
+      { item: "prophet_skirt", chance: 0.04, tier: "rare" },
+      { item: "prophet_sandals", chance: 0.04, tier: "rare" },
+      { item: "prophet_staff", chance: 0.04, tier: "rare" },
+      { item: "worn_coin", chance: 1, min: 200, max: 500, tier: "always" },
       { item: "hex_cloth", chance: 0.6, min: 1, max: 3, tier: "uncommon" },
-      { item: "shard_of_orun", chance: 0.08, tier: "legendary" },
+      { item: "shard_of_orun", chance: 0.04, tier: "legendary" },
       { item: "marrow_shard", chance: 0.5, min: 1, max: 3, tier: "uncommon" },
       { item: "cut_gem", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
       { item: "seed_duskshade", chance: 0.4, min: 1, max: 3, tier: "uncommon" },
@@ -1410,7 +1419,7 @@ export const monsters: Record<string, MonsterStats> = {
   // peace — but pick a fight and they answer with steel. Solid defence makes
   // them a deliberate target, and they pay out in coin, gems and the odd ring.
   "town_guard": {
-    id: "town_guard", name: "Settlement Guard", icon: "🛡️", level: 21, hp: 55,
+    id: "town_guard", name: "Settlement Guard", icon: "🛡️", level: 21, hp: 120,
     acc: 48, def: 26, maxHit: 9, speed: 2800, xp: 90, attackStyle: "stab",
     weakness: ["crush", "magic"],
     desc: "A local watchman keeping the peace at the settlement's edge. Leave them be and they'll leave you be — raise a hand, and they raise one back.",
@@ -1431,7 +1440,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "ironvale_guard": {
-    id: "ironvale_guard", name: "Ironvale Guard", icon: "⚔️", level: 38, hp: 90,
+    id: "ironvale_guard", name: "Ironvale Guard", icon: "⚔️", level: 38, hp: 200,
     acc: 84, def: 40, maxHit: 16, speed: 2600, xp: 240, attackStyle: "slash",
     weakness: ["stab", "magic"],
     desc: "A drilled soldier of the Ironvale watch, mail-clad and unbothered. The city's law made flesh — not to be picked at lightly, but worth the trouble if you can take one.",
@@ -1459,7 +1468,7 @@ export const monsters: Record<string, MonsterStats> = {
   // whole point is the seed satchel: field hands drop the common sowing seeds,
   // the master farmer the rare herb and tree seeds you can't easily buy.
   "field_farmer": {
-    id: "field_farmer", name: "Field Farmer", icon: "🧑‍🌾", level: 18, hp: 40,
+    id: "field_farmer", name: "Field Farmer", icon: "🧑‍🌾", level: 18, hp: 90,
     acc: 22, def: 12, maxHit: 6, speed: 2900, xp: 85, attackStyle: "crush",
     weakness: ["stab"],
     desc: "A weathered farmhand working the settlement plots, pockets stuffed with seed for the next sowing. Rob them if you dare — the seeds are the prize.",
@@ -1480,7 +1489,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "master_farmer": {
-    id: "master_farmer", name: "Master Farmer", icon: "🧑‍🌾", level: 38, hp: 70,
+    id: "master_farmer", name: "Master Farmer", icon: "🧑‍🌾", level: 38, hp: 155,
     acc: 60, def: 22, maxHit: 12, speed: 2800, xp: 200, attackStyle: "crush",
     weakness: ["stab"],
     desc: "The one who runs the fields — decades of sowing in their hands and the rarest seeds in their satchel. A hard mark, but the seed is worth the sweat.",
@@ -1510,7 +1519,7 @@ export const monsters: Record<string, MonsterStats> = {
   // Grace-bolts from range (attackStyle "magic"), drop Hex Cloth for robe-making
   // and, rarely, the robes themselves. Weak to a fast bow or a stabbing rush.
   "cult_acolyte": {
-    id: "cult_acolyte", name: "Cult Acolyte", icon: "🧙", level: 22, hp: 45,
+    id: "cult_acolyte", name: "Cult Acolyte", icon: "🧙", level: 22, hp: 100,
     acc: 46, def: 16, maxHit: 14, speed: 3000, attackRange: 5, xp: 90, attackStyle: "magic",
     weakness: ["stab", "ranged"],
     desc: "A hooded initiate of the Heartmoor Cult, hurling sparks of borrowed Grace from the dark.",
@@ -1527,7 +1536,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "cult_zealot": {
-    id: "cult_zealot", name: "Cult Zealot", icon: "🧙", level: 42, hp: 85,
+    id: "cult_zealot", name: "Cult Zealot", icon: "🧙", level: 42, hp: 185,
     acc: 86, def: 30, maxHit: 22, speed: 2800, attackRange: 5, xp: 200, attackStyle: "magic",
     weakness: ["ranged"],
     desc: "A fevered believer whose devotion has curdled into power. The seam answers when they call.",
@@ -1545,7 +1554,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
   },
   "cult_magus": {
-    id: "cult_magus", name: "Cult Magus", icon: "🧙", level: 66, hp: 130,
+    id: "cult_magus", name: "Cult Magus", icon: "🧙", level: 66, hp: 285,
     acc: 214, def: 45, maxHit: 38, speed: 2600, attackRange: 5, xp: 400, attackStyle: "magic",
     weakness: ["ranged"],
     desc: "A master of the cult, robed in hex-woven cloth and wreathed in Orun's stolen light.",

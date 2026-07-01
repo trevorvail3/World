@@ -166,6 +166,17 @@ export const items: Record<ItemId, ItemDef> = {
     "tier": 4,
     "sell": 150
   },
+  "pickaxe_5": {
+    "id": "pickaxe_5",
+    "name": "Goldbound Pickaxe",
+    "description": "A ribstone head banded in gold. Rich man's steel — it bites clean and holds its edge.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "mainhand",
+    "tool": "pickaxe",
+    "tier": 5,
+    "sell": 290
+  },
   "pickaxe_6": {
     "id": "pickaxe_6",
     "name": "Bloodore Pickaxe",
@@ -176,6 +187,17 @@ export const items: Record<ItemId, ItemDef> = {
     "tool": "pickaxe",
     "tier": 6,
     "sell": 420
+  },
+  "pickaxe_7": {
+    "id": "pickaxe_7",
+    "name": "Palesteel Pickaxe",
+    "description": "Twice-forged bloodore, quenched pale. The Record's surveyors swear by them in the deeps.",
+    "icon": "⛏️",
+    "cat": "Tools",
+    "slot": "mainhand",
+    "tool": "pickaxe",
+    "tier": 7,
+    "sell": 700
   },
   "pickaxe_9": {
     "id": "pickaxe_9",
@@ -232,6 +254,17 @@ export const items: Record<ItemId, ItemDef> = {
     "tier": 4,
     "sell": 150
   },
+  "hatchet_5": {
+    "id": "hatchet_5",
+    "name": "Goldbound Hatchet",
+    "description": "A ribstone bit banded in gold. Swings true and never chips.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "mainhand",
+    "tool": "hatchet",
+    "tier": 5,
+    "sell": 290
+  },
   "hatchet_6": {
     "id": "hatchet_6",
     "name": "Bloodore Hatchet",
@@ -242,6 +275,17 @@ export const items: Record<ItemId, ItemDef> = {
     "tool": "hatchet",
     "tier": 6,
     "sell": 420
+  },
+  "hatchet_7": {
+    "id": "hatchet_7",
+    "name": "Palesteel Hatchet",
+    "description": "Twice-forged bloodore, quenched pale. Fells old growth like young saplings.",
+    "icon": "🪓",
+    "cat": "Tools",
+    "slot": "mainhand",
+    "tool": "hatchet",
+    "tier": 7,
+    "sell": 700
   },
   "hatchet_9": {
     "id": "hatchet_9",
@@ -633,7 +677,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 1,
     "acc": 2,
-    "dmg": 1,
+    "dmg": 3,
     "sell": 20
   },
   "shortbow": {
@@ -647,7 +691,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 10,
     "acc": 5,
-    "dmg": 2,
+    "dmg": 4,
     "sell": 50
   },
   "longbow": {
@@ -661,7 +705,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 20,
     "acc": 9,
-    "dmg": 4,
+    "dmg": 8,
     "sell": 100
   },
   "greyoak_longbow": {
@@ -675,7 +719,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 30,
     "acc": 16,
-    "dmg": 7,
+    "dmg": 16,
     "sell": 200
   },
   "ruewood_shortbow": {
@@ -689,7 +733,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 40,
     "acc": 24,
-    "dmg": 10,
+    "dmg": 22,
     "sell": 380
   },
   "duskwood_warbow": {
@@ -703,7 +747,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 45,
     "acc": 36,
-    "dmg": 15,
+    "dmg": 32,
     "sell": 600
   },
   "deeproot_warbow": {
@@ -717,7 +761,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 50,
     "acc": 48,
-    "dmg": 21,
+    "dmg": 42,
     "sell": 950
   },
   "ashfin_raw": {
@@ -4084,7 +4128,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Arrows",
     "slot": "ammo",
     "acc": 3,
-    "dmg": 2,
+    "dmg": 5,
     "sell": 12
   },
   "arrow_ashiron": {
@@ -4095,7 +4139,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Arrows",
     "slot": "ammo",
     "acc": 8,
-    "dmg": 5,
+    "dmg": 10,
     "sell": 40
   },
   "arrow_ashiron_resin": {
@@ -4106,7 +4150,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Arrows",
     "slot": "ammo",
     "acc": 10,
-    "dmg": 5,
+    "dmg": 10,
     "sell": 44
   },
   "arrow_hearthite": {
@@ -4117,7 +4161,7 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Arrows",
     "slot": "ammo",
     "acc": 28,
-    "dmg": 8,
+    "dmg": 16,
     "sell": 200
   },
   "plant_fiber": {
@@ -4456,7 +4500,7 @@ export const items: Record<ItemId, ItemDef> = {
     "twoHand": true,
     "equipLevel": 60,
     "acc": 40,
-    "dmg": 22,
+    "dmg": 44,
     "lore": "spine",
     "sell": 6000
   },
@@ -4685,7 +4729,7 @@ export const items: Record<ItemId, ItemDef> = {
   "baron_longbow": {
     "id": "baron_longbow", "name": "The Baron's Yew", "icon": "🏹", "cat": "Greenhood Weapons",
     "slot": "mainhand", "ranged": true, "twoHand": true, "equipSkill": "draw", "equipLevel": 55,
-    "acc": 52, "dmg": 25, "speed": 2400, "rarity": "rare", "lore": "green_baron", "sell": 4400,
+    "acc": 52, "dmg": 48, "speed": 2400, "rarity": "rare", "lore": "green_baron", "sell": 4400,
     "description": "A tall black-yew longbow, the grip worn pale by one hand over many years. It puts a black-fletched arrow through anything the Baron decided didn't deserve to keep breathing."
   },
 
@@ -4720,7 +4764,7 @@ export const items: Record<ItemId, ItemDef> = {
   "prophet_staff": {
     "id": "prophet_staff", "name": "The Hollow Staff", "icon": "🔮", "cat": "Prophet's Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipSkill": "faith", "equipLevel": 55,
-    "acc": 62, "dmg": 38, "speed": 2600, "rarity": "rare", "lore": "hollow_prophet", "sell": 4400,
+    "acc": 62, "dmg": 52, "speed": 2600, "rarity": "rare", "lore": "hollow_prophet", "sell": 4400,
     "description": "A staff of burnt bone capped with a shard of Orun's seam. It pulls Grace straight out of the world's wound — the finest, and the worst, staff a faithful hand can hold."
   },
 
@@ -4831,37 +4875,37 @@ export const items: Record<ItemId, ItemDef> = {
   "staff_ashwood": {
     "id": "staff_ashwood", "name": "Ashwood Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 1,
-    "acc": 6, "dmg": 4, "speed": 2600, "sell": 60,
+    "acc": 6, "dmg": 8, "speed": 2600, "sell": 60,
     "description": "A plain ashwood casting staff. Channels Orun's spark for the newly faithful."
   },
   "staff_coldpine": {
     "id": "staff_coldpine", "name": "Coldpine Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 10,
-    "acc": 12, "dmg": 8, "speed": 2600, "sell": 180,
+    "acc": 12, "dmg": 14, "speed": 2600, "sell": 180,
     "description": "A pale coldpine staff, cool to the grip. Steadier channel than ashwood."
   },
   "staff_stonewood": {
     "id": "staff_stonewood", "name": "Stonewood Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 20,
-    "acc": 20, "dmg": 13, "speed": 2600, "sell": 420,
+    "acc": 20, "dmg": 20, "speed": 2600, "sell": 420,
     "description": "A dense stonewood staff. Its weight lends real force to a bolt."
   },
   "staff_greyoak": {
     "id": "staff_greyoak", "name": "Greyoak Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 30,
-    "acc": 30, "dmg": 19, "speed": 2600, "sell": 900,
+    "acc": 30, "dmg": 28, "speed": 2600, "sell": 900,
     "description": "An old-growth greyoak staff. A caster's proper working tool."
   },
   "staff_ruewood": {
     "id": "staff_ruewood", "name": "Ruewood Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 40,
-    "acc": 42, "dmg": 26, "speed": 2600, "sell": 1800,
+    "acc": 42, "dmg": 36, "speed": 2600, "sell": 1800,
     "description": "A dark ruewood staff that hums when Grace runs through it."
   },
   "staff_deeproot": {
     "id": "staff_deeproot", "name": "Deeproot Staff", "icon": "🔮", "cat": "Weapons",
     "slot": "mainhand", "magic": true, "twoHand": true, "equipLevel": 50,
-    "acc": 56, "dmg": 34, "speed": 2600, "sell": 3600,
+    "acc": 56, "dmg": 46, "speed": 2600, "sell": 3600,
     "description": "Cut from the deeproot at the world's bottom. The finest staff a faithful hand can wield."
   },
 

@@ -66,6 +66,24 @@ export const actions: SkillAction[] = [
     "note": "Uncut gemstones from deep rock. A Crafting skill of 30 can cut these."
   },
   {
+    "id": "mine_embercite_deep",
+    "skill": "mining",
+    "name": "Deep Embercite",
+    "levelReq": 50,
+    "xp": 95,
+    "produces": "embercite_ore",
+    "note": "A seam that runs deeper and richer than the surface workings."
+  },
+  {
+    "id": "mine_bloodore_rich",
+    "skill": "mining",
+    "name": "Rich Bloodore",
+    "levelReq": 75,
+    "xp": 170,
+    "produces": "bloodore_ore",
+    "note": "A vein so red it looks wet. Miners call these bleeders."
+  },
+  {
     "id": "mine_gold",
     "skill": "mining",
     "name": "Gold",
@@ -218,6 +236,31 @@ export const actions: SkillAction[] = [
     "produces": "pickaxe_6"
   },
   {
+    "id": "forge_pick_5",
+    "skill": "smithing",
+    "name": "Goldbound Pickaxe",
+    "levelReq": 45,
+    "xp": 78,
+    "baseTime": 3500,
+    "requires": {
+      "ribstone_bar": 2,
+      "gold_bar": 1
+    },
+    "produces": "pickaxe_5"
+  },
+  {
+    "id": "forge_pick_7",
+    "skill": "smithing",
+    "name": "Palesteel Pickaxe",
+    "levelReq": 75,
+    "xp": 170,
+    "baseTime": 4500,
+    "requires": {
+      "bloodore_bar": 3
+    },
+    "produces": "pickaxe_7"
+  },
+  {
     "id": "forge_pick_9",
     "skill": "smithing",
     "name": "Voidstone Pickaxe",
@@ -276,6 +319,31 @@ export const actions: SkillAction[] = [
       "bloodore_bar": 2
     },
     "produces": "hatchet_6"
+  },
+  {
+    "id": "forge_axe_5",
+    "skill": "smithing",
+    "name": "Goldbound Hatchet",
+    "levelReq": 46,
+    "xp": 76,
+    "baseTime": 3500,
+    "requires": {
+      "ribstone_bar": 2,
+      "gold_bar": 1
+    },
+    "produces": "hatchet_5"
+  },
+  {
+    "id": "forge_axe_7",
+    "skill": "smithing",
+    "name": "Palesteel Hatchet",
+    "levelReq": 76,
+    "xp": 168,
+    "baseTime": 4500,
+    "requires": {
+      "bloodore_bar": 3
+    },
+    "produces": "hatchet_7"
   },
   {
     "id": "forge_hatch_9",
@@ -1079,6 +1147,15 @@ export const actions: SkillAction[] = [
     "woodShardDrop": {
       "chance": 0.08
     }
+  },
+  {
+    "id": "fell_ironbark_old",
+    "skill": "forestry",
+    "name": "Old-Growth Ironbark",
+    "levelReq": 70,
+    "xp": 225,
+    "produces": "ironbark_log",
+    "note": "Centuries-old ironbark, black to the heart. Slow work that pays."
   },
   {
     "id": "fell_ruewood",

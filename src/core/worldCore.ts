@@ -98,7 +98,9 @@ const AGGRESSIVE = new Set<string>([
 ]);
 // A staff's free basic bolt hits for this fraction of magic max hit — weak
 // sustain, so magic's damage comes from autocasting spells (which spend Grace).
-const BASIC_BOLT_FACTOR = 0.7;
+// Playtests at 0.7 measured free-bolt magic at ~2× melee xp/hr and DPS; 0.45
+// puts unfuelled magic clearly below melee so the Grace/altar loop matters.
+const BASIC_BOLT_FACTOR = 0.55;
 const AGGRO_RANGE = 1.5; // tiles — only monsters you walk right up to engage you
 const FLEE_GRACE_MS = 2500; // after a move, aggressive monsters hold off this long
 // On death you drop a tenth of your coin (a real but gentle setback).
@@ -261,10 +263,13 @@ function recordCatch(player: Player, f: HookedFish): number {
 const HUNTER = { interval: 1900, success: 0.55, respawn: 8000, deplete: 0.3 };
 const FORAGE = { interval: 2200, success: 0.6, respawn: 9000, deplete: 0.3 };
 
-// Re-tuned: one station-craft step every CRAFT_INTERVAL ms (the idle game's
-// per-recipe baseTimes are far slower; a single snappy interval feels right
-// when you're standing at the station).
-const CRAFT_INTERVAL = 1200;
+/** The step interval for a station recipe. Each recipe's authored `baseTime`
+ *  drives its pace (capped so the slowest constructions don't crawl); recipes
+ *  without one fall back to a level-scaled beat. Replaces the old flat 1.2s
+ *  tick, which playtested at 0.9–1.4M xp/hr — level 100 cooking in 9 hours. */
+function craftInterval(action: SkillAction): number {
+  return Math.min(action.baseTime ?? (1800 + action.levelReq * 25), 9000);
+}
 
 /** Which actions each station offers, by the station's ObjKind. */
 export function stationActions(content: Content, station: string): SkillAction[] {
@@ -301,9 +306,16 @@ const COMBAT = {
   defWeight: 1.35,
   hitFloor: 0.05,
   hitCap: 0.95,
-  /** Exploiting a weakness multiplies accuracy / damage. */
-  weaknessAcc: 1.2,
-  weaknessDmg: 1.1,
+  /** Exploiting a weakness multiplies accuracy / damage. Tuned so the triangle
+   *  is REAL: playtests showed 1.2/1.1 vanished under the 95% hit cap (right vs
+   *  wrong style differed by <7% TTK). At 1.5/1.4 + the boss off-style penalty
+   *  below, bringing the right style is ~2× bringing the wrong one. */
+  weaknessAcc: 1.5,
+  weaknessDmg: 1.4,
+  /** Bosses shrug off attacks that don't exploit a weakness: off-style damage
+   *  is multiplied by this. Regular monsters are spared (any style farms trash;
+   *  the triangle decides bosses — matching each boss's hint text). */
+  bossOffStyleDmg: 0.6,
   /** Ward soaks floor(defence / this) flat damage per hit. */
   wardDivisor: 15,
   /** Small flat bonus the matching style grants. */
@@ -2042,8 +2054,8 @@ function startCraft(
     kind: "crafting",
     targetId: objId,
     actionId,
-    nextActionAt: ctx.now + CRAFT_INTERVAL,
-    actionInterval: CRAFT_INTERVAL,
+    nextActionAt: ctx.now + craftInterval(action),
+    actionInterval: craftInterval(action),
   };
 }
 
@@ -3572,7 +3584,7 @@ function processCraft(
   if (action.skill === "cooking" && ctx.rng() < cookBurnChance(player, action)) {
     if (canAddItem(player, "burnt_food")) addItem(player, "burnt_food", 1, events);
     events.push({ type: "LOG", message: `You burn the ${content.items[action.produces].name}.` });
-    act.nextActionAt = ctx.now + CRAFT_INTERVAL;
+    act.nextActionAt = ctx.now + craftInterval(action);
     return;
   }
   grantXp(state, content, action.skill, action.xp, events);
@@ -3582,7 +3594,7 @@ function processCraft(
     message: `You make ${content.items[action.produces].name}.`,
   });
   tryPetDrop(state, content, action.skill, ctx, events);
-  act.nextActionAt = ctx.now + CRAFT_INTERVAL;
+  act.nextActionAt = ctx.now + craftInterval(action);
 }
 
 // Cooking burn: highest at the recipe's own level, falling linearly to 0 once
@@ -4544,6 +4556,11 @@ function playerSwing(
     const guard = mechs.find((m) => m.type === "scaleguard");
     if (guard && guard.type === "scaleguard" && !exploits) {
       dmg = Math.max(1, Math.round(dmg * (1 - guard.reduce)));
+    } else if (stats.boss && !exploits) {
+      // Off-style vs a boss: the blow lands but can't find purchase. Together
+      // with the weakness multipliers this makes the triangle decide boss
+      // fights (right style ≈ 2× wrong style), as every bossHint promises.
+      dmg = Math.max(1, Math.round(dmg * COMBAT.bossOffStyleDmg));
     }
     // Bounty Helm: a tracker's edge. While worn it adds +10% damage against the
     // exact creature your active bounty names — so it speeds the task you're on.
@@ -4556,11 +4573,13 @@ function playerSwing(
     obj.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: obj.id, amount: dmg, weak: exploits });
     // OSRS-style combat XP, earned per point of damage dealt (not on the kill):
-    // 3 xp to the attack skill (Draw for ranged, the chosen melee style else),
-    // and 1 xp to Vitality. Trimmed from 4 + 1.33 so combat XP/hr sits nearer the
-    // gathering skills instead of being far and away the fastest route to 99.
-    grantXp(state, content, ranged ? "draw" : magic ? "faith" : player.combatStyle, dmg * 3, events);
-    grantXp(state, content, "vitality", dmg, events);
+    // 1.5 xp to the attack skill (Draw for ranged, the chosen melee style else),
+    // and 0.5 xp to Vitality. Trimmed again (from 3 + 1) after the armed-combat
+    // playtest measured 450–700k xp/hr with real weapons — damage-based XP is
+    // invariant to monster-HP scaling, so the rate itself had to come down for
+    // combat to sit alongside the gathering skills instead of lapping them.
+    grantXp(state, content, ranged ? "draw" : magic ? "faith" : player.combatStyle, dmg * 1.5, events);
+    grantXp(state, content, "vitality", dmg * 0.5, events);
     // Searing hide (recoil): a melee blow burns you back. Never lethal on its
     // own — it can't drop you below 1 — but it forces you to keep healing.
     // Ranged and magic strike from a distance, so they're spared the recoil.

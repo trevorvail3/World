@@ -649,6 +649,19 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
 
+  // The Stablemaster — sells every open-market mount (the quest steeds stay
+  // quest-rewards). Prices are the mounts' authored costs: a long gold ladder
+  // from a plough ox to the Redrun Courser — the game's biggest coin sinks
+  // after the skillcapes.
+  {
+    id: "stablemaster", kind: "npc", x: 51, y: 44, name: "Berta, the Stablemaster",
+    lines: [
+      "Mind the straw. Every animal in this yard is broke to saddle and better behaved than most patrons.",
+      "The ox hauls, the wolves keep pace with a killer, and the Courser — the Courser outruns the wind off the Redrun. Priced accordingly.",
+      "No refunds. They remember being sold back, and they sulk.",
+    ],
+  },
+
   // === SETTLEMENT GUARDS (Batch 7) =========================================
   // Attackable but never aggressive (see AGGRESSIVE in worldCore) — they hold
   // the watch at every named settlement. Ironvale, the capital, fields the
@@ -790,6 +803,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "portal_marrow", kind: "portal", x: 92, y: 14, name: "The Marrow Vault", dungeon: "marrow_vault", target: { x: 56, y: 118 }, lines: ["The vault door lets you pass."] },
 
   // === THE REDRUN & THE EYELESS SEA (east) =================================
+  // Rich veins: mid-band mining unlocks (Deep Embercite 50, Rich Bloodore 75)
+  // fill the 42→60→88 dead zones — richer XP from familiar ore.
+  { id: "rd_rock_deep_1", kind: "rock", x: 97, y: 65, name: "Deep Embercite Seam", resource: "mine_embercite_deep" },
+  { id: "rd_rock_rich_1", kind: "rock", x: 94, y: 70, name: "Rich Bloodore Vein", resource: "mine_bloodore_rich" },
   { id: "rd_rock_1", kind: "rock", x: 98, y: 63, name: "Bloodore Vein", resource: "mine_bloodore" },
   { id: "rd_rock_2", kind: "rock", x: 92, y: 72, name: "Bloodore Vein", resource: "mine_bloodore" },
   { id: "rd_fish_greyfin", kind: "fishing_spot", x: 96, y: 66, name: "Greyfin Pool", resource: "fish_greyfin" },
@@ -940,6 +957,8 @@ const rawObjects: WorldObjectDef[] = [
   { id: "kd_rock_20", kind: "rock", x: 94, y: 17, name: "Gem Rock", resource: "mine_rough_gem" },
   { id: "kd_rock_21", kind: "rock", x: 94, y: 26, name: "Gold Vein", resource: "mine_gold" },
   { id: "kd_rock_22", kind: "rock", x: 95, y: 16, name: "Gold Vein", resource: "mine_gold" },
+  { id: "kd_rock_deep_1", kind: "rock", x: 86, y: 27, name: "Deep Embercite Seam", resource: "mine_embercite_deep" },
+  { id: "kd_rock_rich_1", kind: "rock", x: 97, y: 16, name: "Rich Bloodore Vein", resource: "mine_bloodore_rich" },
   { id: "kd_rock_23", kind: "rock", x: 95, y: 25, name: "Bloodore Rock", resource: "mine_bloodore" },
   { id: "kd_rock_24", kind: "rock", x: 96, y: 14, name: "Bloodore Rock", resource: "mine_bloodore" },
   { id: "kd_rock_25", kind: "rock", x: 96, y: 25, name: "Voidstone Rock", resource: "mine_voidstone" },
@@ -963,6 +982,9 @@ const rawObjects: WorldObjectDef[] = [
   { id: "ow_tree_13", kind: "tree", x: 17, y: 30, name: "Greyoak Tree", resource: "fell_greyoak", species: "greyoak" },
   { id: "ow_tree_14", kind: "tree", x: 17, y: 39, name: "Greyoak Tree", resource: "fell_greyoak", species: "greyoak" },
   { id: "ow_tree_15", kind: "tree", x: 18, y: 32, name: "Greyoak Tree", resource: "fell_greyoak", species: "greyoak" },
+  // Old-growth ironbark (Forestry 70) fills the 60→80 dead zone.
+  { id: "ow_tree_old_1", kind: "tree", x: 17, y: 38, name: "Old-Growth Ironbark", resource: "fell_ironbark_old", species: "ironbark" },
+  { id: "ow_tree_old_2", kind: "tree", x: 21, y: 36, name: "Old-Growth Ironbark", resource: "fell_ironbark_old", species: "ironbark" },
   { id: "ow_tree_16", kind: "tree", x: 18, y: 41, name: "Ironbark Tree", resource: "fell_ironbark", species: "ironbark" },
   { id: "ow_tree_17", kind: "tree", x: 19, y: 34, name: "Ironbark Tree", resource: "fell_ironbark", species: "ironbark" },
   { id: "ow_tree_18", kind: "tree", x: 19, y: 42, name: "Ironbark Tree", resource: "fell_ironbark", species: "ironbark" },
