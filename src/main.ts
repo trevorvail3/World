@@ -258,6 +258,8 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   }, (slot, item) => game?.beginUseItem(slot, item));
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
+  // Route sent chat lines to the world so they float over the player's head.
+  hud.onLocalSay = (text: string) => game.showSpeech(text);
 
   // A discreet "Saved" flash so the player knows progress persists on its own.
   const saveTag = document.createElement("div");

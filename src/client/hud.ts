@@ -126,6 +126,9 @@ export class Hud {
   private logEl!: HTMLElement;
   private logLines: { type: "game" | "chat"; html: string }[] = [];
   private chatInput!: HTMLInputElement;
+  /** Set by main.ts to route a sent chat line to the world's overhead-chat
+   *  renderer (float it above the player's head). */
+  onLocalSay: ((text: string) => void) | null = null;
   private chatLastId = -1;
   private chatSeeded = false;
 
@@ -961,6 +964,9 @@ export class Hud {
     const text = this.chatInput.value.trim();
     if (!text) return;
     this.chatInput.value = "";
+    // Float it over the player's head right away (OSRS overhead chat), before the
+    // round-trip to world chat.
+    this.onLocalSay?.(text);
     const name = this.lastState?.player.appearance?.name ?? "Wanderer";
     try {
       await sendChat(name, text);

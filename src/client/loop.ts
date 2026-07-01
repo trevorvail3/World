@@ -329,6 +329,9 @@ export class Game {
   private longTimer: number | null = null;
   private marker: Marker | null = null;
   private tapFlash: TapFlash | null = null;
+  /** OSRS-style overhead chat: the last thing the player said, floating over their
+   *  head until `until` (performance.now() ms). Set by the HUD on send. */
+  private speech: { text: string; until: number } | null = null;
   /** A loot tile the player is walking toward to pick up, polled each frame. */
   private pickupTarget: (Vec2 & { id?: number; qty?: number }) | null = null;
   /** Timestamp of the last hit the player took — drives a red screen flash. */
@@ -529,6 +532,7 @@ export class Game {
     this.drawProjectiles(now);
     this.drawSparks(now);
     this.drawFloats(now);
+    this.drawSpeech(now);
     this.g.setTransform(1, 0, 0, 1, 0, 0); // back to device space for the HUD/minimap
     this.drawHurtVignette(now);
     this.drawDeathOverlay(now);
@@ -1283,6 +1287,47 @@ export class Game {
       x: tileX * TILE + TILE / 2 - this.cam.x,
       y: tileY * TILE + TILE / 2 - this.cam.y,
     };
+  }
+
+  /** Float what the player just typed over their head (OSRS overhead chat). Called
+   *  by the HUD the moment a world-chat line is sent, for instant local feedback. */
+  showSpeech(text: string): void {
+    const t = text.trim();
+    if (!t) return;
+    this.speech = { text: t.length > 48 ? t.slice(0, 47) + "…" : t, until: performance.now() + 5000 };
+  }
+
+  /** Draw the overhead chat bubble above the player, fading out at the end. Drawn
+   *  in world space so it tracks the player and scales with zoom. */
+  private drawSpeech(now: number): void {
+    if (!this.speech) return;
+    if (now >= this.speech.until) { this.speech = null; return; }
+    const p = this.bridge.state.player;
+    if (!p.alive) return;
+    const { x: sx, y: sy } = this.toScreen(p.pos.x, p.pos.y);
+    const remain = this.speech.until - now;
+    const alpha = Math.max(0, Math.min(1, remain / 700)); // fade over the last 700ms
+    const g = this.g;
+    g.save();
+    g.globalAlpha = alpha;
+    g.font = "600 14px 'Segoe UI', system-ui, sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    const text = this.speech.text;
+    const tw = g.measureText(text).width;
+    const ty = sy - TILE * 1.15; // a comfortable gap above the head
+    // A soft rounded backing so the words read over any terrain.
+    g.fillStyle = "rgba(18, 14, 9, 0.66)";
+    g.beginPath();
+    g.roundRect(sx - tw / 2 - 7, ty - 11, tw + 14, 22, 7);
+    g.fill();
+    // Warm parchment text with a dark outline (OSRS overhead legibility).
+    g.lineWidth = 3;
+    g.strokeStyle = "rgba(0, 0, 0, 0.75)";
+    g.strokeText(text, sx, ty);
+    g.fillStyle = "#fbeecb";
+    g.fillText(text, sx, ty);
+    g.restore();
   }
 
   private drawMarker(now: number): void {
