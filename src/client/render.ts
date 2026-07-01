@@ -816,6 +816,53 @@ function drawAgilityTracks(
 }
 
 /**
+ * The Varathian Trail's ground path: a soft worn track threading its far-flung
+ * checkpoints in order, so a runner can follow the ground to the next one rather
+ * than guessing across open country. Deliberately faint — a trodden line, not a
+ * road — and drawn per-segment with view culling (the whole loop spans the map).
+ */
+function drawTrailPath(
+  g: CanvasRenderingContext2D,
+  content: Content,
+  cam: Camera,
+  w: number,
+  h: number,
+  inRegion: (x: number, y: number) => boolean,
+  outside: (x: number, y: number) => boolean,
+): void {
+  const pts = content.objects
+    .filter((o) => o.course === "course_varath_trail")
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (pts.length < 2) return;
+  const sx = (tx: number): number => (tx + 0.5) * TILE - cam.x;
+  const sy = (ty: number): number => (ty + 0.5) * TILE - cam.y;
+  g.save();
+  g.lineCap = "round";
+  g.lineJoin = "round";
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!, b = pts[(i + 1) % pts.length]!; // close the loop
+    // Cull segments wholly off-screen or outside the current region/draw-distance.
+    const midx = Math.round((a.x! + b.x!) / 2), midy = Math.round((a.y! + b.y!) / 2);
+    if (!inRegion(midx, midy) || outside(midx, midy)) continue;
+    const ax = sx(a.x!), ay = sy(a.y!), bx = sx(b.x!), by = sy(b.y!);
+    if (Math.max(ax, bx) < -TILE || Math.min(ax, bx) > w + TILE ||
+        Math.max(ay, by) < -TILE || Math.min(ay, by) > h + TILE) continue;
+    // A worn earthen tread with a faint dashed centre line, low-contrast so it
+    // sits into the ground rather than standing out like a paved road.
+    g.strokeStyle = "rgba(96, 82, 54, 0.28)";
+    g.lineWidth = 7;
+    g.setLineDash([]);
+    g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+    g.strokeStyle = "rgba(150, 200, 150, 0.22)";
+    g.lineWidth = 1.5;
+    g.setLineDash([10, 10]);
+    g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  }
+  g.setLineDash([]);
+  g.restore();
+}
+
+/**
  * OSRS-style next-obstacle marker: a pulsing green ring + chevron over the
  * obstacle to take next — the course's first leg until you start a lap, then
  * advancing leg by leg as you clear them.
@@ -974,6 +1021,7 @@ export function drawWorld(
 
   // Agility courses: worn track + fence, drawn under the obstacles themselves.
   drawAgilityTracks(g, content, cam, w, h, inRegion);
+  drawTrailPath(g, content, cam, w, h, inRegion, outside);
 
   // --- Loot on the floor (kill drops awaiting pickup) ---
   // Drawn before objects so creatures and the player render ON TOP of loot —

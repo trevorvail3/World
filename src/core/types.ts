@@ -177,6 +177,7 @@ export type ItemId =
   | "waterlogged_coin"
   | "redrun_pearl"
   | "eyeless_scale"
+  | "burnt_food"
   | "ashfin_cooked"
   | "speckletrout_cooked"
   | "greyfin_cooked"

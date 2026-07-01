@@ -141,6 +141,9 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   // the pier stays a calm spot, the wild country around it stays wild. (The lvl
   // 22 Forest Bear nearby is harmless at that range, and is a scatter-POI the
   // fixup table doesn't reach, so it's left where it is.)
+  // Hamlet farming plots — final tiles (grass, off-road, near the settlements).
+  patch_redmouth_1: { x: 87, y: 55 }, patch_redmouth_2: { x: 90, y: 55 }, treepatch_redmouth: { x: 92, y: 55 },
+  patch_drover_1: { x: 62, y: 69 }, patch_drover_2: { x: 63, y: 69 }, treepatch_drover: { x: 62, y: 71 },
   rd_orc_1: { x: 128, y: 126 },      // Ancient Orc (lvl 94) → SW wilds
   // The Redrun waystone lands you at 135,112, right on the Saltreach village.
   // These foes used to sit on top of that tile and jump you the instant you
@@ -469,6 +472,14 @@ const rawObjects: WorldObjectDef[] = [
   { id: "patch_6", kind: "plant_patch", x: 85, y: 44, name: "Plant Patch" },
   { id: "treepatch_1", kind: "tree_patch", x: 82, y: 47, name: "Tree Patch" },
   { id: "treepatch_2", kind: "tree_patch", x: 85, y: 47, name: "Tree Patch" },
+  // Farming plots out at the hamlets too, so you're never far from a patch to
+  // plant in (pinned to final map tiles via SPAWN_FIXUP; authored coords ignored).
+  { id: "patch_redmouth_1", kind: "plant_patch", x: 87, y: 55, name: "Plant Patch" },
+  { id: "patch_redmouth_2", kind: "plant_patch", x: 90, y: 55, name: "Plant Patch" },
+  { id: "treepatch_redmouth", kind: "tree_patch", x: 92, y: 55, name: "Tree Patch" },
+  { id: "patch_drover_1", kind: "plant_patch", x: 62, y: 69, name: "Plant Patch" },
+  { id: "patch_drover_2", kind: "plant_patch", x: 63, y: 69, name: "Plant Patch" },
+  { id: "treepatch_drover", kind: "tree_patch", x: 62, y: 71, name: "Tree Patch" },
 
   // --- Starter game on the hill grass, and hare snares (Hunter 1) ---
   { id: "rat_1", kind: "monster", monster: "moor_rat", x: 44, y: 30, name: "Moor Rat" },

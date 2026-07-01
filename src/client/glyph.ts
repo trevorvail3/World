@@ -67,6 +67,7 @@ const GLYPHS: Record<string, string> = {
   speech: line(`<path d="M4 6 H20 V16 H11 L6 20 V16 H4 Z"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="13" x2="14" y2="13"/>`),
   check: line(`<path d="M5 13 L10 18 L19 6"/>`),
   next: line(`<path d="M9 6 L15 12 L9 18"/>`),
+  leaf: line(`<path d="M5 19 Q5 7 19 5 Q19 17 7 19 Q6 19 5 19 Z"/><path d="M6 18 Q12 12 17 8"/>`),
 };
 
 // Every emoji that ever renders → a glyph name above.
@@ -81,7 +82,7 @@ const EMOJI: Record<string, string> = {
   "🗡️": "swords", "💀": "skull", "🧰": "backpack", "👑": "trophy", "🜚": "flask",
   "🏔️": "peak", "⛰️": "peak", "✦": "sparkle", "🦜": "feather", "⚒️": "hammer",
   "🕯️": "candle", "🪶": "feather", "🗺": "map", "🗺️": "map", "🔒": "lock",
-  "👟": "boot", "🥾": "boot", "📖": "scroll",
+  "👟": "boot", "🥾": "boot", "📖": "scroll", "🌿": "leaf", "🍃": "leaf",
   // Region / world icons (diaries, the World tab) + home achievements.
   "🌍": "globe", "🌎": "globe", "🌏": "globe",
   "🕳️": "cave", "🌫️": "mist", "🔥": "flame", "🌊": "wave",

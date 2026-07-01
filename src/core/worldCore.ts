@@ -58,19 +58,20 @@ const MOUNT_SPEED_MULT = 1.1; // a worn mount gives a modest travel boost on top
 // per tile travelled; energy recovers while walking or standing still. Walking is
 // slow on purpose; sprinting (~3.6 tiles/s) is the comfortable pace, so the run
 // bar — and Agility, which stretches it — actually matter.
-const SPRINT_MULT = 2.0;
+const SPRINT_MULT = 1.7;
 const ENERGY_MAX = 100;
-const ENERGY_DRAIN = 1.7; // base energy spent per tile sprinted
-const ENERGY_REGEN = 7; // base energy recovered per second when not sprinting
+const ENERGY_DRAIN = 2.8; // base energy spent per tile sprinted
+const ENERGY_REGEN = 4; // base energy recovered per second when not sprinting
 const ENERGY_RECOVER = 20; // after running dry, you must regen this much before sprinting again
-// Agility now MATTERS: at level 1 a sprint is short and recovery slow (you run dry
-// fast, so there's a real reason to train), and it scales hard toward the cap.
-// Drain multiplier on ENERGY_DRAIN: 1.7×1.6≈2.7/tile (~37 tiles) at lvl 1 →
-// 1.7×0.4≈0.7/tile (~147 tiles) at the cap. Regen multiplier on ENERGY_REGEN:
-// 7×0.5=3.5/s (slow) at lvl 1 → 7×2.2≈15/s (fast) at the cap.
-const AGILITY_DRAIN_AT_1 = 1.6;
+// Agility MATTERS, hard: the overworld is compact, so a low-level sprint is short
+// and its recovery slow — you run dry after a brief dash and have to catch your
+// breath, giving a real reason to train — and it scales strongly toward the cap.
+// Drain multiplier on ENERGY_DRAIN: 2.8×1.9≈5.3/tile (~19 tiles) at lvl 1 →
+// 2.8×0.4≈1.1/tile (~89 tiles) at the cap. Regen multiplier on ENERGY_REGEN:
+// 4×0.35=1.4/s (slow, ~71s to full) at lvl 1 → 4×2.2≈8.8/s (~11s) at the cap.
+const AGILITY_DRAIN_AT_1 = 1.9;
 const AGILITY_DRAIN_AT_CAP = 0.4;
-const AGILITY_REGEN_AT_1 = 0.5;
+const AGILITY_REGEN_AT_1 = 0.35;
 const AGILITY_REGEN_AT_CAP = 2.2;
 // Agility is trained on obstacle courses; clearing a full lap pays a bonus equal
 // to this multiple of the course's total per-obstacle XP.
@@ -1110,17 +1111,17 @@ function buyFromShop(
       return;
     }
   }
-  // Skill capes are earned, not just bought: each needs level 99 in its skill,
-  // and the Cape of Varath needs every skill at 99.
+  // Skill capes are earned, not just bought: each needs level 100 (mastery) in
+  // its skill, and the Cape of Varath needs every skill at 100.
   const capeSkill = def.cat === "Capes" ? def.meta?.skill : undefined;
   if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
-    if (skillLvl(player, capeSkill as SkillId) < 99) {
-      events.push({ type: "LOG", message: `You need ${content.skills[capeSkill as SkillId].name} level 99 to claim the ${def.name}.` });
+    if (skillLvl(player, capeSkill as SkillId) < 100) {
+      events.push({ type: "LOG", message: `You need ${content.skills[capeSkill as SkillId].name} level 100 to claim the ${def.name}.` });
       return;
     }
   }
   if (item === "cape_max" && !allSkillsMaxed(player)) {
-    events.push({ type: "LOG", message: "The Cape of Varath is earned only by mastering every skill to 99." });
+    events.push({ type: "LOG", message: "The Cape of Varath is earned only by mastering every skill to 100." });
     return;
   }
   // A listing may be priced in an alternate currency (e.g. Agility Marks) rather
@@ -1657,11 +1658,11 @@ export function equipRequirement(
 ): { skill: SkillId; level: number } | null {
   const def = content.items[itemId];
   if (!def) return null;
-  // Skill capes are gated at level 99 in their skill (read from meta.skill). The
+  // Skill capes are gated at level 100 (mastery) in their skill (read from meta.skill). The
   // max/prestige capes ("max"/"ironvale") are earned outright — no wield gate.
   const capeSkill = def.cat === "Capes" ? def.meta?.skill : undefined;
   if (capeSkill && capeSkill !== "max" && capeSkill !== "ironvale") {
-    return { skill: capeSkill as SkillId, level: 99 };
+    return { skill: capeSkill as SkillId, level: 100 };
   }
   if (def.tool) {
     if (def.tier === undefined) return null;
@@ -1689,9 +1690,9 @@ function atStation(
   return false;
 }
 
-/** True once every skill has reached the mastery cap (99) — for the max cape. */
+/** True once every skill has reached the mastery cap (100) — for the max cape. */
 function allSkillsMaxed(player: Player): boolean {
-  return (Object.keys(player.skills) as SkillId[]).every((id) => skillLvl(player, id) >= 99);
+  return (Object.keys(player.skills) as SkillId[]).every((id) => skillLvl(player, id) >= 100);
 }
 
 /** The player's combat level (idle game formula). */
@@ -3362,6 +3363,15 @@ function processCraft(
     return;
   }
   consumeIngredients(player, action);
+  // Cooking can BURN (OSRS-style): a chance that falls with your Cooking level
+  // above the recipe's requirement, reaching zero once you've mastered the dish.
+  // A burn wastes the raw food (yields worthless Burnt Food) and grants no XP.
+  if (action.skill === "cooking" && ctx.rng() < cookBurnChance(player, action)) {
+    if (canAddItem(player, "burnt_food")) addItem(player, "burnt_food", 1, events);
+    events.push({ type: "LOG", message: `You burn the ${content.items[action.produces].name}.` });
+    act.nextActionAt = ctx.now + CRAFT_INTERVAL;
+    return;
+  }
   grantXp(state, content, action.skill, action.xp, events);
   addItem(player, action.produces, action.produceQty ?? 1, events);
   events.push({
@@ -3370,6 +3380,21 @@ function processCraft(
   });
   tryPetDrop(state, content, action.skill, ctx, events);
   act.nextActionAt = ctx.now + CRAFT_INTERVAL;
+}
+
+// Cooking burn: highest at the recipe's own level, falling linearly to 0 once
+// you're BURN_RANGE levels above it. A dish you can just barely make burns often;
+// once mastered it never burns — a real reason to level Cooking.
+const BURN_MAX = 0.5;    // burn chance at exactly the recipe's level
+const BURN_RANGE = 32;   // levels above the requirement to reach never-burn
+function cookBurnChance(player: Player, action: SkillAction): number {
+  // Only meals burn — a raw-food recipe with no heal (e.g. an intermediate) or a
+  // non-food cooking output shouldn't, but in practice all cooking makes food.
+  const lvl = skillLvl(player, "cooking");
+  const req = action.levelReq ?? 1;
+  const noBurn = req + BURN_RANGE;
+  if (lvl >= noBurn) return 0;
+  return BURN_MAX * ((noBurn - lvl) / (noBurn - req));
 }
 
 // --- Quests --------------------------------------------------------------

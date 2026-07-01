@@ -793,6 +793,14 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Rare Drops",
     "sell": 500
   },
+  "burnt_food": {
+    "id": "burnt_food",
+    "name": "Burnt Food",
+    "description": "Charred past saving. A cook's shame — worth nothing, and it won't heal a thing. Train Cooking and you'll burn less, until one day you never do.",
+    "icon": "🍖",
+    "cat": "Food",
+    "sell": 0
+  },
   "ashfin_cooked": {
     "id": "ashfin_cooked",
     "name": "Cooked Ashfin",

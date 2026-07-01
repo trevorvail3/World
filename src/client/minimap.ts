@@ -28,11 +28,14 @@ const MAP_CATS: { id: string; label: string; icon: string; kinds: ObjKind[]; on:
   { id: "people", label: "People", icon: "👤", kinds: ["npc"], on: true },
   { id: "bounty", label: "Bounty", icon: "🎯", kinds: ["bounty_board"], on: true },
   { id: "home", label: "Homestead", icon: "🏠", kinds: ["housing_plot"], on: true },
+  // Farming plots (crops + orchard) get their own always-on pin, so you can
+  // always find a patch to plant in — they're easy to miss otherwise.
+  { id: "farming", label: "Farming", icon: "🌾", kinds: ["plant_patch", "tree_patch"], on: true },
   // Resources split by kind so each reads with its own icon (and its own toggle).
-  { id: "trees", label: "Trees", icon: "🌲", kinds: ["tree", "tree_patch"], on: false },
+  { id: "trees", label: "Trees", icon: "🌲", kinds: ["tree"], on: false },
   { id: "mining", label: "Mining", icon: "⛏️", kinds: ["rock"], on: false },
   { id: "fishing", label: "Fishing", icon: "🎣", kinds: ["fishing_spot"], on: false },
-  { id: "foraging", label: "Foraging", icon: "🌿", kinds: ["plant_patch", "forage_spot", "trap"], on: false },
+  { id: "foraging", label: "Foraging", icon: "🌿", kinds: ["forage_spot", "trap"], on: false },
   { id: "agility", label: "Agility", icon: "👟", kinds: ["agility_obstacle"], on: false },
 ];
 
@@ -47,6 +50,8 @@ const EXTRA_LABELS: { name: string; x: number; y: number }[] = [
   { name: "Redmouth", x: 86, y: 60 },
   { name: "Drover's Rest", x: 68, y: 75 },
   { name: "The Fold", x: 62, y: 16 },
+  // The head of the Varathian Trail (at its first checkpoint / Cael).
+  { name: "Varathian Trail", x: 57, y: 10 },
 ];
 
 /** Tiles across the (square) minimap — a fixed local radius, OSRS-style, so the
@@ -499,6 +504,9 @@ export class WorldMapModal {
     for (const def of content.objects) {
       const cat = kindCat.get(def.kind);
       if (!cat) continue;
+      // One agility icon per course: only the starting obstacle (order 0) gets a
+      // marker, so a course reads as a single pin, not a cluster of dots.
+      if (def.kind === "agility_obstacle" && (def.order ?? 0) !== 0) continue;
       const p = objectPos(def, undefined);
       if (p.y >= rows) continue;
       const el = document.createElement("span");
@@ -558,7 +566,7 @@ export class WorldMapModal {
   /** Repaint terrain + player + view-rect each frame; markers are static DOM. */
   draw(
     state: WorldState,
-    _content: Content,
+    content: Content,
     cam: Camera,
     viewW: number,
     viewH: number,
@@ -575,6 +583,24 @@ export class WorldMapModal {
         g.fillStyle = MM_TILE[m.tiles[y * m.width + x]!];
         g.fillRect(x * cell, y * cell, cell + 0.6, cell + 0.6);
       }
+    }
+    // The Varathian Trail: a dashed green loop through its eight checkpoints, so
+    // the whole circuit reads at a glance (a big line across the map is fine).
+    const trail = content.objects
+      .filter((o) => o.course === "course_varath_trail")
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (trail.length > 1) {
+      g.save();
+      g.strokeStyle = "rgba(120, 205, 150, 0.6)";
+      g.lineWidth = Math.max(1.5, cell * 0.5);
+      g.lineCap = "round"; g.lineJoin = "round";
+      g.setLineDash([cell * 1.6, cell * 1.1]);
+      g.beginPath();
+      g.moveTo((trail[0]!.x + 0.5) * cell, (trail[0]!.y + 0.5) * cell);
+      for (let i = 1; i < trail.length; i++) g.lineTo((trail[i]!.x + 0.5) * cell, (trail[i]!.y + 0.5) * cell);
+      g.closePath();
+      g.stroke();
+      g.restore();
     }
     // The view-rect of what the main camera currently shows.
     if (cam.y / TILE < rows) {

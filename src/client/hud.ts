@@ -1314,9 +1314,9 @@ export class Hud {
     const compOwned = comps.filter(ownedOf).length;
     const achTotal = this.content.achievements.length;
     const loreTotal = this.content.lore.length;
-    // Cape of Varath — the all-99 completion goal, now tracked here as an achievement.
+    // Cape of Varath — the all-100 completion goal, now tracked here as an achievement.
     const skillIds = Object.keys(this.content.skills) as SkillId[];
-    const capeMaxed = skillIds.filter((id) => player.skills[id].level >= 99).length;
+    const capeMaxed = skillIds.filter((id) => player.skills[id].level >= 100).length;
     const capeOwned =
       player.equipment.cape === "cape_max" ||
       player.inventory.some((s) => s?.item === "cape_max") ||
@@ -1426,7 +1426,7 @@ export class Hud {
     }).join("")
       + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for an XP lamp — pour it into any skill — with a guaranteed pet at 100.</div>`;
 
-    // Cape of Varath: the grandmaster goal — every skill at 99 — as a progress bar.
+    // Cape of Varath: the grandmaster goal — every skill at 100 — as a progress bar.
     const capePct = skillIds.length ? (capeMaxed / skillIds.length) * 100 : 0;
     const capeNote = capeOwned
       ? "Earned — the mark of a true master of Varath."

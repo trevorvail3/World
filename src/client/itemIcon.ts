@@ -104,7 +104,7 @@ type Shape =
   | "sword" | "dagger" | "claymore" | "spear" | "hammer" | "saw" | "bow" | "bowU"
   | "arrow" | "arrowhead" | "shield" | "helm" | "body" | "legs" | "boot" | "cape"
   | "ring" | "amulet" | "gem" | "bead" | "vial" | "herb" | "seed" | "mushroom"
-  | "fish" | "meat" | "bowl" | "bread" | "hide" | "pet" | "mount" | "coin"
+  | "fish" | "meat" | "cooked" | "bowl" | "bread" | "hide" | "pet" | "mount" | "coin"
   | "scroll" | "key" | "trophy" | "powder" | "rivet" | "sack" | "rune";
 
 function classify(def: ItemDef): Shape {
@@ -165,11 +165,11 @@ function classify(def: ItemDef): Shape {
   if (cat === "Fish") return "fish";
   if (cat === "Meat") return "meat";
   if (cat === "Food") {
+    // Prepared meals read as COOKED — plated, browned and steaming — so a Cooked
+    // Ashfin never looks like a Raw Ashfin. Liquid dishes stay as bowls.
     if (has("stew") || has("broth") || has("chowder")) return "bowl";
     if (has("ration")) return "bread";
-    if (has("smoked") || has("fish") || has("trout") || has("gill") || has("fin") || has("perch") || has("scale") || has("pike") || has("eel")) return "fish";
-    if (has("meat") || has("venison") || has("aurochs") || has("roast")) return "meat";
-    return "bowl";
+    return "cooked";
   }
   if (cat === "Hides" || cat === "Leathers") return "hide";
   if (cat.includes("Jewellery")) return (has("neck") || has("amulet")) ? "amulet" : "ring";
@@ -253,6 +253,11 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
         : shadeFrom(hashColor(id, 175, 130, 44, 24, 44, 18));
     case "fish": return shadeFrom(hashColor(id, 182, 56, 16, 26, 44, 18));
     case "meat": return shadeFrom(hashColor(id, 0, 24, 36, 20, 40, 16));
+    // Cooked meals: a warm, appetising golden-brown, only gently varied per item
+    // so they all read as "cooked" (vs the cool silver of raw fish).
+    case "cooked": return s.includes("burnt")
+      ? shadeFrom("#332a22", "#171210") // charred black-brown
+      : shadeFrom(tweak("#bd8746", id, 12, 10, 10));
     case "bowl": return shadeFrom(hashColor(id, 10, 40, 30, 22, 34, 16));
     case "bread": return shadeFrom(hashColor(id, 22, 26, 38, 20, 50, 16));
     case "hide": return shadeFrom(hashColor(id, 14, 34, 30, 22, 32, 18));
@@ -387,6 +392,15 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "mushroom": return `<rect x="14" y="16" width="4" height="10" rx="1.5" fill="#e6dcc4" stroke="${p.edge}" stroke-width="0.8"/><path d="M7,16 Q7,8 16,8 Q25,8 25,16 Q16,19 7,16 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><circle cx="12" cy="13" r="1.3" fill="#ffffff" opacity="0.7"/><circle cx="19" cy="12" r="1" fill="#ffffff" opacity="0.6"/>`;
     case "fish": return fishShape(p, id);
     case "meat": return `<line x1="9" y1="22" x2="14" y2="17" stroke="#efe6d4" stroke-width="3.2" stroke-linecap="round"/><circle cx="8.5" cy="22.5" r="2.2" fill="#efe6d4"/><circle cx="11" cy="20" r="2.2" fill="#efe6d4"/><ellipse cx="18" cy="13" rx="8" ry="7.5" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><ellipse cx="15" cy="10" rx="2.5" ry="2" fill="${p.light}" opacity="0.55"/>`;
+    case "cooked": // a plated, grill-marked, steaming portion — unmistakably cooked
+      return `<ellipse cx="16" cy="22.5" rx="11" ry="3.8" fill="#c9c3b4" stroke="#8f897a" stroke-width="0.8"/>`
+        + `<ellipse cx="16" cy="22" rx="8.5" ry="2.6" fill="#9c937f"/>`
+        + `<path d="M8,19 Q10,12.5 16,12.5 Q22,12.5 24,19 Q20,22 16,22 Q12,22 8,19 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<path d="M11,17 Q16,15 21,17" stroke="${p.dark}" stroke-width="0.9" fill="none" opacity="0.7"/>`
+        + `<path d="M12.5,19.2 Q16,17.4 19.5,19.2" stroke="${p.dark}" stroke-width="0.9" fill="none" opacity="0.6"/>`
+        + `<ellipse cx="13.5" cy="15" rx="1.8" ry="1" fill="${p.light}" opacity="0.6"/>`
+        + `<path d="M13,11.5 Q11,8.5 13,5.5 Q14.6,3.5 13,1.5" stroke="#e8e8e8" stroke-width="1" fill="none" opacity="0.5" stroke-linecap="round"/>`
+        + `<path d="M19,11.5 Q21,8.5 19,5.5 Q17.4,3.5 19,1.5" stroke="#e8e8e8" stroke-width="1" fill="none" opacity="0.42" stroke-linecap="round"/>`;
     case "bowl": return `<path d="M5,15 Q16,13 27,15 Q25,25 16,25 Q7,25 5,15 Z" fill="#7a5236" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><ellipse cx="16" cy="15" rx="11" ry="3" fill="${p.base}"/><circle cx="12" cy="15" r="1.2" fill="${p.light}"/><circle cx="19" cy="14.5" r="1" fill="${p.dark}"/>`;
     case "bread": return `<path d="M6,18 Q6,11 16,11 Q26,11 26,18 Q26,23 16,23 Q6,23 6,18 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><line x1="11" y1="13" x2="9" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="16" y1="12.5" x2="16" y2="22" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="21" y1="13" x2="23" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/>`;
     case "hide": return `<path d="M16,5 Q21,7 20,12 Q26,14 24,19 Q26,24 20,24 Q18,28 16,24 Q14,28 12,24 Q6,24 8,19 Q6,14 12,12 Q11,7 16,5 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><ellipse cx="16" cy="16" rx="4" ry="6" fill="${p.light}" opacity="0.4"/>`;
