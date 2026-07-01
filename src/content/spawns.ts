@@ -920,6 +920,13 @@ const rawObjects: WorldObjectDef[] = [
   { id: "course_greyoak_2", kind: "agility_obstacle", x: 33, y: 55, name: "Greyoak Run: Rope Swing", course: "course_greyoak", order: 2, exit: { x: 33, y: 56 }, xp: 200, levelReq: 40, obstacle: "rope" },
   { id: "course_greyoak_3", kind: "agility_obstacle", x: 30, y: 57, name: "Greyoak Run: Wall Scramble", course: "course_greyoak", order: 3, exit: { x: 29, y: 57 }, xp: 200, levelReq: 40, obstacle: "wall" },
   { id: "course_greyoak_4", kind: "agility_obstacle", x: 28, y: 58, name: "Greyoak Run: Stepping Stones", course: "course_greyoak", order: 4, exit: { x: 28, y: 57 }, xp: 200, levelReq: 40, obstacle: "stones" },
+  // A fourth, expert course out on the Ashfen Flats (Agility 70+) — the hardest
+  // fixed circuit, a big per-lap payout for those near the cap.
+  { id: "course_ashfen_0", kind: "agility_obstacle", x: 64, y: 83, name: "Ashfen Gauntlet: Balance Log", course: "course_ashfen", order: 0, exit: { x: 65, y: 83 }, xp: 360, levelReq: 70, obstacle: "log" },
+  { id: "course_ashfen_1", kind: "agility_obstacle", x: 67, y: 83, name: "Ashfen Gauntlet: Climbing Net", course: "course_ashfen", order: 1, exit: { x: 67, y: 84 }, xp: 360, levelReq: 70, obstacle: "net" },
+  { id: "course_ashfen_2", kind: "agility_obstacle", x: 69, y: 85, name: "Ashfen Gauntlet: Rope Swing", course: "course_ashfen", order: 2, exit: { x: 69, y: 86 }, xp: 360, levelReq: 70, obstacle: "rope" },
+  { id: "course_ashfen_3", kind: "agility_obstacle", x: 66, y: 87, name: "Ashfen Gauntlet: Wall Scramble", course: "course_ashfen", order: 3, exit: { x: 65, y: 87 }, xp: 360, levelReq: 70, obstacle: "wall" },
+  { id: "course_ashfen_4", kind: "agility_obstacle", x: 64, y: 85, name: "Ashfen Gauntlet: Stepping Stones", course: "course_ashfen", order: 4, exit: { x: 64, y: 84 }, xp: 360, levelReq: 70, obstacle: "stones" },
 
   // === FOUND LORE — discoverable relics (the Archive / exploration layer) ===
   // Each sits beside a landmark whose mystery it deepens; tiles chosen by the
