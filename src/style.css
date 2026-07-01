@@ -2638,23 +2638,30 @@ button.inv-slot {
 .achieve-check { color: #7fc06a; font-weight: 700; }
 
 /* --- Boss Log (Records tab) --- */
-.boss-row {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 6px 0; border-top: 1px solid rgba(201, 162, 74, 0.12); opacity: 0.7;
+/* Boss log — collapsible per-boss entries (header + expandable Info detail). */
+.boss-entry { border-top: 1px solid rgba(201, 162, 74, 0.12); opacity: 0.72; }
+.boss-entry:first-child { border-top: none; }
+.boss-entry.slain { opacity: 1; }
+.boss-head {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 2px; background: none; border: none; cursor: pointer; text-align: left;
 }
-.boss-row:first-child { border-top: none; }
-.boss-row.slain { opacity: 1; }
-.boss-ic { color: var(--ink-dim); display: inline-flex; flex: 0 0 auto; width: 20px; height: 20px; margin-top: 1px; }
+.boss-head:hover { background: rgba(201, 162, 74, 0.06); }
+.boss-ic { color: var(--ink-dim); display: inline-flex; flex: 0 0 auto; width: 20px; height: 20px; }
 .boss-ic .g-ico { width: 20px; height: 20px; }
-.boss-row.slain .boss-ic { color: var(--gold); }
-.boss-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; line-height: 1.25; }
-.boss-name { font-size: 13px; color: var(--ink); display: flex; align-items: center; gap: 7px; }
-.boss-row.slain .boss-name { color: var(--gold); }
+.boss-entry.slain .boss-ic { color: var(--gold); }
+.boss-name { font-size: 13px; color: var(--ink); flex: 1; min-width: 0; }
+.boss-entry.slain .boss-name { color: var(--gold); }
 .boss-lvl {
   font-size: 10px; color: var(--ink-dim); border: 1px solid var(--panel-edge);
-  border-radius: 6px; padding: 0 5px; white-space: nowrap;
+  border-radius: 6px; padding: 0 5px; white-space: nowrap; flex: 0 0 auto;
 }
-.boss-hint { font-size: 11px; color: var(--ink-dim); }
+.boss-chevron { flex: 0 0 auto; color: var(--ink-dim); font-size: 12px; width: 16px; text-align: center; }
+.boss-detail { display: none; padding: 2px 2px 9px 30px; }
+.boss-entry.open .boss-detail { display: block; }
+.boss-detail-lore { font-size: 11px; color: var(--ink); line-height: 1.35; margin-bottom: 4px; }
+.boss-detail-hint { font-size: 11px; color: var(--ink-dim); font-style: italic; margin-bottom: 4px; }
+.boss-detail-weak { font-size: 11px; color: #e0a23a; margin-bottom: 5px; }
 .boss-miles { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
 .boss-mile {
   font-size: 10px; color: var(--ink-dim); white-space: nowrap;

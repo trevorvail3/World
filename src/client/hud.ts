@@ -1397,17 +1397,23 @@ export class Hud {
       .filter((m) => m.boss)
       .sort((a, b) => a.level - b.level);
     const bossSlain = bosses.filter((m) => (player.bossKills[m.id] ?? 0) > 0).length;
+    // Each boss is a collapsible entry: a compact header (icon, name, level,
+    // kills) with an Info toggle that expands its lore, weakness and the full
+    // milestone ladder — so the log stays tidy until you ask for detail.
     const bossBody = bosses.map((m) => {
       const kills = player.bossKills[m.id] ?? 0;
       const slain = kills > 0;
-      const weak = m.weakness?.length ? ` Weak to ${m.weakness.join(", ")}.` : "";
-      const hint = `${m.bossHint ?? m.desc}${weak}`;
+      const key = `boss:${m.id}`;
+      const open = this.openSecs.has(key);
+      const weak = m.weakness?.length ? `<div class="boss-detail-weak">Weak to ${escapeHtml(m.weakness.join(", "))}.</div>` : "";
+      const lore = m.desc ? `<div class="boss-detail-lore">${escapeHtml(m.desc)}</div>` : "";
+      const hintLine = m.bossHint ? `<div class="boss-detail-hint">${escapeHtml(m.bossHint)}</div>` : "";
       // Milestone ladder: claimed (✓), reached & unclaimed (a Claim button), or
       // still locked (greyed, showing the threshold + reward).
       const miles = bossMilestones(m, this.content).map((t) => {
-        const key = `${m.id}:${t.kills}`;
+        const mkey = `${m.id}:${t.kills}`;
         const reward = `${t.xp.toLocaleString()} XP${t.pet ? " + pet" : ""}`;
-        if (player.bossMilestonesClaimed.includes(key)) {
+        if (player.bossMilestonesClaimed.includes(mkey)) {
           return `<span class="boss-mile done" title="${reward}">✓ ${t.kills}</span>`;
         }
         if (kills >= t.kills) {
@@ -1415,16 +1421,18 @@ export class Hud {
         }
         return `<span class="boss-mile" title="${reward}">${t.kills} · ${reward}</span>`;
       }).join("");
-      return `<div class="boss-row ${slain ? "slain" : ""}">`
+      return `<div class="boss-entry ${slain ? "slain" : ""}${open ? " open" : ""}">`
+        + `<button type="button" class="boss-head" data-toggle="${key}">`
         + `<span class="boss-ic">${iconize(m.icon ?? "💀")}</span>`
-        + `<span class="boss-info"><span class="boss-name">${escapeHtml(m.name)}`
-        + `<span class="boss-lvl">Lv ${m.level}</span></span>`
-        + `<span class="boss-hint">${escapeHtml(hint)}</span>`
-        + `<span class="boss-miles">${miles}</span></span>`
+        + `<span class="boss-name">${escapeHtml(m.name)}</span>`
+        + `<span class="boss-lvl">Lv ${m.level}</span>`
         + `<span class="boss-kills" title="Kills">${slain ? `☠ ${kills.toLocaleString()}` : "—"}</span>`
+        + `<span class="boss-chevron">${open ? "▾" : "ⓘ"}</span>`
+        + `</button>`
+        + `<div class="boss-detail">${lore}${hintLine}${weak}<div class="boss-miles">${miles}</div></div>`
         + `</div>`;
     }).join("")
-      + `<div class="tab-note">Defeat a boss to log it and rack up kills. Reach a kill milestone, then tap Claim for an XP lamp — pour it into any skill — with a guaranteed pet at 100.</div>`;
+      + `<div class="tab-note">Tap a boss for its lore and milestones. Reach a kill milestone, then Claim for an XP lamp — pour it into any skill — with a guaranteed pet at 100.</div>`;
 
     // Cape of Varath: the grandmaster goal — every skill at 100 — as a progress bar.
     const capePct = skillIds.length ? (capeMaxed / skillIds.length) * 100 : 0;
