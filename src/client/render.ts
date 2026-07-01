@@ -2766,31 +2766,50 @@ function drawBank(g: CanvasRenderingContext2D, cx: number, cy: number): void {
 /** The Grand Exchange booth: a clerk's counter under a striped awning, a set
  *  of brass scales on top and a bid/ask chalkboard behind. */
 function drawGrandExchange(g: CanvasRenderingContext2D, cx: number, cy: number): void {
-  shadow(g, cx, cy + 12, 16, 5);
-  // Chalkboard backboard (the bid/ask listing).
-  g.fillStyle = "#2b2620"; g.fillRect(cx - 13, cy - 16, 26, 9);
-  g.strokeStyle = "#6e5331"; g.lineWidth = 2; g.strokeRect(cx - 13, cy - 16, 26, 9);
-  g.strokeStyle = "#9fb89f"; g.lineWidth = 1; // chalk lines
-  for (let i = 0; i < 3; i++) { const yy = cy - 14 + i * 3; g.beginPath(); g.moveTo(cx - 10, yy); g.lineTo(cx + (i % 2 ? 4 : 9), yy); g.stroke(); }
-  // Counter.
-  g.fillStyle = "#6e5331"; g.fillRect(cx - 14, cy - 6, 28, 14);
-  g.fillStyle = "#5a4327"; g.fillRect(cx - 14, cy + 4, 28, 4); // base shadow band
-  g.fillStyle = "#7a5532"; g.fillRect(cx - 14, cy - 6, 28, 2); // countertop edge
-  // Striped awning over the counter.
-  const stripe = ["#b23b2e", "#e8dcc0"];
-  for (let i = 0; i < 7; i++) {
-    g.fillStyle = stripe[i % 2]!;
-    g.fillRect(cx - 14 + i * 4, cy - 11, 4, 5);
+  // A grand classical trading hall — deliberately far larger and grander than
+  // anything around it (~2 tiles across): marble colonnade, gilt pediment, a big
+  // hanging ledger board and trade banners, so the Exchange reads as THE hub.
+  const W = 44; // half-width of the hall
+  shadow(g, cx, cy + 20, W + 4, 7);
+  // Broad stone steps up to the platform.
+  g.fillStyle = "#8b8172"; g.fillRect(cx - W - 4, cy + 14, (W + 4) * 2, 6);
+  g.fillStyle = "#a49a89"; g.fillRect(cx - W - 1, cy + 11, (W + 1) * 2, 4);
+  // Hall body (pale marble) sitting on the platform.
+  g.fillStyle = "#cdc6b6"; g.fillRect(cx - W, cy - 12, W * 2, 24);
+  g.fillStyle = "#bcb4a2"; g.fillRect(cx - W, cy + 6, W * 2, 6); // base shadow band
+  // Colonnade: fluted columns with capitals across the front.
+  const cols = 7;
+  for (let i = 0; i < cols; i++) {
+    const colx = cx - W + 6 + i * ((W * 2 - 12) / (cols - 1));
+    g.fillStyle = "#e7e1d2"; g.fillRect(colx - 2.5, cy - 10, 5, 22); // shaft
+    g.fillStyle = "#b7ad99"; g.fillRect(colx - 2.5, cy - 10, 1.4, 22); // shade side
+    g.fillStyle = "#efe9db"; g.fillRect(colx - 3.5, cy - 11, 7, 2); // capital
+    g.fillStyle = "#efe9db"; g.fillRect(colx - 3.5, cy + 10, 7, 2); // base
   }
-  g.fillStyle = "#3a2c20"; g.fillRect(cx - 15, cy - 12, 30, 2); // awning rail
-  // Brass scales of trade on the counter.
-  g.strokeStyle = "#c9a24a"; g.lineWidth = 1.5;
-  g.beginPath(); g.moveTo(cx, cy - 6); g.lineTo(cx, cy - 1); // post
-  g.moveTo(cx - 5, cy - 5); g.lineTo(cx + 5, cy - 5); // beam
-  g.stroke();
-  g.fillStyle = "#e2c061";
-  g.beginPath(); g.arc(cx - 5, cy - 3, 2, 0, Math.PI); g.fill(); // left pan
-  g.beginPath(); g.arc(cx + 5, cy - 3, 2, 0, Math.PI); g.fill(); // right pan
+  // Entablature + gilt pediment (triangular roof).
+  g.fillStyle = "#7a6f5a"; g.fillRect(cx - W - 2, cy - 15, (W + 2) * 2, 4);
+  g.fillStyle = "#d9cfb0"; g.fillRect(cx - W - 2, cy - 15, (W + 2) * 2, 1.5);
+  g.fillStyle = "#c9b98a"; // pediment
+  g.beginPath();
+  g.moveTo(cx - W - 4, cy - 15); g.lineTo(cx, cy - 30); g.lineTo(cx + W + 4, cy - 15); g.closePath(); g.fill();
+  g.strokeStyle = "#e2c061"; g.lineWidth = 1.6; g.stroke(); // gilt trim
+  // A gilt scales-of-trade emblem in the tympanum.
+  g.strokeStyle = "#e2c061"; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(cx, cy - 24); g.lineTo(cx, cy - 18); g.moveTo(cx - 4, cy - 22); g.lineTo(cx + 4, cy - 22); g.stroke();
+  g.fillStyle = "#f0d477";
+  g.beginPath(); g.arc(cx - 4, cy - 21, 1.6, 0, Math.PI); g.fill();
+  g.beginPath(); g.arc(cx + 4, cy - 21, 1.6, 0, Math.PI); g.fill();
+  // A big hanging ledger board (the live bid/ask listings) under the colonnade.
+  g.fillStyle = "#241f18"; g.fillRect(cx - 15, cy - 8, 30, 16);
+  g.strokeStyle = "#c9a24a"; g.lineWidth = 1.5; g.strokeRect(cx - 15, cy - 8, 30, 16);
+  g.strokeStyle = "rgba(180,205,180,0.75)"; g.lineWidth = 1; // chalked rows
+  for (let i = 0; i < 5; i++) { const yy = cy - 5.5 + i * 3; g.beginPath(); g.moveTo(cx - 12, yy); g.lineTo(cx + (i % 2 ? 5 : 11), yy); g.stroke(); }
+  // Trade banners flanking the entrance.
+  for (const bx of [cx - W + 4, cx + W - 4]) {
+    g.fillStyle = "#9a2f2a"; g.beginPath();
+    g.moveTo(bx - 3, cy - 10); g.lineTo(bx + 3, cy - 10); g.lineTo(bx + 3, cy + 6); g.lineTo(bx, cy + 3); g.lineTo(bx - 3, cy + 6); g.closePath(); g.fill();
+    g.fillStyle = "#e2c061"; g.beginPath(); g.arc(bx, cy - 5, 1.6, 0, Math.PI * 2); g.fill();
+  }
 }
 
 /**
