@@ -1321,8 +1321,12 @@ export function applyIntent(
       }
       grantXp(state, content, "fishing", f.xp, events);
       if (f.gold > 0) { player.gold += f.gold; player.stats.goldEarned += f.gold; }
+      // Whoever topped the board before this catch — if it wasn't the player and
+      // now is, they've just become a NEW pier champion (worth announcing).
+      const prevChamp = player.fishingRecords[0]?.angler;
       const rank = recordCatch(player, f);
-      events.push({ type: "FISH_LANDED", species: f.species, weight: f.weight, length: f.length, rank });
+      const newChampion = rank === 1 && prevChamp !== player.appearance.name;
+      events.push({ type: "FISH_LANDED", species: f.species, weight: f.weight, length: f.length, rank, newChampion });
       events.push({
         type: "LOG",
         message: `Landed a ${f.species} — ${f.weight.toFixed(1)}kg, ${f.length}cm! The warden weighs it and pays ${f.gold}g.`,

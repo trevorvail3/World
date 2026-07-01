@@ -43,6 +43,9 @@ import { getTrackedQuest, setTrackedQuest } from "./questTrack.ts";
 // your game history (and vice-versa), regardless of which filter is showing.
 const MAX_GAME_LINES = 80;
 const MAX_CHAT_LINES = 80;
+/** The sender name world-broadcasts (new pier champions, etc.) post under, so
+ *  the chat feed can render them as server messages rather than player chatter. */
+const HERALD_NAME = "Herald";
 
 type TabId =
   | "inventory" | "skills" | "character"
@@ -775,8 +778,23 @@ export class Hud {
     this.pushLine(`<div class="log-line">${escapeHtml(message)}</div>`, "game");
   }
 
-  /** A world-chat line in the same scrollback (sender highlighted). */
+  /** A world-wide broadcast (e.g. a new pier champion): shown in the chat feed
+   *  as a highlighted server message, and — when signed in — posted to the shared
+   *  world chat so everyone online sees it too. Shown locally right away; our own
+   *  echo is skipped when it comes back round on the poll (see chatLine). */
+  worldAnnounce(message: string): void {
+    this.pushLine(`<div class="log-line chat world-broadcast">${escapeHtml(message)}</div>`, "chat");
+    void sendChat(HERALD_NAME, message).catch(() => {});
+  }
+
+  /** A world-chat line in the same scrollback (sender highlighted). A broadcast
+   *  from the Herald renders as a server message; our own echo is dropped. */
   private chatLine(name: string, body: string, you: boolean): void {
+    if (name === HERALD_NAME) {
+      if (you) return; // our own broadcast — already shown locally by worldAnnounce
+      this.pushLine(`<div class="log-line chat world-broadcast">${escapeHtml(body)}</div>`, "chat");
+      return;
+    }
     this.pushLine(
       `<div class="log-line chat${you ? " you" : ""}"><span class="chat-from">${escapeHtml(name)}:</span> ${escapeHtml(body)}</div>`,
       "chat",

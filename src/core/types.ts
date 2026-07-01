@@ -1583,9 +1583,10 @@ export type WorldEvent =
   /** A fish is on the line at the pier — the client opens the tension minigame.
    *  `strength` (0..1) drives how hard it fights. */
   | { type: "HOOKED_FISH"; species: string; weight: number; length: number; strength: number }
-  /** A pier fish was landed: its stats, and the board rank it took (1..5, or 0
-   *  if it didn't make the board). */
-  | { type: "FISH_LANDED"; species: string; weight: number; length: number; rank: number }
+  /** A pier fish was landed: its stats, the board rank it took (1..5, or 0 if it
+   *  didn't make the board), and whether this catch made the player a NEW pier
+   *  champion (took #1 from someone else — worth a world broadcast). */
+  | { type: "FISH_LANDED"; species: string; weight: number; length: number; rank: number; newChampion: boolean }
   /** Open the recipe menu for a station (fire/furnace/anvil). */
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   /** Open the furniture build/replace menu for a housing hotspot. */

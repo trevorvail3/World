@@ -656,6 +656,12 @@ export class Game {
             this.levelUp.champion(ev.species, ev.weight, !ownsRod);
             audio.play("levelup");
           }
+          // A genuine takeover (not beating your own record) is broadcast to the
+          // whole world in the chat feed.
+          if (ev.newChampion) {
+            const name = this.bridge.state.player.appearance.name;
+            this.hud.worldAnnounce(`🏆 ${name} landed a ${ev.weight.toFixed(1)}kg ${ev.species} — the Drowned Pier's new Fishing champion!`);
+          }
           break;
         }
         case "OPEN_CRAFT":

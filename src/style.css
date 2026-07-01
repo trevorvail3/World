@@ -2119,6 +2119,17 @@ button.inv-slot {
 .log-line.chat { opacity: 1; word-break: break-word; }
 .log-line.chat .chat-from { color: var(--gold); font-weight: 600; margin-right: 4px; }
 .log-line.chat.you .chat-from { color: var(--ember); }
+/* A world broadcast (new pier champion, etc.) — a gold server message. */
+.log-line.world-broadcast {
+  color: #f3cf52;
+  font-weight: 600;
+  background: linear-gradient(90deg, rgba(243, 207, 82, 0.14), rgba(243, 207, 82, 0.03));
+  border-left: 2px solid #f3cf52;
+  padding: 2px 6px;
+  margin: 2px 0;
+  border-radius: 3px;
+  text-shadow: 0 0 8px rgba(243, 207, 82, 0.35);
+}
 
 /* The typing line under the log. */
 .log-chat {
