@@ -1231,6 +1231,38 @@ export function drawWorld(
     }
   }
 
+  // Night fireflies: after dusk, warm motes drift over wild grass and moss —
+  // a third of the night mood for a hundredth of its cost. Deterministic per
+  // tile, so they live in the same meadows every evening.
+  const nightF = sv.night;
+  if (!perfMode && nightF > 0.15) {
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        if (!inRegion(x, y) || outside(x, y)) continue;
+        const t = map.tiles[y * map.width + x];
+        if (t !== "grass" && t !== "moss" && t !== "bog") continue;
+        const hv2 = hash(x * 13, y * 17);
+        if (hv2 < 0.94) continue;
+        const px = x * TILE - cam.x, py = y * TILE - cam.y;
+        for (let i = 0; i < 2; i++) {
+          const ph = now / (2400 + i * 700) + hv2 * 40 + i * 2.2;
+          const fx = px + TILE / 2 + Math.sin(ph) * 14 + Math.sin(ph * 2.3) * 5;
+          const fy = py + TILE / 2 + Math.cos(ph * 1.3) * 10 - 4;
+          const pulse = Math.max(0, Math.sin(ph * 3.1 + i));
+          if (pulse < 0.2) continue;
+          const al = (0.5 * pulse * nightF).toFixed(3);
+          const grd2 = g.createRadialGradient(fx, fy, 0, fx, fy, 5);
+          grd2.addColorStop(0, `rgba(200,230,120,${al})`);
+          grd2.addColorStop(1, "rgba(200,230,120,0)");
+          g.fillStyle = grd2;
+          g.beginPath(); g.arc(fx, fy, 5, 0, Math.PI * 2); g.fill();
+          g.fillStyle = `rgba(228,244,170,${al})`;
+          g.fillRect(fx - 0.8, fy - 0.8, 1.6, 1.6);
+        }
+      }
+    }
+  }
+
   // Ambient water wildlife on the surface: fins in the deep, leaping fish in the
   // rivers and lakes, the odd whale sounding out at sea. Drawn over the water but
   // under everything else, so the day/night veil tints it with the water.
@@ -2080,7 +2112,7 @@ function drawObject(
       drawShrine(g, cx, cy);
       break;
     case "bank":
-      drawBank(g, cx, cy);
+      scaled(g, cx, cy, 1.35, () => drawBank(g, 0, 0));
       break;
     case "grand_exchange":
       drawGrandExchange(g, cx, cy);
@@ -2089,10 +2121,10 @@ function drawObject(
       drawFire(g, cx, cy, now);
       break;
     case "furnace":
-      drawFurnace(g, cx, cy, now);
+      scaled(g, cx, cy, 1.4, () => drawFurnace(g, 0, 0, now));
       break;
     case "anvil":
-      drawAnvil(g, cx, cy);
+      scaled(g, cx, cy, 1.35, () => drawAnvil(g, 0, 0));
       break;
     case "portal":
       drawPortal(g, cx, cy);
@@ -2107,13 +2139,13 @@ function drawObject(
       drawForageSpot(g, cx, cy, available, def.resource);
       break;
     case "cauldron":
-      drawCauldron(g, cx, cy, now);
+      scaled(g, cx, cy, 1.3, () => drawCauldron(g, 0, 0, now));
       break;
     case "workbench":
-      drawWorkbench(g, cx, cy);
+      scaled(g, cx, cy, 1.3, () => drawWorkbench(g, 0, 0));
       break;
     case "crafting_table":
-      drawCraftingTable(g, cx, cy);
+      scaled(g, cx, cy, 1.3, () => drawCraftingTable(g, 0, 0));
       break;
     case "cart":
       drawCart(g, cx, cy);
@@ -2125,7 +2157,7 @@ function drawObject(
       drawFountain(g, cx, cy, now);
       break;
     case "sawmill":
-      drawSawmill(g, cx, cy);
+      scaled(g, cx, cy, 1.3, () => drawSawmill(g, 0, 0));
       break;
     case "critter":
       drawCritter(g, def.species, cx, cy, now);
@@ -2134,7 +2166,7 @@ function drawObject(
       drawLamppost(g, cx, cy);
       break;
     case "signpost":
-      drawSignpost(g, cx, cy);
+      scaled(g, cx, cy, 1.25, () => drawSignpost(g, 0, 0));
       break;
     case "waystone":
       drawWaystone(g, cx, cy, now);
@@ -3026,6 +3058,19 @@ function drawAnvil(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   g.fill();
   g.fillStyle = "#6c6e77"; // lit top edge
   g.fillRect(cx - 11, cy - 6, 19, 1.5);
+  g.fillStyle = "#8b8e99"; // cold steel sheen on the face
+  g.fillRect(cx - 8, cy - 5.5, 7, 1);
+  // a smith's hammer resting on the face
+  g.save();
+  g.translate(cx + 3, cy - 7);
+  g.rotate(-0.5);
+  g.fillStyle = "#6b4f30";
+  g.fillRect(-1, 0, 2, 9); // haft
+  g.fillStyle = "#5a5d66";
+  g.fillRect(-4, -3, 8, 4); // head
+  g.fillStyle = "#7c808c";
+  g.fillRect(-4, -3, 8, 1.2);
+  g.restore();
 }
 
 // --- Bank chest: iron-bound wooden chest ---
@@ -3040,6 +3085,17 @@ function drawBank(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   g.fillRect(cx - 2, cy - 10, 4, 22);
   g.fillStyle = "#c9a24a"; // lock
   g.fillRect(cx - 2, cy + 1, 4, 4);
+  g.fillStyle = "#8a6a35"; // wood grain
+  g.fillRect(cx - 10, cy - 1, 7, 1);
+  g.fillRect(cx + 4, cy + 5, 6, 1);
+  // a spill of coins at its foot — no mistaking the bank
+  g.fillStyle = "#e0b84f";
+  circle(g, cx - 8, cy + 13, 2);
+  circle(g, cx - 3, cy + 14, 1.7);
+  circle(g, cx + 6, cy + 13, 1.9);
+  g.fillStyle = "#f4dd8a";
+  circle(g, cx - 8, cy + 12.4, 0.8);
+  circle(g, cx + 6, cy + 12.4, 0.8);
 }
 
 /** The Grand Exchange booth: a clerk's counter under a striped awning, a set
@@ -3264,6 +3320,30 @@ function drawFurnace(g: CanvasRenderingContext2D, cx: number, cy: number, now: n
   g.beginPath();
   g.arc(cx, cy + 4, 2.5, 0, Math.PI * 2);
   g.fill();
+  // heat halo bleeding from the mouth
+  const halo = g.createRadialGradient(cx, cy + 4, 2, cx, cy + 4, 13);
+  halo.addColorStop(0, `rgba(230,120,40,${(0.30 * glow).toFixed(2)})`);
+  halo.addColorStop(1, "rgba(230,120,40,0)");
+  g.fillStyle = halo;
+  g.beginPath(); g.arc(cx, cy + 4, 13, 0, Math.PI * 2); g.fill();
+  // chimney smoke: three drifting puffs
+  for (let i = 0; i < 3; i++) {
+    const ph = ((now / 900) + i * 0.33) % 1;
+    g.fillStyle = `rgba(190,190,200,${(0.28 * (1 - ph)).toFixed(2)})`;
+    g.beginPath();
+    g.arc(cx + 2 + Math.sin(ph * 6 + i) * 3, cy - 14 - ph * 14, 2 + ph * 3.5, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
+/** Draw a prop scaled up around its own centre — stations gain presence
+ *  without touching their art. The callback draws at (0,0). */
+function scaled(g: CanvasRenderingContext2D, cx: number, cy: number, s: number, draw: () => void): void {
+  g.save();
+  g.translate(cx, cy);
+  g.scale(s, s);
+  draw();
+  g.restore();
 }
 
 /** A soft contact shadow under a sprite. */
@@ -3724,6 +3804,21 @@ const MONSTER_SCALE: Record<string, number> = {
   river_serpent: 1.25, mire_serpent: 1.15, marrow_wraith: 1.12,
 };
 
+/** A coloured ground-glow per boss — presence you can feel a screen away. */
+const BOSS_AURA: Record<string, string> = {
+  ashen_wyrm: "226,96,42",      // ember
+  delve_horror: "122,58,240",   // void violet
+  hollow_prophet: "138,107,192",
+  boneman: "208,200,180",       // bone-pale
+  marrow_keeper: "208,200,180",
+  greyback: "150,160,175",      // cold grey
+  spine_warlord: "180,60,50",
+  green_baron: "92,138,58",
+  hollow_warden: "140,148,160",
+  bog_warden: "82,108,88",
+  dread_ferryman: "70,90,120",
+};
+
 /** Draw a monster, scaled up (about its planted foot) by MONSTER_SCALE. */
 function drawMonsterScaled(
   g: CanvasRenderingContext2D,
@@ -3734,6 +3829,16 @@ function drawMonsterScaled(
   moving: boolean,
   action?: AvatarAnim["action"],
 ): void {
+  const aura = monster ? BOSS_AURA[monster] : undefined;
+  if (aura) {
+    const breathe = 0.55 + 0.45 * Math.sin(now / 640);
+    const r = 26 + breathe * 6;
+    const grd = g.createRadialGradient(cx, cy + 12, 2, cx, cy + 12, r);
+    grd.addColorStop(0, `rgba(${aura},${(0.22 * breathe + 0.10).toFixed(3)})`);
+    grd.addColorStop(1, `rgba(${aura},0)`);
+    g.fillStyle = grd;
+    g.beginPath(); g.ellipse(cx, cy + 12, r, r * 0.45, 0, 0, Math.PI * 2); g.fill();
+  }
   const s = (monster && MONSTER_SCALE[monster]) || 1;
   if (s === 1) { drawMonsterBody(g, monster, cx, cy, now, moving, action); return; }
   const foot = cy + 14; // grow up and out from the ground line, not the centre
