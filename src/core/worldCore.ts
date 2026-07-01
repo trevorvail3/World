@@ -1740,8 +1740,11 @@ const GATHER_TOOL: Partial<Record<string, "hatchet" | "pickaxe" | "rod">> = {
   fishing: "rod",
 };
 
-/** Gathering-skill level needed to wield each tool tier (index = tier 1–10). */
-const TOOL_TIER_REQS = [0, 1, 10, 15, 30, 40, 45, 55, 60, 60, 75];
+/** Gathering-skill level needed to wield each tool tier (index = tier 1–10).
+ *  Mirrors the compressed gear ladder so a material means the same level across
+ *  weapons, armour, and tools: Ashiron 10, Ribstone 20, Bloodore 30,
+ *  Voidstone 40, Hearthite 50. */
+const TOOL_TIER_REQS = [0, 1, 5, 10, 20, 25, 30, 35, 40, 40, 50];
 
 /** Tool tier → gather-interval multiplier: better tools gather faster. A steeper
  *  ramp so upgrading your pickaxe/hatchet/rod is a real late-game speed reward
