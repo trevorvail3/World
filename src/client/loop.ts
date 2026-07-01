@@ -309,6 +309,10 @@ export class Game {
   private tension: TensionUI;
   /** Active "Cook all" run: keep cooking every cookable dish at this fire. */
   private cookAll: { objId: string } | null = null;
+  /** An item armed with "Use", awaiting a target tap (OSRS use-on). */
+  private useItem: { slot: number; item: ItemId } | null = null;
+  /** A bounded craft run (Use → cook N): stop after `n` of `rawItem` are used. */
+  private craftLimit: { rawItem: string; startCount: number; n: number } | null = null;
   private press: Press | null = null;
   private longTimer: number | null = null;
   private marker: Marker | null = null;
@@ -467,6 +471,17 @@ export class Game {
     // cookable recipe, until nothing's left to cook.
     if (this.cookAll && this.bridge.state.player.activity.kind !== "crafting") {
       if (!this.startNextCook()) this.cookAll = null;
+    }
+    // Bounded "Use → make N": stop once N of the raw item have been consumed
+    // (counts burns too), or when the craft ends on its own.
+    if (this.craftLimit) {
+      const cur = this.invCount(this.craftLimit.rawItem);
+      const used = this.craftLimit.startCount - cur;
+      const idle = this.bridge.state.player.activity.kind !== "crafting";
+      if (used >= this.craftLimit.n || idle) {
+        if (!idle) this.dispatch({ type: "CANCEL" });
+        this.craftLimit = null;
+      }
     }
 
     // 2) Camera follows the player.
@@ -908,6 +923,66 @@ export class Game {
       undefined,
       tabs.length > 1 ? tabs : undefined,
     );
+  }
+
+  /** How many of an item id are in the pack right now. */
+  private invCount(item: string): number {
+    return this.bridge.state.player.inventory.reduce((n, s) => (s?.item === item ? n + s.qty : n), 0);
+  }
+
+  /** Arm an item with "Use": the next tap picks the target it acts on. */
+  beginUseItem(slot: number, item: ItemId): void {
+    this.useItem = { slot, item };
+    const name = this.bridge.content.items[item]?.name ?? "item";
+    this.hud.log(`Use ${name} on… (tap a target, or tap empty ground to cancel)`);
+  }
+
+  /** Resolve a "Use item on X" tap. Stations that can turn the item into
+   *  something (a fire cooking raw fish, a furnace smelting ore…) prompt for a
+   *  quantity; anything else does nothing. */
+  private resolveUseOn(obj: WorldObjectDef | null, sx: number, sy: number): void {
+    const use = this.useItem;
+    this.useItem = null;
+    if (!use) return;
+    if (!obj) { this.hud.log("Never mind."); return; }
+    // A recipe at THIS station that consumes the used item as an ingredient.
+    const recipes = this.bridge.stationRecipes(obj.kind).filter((a) => {
+      if (!a.produces) return false;
+      if (a.requires && Object.keys(a.requires).includes(use.item)) return true;
+      if (a.requiresAny?.includes(use.item)) return true;
+      return false;
+    });
+    if (recipes.length === 0) {
+      this.hud.log(`Nothing happens.`);
+      return;
+    }
+    // Usually one recipe; if several, pick the lowest-level one the item feeds.
+    const a = recipes.sort((x, y) => x.levelReq - y.levelReq)[0]!;
+    this.openUseQuantity(a, obj.id, use.item, sx, sy);
+  }
+
+  /** The 1 / 5 / All quantity prompt for a Use → make N run. */
+  private openUseQuantity(a: SkillAction, objId: string, rawItem: ItemId, sx: number, sy: number): void {
+    const content = this.bridge.content;
+    const player = this.bridge.state.player;
+    const out = content.items[a.produces!];
+    if (player.skills[a.skill].level < a.levelReq) {
+      this.hud.log(`You need ${content.skills[a.skill].name} level ${a.levelReq} to make ${out.name}.`);
+      return;
+    }
+    // How many you could make from what you carry (limited by the used item).
+    const max = this.invCount(rawItem);
+    if (max <= 0) { this.hud.log(`You have no ${content.items[rawItem].name}.`); return; }
+    const start = (n: number): void => {
+      this.dispatch({ type: "CRAFT", actionId: a.id, objId });
+      // "All" runs until the materials are gone; a fixed count stops after n.
+      this.craftLimit = n >= max ? null : { rawItem, startCount: max, n };
+    };
+    const opts: MenuItem[] = [];
+    opts.push({ label: "Make 1", tone: "action", onSelect: () => start(1) });
+    if (max >= 5) opts.push({ label: "Make 5", onSelect: () => start(5) });
+    opts.push({ label: `Make All`, target: `${max}`, onSelect: () => start(max) });
+    this.menu.show(sx, sy, `${out.name}`, opts, `Make from your ${content.items[rawItem].name}.`);
   }
 
   /** Recipes at the cooking fire the player can make right now (level + stock). */
@@ -1828,6 +1903,8 @@ export class Game {
   private defaultAction(tile: Vec2, sx: number, sy: number): void {
     this.cookAll = null; // any deliberate tap ends a "Cook all" run
     const obj = this.objectAt(tile);
+    // An item is armed with "Use": this tap picks the target.
+    if (this.useItem) { this.resolveUseOn(obj ?? null, sx, sy); return; }
     const st = obj ? this.bridge.state.objects[obj.id] : undefined;
     // A felled monster's body lingers on its tile while it respawns; don't try to
     // re-attack it — let loot there be picked up instead.

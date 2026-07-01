@@ -255,7 +255,7 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   }, {
     get: () => game?.getLootLabels() ?? true,
     set: (v) => game?.setLootLabels(v),
-  });
+  }, (slot, item) => game?.beginUseItem(slot, item));
   const dialogue = new Dialogue(app!);
   game = new Game(canvas!, bridge, hud, dialogue, app!, menu, guide);
 

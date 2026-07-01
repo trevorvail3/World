@@ -170,6 +170,7 @@ export class Hud {
     private onSignOut: () => void = () => {},
     private drawDist: { get(): number; set(d: number): void } = { get: () => 40, set: () => {} },
     private lootLabels: { get(): boolean; set(v: boolean): void } = { get: () => true, set: () => {} },
+    private onUseItem: (slot: number, item: ItemId) => void = () => {},
   ) {
     this.content = content;
     this.onReset = onReset;
@@ -953,6 +954,13 @@ export class Hud {
         onSelect: () => this.dispatch({ type: "EQUIP", slot: index }),
       });
     }
+    // "Use" arms the item to be used on a target — a station or another item
+    // (e.g. use raw fish on a fire to cook). The loop handles the next tap.
+    items.push({
+      label: "Use",
+      target: def.name,
+      onSelect: () => this.onUseItem(index, data.item),
+    });
     const qty = data.qty > 1 ? ` (${data.qty})` : "";
     items.push({
       label: "Drop",
