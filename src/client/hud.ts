@@ -1412,42 +1412,54 @@ export class Hud {
     if (this.questList) this.renderQuests(player);
   }
 
-  /** Rebuild the quest log from the player's active + completed quests. */
+  /** Rebuild the quest log, split into Main Story / Faction / Side Quests. Each
+   *  group lists its active quests (with objective + track star) then its
+   *  completed ones (dim ✓); empty groups are omitted. */
   private renderQuests(player: WorldState["player"]): void {
     if (!this.questList) return;
     const quests = this.content.quests;
-    const active = Object.keys(player.quests);
+    const tracked = getTrackedQuest();
     const parts: string[] = [];
 
-    if (active.length) {
-      parts.push(`<div class="quest-h">Active <span class="quest-h-count">${active.length}</span></div>`);
-      const tracked = getTrackedQuest();
-      for (const id of active) {
-        const def = quests.find((q) => q.id === id);
-        if (!def) continue;
-        const st = player.quests[id]!;
-        const obj = def.steps[st.step];
-        let line = obj ? escapeHtml(obj.text) : "";
-        if (obj && obj.type === "kill") line += ` <span class="quest-prog">(${st.killCount}/${obj.count})</span>`;
-        const on = tracked === id;
-        parts.push(
-          `<div class="quest-item${on ? " tracked" : ""}" data-track="${id}" title="${on ? "Tracked — tap to clear" : "Tap to track this quest"}">` +
-            `<div class="quest-name"><span class="quest-star">${on ? "★" : "☆"}</span> ${escapeHtml(def.name)}</div>` +
-            `<div class="quest-obj">▸ ${line}</div></div>`,
-        );
-      }
-    }
+    const typeOf = (id: string): "main" | "faction" | "side" =>
+      quests.find((q) => q.id === id)?.type ?? "side";
 
-    if (player.questsDone.length) {
-      parts.push(`<div class="quest-h">Completed <span class="quest-h-count">${player.questsDone.length}</span></div>`);
-      for (const id of player.questsDone) {
-        const def = quests.find((q) => q.id === id);
-        if (def) parts.push(`<div class="quest-done">✓ ${escapeHtml(def.name)}</div>`);
-      }
+    const activeItem = (id: string): string => {
+      const def = quests.find((q) => q.id === id);
+      if (!def) return "";
+      const st = player.quests[id]!;
+      const obj = def.steps[st.step];
+      let line = obj ? escapeHtml(obj.text) : "";
+      if (obj && obj.type === "kill") line += ` <span class="quest-prog">(${st.killCount}/${obj.count})</span>`;
+      const on = tracked === id;
+      return (
+        `<div class="quest-item${on ? " tracked" : ""}" data-track="${id}" title="${on ? "Tracked — tap to clear" : "Tap to track this quest"}">` +
+        `<div class="quest-name"><span class="quest-star">${on ? "★" : "☆"}</span> ${escapeHtml(def.name)}</div>` +
+        `<div class="quest-obj">▸ ${line}</div></div>`
+      );
+    };
+    const doneItem = (id: string): string => {
+      const def = quests.find((q) => q.id === id);
+      return def ? `<div class="quest-done">✓ ${escapeHtml(def.name)}</div>` : "";
+    };
+
+    const activeIds = Object.keys(player.quests);
+    const GROUPS: { key: "main" | "faction" | "side"; label: string }[] = [
+      { key: "main", label: "Main Story" },
+      { key: "faction", label: "Faction" },
+      { key: "side", label: "Side Quests" },
+    ];
+    for (const g of GROUPS) {
+      const act = activeIds.filter((id) => typeOf(id) === g.key);
+      const done = player.questsDone.filter((id) => typeOf(id) === g.key);
+      if (!act.length && !done.length) continue;
+      parts.push(`<div class="quest-cat">${g.label} <span class="quest-h-count">${act.length + done.length}</span></div>`);
+      for (const id of act) parts.push(activeItem(id));
+      for (const id of done) parts.push(doneItem(id));
     }
 
     if (!parts.length) {
-      parts.push(note("No quests yet. Talk to the folk you meet — a marker means they've something to ask.").outerHTML);
+      parts.push(note("No quests yet. Talk to the folk you meet — some keep their troubles until they trust you to ask.").outerHTML);
     }
     this.questList.innerHTML = parts.join("");
   }

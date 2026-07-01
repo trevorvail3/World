@@ -532,6 +532,19 @@ body {
   font-size: 10px; letter-spacing: 0; color: var(--gold);
   background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-edge); border-radius: 6px;
 }
+/* A quest-type section header (Main Story / Faction / Side Quests) — a touch
+   stronger than the plain sub-header, with a hairline rule to separate groups. */
+.quest-cat {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--panel-edge);
+}
+.quest-cat:first-child { margin-top: 0; }
 
 .quest-item {
   margin-bottom: 8px;

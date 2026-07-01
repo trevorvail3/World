@@ -1923,6 +1923,9 @@ export interface QuestDef {
   name: string;
   /** Act label for the quest log (1/2/3), optional. */
   act?: number;
+  /** Quest-log grouping: the shard/warmth spine ("main"), a guild or Heartmoor
+   *  rank line ("faction"), or a self-contained side-quest ("side", default). */
+  type?: "main" | "faction" | "side";
   /** The NPC id who offers and ends the quest. */
   giver: string;
   /** A quest id that must be completed before this one is offered. */

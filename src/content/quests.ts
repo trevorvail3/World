@@ -1575,3 +1575,27 @@ export const quests: QuestDef[] = [
     },
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Quest-log grouping. Tagged here in one place (rather than on every quest) so
+// the Quests tab can split Main Story / Faction / Side. The shard-and-warmth
+// spine everyone walks is "main"; the four guild + Heartmoor rank lines are
+// "faction"; everything else defaults to "side".
+// ---------------------------------------------------------------------------
+const MAIN_QUESTS = new Set<string>([
+  "q_ash_and_knuckle", "q_first_shard", "q_worn_coin",
+  "q_seam_question", "q_the_shard_returns", "q_the_four_positions", "q_the_last_choice",
+]);
+const FACTION_QUESTS = new Set<string>([
+  // Ashforge Brotherhood
+  "q_hammer_and_name", "q_forge_apprentice", "q_berric_question",
+  // Warden's Lodge
+  "q_white_in_the_trees", "q_lodge_trial",
+  // The Pale Record
+  "q_pale_record_open",
+  // The Heartmoor
+  "q_hm_welcome", "q_hm_seam", "q_hm_devotion",
+]);
+for (const q of quests) {
+  q.type = MAIN_QUESTS.has(q.id) ? "main" : FACTION_QUESTS.has(q.id) ? "faction" : "side";
+}
