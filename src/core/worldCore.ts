@@ -2817,9 +2817,13 @@ function harvestPatch(
   const { player } = state;
   delete obj.crop;
   delete obj.plantedAt;
+  // A failed survival roll is a THIN harvest, not a total loss — you always
+  // walk away with something for the wait (OSRS reduces yield; it doesn't
+  // routinely take the whole patch).
   if (ctx.rng() >= crop.baseChance) {
-    grantXp(state, content, "farming", Math.floor(crop.xpHarvest * 0.1), events);
-    events.push({ type: "LOG", message: `Your ${crop.name} withered before harvest.` });
+    addItem(player, crop.produce, 1, events);
+    grantXp(state, content, "farming", Math.floor(crop.xpHarvest * 0.4), events);
+    events.push({ type: "LOG", message: `A thin harvest — the ${crop.name} struggled, but you save one ${content.items[crop.produce].name}.` });
     return;
   }
   const qty = randInt(ctx, crop.produceMin, crop.produceMax);

@@ -1507,6 +1507,7 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "seed_hearthbloom", chance: 0.03, tier: "rare" },
       { item: "seed_orunroot", chance: 0.015, tier: "rare" },
       { item: "seed_greyoak", chance: 0.06, tier: "uncommon" },
+      { item: "seed_stonewood", chance: 0.06, tier: "uncommon" },
       { item: "seed_ruewood", chance: 0.04, tier: "rare" },
       { item: "seed_deeproot", chance: 0.02, tier: "rare" },
       { item: "uncut_emerald", chance: 0.03, tier: "rare" },

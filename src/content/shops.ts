@@ -31,6 +31,7 @@ export const shops: ShopDef[] = [
       { item: "seed_bloodberry", price: 69, qty: 3 },
       { item: "seed_coldmoss", price: 108, qty: 3 },
       { item: "seed_ashwood", price: 60, qty: 3 },
+      { item: "seed_stonewood", price: 260, qty: 1 },
       // Higher Farming/Herblore seeds — these had no source before, so the herb
       // line above Coldmoss (and the brews that need those herbs) was unreachable.
       { item: "seed_ironleaf", price: 150, qty: 2 },
