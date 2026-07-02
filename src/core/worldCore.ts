@@ -405,6 +405,8 @@ const BLOCKING_KINDS = new Set([
   "dungeon_gate",
   "puzzle_lever",
   "dungeon_chest",
+  // Surface ruin dressing at the dungeon mouths — solid broken masonry.
+  "ruin_prop",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -2228,11 +2230,15 @@ function eatSlot(
 
   let msg = (canHeal && def.buff) || canGrace ? `You drink the ${def.name}.` : `You ${def.cat === "Food" || canHeal ? "eat" : "drink"} the ${def.name}.`;
   if (canHeal) {
+    // The Drowned Seal (Sunken Court unique): everything you eat heals half
+    // again as much under the Magistrate's old authority.
+    const sealed = player.equipment.necklace === "drowned_seal";
+    const amount = sealed ? Math.round(def.heals! * 1.5) : def.heals!;
     const before = player.hp;
-    player.hp = Math.min(player.maxHp, player.hp + def.heals!);
+    player.hp = Math.min(player.maxHp, player.hp + amount);
     const healed = player.hp - before;
     if (healed > 0) events.push({ type: "HEALED", amount: healed });
-    msg += ` (+${def.heals})`;
+    msg += ` (+${amount}${sealed ? ", the Seal's share included" : ""})`;
   }
   if (canBuff) {
     player.buffs[def.buff!] = { amount: def.buffAmt ?? 0, until: ctx.now + def.buffMs! };
@@ -2484,6 +2490,7 @@ function startInteraction(
     case "lamppost":
     case "signpost":
     case "bone_cairn":
+    case "ruin_prop":
       // Examine-only landmark / city dressing / wildlife / signage.
       events.push({
         type: "LOG",
@@ -3961,7 +3968,10 @@ function stepMovement(player: Player, dt: number): number {
   }
   const moved = startBudget - budget; // tiles actually walked this tick
   if (sprinting && moved > 0) {
-    player.energy = Math.max(0, player.energy - moved * ENERGY_DRAIN * agilityDrainMult(player));
+    // The Herald's Storm-Mantle (Skyreach unique): the wind carries some of
+    // your weight — running drains 30% less energy.
+    const mantle = player.equipment.cape === "storm_mantle" ? 0.7 : 1;
+    player.energy = Math.max(0, player.energy - moved * ENERGY_DRAIN * agilityDrainMult(player) * mantle);
     if (player.energy <= 0) player.winded = true; // out of breath — walk to recover
     return moved;
   }

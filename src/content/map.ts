@@ -36,7 +36,7 @@ const ARENA_BAND = 16;
 const INTERIOR_BAND = 14;
 /** The Act II dungeon band: long hand-authored crawls (see content/dungeons.ts),
  *  carved below the home interiors and reached only by their entrance portals. */
-const DUNGEON_BAND = 26;
+const DUNGEON_BAND = 116;
 const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND + DUNGEON_BAND;
 export const DUNGEON_TOP = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND;
 

@@ -5832,5 +5832,57 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🗝️",
     "cat": "Quest",
     "sell": 0
+  },
+  "drowned_seal": {
+    "id": "drowned_seal",
+    "name": "The Drowned Seal",
+    "description": "UNIQUE. The Magistrate's seal of office on a chain of river-silver. Bread broken under its authority goes further: everything you eat heals half again as much.",
+    "icon": "📿",
+    "cat": "Jewellery",
+    "slot": "necklace",
+    "def": 2,
+    "sell": 0
+  },
+  "storm_mantle": {
+    "id": "storm_mantle",
+    "name": "Herald's Storm-Mantle",
+    "description": "UNIQUE. The Storm-Herald's own mantle, woven of high wind. It carries some of your weight as you run — your legs tire far slower.",
+    "icon": "🌀",
+    "cat": "Capes",
+    "slot": "cape",
+    "def": 3,
+    "sell": 0
+  },
+  "tablet_court": {
+    "id": "tablet_court",
+    "name": "Pale Tablet: The Tide",
+    "description": "A court-tablet in the Pale script — a seated figure, a rising waterline, and the same road north. Someone learned should see this.",
+    "icon": "🪨",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "tablet_sky": {
+    "id": "tablet_sky",
+    "name": "Pale Tablet: The Storm",
+    "description": "A chart-tablet in the Pale script — stars, beacons, a mountain pass drawn again and again, and the road north through it. Someone learned should see this.",
+    "icon": "🪨",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "court_key": {
+    "id": "court_key",
+    "name": "Reliquary Key",
+    "description": "A ceremonial key, green with the moor's long patience. The Reliquarist carried it to the last.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "sky_key": {
+    "id": "sky_key",
+    "name": "Aerie Key",
+    "description": "A key of storm-iron, light as a feather and cold as the high pass. The Warder of the traverse kept it.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
   }
 };

@@ -826,7 +826,7 @@ const rawObjects: WorldObjectDef[] = [
   { id: "hm_hound_2", kind: "monster", monster: "heartmoor_hound", x: 30, y: 96, name: "Heartmoor Hound" },
   { id: "hm_serpent_1", kind: "monster", monster: "mire_serpent", x: 25, y: 85, name: "Mire Serpent" },
   { id: "hm_knight_1", kind: "monster", monster: "bog_knight", x: 20, y: 99, name: "Bog Knight" },
-  { id: "heartmoor_barrow", kind: "shrine", x: 13, y: 99, name: "The Bog Barrow", lines: ["A grave the moor grew up around — older than the bog, they say, built before the land here settled. Whatever waits inside has waited a very long time."] },
+  { id: "heartmoor_barrow", kind: "shrine", x: 13, y: 99, name: "Drowned Waymark", lines: ["A leaning stone worn smooth by the moor. Under the lichen: a seated figure, scales in hand, and a road going north. The old court's boundary-mark — its seat lies close by, half under the water."] },
   { id: "trap_stag_1", kind: "trap", x: 18, y: 91, name: "Stag Snare", resource: "hunt_stag" },
   { id: "trap_stag_2", kind: "trap", x: 27, y: 93, name: "Stag Snare", resource: "hunt_stag" },
   { id: "trap_aurochs_1", kind: "trap", x: 22, y: 96, name: "Aurochs Snare", resource: "hunt_aurochs" },
@@ -834,7 +834,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "hm_fish_eel", kind: "fishing_spot", x: 24, y: 94, name: "Eel Pool", resource: "fish_bramblecarp", catches: POOL_MOOR },
   { id: "hm_fish_shad", kind: "fishing_spot", x: 22, y: 96, name: "Peat Pool", resource: "fish_bramblecarp", catches: POOL_MOOR },
   { id: "trap_moorhart", kind: "trap", x: 16, y: 84, name: "Hart Snare", resource: "hunt_moorhart" },
-  { id: "portal_bog", kind: "portal", x: 15, y: 98, name: "The Bog Barrow", dungeon: "bog_barrow", target: { x: 24, y: 118 }, lines: ["You wade down into the Bog Barrow."] },
+  // (The old Bog Barrow arena is retired: its mouth now opens into the Sunken
+  // Court crawl — see buildDungeonSites — and the Bog Warden stalks the open
+  // moor below, a remote grind boss like the other retired arena keepers.)
+  { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 104, name: "The Bog Warden" },
 
   // === THE ASHFEN FLATS (south) =============================================
   { id: "ashfen_tender", kind: "npc", x: 60, y: 86, name: "Cult Tender", lines: ["You feel it through your boots — the ground's warm here, warmer the deeper you cut. The miners work short shifts. We don't mind the heat.","Embercite comes out of this rock. The smiths swear by it for flux. We keep the seam clean and leave what we owe.","I won't ask you to help. Only to witness. The discomfort is the point."] },
@@ -1200,10 +1203,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "cr_crow5", kind: "critter", species: "crow", x: 96, y: 68, name: "A River Crow" },
 
   // === BOSS ARENAS (sealed band below the overworld) ========================
-  { id: "ret_bog", kind: "portal", x: 24, y: 119, name: "Barrow Exit", target: { x: 16, y: 98 }, lines: ["You haul yourself back out of the mire."] },
-  { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 115, name: "The Bog Warden" },
-  { id: "bog_add1", kind: "monster", monster: "heartmoor_hound", x: 21, y: 117, name: "Barrow Hound" },
-  { id: "bog_add2", kind: "monster", monster: "bog_knight", x: 27, y: 117, name: "Sunken Knight" },
+  // (The Bog Warden's arena is retired — the Warden and its pack now hold an
+  // open lair on the moor; see the Heartmoor section above.)
+  { id: "bog_add1", kind: "monster", monster: "heartmoor_hound", x: 21, y: 105, name: "Warden's Hound" },
+  { id: "bog_add2", kind: "monster", monster: "bog_knight", x: 27, y: 105, name: "Sunken Knight" },
   // The Spine Warlord, moved OUT of its single-room arena to an open lair on a
   // shelf of the pass — a grindable overworld boss now (its old portal leads to
   // the rebuilt Spine Vault crawl; see buildDungeonSites).
@@ -1912,6 +1915,151 @@ function buildDungeonSites(): WorldObjectDef[] {
       loot: [{ item: "delvers_lantern", qty: 1 }, { item: "tablet_vault", qty: 1 }, { item: "ashiron_bar", qty: 2 }],
       lines: ["A coffer of vault-steel and heart-oak, its wax seals unbroken since the door shut."],
     },
+  );
+
+  // --- SITE 3: The Sunken Court — the drowned seat of the old north-folk in
+  //     the Heartmoor (the retired Bog Barrow mouth). Twice the crawl: the
+  //     tide-sluices open the Tide Gate; the nave's four bells, rung in the
+  //     psalm's order, open the Bell Door; the Reliquarist bears the key to
+  //     the reliquary; the lower approach ends at the Magistrate's throne room.
+  const court = DUNGEONS.find((d) => d.id === "sunken_court")!;
+  const cmouth = remap(15, 98); // where the bog mouth always stood
+  const cx = court.x0, cy = court.y0;
+  out.push(
+    {
+      id: "portal_court", kind: "portal", x: cmouth.x, y: cmouth.y, name: "The Sunken Court",
+      dungeon: "sunken_court", target: { x: cx + court.entry.x, y: cy + court.entry.y },
+      lines: ["Steps of drowned marble go down under the moor. The water stands aside, just barely, in the old causeway. You descend into the Sunken Court."],
+    },
+    { id: "ret_court", kind: "portal", x: cx + court.exit.x, y: cy + court.exit.y, name: "Causeway Out", target: { x: cmouth.x, y: cmouth.y + 1 }, lines: ["You climb the causeway back to the moor's grey daylight."] },
+    // Surface ruin: the court's drowned masonry breaking the moor around the mouth.
+    { id: "ruin_court_1", kind: "ruin_prop", x: cmouth.x - 2, y: cmouth.y - 1, name: "Broken Pillar", lines: ["A marble pillar snapped at knee height, carved with the court's scales. The moor is slowly swallowing it."] },
+    { id: "ruin_court_2", kind: "ruin_prop", x: cmouth.x + 2, y: cmouth.y - 1, name: "Fallen Arch", lines: ["Half an arch, face-down in the peat. The half still standing frames the way down."] },
+    { id: "ruin_court_3", kind: "ruin_prop", x: cmouth.x - 1, y: cmouth.y + 2, name: "Drowned Masonry", lines: ["Dressed stone in the black water — a wall's worth, going down further than the light does."] },
+    { id: "ruin_court_4", kind: "ruin_prop", x: cmouth.x + 3, y: cmouth.y + 1, name: "Sunken Balustrade", lines: ["A run of carved railing, tilted into the bog. Whoever built this expected the water to keep its place."] },
+    // Stage one: the tide-sluices, recited by the mosaic floor.
+    { id: "lev_court_1", kind: "puzzle_lever", x: cx + 15, y: cy + 5, name: "Tide-Sluice: the EBB", puzzle: "court_sluices", order: 0, lines: ["A bronze sluice-wheel green with age, cast with a falling waterline."] },
+    { id: "lev_court_2", kind: "puzzle_lever", x: cx + 43, y: cy + 5, name: "Tide-Sluice: the SLACK", puzzle: "court_sluices", order: 1, lines: ["A bronze sluice-wheel cast with a level waterline, dead still."] },
+    { id: "lev_court_3", kind: "puzzle_lever", x: cx + 29, y: cy + 12, name: "Tide-Sluice: the FLOOD", puzzle: "court_sluices", order: 2, lines: ["A bronze sluice-wheel cast with a rising waterline, down among the silt."] },
+    { id: "plq_court_1", kind: "signpost", x: cx + 26, y: cy + 8, name: "Mosaic Inscription", lines: ["'The court kept the tide's own order: FIRST the EBB, that empties the halls.'"] },
+    { id: "plq_court_2", kind: "signpost", x: cx + 29, y: cy + 8, name: "Mosaic Inscription", lines: ["'SECOND the SLACK, when the water stands to hear the verdict.'"] },
+    { id: "plq_court_3", kind: "signpost", x: cx + 32, y: cy + 8, name: "Mosaic Inscription", lines: ["'And LAST the FLOOD, that carries the sentence out. So the Tide Gate is served.'"] },
+    {
+      id: "gate_court_tide", kind: "dungeon_gate", x: cx + 50, y: cy + 8, name: "The Tide Gate",
+      hiddenByFlag: "pz_court_sluices",
+      lines: ["A gate of verdigrised bronze, holding back a hall's worth of black water. Three sluices command it — the mosaic floor recites their order."],
+    },
+    // Stage two: the drowned nave and its four bells.
+    { id: "lev_court_b1", kind: "puzzle_lever", x: cx + 63, y: cy + 1, name: "The Matins Bell", puzzle: "court_bells", order: 0, lines: ["A great bell gone green, its rope long rotted — the striker still swings."] },
+    { id: "lev_court_b2", kind: "puzzle_lever", x: cx + 85, y: cy + 18, name: "The Vespers Bell", puzzle: "court_bells", order: 1, lines: ["A great bell in the south-east cell, silt to its rim."] },
+    { id: "lev_court_b3", kind: "puzzle_lever", x: cx + 85, y: cy + 1, name: "The Sext Bell", puzzle: "court_bells", order: 2, lines: ["A great bell in the north-east cell, its crown carved with a noon sun."] },
+    { id: "lev_court_b4", kind: "puzzle_lever", x: cx + 63, y: cy + 18, name: "The Compline Bell", puzzle: "court_bells", order: 3, lines: ["A great bell in the south-west cell, carved with the last stars of the day."] },
+    { id: "plq_court_b1", kind: "signpost", x: cx + 70, y: cy + 9, name: "Psalter Stand", lines: ["'Ring MATINS at waking, though the court wakes no more —'"] },
+    { id: "plq_court_b2", kind: "signpost", x: cx + 74, y: cy + 9, name: "Psalter Stand", lines: ["'— then VESPERS, out of season, for the drowned keep evening first —'"] },
+    { id: "plq_court_b3", kind: "signpost", x: cx + 78, y: cy + 9, name: "Psalter Stand", lines: ["'— then SEXT, the noon the water never sees —'"] },
+    { id: "plq_court_b4", kind: "signpost", x: cx + 82, y: cy + 9, name: "Psalter Stand", lines: ["'— and COMPLINE last, to put the court to bed. So the Bell Door hears its office and opens.'"] },
+    {
+      id: "gate_court_bell", kind: "dungeon_gate", x: cx + 92, y: cy + 17, name: "The Bell Door",
+      hiddenByFlag: "pz_court_bells",
+      lines: ["A door faced in bell-bronze, without handle or hinge. Four bells hang in the nave's cells; the psalter stands keep their office."],
+    },
+    // The court's dead, posted through the halls.
+    { id: "ct_thrall_1", kind: "monster", monster: "drowned_thrall", x: cx + 20, y: cy + 16, name: "Drowned Thrall" },
+    { id: "ct_wisp_1", kind: "monster", monster: "court_wisp", x: cx + 38, y: cy + 6, name: "Court-Light" },
+    { id: "ct_thrall_2", kind: "monster", monster: "drowned_thrall", x: cx + 70, y: cy + 5, name: "Drowned Thrall" },
+    { id: "ct_wisp_2", kind: "monster", monster: "court_wisp", x: cx + 86, y: cy + 13, name: "Court-Light" },
+    { id: "ct_thrall_3", kind: "monster", monster: "drowned_thrall", x: cx + 55, y: cy + 21, name: "Drowned Thrall" },
+    // The Reliquarist keeps the processional's west end — and the reliquary key.
+    { id: "ct_reliquarist", kind: "monster", monster: "court_reliquarist", x: cx + 38, y: cy + 20, name: "The Reliquarist" },
+    {
+      id: "gate_court_rel", kind: "dungeon_gate", x: cx + 35, y: cy + 23, name: "Reliquary Door",
+      hiddenByFlag: "key_gate_court_rel", keyItem: "court_key",
+      lines: ["A low door of green bronze, triple-sealed. The court's Reliquarist would never have let its key out of reach."],
+    },
+    { id: "ct_wisp_3", kind: "monster", monster: "court_wisp", x: cx + 70, y: cy + 28, name: "Court-Light" },
+    // The throne room: the Magistrate, his bailiffs, and the court's coffer.
+    { id: "ct_bailiff_1", kind: "monster", monster: "drowned_thrall", x: cx + 108, y: cy + 30, name: "Drowned Bailiff" },
+    { id: "ct_bailiff_2", kind: "monster", monster: "drowned_thrall", x: cx + 118, y: cy + 28, name: "Drowned Bailiff" },
+    { id: "ct_magistrate", kind: "monster", monster: "drowned_magistrate", x: cx + 114, y: cy + 32, name: "The Drowned Magistrate" },
+    {
+      id: "chest_court", kind: "dungeon_chest", x: cx + 121, y: cy + 36, name: "The Court Coffer",
+      loot: [{ item: "drowned_seal", qty: 1 }, { item: "tablet_court", qty: 1 }, { item: "cut_gem", qty: 3 }],
+      lines: ["The court's strong-coffer, banded in river-silver, dry inside against all sense."],
+    },
+    // A drowned stair back to the moor, so the victory lap isn't a hike.
+    { id: "ret_court_b", kind: "portal", x: cx + 124, y: cy + 38, name: "Drowned Stair", target: { x: cmouth.x, y: cmouth.y + 1 }, lines: ["A service stair, rising through the peat. You come up blinking on the moor."] },
+  );
+
+  // --- SITE 4: Skyreach Ruin — the north-folk's watch-aerie on the east
+  //     Spine. Four switchback terraces climb to the star-chart gallery
+  //     (beacons in the charts' order open the Wind Door), the counterweight
+  //     cells open the Gale Stair, the Warder of the Traverse bears the Eyrie
+  //     Key, and the final ascent ends in the Storm-Herald's eyrie.
+  const sky = DUNGEONS.find((d) => d.id === "skyreach")!;
+  const smouth = remap(78, 8); // a shoulder of the east Spine, past the wind-shrine
+  const sx = sky.x0, sy = sky.y0;
+  out.push(
+    {
+      id: "portal_sky", kind: "portal", x: smouth.x, y: smouth.y, name: "Skyreach Ruin",
+      dungeon: "skyreach", target: { x: sx + sky.entry.x, y: sy + sky.entry.y },
+      lines: ["A doorway in the mountainside, its lintel carved with stars. The wind goes in ahead of you. You enter Skyreach."],
+    },
+    { id: "ret_sky", kind: "portal", x: sx + sky.exit.x, y: sy + sky.exit.y, name: "Mountain Door", target: { x: smouth.x, y: smouth.y + 1 }, lines: ["You step back out onto the pass, and the wind takes its toll."] },
+    // Surface ruin: the aerie's fallen watchworks on the shoulder of the pass.
+    { id: "ruin_sky_1", kind: "ruin_prop", x: smouth.x - 2, y: smouth.y - 1, name: "Toppled Watchtower", lines: ["The stump of a watchtower, sheared off by a thousand winters. Its upper courses lie down the slope in order, like a felled tree."] },
+    { id: "ruin_sky_2", kind: "ruin_prop", x: smouth.x + 2, y: smouth.y - 1, name: "Broken Beacon-Cradle", lines: ["An iron basket big enough to bathe in, rusted to lace. When this held fire, they say, you could read by it in Ironvale."] },
+    { id: "ruin_sky_3", kind: "ruin_prop", x: smouth.x - 1, y: smouth.y + 2, name: "Carved Rubble", lines: ["A drift of dressed stone: star-charts, wind-roses, and one carved word no one reads anymore."] },
+    { id: "ruin_sky_4", kind: "ruin_prop", x: smouth.x + 3, y: smouth.y + 1, name: "Fallen Stair", lines: ["A grand stair to nowhere — its top forty steps are somewhere down the mountain."] },
+    // Stage one: the beacons, in the order the star-charts climb.
+    { id: "lev_sky_1", kind: "puzzle_lever", x: sx + 5, y: sy + 14, name: "The Dusk Beacon", puzzle: "sky_beacons", order: 0, lines: ["A beacon-lamp of storm-glass in the gallery's west wall, cold a thousand years."] },
+    { id: "lev_sky_2", kind: "puzzle_lever", x: sx + 29, y: sy + 14, name: "The Midnight Beacon", puzzle: "sky_beacons", order: 1, lines: ["A beacon-lamp of storm-glass in the gallery's east wall."] },
+    { id: "lev_sky_3", kind: "puzzle_lever", x: sx + 17, y: sy + 19, name: "The Dawn Beacon", puzzle: "sky_beacons", order: 2, lines: ["A beacon-lamp of storm-glass at the gallery's south rail, facing the long fall."] },
+    { id: "plq_sky_1", kind: "signpost", x: sx + 12, y: sy + 16, name: "Star-Chart", lines: ["'The watch is lit as the night is walked: DUSK carries the first hour.'"] },
+    { id: "plq_sky_2", kind: "signpost", x: sx + 16, y: sy + 16, name: "Star-Chart", lines: ["'MIDNIGHT carries the second, when the pass is blind.'"] },
+    { id: "plq_sky_3", kind: "signpost", x: sx + 20, y: sy + 16, name: "Star-Chart", lines: ["'DAWN carries the last, and hands the road back to the sun. So the Wind Door knows the watch is kept.'"] },
+    {
+      id: "gate_sky_wind", kind: "dungeon_gate", x: sx + 36, y: sy + 16, name: "The Wind Door",
+      hiddenByFlag: "pz_sky_beacons",
+      lines: ["A door that is mostly a howl — wind pouring through carved baffles, hard enough to stand on. Three beacons flank the gallery; the star-charts keep their watch-order."],
+    },
+    // Stage two: the counterweight cells off the wind hall.
+    { id: "lev_sky_w1", kind: "puzzle_lever", x: sx + 49, y: sy + 7, name: "Counterweight: the ANVIL", puzzle: "sky_weights", order: 0, lines: ["A counterweight the size of an anvil, hung on chain that still runs true."] },
+    { id: "lev_sky_w2", kind: "puzzle_lever", x: sx + 73, y: sy + 22, name: "Counterweight: the PLOUGH", puzzle: "sky_weights", order: 1, lines: ["A counterweight cast as a plough-blade, in the south-east cell."] },
+    { id: "lev_sky_w3", kind: "puzzle_lever", x: sx + 73, y: sy + 7, name: "Counterweight: the CROWN", puzzle: "sky_weights", order: 2, lines: ["A counterweight cast as a crown, in the north-east cell."] },
+    { id: "lev_sky_w4", kind: "puzzle_lever", x: sx + 49, y: sy + 22, name: "Counterweight: the GATE", puzzle: "sky_weights", order: 3, lines: ["A counterweight cast as a gate, in the south-west cell — the last thing the mountain weighs."] },
+    { id: "plq_sky_w1", kind: "signpost", x: sx + 54, y: sy + 15, name: "Carved Relief", lines: ["'What the mountain weighs, it weighs in order: the ANVIL first, for the work —'"] },
+    { id: "plq_sky_w2", kind: "signpost", x: sx + 60, y: sy + 15, name: "Carved Relief", lines: ["'— the PLOUGH second, for the bread —'"] },
+    { id: "plq_sky_w3", kind: "signpost", x: sx + 64, y: sy + 15, name: "Carved Relief", lines: ["'— the CROWN third, for the law —'"] },
+    { id: "plq_sky_w4", kind: "signpost", x: sx + 70, y: sy + 15, name: "Carved Relief", lines: ["'— and the GATE last, for the road north. So the Gale Stair unbars.'"] },
+    {
+      id: "gate_sky_gale", kind: "dungeon_gate", x: sx + 86, y: sy + 15, name: "The Gale Stair",
+      hiddenByFlag: "pz_sky_weights",
+      lines: ["A stair sealed behind a shutter of storm-iron. Four counterweights hang in the hall's cells; the reliefs recite what the mountain weighs, and in what order."],
+    },
+    // The aerie's garrison.
+    { id: "sk_harpy_1", kind: "monster", monster: "aerie_harpy", x: sx + 20, y: sy + 37, name: "Aerie Shriker" },
+    { id: "sk_wisp_1", kind: "monster", monster: "storm_wisp", x: sx + 25, y: sy + 26, name: "Storm-Wisp" },
+    { id: "sk_harpy_2", kind: "monster", monster: "aerie_harpy", x: sx + 55, y: sy + 12, name: "Aerie Shriker" },
+    { id: "sk_wisp_2", kind: "monster", monster: "storm_wisp", x: sx + 78, y: sy + 18, name: "Storm-Wisp" },
+    // The Warder walks the traverse with the Eyrie Key.
+    { id: "sk_warder", kind: "monster", monster: "sky_warder", x: sx + 64, y: sy + 26, name: "Warder of the Traverse" },
+    {
+      id: "gate_sky_eyrie", kind: "dungeon_gate", x: sx + 52, y: sy + 29, name: "The Eyrie Door",
+      hiddenByFlag: "key_gate_sky_eyrie", keyItem: "sky_key",
+      lines: ["A door of storm-iron, bolted from this side against something above. The traverse's Warder kept its key."],
+    },
+    { id: "sk_harpy_3", kind: "monster", monster: "aerie_harpy", x: sx + 75, y: sy + 31, name: "Aerie Shriker" },
+    { id: "sk_wisp_3", kind: "monster", monster: "storm_wisp", x: sx + 100, y: sy + 31, name: "Storm-Wisp" },
+    // The eyrie: the Storm-Herald and the watch's strongbox.
+    { id: "sk_harpy_4", kind: "monster", monster: "aerie_harpy", x: sx + 110, y: sy + 24, name: "Herald's Hawk" },
+    { id: "sk_herald", kind: "monster", monster: "storm_herald", x: sx + 115, y: sy + 21, name: "The Storm-Herald" },
+    {
+      id: "chest_sky", kind: "dungeon_chest", x: sx + 123, y: sy + 19, name: "The Watch Strongbox",
+      loot: [{ item: "storm_mantle", qty: 1 }, { item: "tablet_sky", qty: 1 }, { item: "ashiron_bar", qty: 3 }],
+      lines: ["The watch's strongbox, lashed down against wind that could lift a man. The lashings hold a thousand years of knots."],
+    },
+    // The signal-shaft back down to the pass.
+    { id: "ret_sky_b", kind: "portal", x: sx + 105, y: sy + 25, name: "Signal-Shaft", target: { x: smouth.x, y: smouth.y + 1 }, lines: ["A shaft the watch used to drop messages down the mountain. It fits a person, barely."] },
   );
   return out;
 }

@@ -1420,6 +1420,8 @@ export function drawWorld(
       drawPuzzleLever(g, px + TILE / 2, py + TILE / 2, !!obj.thrown || state.player.flags.includes(`pz_${def.puzzle ?? def.id}`), now);
     } else if (def.kind === "dungeon_chest") {
       drawDungeonChest(g, px + TILE / 2, py + TILE / 2, state.player.flags.includes(`looted_${def.id}`));
+    } else if (def.kind === "ruin_prop") {
+      drawRuinProp(g, px + TILE / 2, py + TILE / 2, def.id);
     } else {
       // A soft contact shadow under living things (and not under a slain, mid-
       // respawn monster) so they sit on the ground and read against the terrain.
@@ -1442,6 +1444,8 @@ export function drawWorld(
       lights.push([px + TILE / 2, py + TILE / 2]);
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
+    } else if (def.kind === "monster" && obj.available && (def.monster === "court_wisp" || def.monster === "storm_wisp")) {
+      lights.push([px + TILE / 2, py + TILE / 2 - 4]); // the halls lit by their keepers
     }
     // Name label — monsters show their combat level (OSRS-style). A slain
     // monster (respawning) drops its label until it's back.
@@ -2946,6 +2950,40 @@ function drawDungeonChest(g: CanvasRenderingContext2D, cx: number, cy: number, l
     g.fillStyle = "#352b23"; g.fillRect(cx - 11, cy - 6, 22, 5);
     g.strokeStyle = "#8b8fa0"; g.beginPath(); g.moveTo(cx - 6, cy - 6); g.lineTo(cx - 6, cy - 1); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 6, cy - 1); g.stroke();
     g.fillStyle = "#c9cede"; g.fillRect(cx - 1.5, cy - 3, 3, 4);
+  }
+}
+
+/** Surface ruin dressing at a dungeon mouth: broken pillars, fallen arches,
+ *  rubble drifts. The variant is hashed off the object id so a cluster of
+ *  props reads as varied masonry without per-piece art wiring. */
+function drawRuinProp(g: CanvasRenderingContext2D, cx: number, cy: number, id: string): void {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  const v = Math.abs(h) % 3;
+  shadow(g, cx, cy + 8, 12, 4);
+  const STONE = "#8d8a80", DARK = "#6f6c62", MOSS = "#5d6b4a";
+  if (v === 0) {
+    // A snapped pillar: drum + tilted upper section beside it.
+    g.fillStyle = STONE; g.fillRect(cx - 5, cy - 10, 10, 18);
+    g.fillStyle = DARK; g.fillRect(cx - 6, cy - 12, 12, 3); // capital ring
+    g.fillRect(cx - 5, cy - 4, 10, 1.5);
+    g.save(); g.translate(cx + 9, cy + 5); g.rotate(0.9);
+    g.fillStyle = DARK; g.fillRect(-4, -7, 8, 14); g.restore();
+    g.fillStyle = MOSS; g.fillRect(cx - 5, cy + 4, 4, 4); // moss at the base
+  } else if (v === 1) {
+    // Half an arch, still springing from its pier.
+    g.fillStyle = STONE; g.fillRect(cx - 9, cy - 6, 6, 14);
+    g.strokeStyle = STONE; g.lineWidth = 5;
+    g.beginPath(); g.arc(cx + 2, cy - 4, 9, Math.PI, Math.PI * 1.6); g.stroke();
+    g.fillStyle = DARK; g.fillRect(cx - 10, cy - 8, 8, 3);
+    g.fillStyle = MOSS; g.fillRect(cx - 9, cy + 4, 3.5, 4);
+    g.fillStyle = DARK; g.fillRect(cx + 5, cy + 4, 6, 4); // the fallen keystone
+  } else {
+    // A rubble drift of dressed blocks.
+    g.fillStyle = STONE;
+    g.fillRect(cx - 10, cy + 1, 8, 6); g.fillRect(cx - 2, cy - 2, 9, 8);
+    g.fillStyle = DARK; g.fillRect(cx + 3, cy + 3, 8, 5); g.fillRect(cx - 7, cy - 4, 7, 5);
+    g.fillStyle = MOSS; g.fillRect(cx - 2, cy - 2, 4, 3);
   }
 }
 
@@ -5308,6 +5346,11 @@ const MONSTER_SCALE: Record<string, number> = {
   green_baron: 1.3, hollow_prophet: 1.35,
   mountain_troll: 1.3, deep_golem: 1.35, forest_bear: 1.22, mountain_lion: 1.1,
   river_serpent: 1.25, mire_serpent: 1.15, marrow_wraith: 1.12,
+  // Act II dungeon keepers: mini-bosses read big, the site bosses tower.
+  barrow_sentinel: 1.15, barrow_king: 1.35,
+  vault_sentinel: 1.15, vault_warden: 1.35,
+  court_reliquarist: 1.2, drowned_magistrate: 1.4,
+  sky_warder: 1.2, storm_herald: 1.4, aerie_harpy: 1.12,
 };
 
 /** A coloured ground-glow per boss — presence you can feel a screen away. */
@@ -5323,6 +5366,11 @@ const BOSS_AURA: Record<string, string> = {
   hollow_warden: "140,148,160",
   bog_warden: "82,108,88",
   dread_ferryman: "70,90,120",
+  // Act II site bosses
+  barrow_king: "200,170,90",       // grave-gold
+  vault_warden: "184,163,122",     // mason's lamplight
+  drowned_magistrate: "80,130,150", // black-water phosphor
+  storm_herald: "120,160,220",     // storm-glow
 };
 
 /** Draw a monster, scaled up (about its planted foot) by MONSTER_SCALE. */
@@ -5458,9 +5506,56 @@ function drawMonsterBody(
       return H("#3a2030", "#6a2a44");
     case "cult_magus":
       return H("#2a1830", "#7a3a58");
+    // --- Act II dungeon keepers ---
+    case "barrow_sentinel":
+      return H("#565a64", "#7d8290"); // pale grave-iron
+    case "barrow_king":
+      return H("#3c3a4a", "#c9a24a"); // grave-dark regalia, old gold
+    case "vault_sentinel":
+      return H("#4e5560", "#8b9099"); // vault-steel
+    case "vault_warden":
+      return H("#55524a", "#b8a37a"); // mason's robes, mortar-pale trim
+    case "drowned_thrall":
+      return H("#41504a", "#5d7266"); // waterlogged livery
+    case "court_reliquarist":
+      return H("#3a4440", "#6b8a72"); // verdigrised vestments
+    case "drowned_magistrate":
+      return H("#2f3a44", "#7fa3b8"); // black-water judge's robes
+    case "sky_warder":
+      return H("#4a4e5e", "#9aa6c0"); // storm-iron watch plate
+    case "storm_herald":
+      return H("#33405a", "#b8d0f0"); // high-wind blues
+    case "court_wisp":
+      return drawWisp(g, cx, cy, now, "#e8c87a"); // a hostile candle
+    case "storm_wisp":
+      return drawWisp(g, cx, cy, now, "#9fc4e8"); // knotted weather
+    case "aerie_harpy":
+      return drawBat(g, cx, cy, now); // a stooping shape out of the dark
     default:
       return drawRat(g, cx, cy, now);
   }
+}
+
+/** A wisp: a hovering mote of light with a guttering halo — the Sunken Court's
+ *  lamps and Skyreach's knotted weather. It bobs slowly and casts its own
+ *  faint glow so the big dark halls read by their inhabitants. */
+function drawWisp(g: CanvasRenderingContext2D, cx: number, cy: number, now: number, tint: string): void {
+  const bob = Math.sin(now / 460) * 2.5;
+  const gutter = 0.7 + 0.3 * Math.sin(now / 130);
+  const y = cy - 4 + bob;
+  const halo = g.createRadialGradient(cx, y, 1, cx, y, 16);
+  halo.addColorStop(0, tint + "55");
+  halo.addColorStop(1, tint + "00");
+  g.fillStyle = halo;
+  g.beginPath(); g.arc(cx, y, 16, 0, Math.PI * 2); g.fill();
+  g.fillStyle = tint;
+  g.beginPath(); g.arc(cx, y, 3.2 * gutter + 1.2, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(cx - 0.8, y - 0.8, 1.3, 0, Math.PI * 2); g.fill();
+  // a trailing mote or two
+  g.fillStyle = tint + "aa";
+  g.beginPath(); g.arc(cx - 5, y + 4 + bob * 0.4, 1.1, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(cx + 4, y + 6 - bob * 0.3, 0.9, 0, Math.PI * 2); g.fill();
 }
 
 /** Cindrath, the Ashen Wyrm: a large winged dragon with glowing ember scales,

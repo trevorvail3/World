@@ -358,6 +358,12 @@ export type ItemId =
   | "tablet_vault"
   | "barrow_key"
   | "vault_key"
+  | "drowned_seal"
+  | "storm_mantle"
+  | "tablet_court"
+  | "tablet_sky"
+  | "court_key"
+  | "sky_key"
   | "ring_3"
   | "ring_5"
   | "ring_8"
@@ -913,6 +919,9 @@ export type ObjKind =
   | "puzzle_lever"
   /** A dungeon reward chest: one-time loot, remembered by a player flag. */
   | "dungeon_chest"
+  /** Surface ruin dressing at a dungeon mouth — a broken pillar, a fallen
+   *  arch, a rubble mound. Blocks movement; examine-only. */
+  | "ruin_prop"
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
