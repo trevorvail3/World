@@ -576,7 +576,30 @@ export type ItemId =
   | "bonemeal"
   | "pestle"
   | "potion_grace"
-  | "potion_grace_greater"
+  | "potion_grace_1"
+  | "vial_water"
+  | "pot_gatherer"
+  | "pot_gatherer_1"
+  | "pot_warrior"
+  | "pot_warrior_1"
+  | "pot_runner"
+  | "pot_runner_1"
+  | "pot_ironhide"
+  | "pot_ironhide_1"
+  | "pot_deepgrace"
+  | "pot_deepgrace_1"
+  | "pot_archer"
+  | "pot_archer_1"
+  | "pot_battlemind"
+  | "pot_battlemind_1"
+  | "pot_sage"
+  | "pot_sage_1"
+  | "pot_mastergather"
+  | "pot_mastergather_1"
+  | "pot_hearthfire"
+  | "pot_hearthfire_1"
+  | "pot_orunstears"
+  | "pot_orunstears_1"
   // Ranged + magic gear sets (4 tiers × 3 slots each) and the magic resource.
   // (Sinew already exists as a beast drop.)
   | "hex_cloth"
@@ -628,23 +651,6 @@ export type ItemId =
   | "forage_dawnspore"
   | "forage_deepmoss"
   | "forage_ashbloom"
-  | "potion_wildroot"
-  | "potion_greensap"
-  | "potion_thornbrew"
-  | "potion_ironbrew"
-  | "potion_spinedraught"
-  | "potion_gallbrew"
-  | "potion_bloodfire"
-  | "potion_coldedge"
-  | "potion_runeward"
-  | "potion_duskdraught"
-  | "potion_swifteye"
-  | "potion_trueshot"
-  | "potion_hearthblaze"
-  | "potion_orunsap"
-  | "potion_stonebind"
-  | "potion_deepcalm"
-  | "potion_ashbloom"
   | "forge_token"
   | "pale_record_pass"
   | "seam_marker"
@@ -766,6 +772,10 @@ export interface ItemDef {
   /** A staff: worn in the mainhand but casts at range (uses Faith + Grace). The
    *  basic bolt is free; `acc`/`dmg` are the flat casting boost of the tier. */
   magic?: boolean;
+  /** Run energy restored when drunk (Runner's Blend — the agility potion). */
+  energyRestore?: number;
+  /** Multi-dose potions: the item this becomes after a drink (OSRS doses). */
+  doseNext?: ItemId;
   /** Faith only: Grace restored when this is drunk (the Faith / Grace potion). */
   graceRestore?: number;
   /** Bones: Faith XP granted when this item is buried. */
@@ -1124,6 +1134,10 @@ export interface WorldObjectState {
   wanderTarget?: Vec2 | null;
   /** When standing still, the time (ms) at which it picks its next step. */
   nextWanderAt?: number;
+  /** Shrine/altar: no Grace refill from THIS stone until this time (ms). A
+   *  per-stone breather so one stone can't be camped as an infinite battery —
+   *  transient, never persisted. */
+  graceCooldownUntil?: number;
   /** Farming patch: the CROPS key currently planted (undefined = empty). */
   crop?: string;
   /** Farming patch: wall-clock epoch (ms) the seed was planted. */
@@ -1616,6 +1630,13 @@ export interface SetStyleIntent {
   style: CombatStyle;
 }
 
+/** Rearrange the pack: swap two inventory slots (OSRS drag-to-move). */
+export interface SwapSlotsIntent {
+  type: "SWAP_SLOTS";
+  a: number;
+  b: number;
+}
+
 /** "Cast this Faith spell" (spends Grace; must be wielding a staff). */
 export interface CastSpellIntent {
   type: "CAST_SPELL";
@@ -1872,7 +1893,8 @@ export type Intent =
   | GeMoveIntent
   | TradeApplyIntent
   | OpenNestIntent
-  | LandFishIntent;
+  | LandFishIntent
+  | SwapSlotsIntent;
 
 // ---------------------------------------------------------------------------
 // Events: what the core reports back after handling an intent or a tick.

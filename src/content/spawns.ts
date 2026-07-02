@@ -146,8 +146,8 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   // 22 Forest Bear nearby is harmless at that range, and is a scatter-POI the
   // fixup table doesn't reach, so it's left where it is.)
   // Hamlet farming plots — final tiles (grass, off-road, near the settlements).
-  patch_redmouth_1: { x: 87, y: 55 }, patch_redmouth_2: { x: 90, y: 55 }, treepatch_redmouth: { x: 92, y: 55 },
-  patch_drover_1: { x: 62, y: 69 }, patch_drover_2: { x: 63, y: 69 }, treepatch_drover: { x: 62, y: 71 },
+  patch_redmouth_1: { x: 87, y: 55 }, treepatch_redmouth: { x: 92, y: 55 },
+  patch_drover_1: { x: 62, y: 69 }, treepatch_drover: { x: 62, y: 71 },
   rd_orc_1: { x: 128, y: 126 },      // Ancient Orc (lvl 94) → SW wilds
   // The Redrun waystone lands you at 135,112, right on the Saltreach village.
   // These foes used to sit on top of that tile and jump you the instant you
@@ -643,21 +643,15 @@ const rawObjects: WorldObjectDef[] = [
   { id: "fish_6", kind: "fishing_spot", x: 35, y: 81, name: "Reedy Pool", resource: "fish_ashfin", catches: POOL_RIVER },
 
   // --- Aldric's farmstead (plant + tree patches) on the east apron ---
+  // OSRS-style farming RUN: one plant + one tree patch pair at Aldric's farm
+  // and at every settlement across the world (the rest are in newPois, final
+  // coords) — spread out so farming is a journey, not one super-garden.
   { id: "patch_1", kind: "plant_patch", x: 81, y: 42, name: "Plant Patch" },
   { id: "patch_2", kind: "plant_patch", x: 83, y: 42, name: "Plant Patch" },
-  { id: "patch_3", kind: "plant_patch", x: 85, y: 42, name: "Plant Patch" },
-  { id: "patch_4", kind: "plant_patch", x: 81, y: 44, name: "Plant Patch" },
-  { id: "patch_5", kind: "plant_patch", x: 83, y: 44, name: "Plant Patch" },
-  { id: "patch_6", kind: "plant_patch", x: 85, y: 44, name: "Plant Patch" },
   { id: "treepatch_1", kind: "tree_patch", x: 82, y: 47, name: "Tree Patch" },
-  { id: "treepatch_2", kind: "tree_patch", x: 85, y: 47, name: "Tree Patch" },
-  // Farming plots out at the hamlets too, so you're never far from a patch to
-  // plant in (pinned to final map tiles via SPAWN_FIXUP; authored coords ignored).
   { id: "patch_redmouth_1", kind: "plant_patch", x: 87, y: 55, name: "Plant Patch" },
-  { id: "patch_redmouth_2", kind: "plant_patch", x: 90, y: 55, name: "Plant Patch" },
   { id: "treepatch_redmouth", kind: "tree_patch", x: 92, y: 55, name: "Tree Patch" },
   { id: "patch_drover_1", kind: "plant_patch", x: 62, y: 69, name: "Plant Patch" },
-  { id: "patch_drover_2", kind: "plant_patch", x: 63, y: 69, name: "Plant Patch" },
   { id: "treepatch_drover", kind: "tree_patch", x: 62, y: 71, name: "Tree Patch" },
 
   // --- Starter game on the hill grass, and hare snares (Hunter 1) ---
@@ -1705,6 +1699,23 @@ const newPois: WorldObjectDef[] = [
   { id: "fzn_ore_2", kind: "rock", x: 100, y: 18, name: "Ashiron Vein", resource: "mine_ashiron" },
   { id: "fzn_ore_3", kind: "rock", x: 130, y: 16, name: "Silica Deposit", resource: "mine_silica" },
   { id: "fzn_lion_1", kind: "monster", monster: "mountain_lion", x: 20, y: 22, name: "Mountain Lion" },
+
+  // === FARMING RUN — a plant + tree patch pair at every settlement, so the
+  // skill is a circuit of the whole map (waystones make the run). ============
+  { id: "patch_fold", kind: "plant_patch", x: 79, y: 44, name: "Plant Patch" },
+  { id: "treepatch_fold", kind: "tree_patch", x: 77, y: 44, name: "Tree Patch" },
+  { id: "patch_frostgate", kind: "plant_patch", x: 47, y: 21, name: "Plant Patch" },
+  { id: "treepatch_frostgate", kind: "tree_patch", x: 53, y: 21, name: "Tree Patch" },
+  { id: "patch_deeplight", kind: "plant_patch", x: 122, y: 28, name: "Plant Patch" },
+  { id: "treepatch_deeplight", kind: "tree_patch", x: 128, y: 28, name: "Tree Patch" },
+  { id: "patch_saltreach", kind: "plant_patch", x: 143, y: 107, name: "Plant Patch" },
+  { id: "treepatch_saltreach", kind: "tree_patch", x: 149, y: 101, name: "Tree Patch" },
+  { id: "patch_emberhearth", kind: "plant_patch", x: 74, y: 144, name: "Plant Patch" },
+  { id: "treepatch_emberhearth", kind: "tree_patch", x: 80, y: 144, name: "Tree Patch" },
+  { id: "patch_mirehold", kind: "plant_patch", x: 12, y: 142, name: "Plant Patch" },
+  { id: "treepatch_mirehold", kind: "tree_patch", x: 18, y: 142, name: "Tree Patch" },
+  { id: "patch_lodgehold", kind: "plant_patch", x: 10, y: 84, name: "Plant Patch" },
+  { id: "treepatch_lodgehold", kind: "tree_patch", x: 16, y: 84, name: "Tree Patch" },
 
   // === WATERSIDE + WOODLAND DRESSING — cattails at pond edges, dead trees in
   // the old woods, so wild ground reads lived-in by nature itself. ============

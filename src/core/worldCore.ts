@@ -129,6 +129,8 @@ const LEVEL_CAP = 100;
 // XP ceiling per skill. Level freezes at 100 (12M XP), but XP keeps accruing
 // past that as a prestige/ranking grind — OSRS-style — up to this hard cap.
 const XP_CAP = 100_000_000;
+// A shrine gives its Grace refill at most once a minute (per stone).
+const SHRINE_RECHARGE_MS = 60_000;
 
 // Idle wandering for npcs + monsters. They drift one tile at a time within a
 // small box around their spawn, pausing between steps, and hold still when the
@@ -1507,6 +1509,18 @@ export function applyIntent(
       revokeGoldRodIfDethroned(player, content, events);
       break;
     }
+    case "SWAP_SLOTS": {
+      // Rearranging the pack is free-form housekeeping: swap any two slots
+      // (either may be empty) without touching the current activity.
+      const { a, b } = intent;
+      const inv = player.inventory;
+      if (a >= 0 && b >= 0 && a < inv.length && b < inv.length && a !== b) {
+        const tmp = inv[a] ?? null;
+        inv[a] = inv[b] ?? null;
+        inv[b] = tmp;
+      }
+      break;
+    }
     case "DROP": {
       dropSlot(state, content, intent.slot, ctx, events);
       break;
@@ -2131,8 +2145,14 @@ function eatSlot(
   const canHeal = !!def.heals;
   const canBuff = !!(def.buff && def.buffMs);
   const canGrace = !!def.graceRestore;
-  if (!canHeal && !canBuff && !canGrace) {
+  const canEnergy = !!def.energyRestore;
+  if (!canHeal && !canBuff && !canGrace && !canEnergy) {
     events.push({ type: "LOG", message: `You can't use the ${def.name}.` });
+    return;
+  }
+  // Don't waste a pure energy restore (Runner's Blend) on full legs.
+  if (canEnergy && !canHeal && !canBuff && !canGrace && player.energy >= ENERGY_MAX) {
+    events.push({ type: "LOG", message: "Your legs are already fresh." });
     return;
   }
   // Don't waste a pure-heal at full HP; a buffed/Grace item is still worth using.
@@ -2164,8 +2184,19 @@ function eatSlot(
     const gained = Math.round(player.grace - before);
     if (gained > 0) msg += ` (+${gained} Grace)`;
   }
-  data.qty -= 1;
-  if (data.qty <= 0) player.inventory[slot] = null;
+  if (canEnergy) {
+    player.energy = Math.min(ENERGY_MAX, player.energy + def.energyRestore!);
+    player.winded = false;
+    msg += " Your legs feel fresh again.";
+  }
+  // Multi-dose potions (OSRS): a drink leaves the next dose in the slot
+  // instead of consuming the vial outright.
+  if (def.doseNext) {
+    player.inventory[slot] = { item: def.doseNext, qty: 1 };
+  } else {
+    data.qty -= 1;
+    if (data.qty <= 0) player.inventory[slot] = null;
+  }
   events.push({ type: "LOG", message: msg });
 }
 
@@ -2372,11 +2403,17 @@ function startInteraction(
 
     case "shrine": {
       // A shrine/altar of Orun: kneel and pray to refill Grace (the Faith fuel).
+      // Each stone gives its blessing once a minute — camping one stone as an
+      // infinite spell battery doesn't work; running to ANOTHER stone does.
       const gm = graceMax(player);
       if (player.grace >= gm) {
         events.push({ type: "LOG", message: `You kneel at the ${def.name}. Your Grace is already full.` });
+      } else if (ctx.now < (obj.graceCooldownUntil ?? 0)) {
+        const wait = Math.ceil(((obj.graceCooldownUntil ?? 0) - ctx.now) / 1000);
+        events.push({ type: "LOG", message: `The ${def.name} is spent from your last prayer — its grace returns in ${wait}s. Another stone would serve you now.` });
       } else {
         player.grace = gm;
+        obj.graceCooldownUntil = ctx.now + SHRINE_RECHARGE_MS;
         events.push({ type: "LOG", message: `You kneel at the ${def.name} and pray. Orun's grace fills you.` });
       }
       break;

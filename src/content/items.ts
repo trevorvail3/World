@@ -4825,16 +4825,6 @@ export const items: Record<ItemId, ItemDef> = {
     "id": "pestle", "name": "Pestle & Mortar", "icon": "🥣", "cat": "Tools", "sell": 8,
     "description": "A stone bowl and grinder. Crush bones in your pack into bonemeal with it."
   },
-  "potion_grace": {
-    "id": "potion_grace", "name": "Devotion Potion", "icon": "🙏", "cat": "Potions",
-    "graceRestore": 30, "sell": 120,
-    "description": "A bone-and-herb brew that restores a measure of Grace on the move — no shrine needed."
-  },
-  "potion_grace_greater": {
-    "id": "potion_grace_greater", "name": "Greater Devotion Potion", "icon": "🙏", "cat": "Potions",
-    "graceRestore": 70, "sell": 320,
-    "description": "A potent flask of bonemeal and rare herb — restores a deep draught of Grace anywhere."
-  },
 
   // === RANGED + MAGIC GEAR RESOURCES ========================================
   // (Sinew already exists — dropped by beasts and sold at the general store.)
@@ -5209,193 +5199,6 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Foraged",
     "sell": 55
   },
-  "potion_wildroot": {
-    "id": "potion_wildroot",
-    "name": "Wildroot Tincture",
-    "description": "A rough brew of mushroom and thornberry. The weakest gathering tincture in Varath, but it needs no farm.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.06,
-    "buffMs": 180000,
-    "sell": 30
-  },
-  "potion_greensap": {
-    "id": "potion_greensap",
-    "name": "Greensap Tincture",
-    "description": "A green brew from ashweed and mushroom. Gathering feels effortless for a time.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.1,
-    "buffMs": 300000,
-    "sell": 80
-  },
-  "potion_thornbrew": {
-    "id": "potion_thornbrew",
-    "name": "Thornbrew",
-    "description": "Thornroot and thornberries. The hands move faster, the tools bite deeper.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.15,
-    "buffMs": 480000,
-    "sell": 140
-  },
-  "potion_ironbrew": {
-    "id": "potion_ironbrew",
-    "name": "Ironbrew",
-    "description": "Ironleaf steeped in hearthroot tincture. Gathering +20% speed.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.2,
-    "buffMs": 600000,
-    "sell": 220
-  },
-  "potion_spinedraught": {
-    "id": "potion_spinedraught",
-    "name": "Spine Draught",
-    "description": "Spinethistle extract. Uncommonly potent.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.25,
-    "buffMs": 720000,
-    "sell": 320
-  },
-  "potion_gallbrew": {
-    "id": "potion_gallbrew",
-    "name": "Gall Tincture",
-    "description": "A bitter brew from greyoak gall and mushroom. Gathering feels easier for a time.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "gather_speed",
-    "buffAmt": 0.12,
-    "buffMs": 360000,
-    "sell": 120
-  },
-  "potion_bloodfire": {
-    "id": "potion_bloodfire",
-    "name": "Bloodfire Elixir",
-    "description": "Bloodberry and ashroot. Your strikes land truer.",
-    "icon": "🔴",
-    "cat": "Potions",
-    "buff": "melee_acc",
-    "buffAmt": 8,
-    "buffMs": 300000,
-    "sell": 180
-  },
-  "potion_coldedge": {
-    "id": "potion_coldedge",
-    "name": "Coldedge Elixir",
-    "description": "Coldmoss and ashroot. Each hit cuts deeper.",
-    "icon": "🔵",
-    "cat": "Potions",
-    "buff": "melee_dmg",
-    "buffAmt": 6,
-    "buffMs": 300000,
-    "sell": 180
-  },
-  "potion_runeward": {
-    "id": "potion_runeward",
-    "name": "Runeward Elixir",
-    "description": "Ruevine and dawnspore. The blows land softer.",
-    "icon": "🟣",
-    "cat": "Potions",
-    "buff": "defence",
-    "buffAmt": 10,
-    "buffMs": 300000,
-    "sell": 200
-  },
-  "potion_duskdraught": {
-    "id": "potion_duskdraught",
-    "name": "Dusk Draught",
-    "description": "Duskshade and ashroot. Rare and powerful.",
-    "icon": "⚫",
-    "cat": "Potions",
-    "buff": "melee_acc",
-    "buffAmt": 14,
-    "buffMs": 480000,
-    "sell": 400
-  },
-  "potion_swifteye": {
-    "id": "potion_swifteye",
-    "name": "Swifteye Elixir",
-    "description": "Thornberry and hearthroot. The eye sharpens, the arrow flies true.",
-    "icon": "🟢",
-    "cat": "Potions",
-    "buff": "ranged_acc",
-    "buffAmt": 8,
-    "buffMs": 300000,
-    "sell": 180
-  },
-  "potion_trueshot": {
-    "id": "potion_trueshot",
-    "name": "Trueshot Elixir",
-    "description": "Greyoak gall and hearthroot. Each shot lands with more force behind it.",
-    "icon": "🟡",
-    "cat": "Potions",
-    "buff": "ranged_dmg",
-    "buffAmt": 6,
-    "buffMs": 300000,
-    "sell": 180
-  },
-  "potion_hearthblaze": {
-    "id": "potion_hearthblaze",
-    "name": "Hearthblaze Draught",
-    "description": "Hearthbloom and dawnspore. All skill XP +10% for a time.",
-    "icon": "🟠",
-    "cat": "Potions",
-    "buff": "xp_boost",
-    "buffAmt": 0.1,
-    "buffMs": 600000,
-    "sell": 600
-  },
-  "potion_orunsap": {
-    "id": "potion_orunsap",
-    "name": "Orunsap",
-    "description": "Orunroot distilled. Believers do not drink it lightly.",
-    "icon": "🖤",
-    "cat": "Potions",
-    "buff": "xp_boost",
-    "buffAmt": 0.2,
-    "buffMs": 900000,
-    "sell": 1500
-  },
-  "potion_stonebind": {
-    "id": "potion_stonebind",
-    "name": "Stonebind Draught",
-    "description": "Coldmoss and ironleaf, reduced. Builders in the old stories mixed this into their mortar. Modern ones drink it instead.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "construction_speed",
-    "buffAmt": 0.15,
-    "buffMs": 480000,
-    "sell": 220
-  },
-  "potion_deepcalm": {
-    "id": "potion_deepcalm",
-    "name": "Deepcalm Elixir",
-    "description": "Deepmoss steeped slow. The effect is a settled, cold resistance. Cave fighters favour this.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "defence",
-    "buffAmt": 14,
-    "buffMs": 480000,
-    "sell": 280
-  },
-  "potion_ashbloom": {
-    "id": "potion_ashbloom",
-    "name": "Ashbloom Draught",
-    "description": "Brewed from the pale flower of old fire sites. An XP boost with unusual origins.",
-    "icon": "🧪",
-    "cat": "Potions",
-    "buff": "xp_boost",
-    "buffAmt": 0.08,
-    "buffMs": 480000,
-    "sell": 350
-  },
   "forge_token": {
     "id": "forge_token",
     "name": "Forge Token",
@@ -5591,6 +5394,277 @@ export const items: Record<ItemId, ItemDef> = {
     "cat": "Mounts",
     "sell": 4000
   },
+  "vial_water": {
+    "id": "vial_water",
+    "name": "Vial of Water",
+    "description": "A stoppered glass vial of clean water — the base of every potion. Fill your own from a glass vial at a cauldron, or buy them from the apothecary.",
+    "icon": "🧴",
+    "cat": "Potions",
+    "stackable": true,
+    "sell": 4
+  },
+  "potion_grace": {
+      "id": "potion_grace",
+      "name": "Grace Potion (2)",
+      "description": "Ashweed and bonemeal in blessed water. Each dose restores 30 Grace. Two doses.",
+      "icon": "🙏",
+      "cat": "Potions",
+      "sell": 60,
+      "graceRestore": 30,
+      "doseNext": "potion_grace_1"
+    },
+  "potion_grace_1": {
+      "id": "potion_grace_1",
+      "name": "Grace Potion (1)",
+      "description": "Ashweed and bonemeal in blessed water. Each dose restores 30 Grace. One dose left.",
+      "icon": "🙏",
+      "cat": "Potions",
+      "sell": 30,
+      "graceRestore": 30
+    },
+  "pot_gatherer": {
+      "id": "pot_gatherer",
+      "name": "Gatherer's Brew (2)",
+      "description": "Thornroot sharpens the eye. Each dose quickens gathering for 4 minutes. Two doses.",
+      "icon": "🧪",
+      "cat": "Potions",
+      "sell": 90,
+      "buff": "gather_speed",
+      "buffAmt": 0.12,
+      "buffMs": 240000,
+      "doseNext": "pot_gatherer_1"
+    },
+  "pot_gatherer_1": {
+      "id": "pot_gatherer_1",
+      "name": "Gatherer's Brew (1)",
+      "description": "Thornroot sharpens the eye. Each dose quickens gathering for 4 minutes. One dose left.",
+      "icon": "🧪",
+      "cat": "Potions",
+      "sell": 45,
+      "buff": "gather_speed",
+      "buffAmt": 0.12,
+      "buffMs": 240000
+    },
+  "pot_warrior": {
+      "id": "pot_warrior",
+      "name": "Warrior's Brew (2)",
+      "description": "Bloodberry heat in the arm. Each dose raises melee damage for 4 minutes. Two doses.",
+      "icon": "🔴",
+      "cat": "Potions",
+      "sell": 120,
+      "buff": "melee_dmg",
+      "buffAmt": 4,
+      "buffMs": 240000,
+      "doseNext": "pot_warrior_1"
+    },
+  "pot_warrior_1": {
+      "id": "pot_warrior_1",
+      "name": "Warrior's Brew (1)",
+      "description": "Bloodberry heat in the arm. Each dose raises melee damage for 4 minutes. One dose left.",
+      "icon": "🔴",
+      "cat": "Potions",
+      "sell": 60,
+      "buff": "melee_dmg",
+      "buffAmt": 4,
+      "buffMs": 240000
+    },
+  "pot_runner": {
+      "id": "pot_runner",
+      "name": "Runner's Blend (2)",
+      "description": "Coldmoss cools the burn in the legs. Each dose restores your run energy in full. Two doses.",
+      "icon": "🥤",
+      "cat": "Potions",
+      "sell": 150,
+      "energyRestore": 100,
+      "doseNext": "pot_runner_1"
+    },
+  "pot_runner_1": {
+      "id": "pot_runner_1",
+      "name": "Runner's Blend (1)",
+      "description": "Coldmoss cools the burn in the legs. Each dose restores your run energy in full. One dose left.",
+      "icon": "🥤",
+      "cat": "Potions",
+      "sell": 75,
+      "energyRestore": 100
+    },
+  "pot_ironhide": {
+      "id": "pot_ironhide",
+      "name": "Ironhide Brew (2)",
+      "description": "Ironleaf stiffens the skin. Each dose raises defence for 4 minutes. Two doses.",
+      "icon": "🛡",
+      "cat": "Potions",
+      "sell": 180,
+      "buff": "defence",
+      "buffAmt": 6,
+      "buffMs": 240000,
+      "doseNext": "pot_ironhide_1"
+    },
+  "pot_ironhide_1": {
+      "id": "pot_ironhide_1",
+      "name": "Ironhide Brew (1)",
+      "description": "Ironleaf stiffens the skin. Each dose raises defence for 4 minutes. One dose left.",
+      "icon": "🛡",
+      "cat": "Potions",
+      "sell": 90,
+      "buff": "defence",
+      "buffAmt": 6,
+      "buffMs": 240000
+    },
+  "pot_deepgrace": {
+      "id": "pot_deepgrace",
+      "name": "Deep Grace Potion (2)",
+      "description": "Greybloom steeped over double bonemeal. Each dose restores 80 Grace. Two doses.",
+      "icon": "✨",
+      "cat": "Potions",
+      "sell": 260,
+      "graceRestore": 80,
+      "doseNext": "pot_deepgrace_1"
+    },
+  "pot_deepgrace_1": {
+      "id": "pot_deepgrace_1",
+      "name": "Deep Grace Potion (1)",
+      "description": "Greybloom steeped over double bonemeal. Each dose restores 80 Grace. One dose left.",
+      "icon": "✨",
+      "cat": "Potions",
+      "sell": 130,
+      "graceRestore": 80
+    },
+  "pot_archer": {
+      "id": "pot_archer",
+      "name": "Archer's Brew (2)",
+      "description": "Spinethistle steadies the draw. Each dose raises ranged damage for 4 minutes. Two doses.",
+      "icon": "🟢",
+      "cat": "Potions",
+      "sell": 320,
+      "buff": "ranged_dmg",
+      "buffAmt": 5,
+      "buffMs": 240000,
+      "doseNext": "pot_archer_1"
+    },
+  "pot_archer_1": {
+      "id": "pot_archer_1",
+      "name": "Archer's Brew (1)",
+      "description": "Spinethistle steadies the draw. Each dose raises ranged damage for 4 minutes. One dose left.",
+      "icon": "🟢",
+      "cat": "Potions",
+      "sell": 160,
+      "buff": "ranged_dmg",
+      "buffAmt": 5,
+      "buffMs": 240000
+    },
+  "pot_battlemind": {
+      "id": "pot_battlemind",
+      "name": "Battlemind Brew (2)",
+      "description": "Ruevine clears the red mist. Each dose raises melee accuracy for 4 minutes. Two doses.",
+      "icon": "🧠",
+      "cat": "Potions",
+      "sell": 420,
+      "buff": "melee_acc",
+      "buffAmt": 12,
+      "buffMs": 240000,
+      "doseNext": "pot_battlemind_1"
+    },
+  "pot_battlemind_1": {
+      "id": "pot_battlemind_1",
+      "name": "Battlemind Brew (1)",
+      "description": "Ruevine clears the red mist. Each dose raises melee accuracy for 4 minutes. One dose left.",
+      "icon": "🧠",
+      "cat": "Potions",
+      "sell": 210,
+      "buff": "melee_acc",
+      "buffAmt": 12,
+      "buffMs": 240000
+    },
+  "pot_sage": {
+      "id": "pot_sage",
+      "name": "Sage's Brew (2)",
+      "description": "Duskshade opens the mind. Each dose lifts ALL experience gains 5% for 8 minutes. Two doses.",
+      "icon": "📘",
+      "cat": "Potions",
+      "sell": 550,
+      "buff": "xp_boost",
+      "buffAmt": 0.05,
+      "buffMs": 480000,
+      "doseNext": "pot_sage_1"
+    },
+  "pot_sage_1": {
+      "id": "pot_sage_1",
+      "name": "Sage's Brew (1)",
+      "description": "Duskshade opens the mind. Each dose lifts ALL experience gains 5% for 8 minutes. One dose left.",
+      "icon": "📘",
+      "cat": "Potions",
+      "sell": 275,
+      "buff": "xp_boost",
+      "buffAmt": 0.05,
+      "buffMs": 480000
+    },
+  "pot_mastergather": {
+      "id": "pot_mastergather",
+      "name": "Master Gatherer's (2)",
+      "description": "Marrowflower under the fingernails. Each dose greatly quickens gathering for 4 minutes. Two doses.",
+      "icon": "⚗",
+      "cat": "Potions",
+      "sell": 700,
+      "buff": "gather_speed",
+      "buffAmt": 0.25,
+      "buffMs": 240000,
+      "doseNext": "pot_mastergather_1"
+    },
+  "pot_mastergather_1": {
+      "id": "pot_mastergather_1",
+      "name": "Master Gatherer's (1)",
+      "description": "Marrowflower under the fingernails. Each dose greatly quickens gathering for 4 minutes. One dose left.",
+      "icon": "⚗",
+      "cat": "Potions",
+      "sell": 350,
+      "buff": "gather_speed",
+      "buffAmt": 0.25,
+      "buffMs": 240000
+    },
+  "pot_hearthfire": {
+      "id": "pot_hearthfire",
+      "name": "Hearthfire Elixir (2)",
+      "description": "Hearthbloom's warmth in the blood. Each dose lifts ALL experience gains 10% for 8 minutes. Two doses.",
+      "icon": "🟠",
+      "cat": "Potions",
+      "sell": 950,
+      "buff": "xp_boost",
+      "buffAmt": 0.1,
+      "buffMs": 480000,
+      "doseNext": "pot_hearthfire_1"
+    },
+  "pot_hearthfire_1": {
+      "id": "pot_hearthfire_1",
+      "name": "Hearthfire Elixir (1)",
+      "description": "Hearthbloom's warmth in the blood. Each dose lifts ALL experience gains 10% for 8 minutes. One dose left.",
+      "icon": "🟠",
+      "cat": "Potions",
+      "sell": 475,
+      "buff": "xp_boost",
+      "buffAmt": 0.1,
+      "buffMs": 480000
+    },
+  "pot_orunstears": {
+      "id": "pot_orunstears",
+      "name": "Orun's Tears (2)",
+      "description": "Orunroot and nightshade — the master's brew. Each dose fills your Grace outright and knits 40 health. Two doses.",
+      "icon": "🖤",
+      "cat": "Potions",
+      "sell": 1400,
+      "graceRestore": 999,
+      "heals": 40,
+      "doseNext": "pot_orunstears_1"
+    },
+  "pot_orunstears_1": {
+      "id": "pot_orunstears_1",
+      "name": "Orun's Tears (1)",
+      "description": "Orunroot and nightshade — the master's brew. Each dose fills your Grace outright and knits 40 health. One dose left.",
+      "icon": "🖤",
+      "cat": "Potions",
+      "sell": 700,
+      "graceRestore": 999,
+      "heals": 40
+    },
   "saddle_gold": {
     "id": "saddle_gold",
     "name": "Gilded Saddle",

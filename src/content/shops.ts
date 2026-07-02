@@ -165,6 +165,7 @@ export const shops: ShopDef[] = [
     // tinctures and elixirs need, sold for coin at ≈1.7× sell (pure drain, no
     // arbitrage) and bundled. Pair with a cauldron and pour gold into Herblore.
     stock: [
+      { item: "vial_water", price: 8, qty: 1 },
       // --- Herbs (the heart of every brew) ---
       { item: "herb_ashweed", price: 77, qty: 3 },        // sell 15
       { item: "herb_thornroot", price: 143, qty: 3 },     // sell 28

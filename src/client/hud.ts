@@ -412,6 +412,7 @@ export class Hud {
         for (let i = 0; i < 28; i++) {
           const slot = document.createElement("div");
           slot.className = "inv-slot";
+          slot.dataset["idx"] = String(i);
           this.attachLongPress(
             slot,
             (x, y) => this.inspectItem(i, x, y),
@@ -420,8 +421,9 @@ export class Hud {
           grid.appendChild(slot);
           this.invSlots.push(slot);
         }
+        this.attachPackDrag(grid);
         p.appendChild(grid);
-        p.appendChild(note("Long-press an item to inspect it; tap to use, eat, equip or drop."));
+        p.appendChild(note("Long-press to inspect · tap to use · drag to rearrange."));
         break;
       }
       case "skills": {
@@ -875,6 +877,63 @@ export class Hud {
     if (this.activeTab === "records" && !this.collapsed && this.lastState) {
       this.renderRecords(this.lastState.player, true);
     }
+  }
+
+  /** OSRS drag-to-rearrange for the pack: press a filled slot and pull past a
+   *  small threshold to lift the item (a ghost icon rides the pointer); release
+   *  over another slot to swap them. A clean tap/long-press is untouched —
+   *  attachLongPress already cancels itself on the same movement threshold. */
+  private attachPackDrag(grid: HTMLElement): void {
+    let from = -1;          // candidate slot pressed
+    let dragging = false;   // passed the threshold, ghost is live
+    let sx = 0, sy = 0;
+    let ghost: HTMLElement | null = null;
+    const slotAt = (x: number, y: number): number => {
+      const el = document.elementFromPoint(x, y);
+      const s = el?.closest?.(".inv-slot") as HTMLElement | null;
+      const idx = s?.dataset?.["idx"];
+      return idx === undefined ? -1 : Number(idx);
+    };
+    const clearMark = (): void => {
+      for (const el of this.invSlots) el.classList.remove("drop-target");
+    };
+    const end = (x: number, y: number): void => {
+      if (dragging) {
+        const to = slotAt(x, y);
+        if (to >= 0 && from >= 0 && to !== from) this.dispatch({ type: "SWAP_SLOTS", a: from, b: to });
+      }
+      dragging = false; from = -1;
+      if (ghost) { ghost.remove(); ghost = null; }
+      clearMark();
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    const onMove = (e: PointerEvent): void => {
+      if (from < 0) return;
+      if (!dragging) {
+        if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) <= 12) return;
+        const inv = this.lastState?.player.inventory;
+        if (!inv || !inv[from]) { from = -1; return; } // empty slot — nothing to lift
+        dragging = true;
+        ghost = document.createElement("div");
+        ghost.className = "inv-drag-ghost";
+        const icon = this.invSlots[from]!.querySelector(".inv-icon");
+        ghost.innerHTML = icon ? icon.outerHTML : "";
+        document.body.appendChild(ghost);
+      }
+      if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; }
+      clearMark();
+      const over = slotAt(e.clientX, e.clientY);
+      if (over >= 0 && over !== from) this.invSlots[over]!.classList.add("drop-target");
+    };
+    const onUp = (e: PointerEvent): void => end(e.clientX, e.clientY);
+    grid.addEventListener("pointerdown", (e) => {
+      const idx = slotAt(e.clientX, e.clientY);
+      if (idx < 0) return;
+      from = idx; sx = e.clientX; sy = e.clientY; dragging = false;
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    });
   }
 
   /** Reflect the current active-tab / collapsed state in the DOM. */

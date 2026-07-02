@@ -154,9 +154,18 @@ export class SkillDetailModal {
         const label = skill === "draw" && !def.ranged && def.slot !== "ranged" && def.slot !== "ammo"
           ? "Ranged Armour"
           : gear.label;
+        // Collapse a material's pieces into ONE line per level — "Ribstone
+        // armour", "Hearthite weapons" — instead of spelling out every helm,
+        // plate, leg and boot. The material is the name's leading word; a
+        // multi-word unique (no shared material tier) keeps its full name.
+        const material = def.name.split(" ")[0]!;
+        const collapsed = skill === "ward" || label === "Ranged Armour"
+          ? `${material} armour`
+          : skill === "edge" ? `${material} weapons`
+          : def.name;
         const byLevel = activities.get(label) ?? new Map<number, string[]>();
         const list = byLevel.get(lvl) ?? [];
-        if (!list.includes(def.name)) list.push(def.name);
+        if (!list.includes(collapsed)) list.push(collapsed);
         byLevel.set(lvl, list);
         activities.set(label, byLevel);
       }
