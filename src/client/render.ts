@@ -11,6 +11,7 @@ import type {
   Appearance,
   Content,
   FurnitureDef,
+  SurfaceDef,
   ItemDef,
   ItemId,
   SkillAction,
@@ -755,6 +756,58 @@ function paintTile(
 }
 
 /**
+ * Recolour one interior tile to a chosen home surface (floor or wall). A solid
+ * fill in the surface colour, then a seam pattern keyed to the surface style:
+ * wood-grain boards, tiled squares (checker/marble), or panelled walls, plus a
+ * soft top highlight so the room still reads as a lit, textured space.
+ */
+function paintHomeSurface(
+  g: CanvasRenderingContext2D,
+  surf: SurfaceDef,
+  px: number,
+  py: number,
+  x: number,
+  y: number,
+): void {
+  g.fillStyle = surf.color;
+  g.fillRect(px, py, TILE, TILE);
+  const seam = surf.seam;
+  const style = surf.style ?? (surf.kind === "floor" ? "board" : "panel");
+  if (seam) {
+    g.strokeStyle = seam;
+    g.lineWidth = 1;
+    if (style === "board") {
+      for (let i = 1; i < 3; i++) {
+        const yy = py + Math.round(i * TILE / 3);
+        g.beginPath(); g.moveTo(px, yy + 0.5); g.lineTo(px + TILE, yy + 0.5); g.stroke();
+      }
+      const jx = px + Math.round(TILE * (0.3 + 0.4 * hash(x, y)));
+      const band = hash(x, y) > 0.5 ? 0 : 1;
+      g.beginPath(); g.moveTo(jx + 0.5, py + band * TILE / 3); g.lineTo(jx + 0.5, py + (band + 1) * TILE / 3); g.stroke();
+    } else if (style === "tile") {
+      // A grid of squares — stone, slate, marble, checker.
+      const half = TILE / 2;
+      g.strokeRect(px + 0.5, py + 0.5, half - 1, half - 1);
+      g.strokeRect(px + half + 0.5, py + 0.5, half - 1, half - 1);
+      g.strokeRect(px + 0.5, py + half + 0.5, half - 1, half - 1);
+      g.strokeRect(px + half + 0.5, py + half + 0.5, half - 1, half - 1);
+    } else if (style === "checker") {
+      g.fillStyle = seam;
+      g.fillRect(px, py, TILE / 2, TILE / 2);
+      g.fillRect(px + TILE / 2, py + TILE / 2, TILE / 2, TILE / 2);
+    } else {
+      // Panelled wall: a framed rectangle inset from the tile edge.
+      g.strokeRect(px + 2.5, py + 2.5, TILE - 5, TILE - 5);
+    }
+  }
+  // A faint top-lit sheen so the surface isn't flat.
+  g.fillStyle = surf.kind === "floor" ? "rgba(255,240,210,0.06)" : "rgba(255,255,255,0.05)";
+  g.fillRect(px, py, TILE, 2);
+  g.fillStyle = "rgba(0,0,0,0.08)";
+  g.fillRect(px, py + TILE - 2, TILE, 2);
+}
+
+/**
  * Dressed-stone city wall: warm masonry in a brick bond, with battlement teeth
  * (merlons) along any edge that faces open ground, and a cast shadow where it
  * drops to the ground below. Reads as a real rampart, not a grey block.
@@ -1227,6 +1280,11 @@ export function drawWorld(
     dd2 !== Infinity && ((x - pdx) * (x - pdx) + (y - pdy) * (y - pdy)) > dd2;
 
   // --- Tiles ---
+  // Home surfaces: when the player stands in their home, a chosen floor/wall
+  // surface recolours the plank floor / stone walls of the room they're in.
+  const homeInterior = !!(region && region.y0 === INTERIOR_TOP);
+  const floorSurf = homeInterior ? content.surfaces[state.player.home.floor ?? ""] : undefined;
+  const wallSurf = homeInterior ? content.surfaces[state.player.home.wall ?? ""] : undefined;
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       if (!inRegion(x, y)) continue; // mask everything outside the current instance
@@ -1235,6 +1293,8 @@ export function drawWorld(
       const px = x * TILE - cam.x;
       const py = y * TILE - cam.y;
       paintTile(g, tile, px, py, x, y, now, map);
+      if (floorSurf && tile === "plank") paintHomeSurface(g, floorSurf, px, py, x, y);
+      else if (wallSurf && tile === "wall") paintHomeSurface(g, wallSurf, px, py, x, y);
       scatterVegetation(g, tile, px, py, x, y, now);
     }
   }
@@ -2650,19 +2710,352 @@ function drawPlacedFurniture(
     const cx = (p.x + w / 2) * TILE - cam.x;
     const cy = (p.y + h / 2) * TILE - cam.y;
     if (cx < -TILE * 2 || cy < -TILE * 2 || cx > g.canvas.width + TILE * 2 || cy > g.canvas.height + TILE * 2) continue;
-    const { idx, last } = furnitureRank(content, f);
-    if (p.rot) {
-      g.save();
-      g.translate(cx, cy);
-      g.rotate((p.rot & 3) * Math.PI / 2);
-      drawHotspot(g, 0, 0, f, idx, last, now, trophy);
-      g.restore();
+    const [w0, h0] = f.footprint ?? [1, 1];
+    g.save();
+    g.translate(cx, cy);
+    if (p.rot) g.rotate((p.rot & 3) * Math.PI / 2);
+    if (f.render) {
+      drawFurniturePiece(g, w0 * TILE, h0 * TILE, f, now);
     } else {
-      drawHotspot(g, cx, cy, f, idx, last, now, trophy);
+      const { idx, last } = furnitureRank(content, f);
+      drawHotspot(g, 0, 0, f, idx, last, now, trophy); // stations keep bespoke art
     }
+    g.restore();
     // A cooking hearth or any lighting piece warms the room.
     if (f.category === "kitchen" || f.light) lights.push([cx, cy]);
   }
+}
+
+/**
+ * The data-driven furniture renderer: draws piece `f` centred at the current
+ * transform origin, filling a box `bw × bh` pixels (its footprint), from its
+ * `render` descriptor's shape + palette. Recolours come free — the same shape
+ * with a different `wood` / `cloth` reads as a whole new item.
+ */
+function drawFurniturePiece(g: CanvasRenderingContext2D, bw: number, bh: number, f: FurnitureDef, now: number): void {
+  const r = f.render!;
+  const wood = r.wood ?? "#7e6a4e";
+  const dark = r.accent ?? shade(wood, 0.62);
+  const lite = shade(wood, 1.28);
+  const cloth = r.cloth ?? "#8f7048";
+  const M = 4;
+  const L = -bw / 2 + M, R = bw / 2 - M, T = -bh / 2 + M, B = bh / 2 - M;
+  const iw = R - L, ih = B - T;
+  const shadow = (): void => { g.fillStyle = "rgba(0,0,0,0.22)"; g.beginPath(); g.ellipse(0, B - 1, iw * 0.42, ih * 0.12, 0, 0, Math.PI * 2); g.fill(); };
+  const rect = (x: number, y: number, w: number, h: number, c: string): void => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  const topLight = (x: number, y: number, w: number, hh: number): void => { g.fillStyle = "rgba(255,255,255,0.10)"; g.fillRect(x, y, w, Math.max(1, hh * 0.12)); };
+
+  switch (r.shape) {
+    // ---- seating ----
+    case "stool": {
+      shadow();
+      rect(L + iw * 0.2, 0, iw * 0.12, ih * 0.5, dark); rect(R - iw * 0.32, 0, iw * 0.12, ih * 0.5, dark); // legs
+      g.fillStyle = wood; g.beginPath(); g.ellipse(0, -ih * 0.05, iw * 0.34, ih * 0.14, 0, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "chair": {
+      shadow();
+      rect(L + iw * 0.22, -ih * 0.05, iw * 0.1, ih * 0.5, dark); rect(R - iw * 0.32, -ih * 0.05, iw * 0.1, ih * 0.5, dark);
+      rect(L + iw * 0.24, T, iw * 0.52, ih * 0.42, wood); topLight(L + iw * 0.24, T, iw * 0.52, ih * 0.42); // back
+      rect(L + iw * 0.18, -ih * 0.1, iw * 0.64, ih * 0.16, r.cloth ? cloth : lite); // seat
+      break;
+    }
+    case "armchair": {
+      shadow();
+      rect(L + iw * 0.06, -ih * 0.24, iw * 0.88, ih * 0.5, dark); // body
+      rect(L + iw * 0.14, T + ih * 0.06, iw * 0.72, ih * 0.34, cloth); // back cushion
+      rect(L + iw * 0.06, -ih * 0.1, iw * 0.16, ih * 0.34, shade(cloth, 0.8)); rect(R - iw * 0.22, -ih * 0.1, iw * 0.16, ih * 0.34, shade(cloth, 0.8)); // arms
+      rect(L + iw * 0.2, -ih * 0.06, iw * 0.6, ih * 0.16, shade(cloth, 1.12)); // seat
+      break;
+    }
+    case "sofa": {
+      shadow();
+      rect(L, -ih * 0.24, iw, ih * 0.5, dark);
+      rect(L + iw * 0.08, T + ih * 0.06, iw * 0.84, ih * 0.32, cloth);
+      rect(L, -ih * 0.12, iw * 0.12, ih * 0.36, shade(cloth, 0.8)); rect(R - iw * 0.12, -ih * 0.12, iw * 0.12, ih * 0.36, shade(cloth, 0.8));
+      rect(L + iw * 0.14, -ih * 0.06, iw * 0.34, ih * 0.16, shade(cloth, 1.12)); rect(L + iw * 0.52, -ih * 0.06, iw * 0.34, ih * 0.16, shade(cloth, 1.12));
+      break;
+    }
+    case "bench": {
+      shadow();
+      rect(L + iw * 0.08, 0, iw * 0.08, ih * 0.4, dark); rect(R - iw * 0.16, 0, iw * 0.08, ih * 0.4, dark);
+      rect(L, -ih * 0.08, iw, ih * 0.14, wood); topLight(L, -ih * 0.08, iw, ih * 0.14);
+      break;
+    }
+    case "throne": {
+      shadow();
+      rect(L + iw * 0.14, -ih * 0.1, iw * 0.72, ih * 0.5, dark);
+      rect(L + iw * 0.2, T, iw * 0.6, ih * 0.5, wood); // tall back
+      g.fillStyle = GOLD; g.fillRect(L + iw * 0.2, T, iw * 0.6, 2);
+      rect(L + iw * 0.22, -ih * 0.06, iw * 0.56, ih * 0.16, cloth);
+      g.fillStyle = GEM; g.beginPath(); g.arc(0, T + ih * 0.1, 2.2, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    // ---- tables ----
+    case "sidetable": case "table": case "longtable": case "coffee": {
+      shadow();
+      for (const lx of [L + iw * 0.08, R - iw * 0.14]) { rect(lx, -ih * 0.1, iw * 0.07, ih * 0.5, dark); }
+      rect(L, T + ih * 0.28, iw, ih * 0.18, wood); topLight(L, T + ih * 0.28, iw, ih * 0.18); // top
+      break;
+    }
+    case "roundtable": {
+      shadow();
+      rect(-iw * 0.05, -ih * 0.1, iw * 0.1, ih * 0.5, dark); // pedestal
+      g.fillStyle = wood; g.beginPath(); g.ellipse(0, T + ih * 0.34, iw * 0.46, ih * 0.16, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.10)"; g.beginPath(); g.ellipse(0, T + ih * 0.3, iw * 0.4, ih * 0.1, 0, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "desk": {
+      shadow();
+      rect(L + iw * 0.05, -ih * 0.02, iw * 0.9, ih * 0.42, wood); // body w/ drawer
+      rect(L + iw * 0.12, ih * 0.06, iw * 0.3, ih * 0.16, dark); g.fillStyle = GOLD; g.fillRect(L + iw * 0.24, ih * 0.13, 3, 2);
+      rect(L, T + ih * 0.2, iw, ih * 0.14, lite); topLight(L, T + ih * 0.2, iw, ih * 0.14);
+      break;
+    }
+    // ---- beds ----
+    case "bed": case "bedlarge": {
+      shadow();
+      rect(L, -ih * 0.28, iw, ih * 0.62, dark); // frame
+      rect(L + iw * 0.06, T + ih * 0.14, iw * 0.88, ih * 0.5, "#ece2c8"); // sheet
+      rect(L + iw * 0.06, T + ih * 0.14, iw * 0.88, ih * 0.2, cloth); // blanket top
+      rect(L + iw * 0.12, T + ih * 0.05, iw * 0.34, ih * 0.14, "#fbf4e2"); // pillow
+      rect(L, T, iw * 0.06, ih * 0.7, shade(wood, 0.7)); // headboard post
+      break;
+    }
+    case "canopy": {
+      shadow();
+      rect(L, T, iw * 0.06, ih, dark); rect(R - iw * 0.06, T, iw * 0.06, ih * 0.5, dark); // posts
+      rect(L, T, iw, ih * 0.08, shade(wood, 0.7)); // canopy rail
+      g.fillStyle = withAlpha(cloth, 0.5); g.fillRect(R - iw * 0.18, T + ih * 0.06, iw * 0.18, ih * 0.7); // drape
+      rect(L + iw * 0.06, T + ih * 0.2, iw * 0.84, ih * 0.62, dark);
+      rect(L + iw * 0.1, T + ih * 0.26, iw * 0.78, ih * 0.5, "#ece2c8");
+      rect(L + iw * 0.1, T + ih * 0.26, iw * 0.78, ih * 0.2, cloth);
+      rect(L + iw * 0.16, T + ih * 0.18, iw * 0.3, ih * 0.12, "#fbf4e2");
+      break;
+    }
+    // ---- storage boxes ----
+    case "crate": {
+      shadow(); rect(L + iw * 0.1, 0, iw * 0.8, ih * 0.5, wood);
+      g.strokeStyle = dark; g.lineWidth = 1.4; g.strokeRect(L + iw * 0.1, 0, iw * 0.8, ih * 0.5);
+      g.beginPath(); g.moveTo(L + iw * 0.1, 0); g.lineTo(R - iw * 0.1, ih * 0.5); g.moveTo(R - iw * 0.1, 0); g.lineTo(L + iw * 0.1, ih * 0.5); g.stroke();
+      break;
+    }
+    case "drawers": case "sideboard": {
+      shadow(); rect(L + iw * 0.06, -ih * 0.1, iw * 0.88, ih * 0.55, wood); topLight(L + iw * 0.06, -ih * 0.1, iw * 0.88, ih * 0.55);
+      const rows = r.shape === "sideboard" ? 2 : 3;
+      for (let i = 0; i < rows; i++) { const y = -ih * 0.06 + i * (ih * 0.5 / rows); rect(L + iw * 0.1, y, iw * 0.8, ih * 0.5 / rows - 2, shade(wood, 0.86)); g.fillStyle = GOLD; g.fillRect(-2, y + (ih * 0.5 / rows) / 2 - 1, 4, 1.6); }
+      break;
+    }
+    case "wardrobe": {
+      shadow(); rect(L + iw * 0.1, T + ih * 0.05, iw * 0.8, ih * 0.9, wood); topLight(L + iw * 0.1, T + ih * 0.05, iw * 0.8, ih * 0.1);
+      g.strokeStyle = dark; g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, T + ih * 0.08); g.lineTo(0, B - ih * 0.04); g.stroke();
+      g.fillStyle = GOLD; g.fillRect(-3, 0, 1.6, 4); g.fillRect(1.4, 0, 1.6, 4);
+      break;
+    }
+    case "cabinet": {
+      shadow(); rect(L + iw * 0.1, -ih * 0.1, iw * 0.8, ih * 0.55, wood);
+      rect(L + iw * 0.16, -ih * 0.04, iw * 0.68, ih * 0.42, withAlpha("#bcdfe6", 0.4)); // glass
+      g.strokeStyle = dark; g.lineWidth = 1; g.strokeRect(L + iw * 0.16, -ih * 0.04, iw * 0.68, ih * 0.42);
+      break;
+    }
+    case "bookshelf": {
+      shadow(); rect(L + iw * 0.1, T + ih * 0.05, iw * 0.8, ih * 0.9, wood);
+      const cols = ["#7a3b2c", "#3c5a44", "#4a4a6a", "#8a6a2c", "#5a3b6a"];
+      for (let row = 0; row < 3; row++) { const y = T + ih * 0.12 + row * ih * 0.28; rect(L + iw * 0.12, y + ih * 0.18, iw * 0.76, 2, dark); for (let i = 0; i < 6; i++) { g.fillStyle = cols[(row + i) % cols.length]!; g.fillRect(L + iw * 0.14 + i * iw * 0.12, y, iw * 0.09, ih * 0.18); } }
+      break;
+    }
+    // ---- lighting ----
+    case "candle": {
+      rect(-1.5, -ih * 0.1, 3, ih * 0.5, dark); // stand
+      g.fillStyle = "#e8dcc0"; g.fillRect(-4, T + ih * 0.2, 3, ih * 0.24); g.fillRect(1, T + ih * 0.22, 3, ih * 0.22);
+      flameFx(g, -2.5, T + ih * 0.2, now); flameFx(g, 2.5, T + ih * 0.22, now);
+      break;
+    }
+    case "tablelamp": {
+      rect(-1.5, ih * 0.06, 3, ih * 0.28, dark);
+      g.fillStyle = withAlpha(r.glow ?? "#ffd27a", 0.85); g.beginPath(); g.moveTo(-iw * 0.22, ih * 0.06); g.lineTo(iw * 0.22, ih * 0.06); g.lineTo(iw * 0.14, T + ih * 0.15); g.lineTo(-iw * 0.14, T + ih * 0.15); g.closePath(); g.fill();
+      break;
+    }
+    case "floorlamp": {
+      rect(-1.5, T + ih * 0.3, 3, ih * 0.6, dark); g.fillStyle = dark; g.fillRect(-iw * 0.14, B - 2, iw * 0.28, 2);
+      g.fillStyle = withAlpha(r.glow ?? "#ffd27a", 0.85); g.beginPath(); g.moveTo(-iw * 0.2, T + ih * 0.3); g.lineTo(iw * 0.2, T + ih * 0.3); g.lineTo(iw * 0.12, T + ih * 0.05); g.lineTo(-iw * 0.12, T + ih * 0.05); g.closePath(); g.fill();
+      break;
+    }
+    case "lantern": {
+      rect(-1, T, 2, ih * 0.2, dark); g.fillStyle = dark; g.fillRect(-iw * 0.14, T + ih * 0.2, iw * 0.28, ih * 0.42);
+      g.fillStyle = withAlpha(r.glow ?? "#ffbe55", 0.9); g.fillRect(-iw * 0.1, T + ih * 0.26, iw * 0.2, ih * 0.3);
+      break;
+    }
+    case "brazier": {
+      rect(-iw * 0.06, 0, iw * 0.12, ih * 0.4, dark); g.fillStyle = dark; g.beginPath(); g.ellipse(0, -ih * 0.02, iw * 0.26, ih * 0.1, 0, 0, Math.PI * 2); g.fill();
+      const fl = 0.5 + 0.5 * Math.sin(now / 110); g.fillStyle = withAlpha(r.glow ?? "#ff8a3a", 0.85); g.beginPath(); g.moveTo(0, -ih * 0.02 - ih * 0.25 * fl); g.lineTo(-iw * 0.16, -ih * 0.02); g.lineTo(iw * 0.16, -ih * 0.02); g.closePath(); g.fill();
+      break;
+    }
+    case "chandelier": {
+      g.strokeStyle = dark; g.lineWidth = 1.4; g.beginPath(); g.moveTo(0, T); g.lineTo(0, T + ih * 0.2); g.stroke();
+      g.fillStyle = dark; g.beginPath(); g.ellipse(0, T + ih * 0.28, iw * 0.34, ih * 0.08, 0, 0, Math.PI * 2); g.stroke();
+      for (const ax of [-iw * 0.3, 0, iw * 0.3]) flameFx(g, ax, T + ih * 0.28, now);
+      g.fillStyle = withAlpha(r.glow ?? "#ffe0a0", 0.3); g.beginPath(); g.arc(0, T + ih * 0.3, iw * 0.4, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    // ---- plants ----
+    case "plant": case "tallplant": case "fern": {
+      pot(g, 0, B, iw, ih, wood, dark);
+      const tall = r.shape === "tallplant" ? 0.9 : 0.6;
+      g.fillStyle = r.shape === "fern" ? "#4f7a3a" : "#3c6a34";
+      for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * 0.4; const len = ih * tall; g.beginPath(); g.moveTo(0, B - ih * 0.18); g.lineTo(Math.cos(a) * iw * 0.34, B - ih * 0.18 - Math.sin(-a) * 0 - len * (0.6 + 0.3 * Math.abs(Math.cos(a)))); g.lineWidth = 2.4; g.strokeStyle = i % 2 ? "#4f7a3a" : "#3c6a34"; g.stroke(); }
+      break;
+    }
+    case "cactus": {
+      pot(g, 0, B, iw, ih, wood, dark);
+      g.fillStyle = "#4f7a3a"; g.fillRect(-iw * 0.1, B - ih * 0.6, iw * 0.2, ih * 0.42); g.fillRect(-iw * 0.28, B - ih * 0.45, iw * 0.14, ih * 0.12); g.fillRect(iw * 0.14, B - ih * 0.5, iw * 0.14, ih * 0.1);
+      break;
+    }
+    case "flowerpot": {
+      pot(g, 0, B, iw, ih, wood, dark);
+      for (const [dx, c] of [[-iw * 0.2, "#d85a72"], [0, "#e8c45a"], [iw * 0.2, "#7a86d8"]] as const) { g.fillStyle = "#3c6a34"; g.fillRect(dx - 0.6, B - ih * 0.5, 1.4, ih * 0.32); g.fillStyle = c; g.beginPath(); g.arc(dx, B - ih * 0.52, iw * 0.08, 0, Math.PI * 2); g.fill(); }
+      break;
+    }
+    case "tree": {
+      g.fillStyle = dark; g.fillRect(-iw * 0.16, B - ih * 0.16, iw * 0.32, ih * 0.14); // pot
+      g.fillStyle = "#5a3f26"; g.fillRect(-iw * 0.05, B - ih * 0.6, iw * 0.1, ih * 0.46); // trunk
+      g.fillStyle = "#3c6a34"; g.beginPath(); g.ellipse(0, T + ih * 0.28, iw * 0.4, ih * 0.28, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#4f7a3a"; g.beginPath(); g.ellipse(-iw * 0.12, T + ih * 0.24, iw * 0.2, ih * 0.16, 0, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    // ---- pots / barrels ----
+    case "vase": {
+      shadow(); g.fillStyle = wood; g.beginPath(); g.moveTo(-iw * 0.14, 0); g.quadraticCurveTo(-iw * 0.3, T + ih * 0.4, -iw * 0.12, T + ih * 0.1); g.lineTo(iw * 0.12, T + ih * 0.1); g.quadraticCurveTo(iw * 0.3, T + ih * 0.4, iw * 0.14, 0); g.closePath(); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.12)"; g.fillRect(-iw * 0.1, T + ih * 0.15, 2, ih * 0.4);
+      break;
+    }
+    case "urn": case "barrel": {
+      shadow(); g.fillStyle = wood; g.beginPath(); g.ellipse(0, 0, iw * 0.26, ih * 0.4, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = dark; g.fillRect(-iw * 0.26, -ih * 0.14, iw * 0.52, 2); g.fillRect(-iw * 0.26, ih * 0.12, iw * 0.52, 2);
+      break;
+    }
+    case "statue": {
+      shadow(); g.fillStyle = dark; g.fillRect(-iw * 0.2, ih * 0.2, iw * 0.4, ih * 0.24); // plinth
+      g.fillStyle = wood; g.fillRect(-iw * 0.08, T + ih * 0.2, iw * 0.16, ih * 0.5); g.beginPath(); g.arc(0, T + ih * 0.18, iw * 0.1, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "bust": {
+      shadow(); g.fillStyle = dark; g.fillRect(-iw * 0.16, ih * 0.16, iw * 0.32, ih * 0.24);
+      g.fillStyle = wood; g.fillRect(-iw * 0.16, 0, iw * 0.32, ih * 0.2); g.beginPath(); g.arc(0, -ih * 0.02, iw * 0.14, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "globe": {
+      shadow(); g.fillStyle = dark; g.fillRect(-2, ih * 0.05, 4, ih * 0.35); g.fillStyle = "#3a5a7a"; g.beginPath(); g.arc(0, -ih * 0.06, iw * 0.24, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#4f7a3a"; g.beginPath(); g.arc(-iw * 0.06, -ih * 0.1, iw * 0.08, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = GOLD; g.lineWidth = 1; g.beginPath(); g.arc(0, -ih * 0.06, iw * 0.27, 0, Math.PI * 2); g.stroke();
+      break;
+    }
+    case "screen": {
+      shadow(); for (let i = 0; i < 3; i++) { const x = L + iw * 0.06 + i * iw * 0.3; g.fillStyle = i % 2 ? shade(cloth, 0.9) : cloth; g.fillRect(x, T + ih * 0.1, iw * 0.28, ih * 0.8); g.strokeStyle = dark; g.lineWidth = 1; g.strokeRect(x, T + ih * 0.1, iw * 0.28, ih * 0.8); }
+      break;
+    }
+    case "birdcage": {
+      shadow(); rect(-1.5, ih * 0.06, 3, ih * 0.34, dark); g.strokeStyle = wood; g.lineWidth = 1.2;
+      g.beginPath(); g.ellipse(0, -ih * 0.06, iw * 0.2, ih * 0.3, 0, 0, Math.PI * 2); g.stroke();
+      for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(i * iw * 0.06, -ih * 0.34); g.lineTo(i * iw * 0.06, ih * 0.2); g.stroke(); }
+      g.fillStyle = "#e8c45a"; g.beginPath(); g.arc(0, 0, 2, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "easel": {
+      shadow(); g.strokeStyle = dark; g.lineWidth = 2; g.beginPath(); g.moveTo(0, T + ih * 0.1); g.lineTo(-iw * 0.24, B); g.moveTo(0, T + ih * 0.1); g.lineTo(iw * 0.24, B); g.stroke();
+      g.fillStyle = wood; g.fillRect(-iw * 0.2, T + ih * 0.15, iw * 0.4, ih * 0.4); g.fillStyle = "#3a5a7a"; g.fillRect(-iw * 0.16, T + ih * 0.2, iw * 0.32, ih * 0.3);
+      break;
+    }
+    case "harp": {
+      shadow(); g.strokeStyle = wood; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-iw * 0.2, B); g.quadraticCurveTo(-iw * 0.34, T + ih * 0.2, iw * 0.14, T); g.lineTo(-iw * 0.2, B); g.stroke();
+      g.strokeStyle = withAlpha("#e8dcc0", 0.7); g.lineWidth = 0.6; for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(-iw * 0.2 + i * iw * 0.05, B); g.lineTo(-iw * 0.1 + i * iw * 0.04, T + ih * 0.1); g.stroke(); }
+      break;
+    }
+    case "fountain": {
+      shadow(); g.fillStyle = wood; g.beginPath(); g.ellipse(0, ih * 0.2, iw * 0.4, ih * 0.18, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = withAlpha("#6fb0c8", 0.7); g.beginPath(); g.ellipse(0, ih * 0.18, iw * 0.34, ih * 0.13, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = wood; g.fillRect(-iw * 0.05, T + ih * 0.2, iw * 0.1, ih * 0.4);
+      g.fillStyle = withAlpha("#bfe6ef", 0.6); g.fillRect(-1.5, T + ih * 0.1, 3, ih * 0.3);
+      break;
+    }
+    // ---- wall-hung (drawn high, no shadow) ----
+    case "painting": case "map": {
+      rect(L + iw * 0.12, T + ih * 0.08, iw * 0.76, ih * 0.62, dark);
+      rect(L + iw * 0.18, T + ih * 0.14, iw * 0.64, ih * 0.5, r.shape === "map" ? "#cabf9e" : wood);
+      if (r.shape === "map") { g.strokeStyle = "#5a4630"; g.lineWidth = 0.6; g.beginPath(); g.moveTo(L + iw * 0.2, 0); g.lineTo(R - iw * 0.2, -ih * 0.05); g.stroke(); }
+      else { g.fillStyle = shade(wood, 1.3); g.beginPath(); g.moveTo(L + iw * 0.2, T + ih * 0.5); g.lineTo(0, T + ih * 0.28); g.lineTo(R - iw * 0.2, T + ih * 0.5); g.fill(); }
+      break;
+    }
+    case "tapestry": case "banner": {
+      g.fillStyle = cloth; g.beginPath(); g.moveTo(L + iw * 0.24, T); g.lineTo(R - iw * 0.24, T); g.lineTo(R - iw * 0.24, B - ih * 0.1); g.lineTo(0, B); g.lineTo(L + iw * 0.24, B - ih * 0.1); g.closePath(); g.fill();
+      g.fillStyle = shade(cloth, 1.3); g.fillRect(-1.5, T + ih * 0.1, 3, ih * 0.6); g.fillStyle = GOLD; g.beginPath(); g.arc(0, T + ih * 0.3, iw * 0.08, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "mirror": {
+      rect(L + iw * 0.2, T + ih * 0.05, iw * 0.6, ih * 0.8, wood);
+      rect(L + iw * 0.26, T + ih * 0.11, iw * 0.48, ih * 0.68, "#bcdfe6"); g.fillStyle = "rgba(255,255,255,0.2)"; g.beginPath(); g.moveTo(L + iw * 0.28, T + ih * 0.6); g.lineTo(L + iw * 0.42, T + ih * 0.12); g.lineTo(L + iw * 0.5, T + ih * 0.12); g.lineTo(L + iw * 0.3, T + ih * 0.7); g.fill();
+      break;
+    }
+    case "clock": {
+      g.fillStyle = wood; g.beginPath(); g.arc(0, T + ih * 0.4, iw * 0.3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#e8dcc0"; g.beginPath(); g.arc(0, T + ih * 0.4, iw * 0.22, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = dark; g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, T + ih * 0.4); g.lineTo(0, T + ih * 0.26); g.moveTo(0, T + ih * 0.4); g.lineTo(iw * 0.12, T + ih * 0.42); g.stroke();
+      break;
+    }
+    case "shield": {
+      g.fillStyle = wood; g.beginPath(); g.moveTo(0, T); g.lineTo(R - iw * 0.24, T + ih * 0.2); g.lineTo(0, B); g.lineTo(L + iw * 0.24, T + ih * 0.2); g.closePath(); g.fill();
+      g.strokeStyle = GOLD; g.lineWidth = 1.4; g.stroke(); g.fillStyle = shade(wood, 1.3); g.beginPath(); g.arc(0, T + ih * 0.35, iw * 0.08, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "antlers": {
+      g.fillStyle = dark; g.fillRect(-iw * 0.12, T + ih * 0.4, iw * 0.24, ih * 0.16); g.strokeStyle = "#d8cba8"; g.lineWidth = 2;
+      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, T + ih * 0.4); g.quadraticCurveTo(s * iw * 0.3, T + ih * 0.1, s * iw * 0.24, T); g.moveTo(s * iw * 0.14, T + ih * 0.2); g.lineTo(s * iw * 0.32, T + ih * 0.15); g.stroke(); }
+      break;
+    }
+    // ---- rugs ----
+    case "rug": {
+      g.fillStyle = cloth; g.fillRect(L - M, T - M, iw + M * 2, ih + M * 2);
+      g.strokeStyle = shade(cloth, 1.18); g.lineWidth = 1.5; g.strokeRect(L, T, iw, ih);
+      g.strokeStyle = shade(cloth, 0.72); g.lineWidth = 1; g.strokeRect(L + 4, T + 4, iw - 8, ih - 8);
+      g.fillStyle = shade(cloth, 1.12); g.beginPath(); g.ellipse(0, 0, iw * 0.16, ih * 0.16, 0, 0, Math.PI * 2); g.fill();
+      break;
+    }
+    case "hide": {
+      g.fillStyle = wood; g.beginPath(); g.ellipse(0, 0, iw * 0.5, ih * 0.42, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = shade(wood, 0.8); for (let i = 0; i < 5; i++) g.fillRect(-iw * 0.3 + i * iw * 0.14, -ih * 0.1, 3, ih * 0.2);
+      break;
+    }
+    default: {
+      shadow(); rect(L + iw * 0.1, 0, iw * 0.8, ih * 0.5, wood); topLight(L + iw * 0.1, 0, iw * 0.8, ih * 0.5);
+    }
+  }
+}
+
+/** A little pot base for plants. */
+function pot(g: CanvasRenderingContext2D, cx: number, base: number, iw: number, ih: number, wood: string, dark: string): void {
+  g.fillStyle = "rgba(0,0,0,0.2)"; g.beginPath(); g.ellipse(cx, base - 1, iw * 0.24, ih * 0.08, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = wood; g.beginPath(); g.moveTo(cx - iw * 0.2, base - ih * 0.2); g.lineTo(cx + iw * 0.2, base - ih * 0.2); g.lineTo(cx + iw * 0.14, base); g.lineTo(cx - iw * 0.14, base); g.closePath(); g.fill();
+  g.fillStyle = dark; g.fillRect(cx - iw * 0.2, base - ih * 0.22, iw * 0.4, ih * 0.05);
+}
+/** A small flame for candles/braziers. */
+function flameFx(g: CanvasRenderingContext2D, x: number, y: number, now: number): void {
+  const fl = 0.6 + 0.4 * Math.sin(now / 90 + x);
+  g.fillStyle = `rgba(255,180,70,${0.7 + 0.25 * fl})`; g.beginPath(); g.moveTo(x, y - 5 - 2 * fl); g.lineTo(x - 2, y); g.lineTo(x + 2, y); g.closePath(); g.fill();
+  g.fillStyle = "#fff2c8"; g.fillRect(x - 0.8, y - 2, 1.6, 2);
+}
+/** Multiply a hex colour toward light (>1) or dark (<1). */
+function shade(hex: string, k: number): string {
+  const h = hex.replace("#", "");
+  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const r = Math.min(255, Math.round(parseInt(n.slice(0, 2), 16) * k));
+  const gg = Math.min(255, Math.round(parseInt(n.slice(2, 4), 16) * k));
+  const b = Math.min(255, Math.round(parseInt(n.slice(4, 6), 16) * k));
+  return `rgb(${r},${gg},${b})`;
+}
+function withAlpha(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`;
 }
 
 function drawHotspot(

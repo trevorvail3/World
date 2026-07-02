@@ -14,8 +14,16 @@
  *   - Tap a piece already placed → move / rotate / store / upgrade it.
  */
 
-import type { Content, Intent, WorldState, ItemId, Vec2, FurnitureDef } from "../core/types.ts";
+import type { Content, Intent, WorldState, ItemId, Vec2, FurnitureDef, SurfaceDef } from "../core/types.ts";
 import type { ContextMenu, MenuItem } from "./contextMenu.ts";
+import { FURNITURE_CATEGORIES } from "../content/furniture.ts";
+
+/** Human labels for the catalogue tabs (categories + the two surface drawers). */
+const CATEGORY_LABEL: Record<string, string> = {
+  seating: "Seats", table: "Tables", bed: "Beds", storage: "Storage",
+  lighting: "Lights", plant: "Plants", display: "Décor", hall: "Wall art",
+  rug: "Rugs", kitchen: "Kitchen", forge: "Forge", alchemy: "Alchemy", workshop: "Workshop",
+};
 
 interface Deps {
   state: () => WorldState;
@@ -32,6 +40,8 @@ export class DecorateUI {
   private active = false;
   private placing: { id: string; rot: number } | null = null;
   private moving: { index: number; rot: number } | null = null;
+  /** Which catalogue tab is open: a furniture category, or "floors" / "walls". */
+  private tab: string = "seating";
 
   private btn: HTMLButtonElement;   // the "Decorate" entry, shown in-home
   private shelf: HTMLElement;       // the bottom drawer
@@ -151,33 +161,74 @@ export class DecorateUI {
   private renderShelf(): void {
     this.hint.classList.add("hidden");
     this.shelf.classList.remove("hidden");
-    const st = this.d.state().player;
-    const stored = Object.entries(st.home.storage).filter(([, n]) => (n ?? 0) > 0);
 
-    const storeRow = stored.length === 0
-      ? `<div class="deco-empty">Nothing built yet — craft a piece below.</div>`
-      : stored.map(([id, n]) => {
-          const f = this.d.content.furniture[id];
-          if (!f) return "";
-          return `<button class="deco-chip" data-place="${id}">${escapeHtml(f.name)}${(n ?? 0) > 1 ? ` ×${n}` : ""}</button>`;
-        }).join("");
+    // Tab bar: every furniture category present in content, then Floors + Walls.
+    const cats = FURNITURE_CATEGORIES.filter((c) => Object.values(this.d.content.furniture).some((f) => f.category === c));
+    const tabDefs: { id: string; label: string }[] = [
+      ...cats.map((c) => ({ id: c as string, label: CATEGORY_LABEL[c] ?? c })),
+      { id: "floors", label: "Floors" },
+      { id: "walls", label: "Walls" },
+    ];
+    if (!tabDefs.some((t) => t.id === this.tab)) this.tab = tabDefs[0]!.id;
+    const tabBar = tabDefs.map((t) =>
+      `<button class="deco-tab ${t.id === this.tab ? "on" : ""}" data-tab="${t.id}">${escapeHtml(t.label)}</button>`,
+    ).join("");
 
-    // Craftable: every furniture piece, grouped by category, cheapest first.
-    const craftable = Object.values(this.d.content.furniture).sort((a, b) => a.levelReq - b.levelReq || a.category.localeCompare(b.category));
-    const conLvl = st.skills.construction.level;
-    const craftRow = craftable.map((f) => {
-      const leveled = conLvl >= f.levelReq;
-      const ready = leveled && this.canAfford(f);
-      const cls = ready ? "ready" : leveled ? "" : "locked";
-      const cost = leveled ? this.costLabel(f) : `Con ${f.levelReq}`;
-      return `<button class="deco-craft ${cls}" data-craft="${f.id}" title="${escapeHtml(cost)}">${escapeHtml(f.name)}<span>${escapeHtml(cost)}</span></button>`;
-    }).join("");
+    const body = (this.tab === "floors" || this.tab === "walls")
+      ? this.surfaceBody(this.tab === "floors" ? "floor" : "wall")
+      : this.furnitureBody(this.tab);
 
     this.shelf.innerHTML = `
       <div class="deco-head">
         <span class="deco-title">Decorate your home</span>
         <button class="deco-done" type="button">Done</button>
       </div>
+      <div class="deco-tabs">${tabBar}</div>
+      ${body}`;
+
+    (this.shelf.querySelector(".deco-done") as HTMLElement).addEventListener("click", () => this.close());
+    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-tab]"))) {
+      b.addEventListener("click", () => { this.tab = b.dataset["tab"]!; this.renderShelf(); });
+    }
+    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-place]"))) {
+      b.addEventListener("click", () => { this.placing = { id: b.dataset["place"]!, rot: 0 }; this.moving = null; this.showHint(); });
+    }
+    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-craft]"))) {
+      b.addEventListener("click", () => { this.d.dispatch({ type: "CRAFT_FURNITURE", furnitureId: b.dataset["craft"]! }); this.renderShelf(); });
+    }
+    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-surface]"))) {
+      b.addEventListener("click", () => { this.d.dispatch({ type: "SET_SURFACE", surfaceId: b.dataset["surface"]! }); this.renderShelf(); });
+    }
+  }
+
+  /** Storage row + craft catalogue for one furniture category. */
+  private furnitureBody(category: string): string {
+    const st = this.d.state().player;
+    const conLvl = st.skills.construction.level;
+    const inCat = (f: FurnitureDef): boolean => f.category === category;
+
+    const stored = Object.entries(st.home.storage)
+      .filter(([id, n]) => (n ?? 0) > 0 && inCat(this.d.content.furniture[id] ?? ({} as FurnitureDef)));
+    const storeRow = stored.length === 0
+      ? `<div class="deco-empty">Build a piece below, then tap it to place.</div>`
+      : stored.map(([id, n]) => {
+          const f = this.d.content.furniture[id];
+          if (!f) return "";
+          return `<button class="deco-chip" data-place="${id}">${swatch(f)}${escapeHtml(f.name)}${(n ?? 0) > 1 ? ` ×${n}` : ""}</button>`;
+        }).join("");
+
+    const craftable = Object.values(this.d.content.furniture)
+      .filter(inCat)
+      .sort((a, b) => a.levelReq - b.levelReq || a.name.localeCompare(b.name));
+    const craftRow = craftable.map((f) => {
+      const leveled = conLvl >= f.levelReq;
+      const ready = leveled && this.canAfford(f);
+      const cls = ready ? "ready" : leveled ? "" : "locked";
+      const cost = leveled ? this.costLabel(f) : `Con ${f.levelReq}`;
+      return `<button class="deco-craft ${cls}" data-craft="${f.id}" title="${escapeHtml(cost)}">${swatch(f)}<span class="deco-craft-name">${escapeHtml(f.name)}</span><span class="deco-craft-cost">${escapeHtml(cost)}</span></button>`;
+    }).join("");
+
+    return `
       <div class="deco-section">
         <div class="deco-label">Your furniture — tap to place</div>
         <div class="deco-row deco-storage">${storeRow}</div>
@@ -186,14 +237,28 @@ export class DecorateUI {
         <div class="deco-label">Build from Construction materials</div>
         <div class="deco-row deco-catalogue">${craftRow}</div>
       </div>`;
+  }
 
-    (this.shelf.querySelector(".deco-done") as HTMLElement).addEventListener("click", () => this.close());
-    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-place]"))) {
-      b.addEventListener("click", () => { this.placing = { id: b.dataset["place"]!, rot: 0 }; this.moving = null; this.showHint(); });
-    }
-    for (const b of Array.from(this.shelf.querySelectorAll<HTMLElement>("[data-craft]"))) {
-      b.addEventListener("click", () => { this.d.dispatch({ type: "CRAFT_FURNITURE", furnitureId: b.dataset["craft"]! }); this.renderShelf(); });
-    }
+  /** The Floors / Walls drawer: pick a surface to recolour the whole room. */
+  private surfaceBody(kind: "floor" | "wall"): string {
+    const st = this.d.state().player;
+    const conLvl = st.skills.construction.level;
+    const current = kind === "floor" ? st.home.floor : st.home.wall;
+    const list = Object.values(this.d.content.surfaces)
+      .filter((s) => s.kind === kind)
+      .sort((a, b) => (a.levelReq ?? 0) - (b.levelReq ?? 0) || a.name.localeCompare(b.name));
+    const chips = list.map((s) => {
+      const locked = (s.levelReq ?? 0) > conLvl;
+      const on = s.id === current || (!current && s.id.endsWith(kind === "floor" ? "_plank" : "_stone"));
+      const cls = `${locked ? "locked" : ""} ${on ? "on" : ""}`.trim();
+      const req = locked ? `<span class="deco-craft-cost">Con ${s.levelReq}</span>` : "";
+      return `<button class="deco-surface ${cls}" data-surface="${s.id}" title="${escapeHtml(s.name)}">${surfSwatch(s)}<span class="deco-craft-name">${escapeHtml(s.name)}</span>${req}</button>`;
+    }).join("");
+    return `
+      <div class="deco-section">
+        <div class="deco-label">${kind === "floor" ? "Floor" : "Wall"} — tap to lay it through the whole home</div>
+        <div class="deco-row deco-surfaces">${chips}</div>
+      </div>`;
   }
 
   private showHint(): void {
@@ -231,4 +296,18 @@ export class DecorateUI {
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+/** A little colour dot for a furniture piece, so recolours are told apart. */
+function swatch(f: FurnitureDef): string {
+  const c = f.render?.cloth ?? f.render?.wood ?? "#8a6a44";
+  return `<i class="deco-sw" style="background:${cssColor(c)}"></i>`;
+}
+/** A colour dot for a surface, tinted to its base colour. */
+function surfSwatch(s: SurfaceDef): string {
+  return `<i class="deco-sw" style="background:${cssColor(s.color)};border-color:${cssColor(s.seam ?? s.color)}"></i>`;
+}
+/** Guard against anything but a hex/rgb string reaching inline style. */
+function cssColor(c: string): string {
+  return /^#[0-9a-fA-F]{3,8}$|^rgb/.test(c) ? c : "#8a6a44";
 }

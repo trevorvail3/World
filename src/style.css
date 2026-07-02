@@ -3832,11 +3832,37 @@ button.inv-slot {
   font-family: "EB Garamond", serif; font-size: 13.5px; color: #cdbf9a;
   background: #221a12; border: 1px solid #3a2e1e;
 }
-.deco-craft span { font-size: 11px; color: #8b7a5c; }
+.deco-craft-cost { font-size: 11px; color: #8b7a5c; }
+.deco-craft-name { font-size: 13.5px; }
 .deco-craft.ready { border-color: #6f9a54; color: #e6dcc2; }
-.deco-craft.ready span { color: #9dbe7d; }
+.deco-craft.ready .deco-craft-cost { color: #9dbe7d; }
 .deco-craft.locked { opacity: 0.5; cursor: default; }
 .deco-craft:not(.locked):hover { border-color: #c8a45a; }
+
+/* Catalogue tabs — categories + Floors / Walls. */
+.deco-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.deco-tab {
+  padding: 5px 11px; border-radius: 14px; cursor: pointer;
+  font-family: "EB Garamond", serif; font-size: 12.5px; color: #b3a382;
+  background: #241b12; border: 1px solid #3a2e1e;
+}
+.deco-tab:hover { border-color: #7a5c38; color: #e6dcc2; }
+.deco-tab.on { background: linear-gradient(180deg, #6b4a2c, #4a2f1a); border-color: #c8a45a; color: #f2e2b8; }
+/* Colour swatch on chips/craft/surface buttons so recolours are told apart. */
+.deco-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; border: 1px solid rgba(0,0,0,0.4); }
+.deco-craft .deco-sw, .deco-surface .deco-sw { margin-right: 5px; }
+/* The catalogue rows can be long — keep the shelf tidy with an inner scroll. */
+.deco-catalogue, .deco-surfaces { max-height: 26vh; overflow-y: auto; align-content: flex-start; }
+.deco-surface {
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 12px; border-radius: 6px; cursor: pointer; min-width: 132px;
+  font-family: "EB Garamond", serif; font-size: 13.5px; color: #cdbf9a;
+  background: #221a12; border: 1px solid #3a2e1e;
+}
+.deco-surface:not(.locked):hover { border-color: #c8a45a; }
+.deco-surface.locked { opacity: 0.5; cursor: default; }
+.deco-surface.on { border-color: #e8c45a; color: #f2e2b8; box-shadow: 0 0 0 1px rgba(232,196,90,0.4) inset; }
+.deco-surface .deco-craft-cost { margin-left: auto; }
 
 .decorate-hint {
   position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 62;

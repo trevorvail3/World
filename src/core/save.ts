@@ -100,7 +100,7 @@ export interface SavedProgress {
   /** Player housing: claimed plot ids + built furniture (hotspot id -> piece id). */
   housing: { plots: string[]; furniture: Record<string, string> };
   /** Free-placement home: unplaced storage + placed pieces (positions/rotations). */
-  home?: { storage: Record<string, number>; placed: { item: string; x: number; y: number; rot: number }[] };
+  home?: { storage: Record<string, number>; placed: { item: string; x: number; y: number; rot: number }[]; wall?: string; floor?: string };
   hp: number;
   /** The pier's top-five catches by weight (the records board). */
   fishingRecords?: FishRecord[];
@@ -132,6 +132,8 @@ export function serializePlayer(state: WorldState): SavedProgress {
     home: {
       storage: { ...player.home.storage },
       placed: player.home.placed.map((p) => ({ item: p.item, x: p.x, y: p.y, rot: p.rot })),
+      ...(player.home.wall ? { wall: player.home.wall } : {}),
+      ...(player.home.floor ? { floor: player.home.floor } : {}),
     },
     spawn: { x: Math.round(player.spawn.x), y: Math.round(player.spawn.y) },
     version: SAVE_VERSION,
@@ -512,6 +514,9 @@ export function hydratePlayer(
         }
       }
     }
+    const wall = savedHome["wall"], floor = savedHome["floor"];
+    if (typeof wall === "string" && wall in content.surfaces) player.home.wall = wall;
+    if (typeof floor === "string" && floor in content.surfaces) player.home.floor = floor;
   } else if (isRecord(savedHousing) && isRecord(savedHousing["furniture"])) {
     // One-time migration from the fixed-slot era.
     const furn = savedHousing["furniture"] as Record<string, unknown>;

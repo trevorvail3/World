@@ -1806,6 +1806,10 @@ export function applyIntent(
       upgradeFurniture(state, content, intent.index, events);
       break;
     }
+    case "SET_SURFACE": {
+      setSurface(state, content, intent.surfaceId, events);
+      break;
+    }
   }
   return events;
 }
@@ -2822,6 +2826,24 @@ function upgradeFurniture(state: WorldState, content: Content, index: number, ev
   if (next.bed) player.spawn = { x: p.x, y: p.y };
   refreshHomeStanding(player, content);
   events.push({ type: "LOG", message: `You upgrade the ${cur.name} into a ${next.name}.` });
+}
+
+/** SET_SURFACE: recolour the home's floor or walls to a chosen surface. */
+function setSurface(state: WorldState, content: Content, surfaceId: string, events: WorldEvent[]): void {
+  const { player } = state;
+  if (homeFloorSet(state).size === 0) {
+    events.push({ type: "LOG", message: "You can only redecorate inside your own home." });
+    return;
+  }
+  const s = content.surfaces[surfaceId];
+  if (!s) return;
+  if (s.levelReq && skillLvl(player, "construction") < s.levelReq) {
+    events.push({ type: "LOG", message: `You need Construction level ${s.levelReq} to lay the ${s.name}.` });
+    return;
+  }
+  if (s.kind === "floor") player.home.floor = surfaceId;
+  else player.home.wall = surfaceId;
+  events.push({ type: "LOG", message: `You lay the ${s.name}.` });
 }
 
 /**

@@ -1842,6 +1842,12 @@ export interface UpgradeFurnitureIntent {
   index: number;
 }
 
+/** "Set my home's wallpaper / flooring to this surface style." */
+export interface SetSurfaceIntent {
+  type: "SET_SURFACE";
+  surfaceId: string;
+}
+
 /** "Pick up the loot lying on this tile" (honoured when the player is on/next to it). */
 export interface PickupIntent {
   type: "PICKUP";
@@ -1937,6 +1943,7 @@ export type Intent =
   | MoveFurnitureIntent
   | StoreFurnitureIntent
   | UpgradeFurnitureIntent
+  | SetSurfaceIntent
   | UseFurnitureIntent
   | BuildRoomIntent
   | PickupIntent
@@ -2299,6 +2306,46 @@ export interface FurnitureDef {
   /** Tile footprint [w, h] at rotation 0 (default [1, 1]). Free-placement homes
    *  fit the piece to the floor and block those tiles (rugs excepted). */
   footprint?: readonly [number, number];
+  /** How to draw the piece (data-driven, scaled to the footprint). When absent,
+   *  the renderer falls back to the legacy per-category art (the stations). */
+  render?: FurnitureRender;
+  /** A wall-hung piece (paintings, mirrors, banners): drawn on the wall behind,
+   *  and it doesn't block the floor you stand on. */
+  wall?: boolean;
+  /** Bought for gold from the furnishings vendor rather than crafted (cosmetic). */
+  cosmetic?: boolean;
+}
+
+/** A parameterised furniture look: a shape archetype plus its palette, drawn at
+ *  the piece's footprint size so a bed reads bigger than a stool. */
+export interface FurnitureRender {
+  shape: string;
+  /** Primary body / wood colour. */
+  wood?: string;
+  /** Trim / metal / accent colour. */
+  accent?: string;
+  /** Fabric colour (beds, sofas, rugs, cushions). */
+  cloth?: string;
+  /** If it lights the room, the glow colour. */
+  glow?: string;
+}
+
+/** A room surface the player can swap — a wallpaper or a flooring. */
+export interface SurfaceDef {
+  id: string;
+  kind: "wall" | "floor";
+  name: string;
+  /** Base colour. */
+  color: string;
+  /** A second colour for a plank/tile/pattern seam. */
+  seam?: string;
+  /** How the seam pattern draws: wood boards, tiled squares, checkerboard, or
+   *  panelled wall. Defaults to boards for floors, panels for walls. */
+  style?: "board" | "tile" | "checker" | "panel";
+  /** Construction level to unlock (0 = always available). */
+  levelReq?: number;
+  /** Bought for gold from the vendor instead of unlocked by level. */
+  cosmetic?: boolean;
 }
 
 /** One furniture piece placed in a free-placement home: its id, the top-left
@@ -2317,6 +2364,10 @@ export interface PlacedFurniture {
 export interface HomeState {
   storage: Record<string, number>;
   placed: PlacedFurniture[];
+  /** Chosen wall surface id (a SurfaceDef of kind "wall"), or undefined = default. */
+  wall?: string;
+  /** Chosen floor surface id (a SurfaceDef of kind "floor"). */
+  floor?: string;
 }
 
 /** A species catchable from the deep-water pier minigame. Each landed fish rolls
@@ -2430,6 +2481,8 @@ export interface Content {
   crops: Record<string, CropDef>;
   /** Buildable housing furniture, keyed by furniture id. */
   furniture: Record<string, FurnitureDef>;
+  /** Home wall + floor surface styles, keyed by surface id. */
+  surfaces: Record<string, SurfaceDef>;
   /** Bounty task-givers (data). */
   bountyGuides: BountyGuide[];
   /** Bounty task templates, keyed by zone (data). */
