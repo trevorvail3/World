@@ -1386,7 +1386,8 @@ export class Hud {
     // everyone starts with a small pool, and it never regenerates in the field,
     // only at a shrine or altar. Keeping it visible even at 0 is the point: you
     // need to see when it's empty.
-    const graceMax = 9 + Math.max(1, player.skills.faith.level);
+    // Mirror graceMax() in worldCore: a 30-Grace base, +2 per Devotion level.
+    const graceMax = 28 + 2 * Math.max(1, player.skills.faith.level);
     const gpct = Math.max(0, Math.min(1, player.grace / graceMax));
     this.graceFill.style.width = `${gpct * 100}%`;
     this.graceBar.title = `Grace: ${Math.floor(player.grace)} / ${graceMax} — the Devotion spell fuel. Refill at a shrine or altar.`;

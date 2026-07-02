@@ -100,14 +100,18 @@ body {
 .hud-vitals {
   top: 138px; /* below the minimap (top 10 + 116 canvas + frame) */
   right: 10px;
-  width: auto; /* sizes to the orb + full-width bars */
+  /* Match the minimap panel exactly: same 3px horizontal padding and 1px border,
+     so this panel's outer box lines up edge-for-edge with the minimap above it. */
+  padding: 6px 3px;
+  width: auto;
 }
-/* Run orb beside the two bars (HP over Grace). The bars are fixed to the
-   minimap's canvas width (116px) and right-aligned under it, so they line up
-   with the minimap; the orb tucks to their left. No numbers or icons on the
-   bars — values live in the hover tooltips. */
-.vitals-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; justify-content: flex-end; }
-.vitals-bars { flex: 0 0 116px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* The whole vitals row spans exactly the minimap's canvas width (116px): the run
+   orb sits flush with the minimap's LEFT edge, the two stacked bars (HP over
+   Grace) fill the rest to its RIGHT edge — so orb and bars line up under the
+   minimap on both sides. No numbers or icons on the bars — values live in the
+   hover tooltips. */
+.vitals-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; width: 116px; }
+.vitals-bars { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .vitals-bars .hp-bar { width: 100%; margin-top: 0; }
 
 /* --- Buffs strip (top-left; the corner is otherwise free now) --- */
@@ -1974,38 +1978,68 @@ button.inv-slot {
   border-bottom: 1px solid rgba(74, 61, 44, 0.4);
   padding-bottom: 3px;
 }
-.shop-wares { display: flex; flex-direction: column; gap: 4px; }
-.shop-row {
+/* Buy tab: a card grid matching the Sell tab and the game's other item panels. */
+.shop-wares-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  padding: 2px;
+}
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 5px 6px;
+  background: rgba(28, 23, 16, 0.55);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.12s, background 0.12s;
+}
+.shop-card:hover { border-color: var(--ember); background: rgba(210, 116, 44, 0.1); }
+.shop-card.disabled { opacity: 0.55; cursor: default; }
+.shop-card.disabled:hover { border-color: var(--panel-edge); background: rgba(28, 23, 16, 0.55); }
+.shop-card-icon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: block;
+}
+.shop-card-icon svg { width: 100%; height: 100%; }
+.shop-card-bundle {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  font-size: 10px;
+  color: var(--ink);
+  background: rgba(12, 10, 7, 0.85);
+  border-radius: 4px;
+  padding: 0 3px;
+  line-height: 1.3;
+}
+.shop-card-name {
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--ink);
+  min-height: 26px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 4px;
 }
-.shop-swatch {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-}
-.shop-row-name { flex: 1; font-size: 13px; color: var(--ink); }
-.shop-stock { margin-left: 6px; font-size: 11px; color: #8aa06a; }
-.shop-stock.out { color: #c0603a; }
-.shop-buy {
+.shop-card-price {
   font-family: "Cinzel", serif;
   font-size: 12px;
   color: var(--gold);
-  background: rgba(210, 116, 44, 0.12);
+  background: rgba(210, 116, 44, 0.14);
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
-  padding: 3px 10px;
-  cursor: pointer;
+  padding: 2px 9px;
   white-space: nowrap;
 }
-.shop-buy:hover { border-color: var(--ember); color: #f0c187; }
-.shop-buy.disabled {
-  opacity: 0.4;
-  cursor: default;
-  pointer-events: none;
-}
+.shop-card-price.short { color: #c0603a; background: rgba(192, 96, 58, 0.12); }
+.shop-card-stock { font-size: 10px; color: #8aa06a; }
+.shop-card-stock.out { color: #c0603a; }
 .inv-slot.unsellable { opacity: 0.5; cursor: default; }
 
 /* --- Bounty board --- */

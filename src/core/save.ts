@@ -264,8 +264,9 @@ export function hydratePlayer(
   if (finiteNum(savedEnergy)) player.energy = Math.max(0, Math.min(100, savedEnergy));
   player.winded = player.energy <= 0;
   // Faith Grace: clamp to the current pool; pre-Faith saves (no grace) start full.
+  // Mirror graceMax() in worldCore: a 30-Grace base, +2 per Devotion level.
   const savedGrace = raw["grace"];
-  const gmax = Math.max(10, player.skills.faith.level);
+  const gmax = 28 + 2 * Math.max(1, player.skills.faith.level);
   player.grace = finiteNum(savedGrace) ? Math.max(0, Math.min(gmax, savedGrace)) : gmax;
   const ac = raw["autocastSpell"];
   player.autocastSpell = typeof ac === "string" ? ac : null;

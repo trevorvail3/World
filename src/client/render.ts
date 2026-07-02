@@ -3060,32 +3060,82 @@ function drawSkillPet(
 
 /** A town fountain: a round stone basin with a bright, jetting plume. */
 function drawFountain(g: CanvasRenderingContext2D, cx: number, cy: number, now: number): void {
-  shadow(g, cx, cy + 11, 15, 5);
-  // Outer basin (stone ring).
-  g.fillStyle = "#6b6157";
-  g.beginPath(); g.ellipse(cx, cy + 3, 16, 11, 0, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "#564d44";
-  g.beginPath(); g.ellipse(cx, cy + 3, 16, 11, 0, 0, Math.PI * 2); g.stroke();
-  // Water in the basin (animated shimmer).
-  const sh = 0.5 + 0.5 * Math.sin(now / 400);
+  // The Ironvale Fountain — the city's centrepiece, ~3× the linear size of an
+  // ordinary prop (a grand two-tier basin on a fluted column, cascading jets).
+  const sh = 0.5 + 0.5 * Math.sin(now / 400);   // slow basin shimmer
+  const sh2 = 0.5 + 0.5 * Math.sin(now / 260 + 1); // faster jet flutter
+
+  // A broad ground shadow anchoring the whole structure.
+  g.fillStyle = "rgba(8,8,12,0.28)";
+  g.beginPath(); g.ellipse(cx, cy + 30, 54, 17, 0, 0, Math.PI * 2); g.fill();
+
+  // --- Lower basin: a wide stone ring with a moulded rim. ---
+  g.fillStyle = "#5b524a";
+  g.beginPath(); g.ellipse(cx, cy + 20, 52, 30, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#6f655a"; // lit outer rim
+  g.beginPath(); g.ellipse(cx, cy + 17, 52, 30, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#4c443c"; // inner well shadow
+  g.beginPath(); g.ellipse(cx, cy + 19, 44, 24, 0, 0, Math.PI * 2); g.fill();
+  // Lower water.
   g.fillStyle = "#2f5a78";
-  g.beginPath(); g.ellipse(cx, cy + 3, 12.5, 8, 0, 0, Math.PI * 2); g.fill();
-  g.fillStyle = `rgba(120,180,210,${0.35 + 0.25 * sh})`;
-  g.beginPath(); g.ellipse(cx - 2, cy + 1, 7, 4, 0, 0, Math.PI * 2); g.fill();
-  // Central pedestal.
-  g.fillStyle = "#5a5149";
-  g.fillRect(cx - 3, cy - 8, 6, 12);
+  g.beginPath(); g.ellipse(cx, cy + 19, 41, 22, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(120,180,210,${0.3 + 0.22 * sh})`;
+  g.beginPath(); g.ellipse(cx - 8, cy + 15, 24, 11, 0, 0, Math.PI * 2); g.fill();
+  // Concentric ripples where the falling water lands.
+  g.strokeStyle = `rgba(200,230,245,${0.16 + 0.12 * sh})`; g.lineWidth = 1.6;
+  for (let i = 0; i < 3; i++) {
+    const rr = 8 + ((now / 700 + i * 0.6) % 1) * 22;
+    g.beginPath(); g.ellipse(cx, cy + 19, rr, rr * 0.55, 0, 0, Math.PI * 2); g.stroke();
+  }
+
+  // --- Fluted central column rising from the lower basin. ---
+  g.fillStyle = "#544b43";
+  g.fillRect(cx - 9, cy - 20, 18, 40);
+  g.fillStyle = "#665c52"; // lit left flute
+  g.fillRect(cx - 9, cy - 20, 5, 40);
+  g.fillStyle = "#453d36"; // shaded right flute
+  g.fillRect(cx + 5, cy - 20, 4, 40);
+  // A moulded collar where the column meets the upper basin.
   g.fillStyle = "#6f655a";
-  g.fillRect(cx - 4, cy - 9, 8, 2);
-  // The jet + falling droplets.
-  const jet = 6 + 3 * sh;
-  g.strokeStyle = "rgba(170,210,235,0.7)"; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(cx, cy - 8); g.lineTo(cx, cy - 8 - jet); g.stroke();
-  g.fillStyle = "rgba(190,225,245,0.8)";
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + now / 500;
+  g.fillRect(cx - 12, cy - 22, 24, 5);
+
+  // --- Upper basin: a smaller raised bowl the top jet fills and overflows. ---
+  g.fillStyle = "#5b524a";
+  g.beginPath(); g.ellipse(cx, cy - 21, 26, 13, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#6f655a";
+  g.beginPath(); g.ellipse(cx, cy - 23, 26, 13, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#2f5a78";
+  g.beginPath(); g.ellipse(cx, cy - 23, 20, 9, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(140,195,222,${0.35 + 0.25 * sh})`;
+  g.beginPath(); g.ellipse(cx - 4, cy - 25, 11, 4.5, 0, 0, Math.PI * 2); g.fill();
+
+  // A short finial pedestal on the upper basin, and the central jet.
+  g.fillStyle = "#544b43";
+  g.fillRect(cx - 4, cy - 40, 8, 18);
+  g.fillStyle = "#665c52";
+  g.fillRect(cx - 4, cy - 40, 3, 18);
+  const jet = 20 + 10 * sh2;
+  const jg = g.createLinearGradient(cx, cy - 40 - jet, cx, cy - 40);
+  jg.addColorStop(0, "rgba(210,235,250,0)");
+  jg.addColorStop(1, `rgba(190,225,245,${0.55 + 0.2 * sh2})`);
+  g.strokeStyle = jg; g.lineWidth = 3.4;
+  g.beginPath(); g.moveTo(cx, cy - 40); g.lineTo(cx, cy - 40 - jet); g.stroke();
+
+  // Arcing streams spilling off the upper basin down into the lower one.
+  g.strokeStyle = `rgba(190,225,245,${0.42 + 0.18 * sh2})`; g.lineWidth = 2;
+  for (const s of [-1, 1]) {
     g.beginPath();
-    g.arc(cx + Math.cos(a) * 7, cy - 6 + Math.abs(Math.sin(a)) * 5, 1.4, 0, Math.PI * 2);
+    g.moveTo(cx + s * 18, cy - 23);
+    g.quadraticCurveTo(cx + s * 30, cy - 6, cx + s * 26, cy + 12);
+    g.stroke();
+  }
+  // Falling droplets from the top jet + the arcs.
+  g.fillStyle = `rgba(210,235,250,0.85)`;
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + now / 480;
+    const rad = 10 + (i % 3) * 5;
+    g.beginPath();
+    g.arc(cx + Math.cos(a) * rad, cy - 34 + Math.abs(Math.sin(a)) * 12, 1.6, 0, Math.PI * 2);
     g.fill();
   }
 }

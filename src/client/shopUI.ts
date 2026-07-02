@@ -120,8 +120,15 @@ export class ShopUI {
 
   // --- Buy tab: the keeper's wares. ------------------------------------------
   private renderBuy(player: WorldState["player"]): void {
-    const wares = document.createElement("div");
-    wares.className = "shop-wares";
+    const hint = document.createElement("div");
+    hint.className = "shop-sell-hint";
+    hint.textContent = "Tap a ware to buy it · hold to inspect it first.";
+    this.contentEl.appendChild(hint);
+
+    // A card grid matching the Sell tab and the rest of the game's item panels:
+    // an icon tile with a bundle badge, the name, a price pill and a stock tag.
+    const grid = document.createElement("div");
+    grid.className = "shop-wares-grid";
     for (const line of this.shop!.stock) {
       const def = this.content.items[line.item];
       if (!def) continue;
@@ -139,31 +146,32 @@ export class ShopUI {
         ? `${payQty} ${this.content.items[payItem]?.name ?? "Mark"}${payQty === 1 ? "" : "s"}`
         : `${line.price.toLocaleString()}g`;
       const afford = (payItem ? have >= payQty : player.gold >= line.price) && inStock;
-      const row = document.createElement("div");
-      row.className = "shop-row";
-      const bundle = line.qty > 1 ? ` ×${line.qty}` : "";
+      const bundle = line.qty > 1 ? `<span class="shop-card-bundle">×${line.qty}</span>` : "";
       const stockTag = stocked
-        ? `<span class="shop-stock${inStock ? "" : " out"}">${inStock ? `${left} left` : "Sold out"}</span>`
-        : "";
-      row.innerHTML = `
-        <span class="shop-swatch">${itemIconSVG(def)}</span>
-        <span class="shop-row-name">${def.name}${bundle}${stockTag}</span>
-        <button class="shop-buy ${afford ? "" : "disabled"}" type="button">${costLabel}</button>`;
-      const btn = row.querySelector(".shop-buy") as HTMLElement;
-      btn.title = inStock ? def.description : "Out of stock — the keeper will restock soon.";
-      // Long-press the item (not the Buy button) to inspect what you're buying.
+        ? `<span class="shop-card-stock${inStock ? "" : " out"}">${inStock ? `${left} left` : "Sold out"}</span>`
+        : `<span class="shop-card-stock">In stock</span>`;
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "shop-card" + (afford ? "" : " disabled");
+      card.title = inStock ? def.description : "Out of stock — the keeper will restock soon.";
+      card.innerHTML = `
+        <span class="shop-card-icon">${itemIconSVG(def)}${bundle}</span>
+        <span class="shop-card-name">${def.name}</span>
+        <span class="shop-card-price${afford ? "" : " short"}">${costLabel}</span>
+        ${stockTag}`;
+      // Tap = buy (when affordable & in stock); hold = inspect what you're buying.
       const inspect = (): void => this.showInspect(line.item, line.qty, "buy", line.price);
-      this.onLongPress(row.querySelector(".shop-swatch") as HTMLElement, inspect);
-      this.onLongPress(row.querySelector(".shop-row-name") as HTMLElement, inspect);
-      if (afford) {
-        btn.addEventListener("pointerdown", (e) => {
-          e.stopPropagation();
-          this.dispatchAndRender({ type: "BUY", shop: this.shop!.id, item: line.item });
-        });
-      }
-      wares.appendChild(row);
+      this.attachPress(
+        card,
+        inspect,
+        () => {
+          if (afford) this.dispatchAndRender({ type: "BUY", shop: this.shop!.id, item: line.item });
+          else inspect();
+        },
+      );
+      grid.appendChild(card);
     }
-    this.contentEl.appendChild(wares);
+    this.contentEl.appendChild(grid);
   }
 
   // --- Sell tab: your pack. Tap opens a quantity picker; long-hold inspects. --
@@ -305,24 +313,6 @@ export class ShopUI {
   }
 
   private hideInfo(): void { this.infoEl.classList.add("hidden"); }
-
-  /** Fire `onHold` after a long press on `el` (cancelled by release or a drag). */
-  private onLongPress(el: HTMLElement, onHold: () => void): void {
-    let sx = 0, sy = 0;
-    const cancel = (): void => { if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = 0; } };
-    el.addEventListener("pointerdown", (e) => {
-      sx = e.clientX; sy = e.clientY;
-      cancel();
-      this.pressTimer = window.setTimeout(() => { this.pressTimer = 0; onHold(); }, 380);
-    });
-    el.addEventListener("pointermove", (e) => {
-      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) cancel();
-    });
-    el.addEventListener("pointerup", cancel);
-    el.addEventListener("pointercancel", cancel);
-    el.addEventListener("pointerleave", cancel);
-    el.addEventListener("contextmenu", (e) => e.preventDefault());
-  }
 
   /** Long-press → onLong; a clean tap (no hold, no drag) → onTap. Right-click
    *  fires the inspect at once on desktop. */

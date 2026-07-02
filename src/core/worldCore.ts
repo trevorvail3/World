@@ -504,7 +504,7 @@ export function createWorld(
     combatStyle: "vigour",
     running: true,
     energy: ENERGY_MAX,
-    grace: 10, // start with a small Grace pool (floored at 10); grows with Faith
+    grace: 30, // start with a full 30-Grace pool (see graceMax); grows with Faith
     autocastSpell: null,
     winded: false,
     agilityLap: null,
@@ -4428,9 +4428,11 @@ function isMagic(player: Player, content: Content): boolean {
 /** The player's Grace ceiling — their Faith level, floored at 10 so a new caster
  *  can get a few casts off before Faith is trained. */
 function graceMax(player: Player): number {
-  // Start with 10 Grace (like Vitality's opening HP); each Devotion level adds
-  // one more — level 2 = 11, level 50 = 59, and so on.
-  return 9 + Math.max(1, skillLvl(player, "faith"));
+  // A real combat resource: start with a 30-Grace pool so Devotion is a style you
+  // can fight with (≈10 Sparks / 5 Emberbolts before you drop to the free bolt),
+  // not a three-cast novelty. Each Devotion level adds two more, so the pool keeps
+  // pace as the spells get costlier — level 50 = 128, level 99 = 226.
+  return 28 + 2 * Math.max(1, skillLvl(player, "faith"));
 }
 
 /** Magic accuracy: Faith + staff acc + any magic-accuracy buff. */
