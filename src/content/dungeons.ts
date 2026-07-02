@@ -67,6 +67,39 @@ const BARROW_ROWS = [
   "                                                                        ", // 21
 ];
 
+
+// ============================================================================
+// SITE 2 — THE SPINE VAULT (rebuilt as a worked-stone vault crawl)
+// The mountain vault the old north-folk sealed from the inside, high in the
+// northern pass. A pillared gallery with four counting-cells (throw the
+// weigh-locks in the order the tally-stones recite), then the warded stair,
+// a sentinel landing whose keeper carries the Wardens' Key, and the treasury
+// where the Vaultwright still tends the seals.
+const VAULT_ROWS = [
+  "                                                                  ", // 0
+  "                                                                  ", // 1
+  "                ...         ...                                   ", // 2
+  "                ...         ...                                   ", // 3
+  "                ...         ...        ..............             ", // 4
+  "                 .           .         ..............             ", // 5
+  "               ....................    ..          ..             ", // 6
+  "               ....................    ..          ..     ...     ", // 7
+  "  ........     ....................    ..          ..     ...     ", // 8
+  "  ........     ....#.....#.....#...    ..          ..     ...     ", // 9
+  "  .................................    ..          ..      .      ", // 10
+  "  .......................................          ..     ....... ", // 11
+  "  ........     ....#.....#.....#...                ..     ....... ", // 12
+  "  ........     ....................          ..........   ....... ", // 13
+  "               ....................          ..........   ....... ", // 14
+  "               ....................          .................... ", // 15
+  "                 .           .               ..........   ....... ", // 16
+  "                ...         ...              ..........   ....... ", // 17
+  "                ...         ...                           ....... ", // 18
+  "                ...         ...                           ....... ", // 19
+  "                                                                  ", // 20
+  "                                                                  ", // 21
+];
+
 export const DUNGEON_LAYOUTS: DungeonLayout[] = [
   {
     id: "hollow_barrows",
@@ -76,5 +109,14 @@ export const DUNGEON_LAYOUTS: DungeonLayout[] = [
     rows: BARROW_ROWS,
     entry: { x: 5, y: 4 },
     exit: { x: 3, y: 3 },
+  },
+  {
+    id: "spine_vault",
+    name: "The Spine Vault",
+    x0: 84,
+    row0: 1,
+    rows: VAULT_ROWS,
+    entry: { x: 4, y: 10 },
+    exit: { x: 3, y: 9 },
   },
 ];

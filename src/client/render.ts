@@ -23,7 +23,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
-import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, homeLayout, HOMES, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
+import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, DUNGEON_TOP, homeLayout, HOMES, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
@@ -1262,6 +1262,8 @@ export function drawWorld(
   // A backyard paddock is an instance in the interior band, but reads as an
   // OUTDOOR grass yard — the homes sit left of x55, the yards right of it.
   const backyard = !!(region && region.y0 === INTERIOR_TOP && region.x0 >= 55);
+  // A dungeon site: an instance carved in the band below the interiors.
+  const dungeon = !!(region && region.y0 >= DUNGEON_TOP - 1);
 
   g.fillStyle = backyard ? "#182415" : region ? "#07070a" : "#13100d";
   g.fillRect(0, 0, w, h);
@@ -1536,6 +1538,10 @@ export function drawWorld(
   if (backyard && region) {
     drawBackyard(g, state, content, region, cam, now);
   }
+  // Dungeon halls: sparse wall-torches so the crawls read by their own firelight.
+  if (dungeon && region) {
+    drawDungeonSconces(g, state, region, cam, now, lights);
+  }
 
   // --- Other players (ghosts): translucent snapshots from the shared world,
   //     drawn under the player and culled to the current view + instance. ---
@@ -1633,7 +1639,11 @@ export function drawWorld(
     }
     // A warm light the player carries — added after the bloom pass so it only
     // punches a night pool (no daytime halo), via drawDaylight's light list.
-    if (!region) playerGlow = [plCx, plCy - 4];
+    // UNIQUE — the Delver's Lantern extends the carried light into the deep
+    // places: inside a dungeon its bearer walks in their own pool of light.
+    const lantern = state.player.equipment.offhand === "delvers_lantern";
+    if (!region || (dungeon && lantern)) playerGlow = [plCx, plCy - 4];
+    if (dungeon && lantern) lights.push([plCx, plCy - 4]);
   }
 
   // --- Roof canopies (OSRS-style roof-lift): draw each enterable building's
@@ -2848,6 +2858,40 @@ function drawBackyard(
     g.fillStyle = "rgba(0,0,0,0.4)"; g.font = "italic 11px 'EB Garamond', serif"; g.textAlign = "center";
     g.fillText("A quiet paddock — find a pet, and it will roam here.", hx, hy);
     g.textAlign = "left";
+  }
+}
+
+/**
+ * Sparse wall-torches through a dungeon site: deterministic (hash-picked) cave
+ * wall tiles that face open floor get a bracketed flame, so the halls read by
+ * their own firelight — brighter in rooms, long shadows in the corridors.
+ */
+function drawDungeonSconces(
+  g: CanvasRenderingContext2D,
+  state: WorldState,
+  region: { x0: number; y0: number; x1: number; y1: number },
+  cam: Camera,
+  now: number,
+  lights: Array<[number, number]>,
+): void {
+  const { map } = state;
+  const at = (x: number, y: number) => map.tiles[y * map.width + x];
+  for (let ty = region.y0; ty <= region.y1; ty++) {
+    for (let tx = region.x0; tx <= region.x1; tx++) {
+      if (at(tx, ty) !== "cave_wall") continue;
+      const below = at(tx, ty + 1);
+      if (below !== "cave" && below !== "dirt") continue; // must face open floor
+      if (hash(tx * 13, ty * 7) > 0.16) continue;         // sparse, deterministic
+      const x = tx * TILE - cam.x + TILE / 2;
+      const y = ty * TILE - cam.y + TILE - 6;
+      if (x < -TILE || y < -TILE || x > g.canvas.width + TILE || y > g.canvas.height + TILE) continue;
+      const fl = 0.6 + 0.4 * Math.sin(now / 190 + tx * 1.7 + ty);
+      g.fillStyle = "#3b3e45"; g.fillRect(x - 1.5, y - 2, 3, 8); // iron bracket
+      g.fillStyle = `rgba(255,170,80,${0.6 + 0.3 * fl})`;
+      g.beginPath(); g.moveTo(x, y - 8 - 3 * fl); g.lineTo(x - 3, y - 1); g.lineTo(x + 3, y - 1); g.closePath(); g.fill();
+      g.fillStyle = "#ffe9b8"; g.fillRect(x - 1, y - 4, 2, 3);
+      lights.push([x, y - 4]);
+    }
   }
 }
 

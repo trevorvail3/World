@@ -351,6 +351,13 @@ export type ItemId =
   | "claymore_9"
   | "claymore_10"
   | "ring_1"
+  // Act II dungeon uniques, tablets and keys
+  | "barrow_king_signet"
+  | "delvers_lantern"
+  | "tablet_barrow"
+  | "tablet_vault"
+  | "barrow_key"
+  | "vault_key"
   | "ring_3"
   | "ring_5"
   | "ring_8"
@@ -1057,6 +1064,10 @@ export interface WorldObjectDef {
   puzzle?: string;
   /** dungeon_chest only: what the chest holds. Granted once per player. */
   loot?: { item: ItemId; qty: number }[];
+  /** dungeon_gate only: a key that opens THIS gate instead of a puzzle. Using
+   *  the gate with the key in your pack consumes it and sets `key_<id>` (the
+   *  gate's hiddenByFlag), swinging it open for good. */
+  keyItem?: ItemId;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */

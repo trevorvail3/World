@@ -5778,4 +5778,59 @@ export const items: Record<ItemId, ItemDef> = {
     "sell": 0,
     "meta": { "skill": "agility" }
   }
+  ,
+  "barrow_king_signet": {
+    "id": "barrow_king_signet",
+    "name": "Barrow-King's Signet",
+    "description": "UNIQUE. The Barrow-King's stubborn vigour lives in the band: every foe you fell knits your wounds a little. Taken from the chest in his resting hall.",
+    "icon": "💍",
+    "cat": "Jewellery",
+    "slot": "ring",
+    "acc": 6,
+    "sell": 0
+  },
+  "delvers_lantern": {
+    "id": "delvers_lantern",
+    "name": "Delver's Lantern",
+    "description": "UNIQUE. A wick that burns without oil, cased in vault-glass. Night and the deep places brighten around whoever bears it.",
+    "icon": "🏮",
+    "cat": "Armour",
+    "slot": "offhand",
+    "tier": 3,
+    "def": 2,
+    "twoHand": false,
+    "sell": 0
+  },
+  "tablet_barrow": {
+    "id": "tablet_barrow",
+    "name": "Pale Tablet: The Wolf",
+    "description": "A grave-tablet cut in the Pale script — the running wolf, over and over, and a road going north. Someone learned should see this.",
+    "icon": "🪨",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "tablet_vault": {
+    "id": "tablet_vault",
+    "name": "Pale Tablet: The Mountain",
+    "description": "A ledger-tablet in the Pale script — tallies, seals, and a mountain split by a gate. Someone learned should see this.",
+    "icon": "🪨",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "barrow_key": {
+    "id": "barrow_key",
+    "name": "Barrow-King's Key",
+    "description": "A long iron key from a grave-sentinel's belt, cold as the halls it was forged for.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "vault_key": {
+    "id": "vault_key",
+    "name": "Wardens' Key",
+    "description": "A toothed key of vault-steel. The strongdoor it answers has waited a long time.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
+  }
 };

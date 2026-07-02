@@ -811,7 +811,6 @@ const rawObjects: WorldObjectDef[] = [
   { id: "sp_wraith_2", kind: "monster", monster: "spine_wraith", x: 52, y: 35, name: "Spine Wraith" },
   { id: "spine_wind_shrine", kind: "shrine", x: 54, y: 7, name: "The Wind-Shrine", lines: ["A standing stone the wind has worn to the shape of a vertebra. Orun's, the believers say. A rock worn by weather, say the rest. The shrine settles nothing."] },
   { id: "spine_vault", kind: "shrine", x: 54, y: 32, name: "The Spine Vault", lines: ["A door of dressed stone set into the mountain — shut, and shut from the inside. The ward-stones around it have not been moved in a very long time."] },
-  { id: "portal_spine", kind: "portal", x: 50, y: 12, name: "The Spine Vault", dungeon: "spine_vault", target: { x: 40, y: 118 }, lines: ["You break the seal on the Spine Vault."] }, // high in the remote northern pass
 
   // === HEARTMOOR (south-west) ===============================================
   { id: "calder", kind: "npc", x: 17, y: 82, name: "Calder", lines: ["Cold road, isn't it. Sit a moment — there's always a fire going at the moor's edge, and food for whoever the road gives out on.","We're the Heartmoor faithful. No, don't make the face. We feed people. What you do with the rest of it is your business.","The peat keeps things. Bog-bodies, old swords, older questions. And the warm seams — Hearthite, black and almost living. Rock, the miners say. We say otherwise. Both are true of the same stone.","Go careful past the pools. The bog knights don't sleep, and the serpents are patient."],
@@ -1205,8 +1204,10 @@ const rawObjects: WorldObjectDef[] = [
   { id: "boss_bog", kind: "monster", monster: "bog_warden", x: 24, y: 115, name: "The Bog Warden" },
   { id: "bog_add1", kind: "monster", monster: "heartmoor_hound", x: 21, y: 117, name: "Barrow Hound" },
   { id: "bog_add2", kind: "monster", monster: "bog_knight", x: 27, y: 117, name: "Sunken Knight" },
-  { id: "ret_spine", kind: "portal", x: 40, y: 119, name: "Vault Exit", target: { x: 49, y: 11 }, lines: ["You leave the vault to its silence."] },
-  { id: "boss_spine", kind: "monster", monster: "spine_warlord", x: 40, y: 115, name: "The Spine Warlord" },
+  // The Spine Warlord, moved OUT of its single-room arena to an open lair on a
+  // shelf of the pass — a grindable overworld boss now (its old portal leads to
+  // the rebuilt Spine Vault crawl; see buildDungeonSites).
+  { id: "boss_spine", kind: "monster", monster: "spine_warlord", x: 44, y: 16, name: "The Spine Warlord" },
   { id: "spine_add1", kind: "monster", monster: "stone_crawler", x: 37, y: 117, name: "Vault Crawler" },
   { id: "spine_add2", kind: "monster", monster: "mountain_troll", x: 43, y: 117, name: "Guard Troll" },
   { id: "ret_marrow", kind: "portal", x: 56, y: 119, name: "Vault Exit", target: { x: 91, y: 14 }, lines: ["The door closes behind you."] },
@@ -1845,7 +1846,72 @@ function buildDungeonSites(): WorldObjectDef[] {
     // The Barrow-King's chest, in the resting hall past the slab. (D2 dresses
     // the hall with its dead and seats the mini-boss; the chest's true prizes —
     // the unique and the first tablet — arrive with the quest chain.)
-    { id: "chest_barrow", kind: "dungeon_chest", x: 70, y: 212, name: "Barrow-King's Chest", loot: [{ item: "cut_gem", qty: 1 }], lines: ["A long chest of black oak, banded in silver gone dark."] },
+    // The dead of the barrow, posted through the halls.
+    { id: "bw_bat_1", kind: "monster", monster: "deep_bat", x: 19, y: 204, name: "Barrow Shrieker" },
+    { id: "bw_bat_2", kind: "monster", monster: "deep_bat", x: 24, y: 206, name: "Barrow Shrieker" },
+    { id: "bw_wraith_1", kind: "monster", monster: "marrow_wraith", x: 33, y: 208, name: "Barrow Wight" },
+    { id: "bw_wraith_2", kind: "monster", monster: "marrow_wraith", x: 45, y: 199, name: "Barrow Wight" },
+    // The Grave-Sentinel keeps the switchback galleries — and the King's key.
+    { id: "bw_sentinel", kind: "monster", monster: "barrow_sentinel", x: 56, y: 203, name: "Grave-Sentinel" },
+    // The King's door: locked, not puzzled — the key walks the halls.
+    {
+      id: "gate_barrow2", kind: "dungeon_gate", x: 61, y: 204, name: "The King's Door",
+      hiddenByFlag: "key_gate_barrow2", keyItem: "barrow_key",
+      lines: ["A door of grave-iron, triple-locked. The sentinels of these halls would carry its key."],
+    },
+    // The resting hall: the Barrow-King and his honour guard.
+    { id: "bw_king", kind: "monster", monster: "barrow_king", x: 65, y: 212, name: "The Barrow-King" },
+    { id: "bw_guard", kind: "monster", monster: "marrow_wraith", x: 69, y: 210, name: "Honour-Guard" },
+    { id: "chest_barrow", kind: "dungeon_chest", x: 70, y: 212, name: "Barrow-King's Chest", loot: [{ item: "barrow_king_signet", qty: 1 }, { item: "tablet_barrow", qty: 1 }, { item: "cut_gem", qty: 2 }], lines: ["A long chest of black oak, banded in silver gone dark."] },
+  );
+  // --- SITE 2: The Spine Vault — the mountain vault in the northern pass,
+  //     sealed from the inside. Four weigh-locks in the counting-cells (the
+  //     tally-stones recite the order), the warded stair, a sentinel bearing
+  //     the Wardens' Key, and the Vaultwright's treasury.
+  const vault = DUNGEONS.find((d) => d.id === "spine_vault")!;
+  const vmouth = remap(50, 12); // the vault door, high in the pass (old portal spot)
+  const vx = vault.x0, vy = vault.y0;
+  out.push(
+    {
+      id: "portal_spine", kind: "portal", x: vmouth.x, y: vmouth.y, name: "The Spine Vault",
+      dungeon: "spine_vault", target: { x: vx + vault.entry.x, y: vy + vault.entry.y },
+      lines: ["The dressed-stone door gives at last. Stale mountain air, and dark going down. You enter the Spine Vault."],
+    },
+    { id: "ret_spine", kind: "portal", x: vx + vault.exit.x, y: vy + vault.exit.y, name: "Vault Exit", target: { x: vmouth.x, y: vmouth.y + 1 }, lines: ["You leave the vault to its silence."] },
+    // The weigh-locks, one to a counting-cell off the gallery.
+    { id: "lev_vault_1", kind: "puzzle_lever", x: vx + 17, y: vy + 3, name: "Weigh-Lock I", puzzle: "vault_locks", order: 0, lines: ["A counter-weighted lock-arm, stamped with a single tally."] },
+    { id: "lev_vault_2", kind: "puzzle_lever", x: vx + 29, y: vy + 18, name: "Weigh-Lock II", puzzle: "vault_locks", order: 1, lines: ["A counter-weighted lock-arm, stamped with two tallies."] },
+    { id: "lev_vault_3", kind: "puzzle_lever", x: vx + 29, y: vy + 3, name: "Weigh-Lock III", puzzle: "vault_locks", order: 2, lines: ["A counter-weighted lock-arm, stamped with three tallies."] },
+    { id: "lev_vault_4", kind: "puzzle_lever", x: vx + 17, y: vy + 18, name: "Weigh-Lock IIII", puzzle: "vault_locks", order: 3, lines: ["A counter-weighted lock-arm, stamped with four tallies."] },
+    // The tally-stones that recite the count and its compass.
+    { id: "plq_vault_1", kind: "signpost", x: vx + 18, y: vy + 8, name: "Tally-Stone", lines: ["'ONE weight to the NORTH-WEST cell, where the count begins.'"] },
+    { id: "plq_vault_2", kind: "signpost", x: vx + 24, y: vy + 8, name: "Tally-Stone", lines: ["'TWO to the SOUTH-EAST, across the gallery — the count crosses, always.'"] },
+    { id: "plq_vault_3", kind: "signpost", x: vx + 30, y: vy + 8, name: "Tally-Stone", lines: ["'THREE to the NORTH-EAST, FOUR to the SOUTH-WEST — and the stair unbars for honest hands.'"] },
+    // The warded stair-gate, opened by the count.
+    {
+      id: "gate_vault", kind: "dungeon_gate", x: vx + 36, y: vy + 11, name: "Warded Stair-Gate",
+      hiddenByFlag: "pz_vault_locks",
+      lines: ["A gate of ward-stone across the stair. Four weigh-locks hold it; the tally-stones keep their count."],
+    },
+    // The vault's keepers.
+    { id: "sv_bat_1", kind: "monster", monster: "deep_bat", x: vx + 21, y: vy + 6, name: "Vault Shrieker" },
+    { id: "sv_wraith_1", kind: "monster", monster: "spine_wraith", x: vx + 27, y: vy + 14, name: "Vault Wraith" },
+    { id: "sv_sentinel", kind: "monster", monster: "vault_sentinel", x: vx + 46, y: vy + 4, name: "Vault-Sentinel" },
+    { id: "sv_golem", kind: "monster", monster: "deep_golem", x: vx + 51, y: vy + 8, name: "Ward-Golem" },
+    { id: "sv_wraith_2", kind: "monster", monster: "spine_wraith", x: vx + 49, y: vy + 15, name: "Vault Wraith" },
+    // The strongdoor: keyed, not puzzled — the sentinel of the stair bears it.
+    {
+      id: "gate_vault_door", kind: "dungeon_gate", x: vx + 56, y: vy + 15, name: "Wardens' Strongdoor",
+      hiddenByFlag: "key_gate_vault_door", keyItem: "vault_key",
+      lines: ["Vault-steel, without a seam. The Wardens' Key answers it — the stair's keeper would carry that."],
+    },
+    // The treasury: the Vaultwright, and what it tends.
+    { id: "sv_warden", kind: "monster", monster: "vault_warden", x: vx + 61, y: vy + 15, name: "The Vaultwright" },
+    {
+      id: "chest_vault", kind: "dungeon_chest", x: vx + 63, y: vy + 18, name: "Wardens' Coffer",
+      loot: [{ item: "delvers_lantern", qty: 1 }, { item: "tablet_vault", qty: 1 }, { item: "ashiron_bar", qty: 2 }],
+      lines: ["A coffer of vault-steel and heart-oak, its wax seals unbroken since the door shut."],
+    },
   );
   return out;
 }

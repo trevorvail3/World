@@ -2607,8 +2607,18 @@ function startInteraction(
 
     case "dungeon_gate":
       // A gate object only exists while sealed (hiddenByFlag removes it — and
-      // its blocking — the moment its puzzle flag is set), so interacting with
-      // one always means: still locked.
+      // its blocking — the moment its flag is set). A keyed gate opens here,
+      // with its key; a puzzle gate only reports itself.
+      if (def.keyItem) {
+        if (countItem(state.player, def.keyItem) > 0) {
+          removeOneItem(state.player, def.keyItem);
+          state.player.flags.push(`key_${def.id}`); // its hiddenByFlag — walkability rebuilds
+          events.push({ type: "LOG", message: `The ${content.items[def.keyItem]?.name ?? "key"} turns hard, twice — and the way stands open.` });
+        } else {
+          events.push({ type: "LOG", message: def.lines?.[0] ?? "Locked fast. Somewhere in these halls is the key — or the hand that carries it." });
+        }
+        break;
+      }
       events.push({ type: "LOG", message: def.lines?.[0] ?? "Sealed fast. Something in these halls must open it." });
       break;
 
@@ -5240,6 +5250,12 @@ function checkKill(
   }
   player.stats.monstersSlain += 1;
   if (stats.boss) player.bossKills[stats.id] = (player.bossKills[stats.id] ?? 0) + 1;
+  // UNIQUE — the Barrow-King's Signet: every kill knits the wearer's wounds.
+  if (player.equipment.ring === "barrow_king_signet" && player.hp < player.maxHp) {
+    const heal = Math.max(3, Math.round(player.maxHp * 0.08));
+    player.hp = Math.min(player.maxHp, player.hp + heal);
+    events.push({ type: "LOG", message: `The Barrow-King's Signet warms — your wounds knit (+${heal}).` });
+  }
   events.push({ type: "MONSTER_KILLED", objId: obj.id });
   // "the The Boneman" reads badly — names that carry their own article skip ours.
   events.push({ type: "LOG", message: `You defeat ${/^The /.test(def.name) ? def.name : `the ${def.name}`}.` });
