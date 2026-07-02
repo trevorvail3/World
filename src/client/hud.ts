@@ -1574,6 +1574,23 @@ export class Hud {
       return def ? `<div class="quest-done">✓ ${escapeHtml(def.name)}</div>` : "";
     };
 
+    // The active Bounty contract, pinned at the top so you can check your
+    // slay-task and its progress from anywhere — not only at a guide's board.
+    const task = player.bounty?.task;
+    if (task) {
+      const mon = this.content.monsters[task.monster];
+      const guide = this.content.bountyGuides.find((g) => g.id === task.guideId);
+      const done = task.progress >= task.required;
+      parts.push(
+        `<div class="quest-cat">Bounty Contract</div>` +
+        `<div class="quest-item bounty-contract${done ? " tracked" : ""}">` +
+        `<div class="quest-name"><span class="quest-star">🎯</span> ${escapeHtml(mon?.name ?? task.monster)}` +
+        `${guide ? ` <span class="quest-prog">· ${escapeHtml(guide.name)}</span>` : ""}</div>` +
+        `<div class="quest-obj">▸ ${done ? "Contract complete — return to claim your Hunt Marks." : `Slay ${task.monster ? escapeHtml(mon?.name ?? task.monster) : ""}`} ` +
+        `<span class="quest-prog">(${Math.min(task.progress, task.required)}/${task.required})</span></div></div>`,
+      );
+    }
+
     const activeIds = Object.keys(player.quests);
     const GROUPS: { key: "main" | "faction" | "side"; label: string }[] = [
       { key: "main", label: "Main Story" },

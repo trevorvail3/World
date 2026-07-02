@@ -1786,6 +1786,12 @@ body {
   color: #f0c187;
 }
 
+/* The active Bounty contract, pinned atop the quest log. */
+.quest-item.bounty-contract {
+  border-left: 2px solid var(--ember);
+  padding-left: 6px;
+}
+
 /* Pack drag-to-rearrange: the lifted item rides the pointer as a ghost; the
    slot under it glows as the drop target. */
 .inv-drag-ghost {
