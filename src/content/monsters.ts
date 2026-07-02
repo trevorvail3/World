@@ -32,7 +32,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A bristling, overgrown rat of the hill moors. More nuisance than threat.",
     "drops": [
       { item: "raw_rat_meat", chance: 1, tier: "always" },
-      { item: "bones", chance: 0.9, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.35, tier: "common" },
       { item: "rat_tail", chance: 0.25, tier: "common" },
       { item: "chipped_tooth", chance: 0.12, tier: "common" },
@@ -62,7 +62,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A lean grey wolf that hunts the Knuckle Hills in the cold months. Quick and wary.",
     "drops": [
       { item: "raw_meat", chance: 1, tier: "always" },
-      { item: "bones", chance: 0.9, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.5, tier: "common" },
       { item: "wolf_fang", chance: 0.15, tier: "uncommon" },
       { item: "chipped_tooth", chance: 0.12, tier: "common" },
@@ -91,7 +91,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A heavy, ill-tempered boar of the Greyoak understory. It charges before it thinks.",
     "drops": [
       { item: "raw_meat", chance: 1, tier: "always" },
-      { item: "big_bones", chance: 0.85, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.55, tier: "common" },
       { item: "sinew", chance: 0.3, tier: "common" },
       { item: "boar_tusk", chance: 0.18, tier: "uncommon" },
@@ -122,7 +122,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A great bear of the deep Greyoak. Slow to rouse, devastating once roused.",
     "drops": [
       { item: "raw_meat", chance: 1, min: 1, max: 2, tier: "always" },
-      { item: "big_bones", chance: 0.9, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.65, tier: "common" },
       { item: "sinew", chance: 0.35, tier: "common" },
       { item: "thick_hide", chance: 0.12, tier: "uncommon" },
@@ -150,7 +150,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A wary stag of the open country. It will bolt — or, cornered, drive its antlers home.",
     "drops": [
       { item: "raw_meat", chance: 1, tier: "always" },
-      { item: "bones", chance: 0.85, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.6, tier: "common" },
       { item: "beast_horn", chance: 0.15, tier: "uncommon" },
       { item: "worn_coin", chance: 0.4, min: 2, max: 12, tier: "common" },
@@ -174,7 +174,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A tawny cat of the high rocks and the wood's edge. It stalks, then it sprints — and it does not miss twice.",
     "drops": [
       { item: "raw_meat", chance: 1, min: 1, max: 2, tier: "always" },
-      { item: "big_bones", chance: 0.85, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "raw_hide", chance: 0.6, tier: "common" },
       { item: "bear_claw", chance: 0.15, tier: "uncommon" },
       { item: "chipped_tooth", chance: 0.15, tier: "common" },
@@ -204,7 +204,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A mountain wolf, larger and meaner than its forest cousins.",
     "drops": [
       { item: "raw_meat", chance: 0.8, tier: "always" },
-      { item: "big_bones", chance: 0.8, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "wolf_fang", chance: 0.4, tier: "common" },
       { item: "raw_hide", chance: 0.25, tier: "uncommon" },
       { item: "chipped_tooth", chance: 0.15, tier: "common" },
@@ -232,6 +232,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "An armoured reptile that moves across cliff faces. Its shell absorbs blows.",
     "drops": [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "knucklestone_ore", chance: 0.55, min: 1, max: 2, tier: "common" },
       { item: "ribstone_ore", chance: 0.25, min: 1, max: 2, tier: "common" },
       { item: "cracked_shell", chance: 0.35, tier: "common" },
@@ -268,7 +269,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Slow. Extremely strong. Does not like being poked.",
     "drops": [
       { item: "worn_coin", chance: 0.7, min: 8, max: 22, tier: "always" },
-      { item: "big_bones", chance: 0.7, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "ribstone_ore", chance: 0.45, min: 1, max: 3, tier: "common" },
       { item: "golem_dust", chance: 0.25, tier: "common" },
       { item: "beast_horn", chance: 0.1, tier: "uncommon" },
@@ -304,7 +305,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A fast, barely-visible thing that moves between rocks. It flings shards of cold from afar — close the gap or answer it with a bow.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 6, max: 18, tier: "common" },
-      { item: "bones", chance: 0.5, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "wraith_fragment", chance: 0.3, tier: "uncommon" },
       { item: "tarnished_amulet", chance: 0.1, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.12, tier: "uncommon" },
@@ -335,6 +336,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "A bog reptile that waits beneath the surface. The first sign is often the last.",
     "drops": [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "raw_boar_meat", chance: 0.55, tier: "common" },
       { item: "serpent_scale", chance: 0.3, tier: "common" },
       { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
@@ -368,7 +370,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Pack hunters of the Heartmoor. Faster than they look. Work in groups.",
     "drops": [
       { item: "raw_wolf_meat", chance: 0.7, tier: "always" },
-      { item: "big_bones", chance: 0.7, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "wolf_fang", chance: 0.4, tier: "common" },
       { item: "wolf_pelt", chance: 0.22, tier: "uncommon" },
       { item: "chipped_tooth", chance: 0.15, tier: "common" },
@@ -399,7 +401,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Something armoured that was buried in the mire and did not stay buried.",
     "drops": [
       { item: "worn_coin", chance: 0.8, min: 8, max: 22, tier: "always" },
-      { item: "big_bones", chance: 0.55, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "ashiron_bar", chance: 0.18, tier: "uncommon" },
       { item: "ribstone_bar", chance: 0.1, tier: "uncommon" },
       { item: "tarnished_amulet", chance: 0.12, tier: "uncommon" },
@@ -433,6 +435,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "An enormous reptile that makes its home in the Heartmoor fens. Venomous.",
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "serpent_scale", chance: 0.4, min: 1, max: 2, tier: "common" },
       { item: "raw_boar_meat", chance: 0.4, tier: "common" },
       { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
@@ -499,7 +502,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "Enormous bats that hunt in the Marrow Deeps. Incredibly fast, somewhat fragile.",
     "drops": [
       { item: "bat_wing", chance: 0.5, min: 1, max: 2, tier: "common" },
-      { item: "bones", chance: 0.55, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.5, min: 10, max: 28, tier: "common" },
       { item: "chipped_tooth", chance: 0.18, tier: "common" },
       { item: "raw_rat_meat", chance: 0.3, tier: "common" },
@@ -532,7 +535,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A remnant that has absorbed the minerals of the deep. Bone without flesh — it hurls splinters of itself from a distance.",
     "drops": [
       { item: "worn_coin", chance: 0.6, min: 14, max: 36, tier: "common" },
-      { item: "big_bones", chance: 0.5, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "wraith_fragment", chance: 0.32, tier: "uncommon" },
       { item: "marrow_shard", chance: 0.08, tier: "rare" },
       { item: "tarnished_amulet", chance: 0.12, tier: "uncommon" },
@@ -570,6 +573,7 @@ export const monsters: Record<string, MonsterStats> = {
       { "type": "slam", "every": 5, "mult": 2.5, "radius": 1, "windupMs": 2200, "tell": "The Keeper heaves its fists high — the ground beneath you cracks. MOVE!" }
     ],
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       {
         "item": "pet_marrow_keeper",
         "chance": 0.002,
@@ -642,6 +646,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "An ancient serpent from the Redrun tributaries. The river looks different than it used to.",
     "drops": [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "serpent_scale", chance: 0.5, min: 1, max: 3, tier: "common" },
       { item: "raw_bear_meat", chance: 0.45, tier: "common" },
       { item: "cracked_shell", chance: 0.2, tier: "uncommon" },
@@ -674,7 +679,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "An outlaw of the Redrun crossings. Armed, armoured, and motivated.",
     "drops": [
       { item: "worn_coin", chance: 0.95, min: 20, max: 60, tier: "always" },
-      { item: "bones", chance: 0.4, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "tarnished_ring", chance: 0.3, tier: "common" },
       { item: "tarnished_amulet", chance: 0.15, tier: "uncommon" },
       { item: "rusty_key", chance: 0.15, tier: "common" },
@@ -709,7 +714,7 @@ export const monsters: Record<string, MonsterStats> = {
     "desc": "A very old orc warrior. Carries centuries of fighting experience. Approach respectfully.",
     "drops": [
       { item: "orc_tooth", chance: 0.5, min: 1, max: 2, tier: "common" },
-      { item: "big_bones", chance: 0.5, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.7, min: 30, max: 75, tier: "always" },
       { item: "beast_horn", chance: 0.1, tier: "uncommon" },
       { item: "hearthite_ore", chance: 0.3, min: 1, max: 2, tier: "uncommon" },
@@ -741,6 +746,7 @@ export const monsters: Record<string, MonsterStats> = {
     ],
     "desc": "The ferryman of the Redrun. He has been here longer than the river. He wants payment.",
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       {
         "item": "worn_coin",
         "chance": 1,
@@ -791,7 +797,8 @@ export const monsters: Record<string, MonsterStats> = {
       "stab"
     ],
     "desc": "Something older and stranger than a hill wolf. It moves without sound and looks at you like it already knows the outcome.",
-    "drops": []
+    "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },]
   },
   "berric_fighter": {
     "id": "berric_fighter",
@@ -809,7 +816,8 @@ export const monsters: Record<string, MonsterStats> = {
       "stab"
     ],
     "desc": "A smith who spent thirty years shaping iron. His grip remembers every hammer swing.",
-    "drops": []
+    "drops": [
+      { item: "bones", chance: 1, tier: "always" },]
   },
   "greymane_boar": {
     "id": "greymane_boar",
@@ -830,7 +838,7 @@ export const monsters: Record<string, MonsterStats> = {
     "drops": [
       { item: "greymane_pelt", chance: 0.6, tier: "common" },
       { item: "greymane_tusk", chance: 0.25, tier: "uncommon" },
-      { item: "big_bones", chance: 0.7, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "raw_boar_meat", chance: 0.5, min: 1, max: 2, tier: "common" },
       { item: "beast_horn", chance: 0.08, tier: "uncommon" },
       { item: "worn_coin", chance: 0.4, min: 3, max: 10, tier: "common" },
@@ -859,7 +867,8 @@ export const monsters: Record<string, MonsterStats> = {
       "slash"
     ],
     "desc": "A true believer of the Heartmoor Cult. Fights like the seam is worth their life — because to them, it is.",
-    "drops": []
+    "drops": [
+      { item: "bones", chance: 1, tier: "always" },]
   },
   "ashforge_enforcer": {
     "id": "ashforge_enforcer",
@@ -877,7 +886,8 @@ export const monsters: Record<string, MonsterStats> = {
       "crush"
     ],
     "desc": "A trained Brotherhood fighter. Vorn did not come himself, but he sent someone who knows how to finish things.",
-    "drops": []
+    "drops": [
+      { item: "bones", chance: 1, tier: "always" },]
   },
   "lodge_warden_npc": {
     "id": "lodge_warden_npc",
@@ -895,7 +905,8 @@ export const monsters: Record<string, MonsterStats> = {
       "slash"
     ],
     "desc": "A Lodge warden sent to seal the seam. Principled. Persistent. Standing exactly between you and what you came for.",
-    "drops": []
+    "drops": [
+      { item: "bones", chance: 1, tier: "always" },]
   },
   "hollow_warden": {
     "id": "hollow_warden",
@@ -920,6 +931,7 @@ export const monsters: Record<string, MonsterStats> = {
       { "type": "enrage", "below": 0.3, "mult": 1.5, "tell": "The Warden's hollow eyes blaze with old fury." }
     ],
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       {
         "item": "pet_hollow_warden",
         "chance": 0.002,
@@ -997,6 +1009,7 @@ export const monsters: Record<string, MonsterStats> = {
       { "type": "enrage", "below": 0.25, "mult": 1.6, "tell": "The Spine Warlord refuses to fall." }
     ],
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       {
         "item": "pet_spine_warlord",
         "chance": 0.002,
@@ -1069,6 +1082,7 @@ export const monsters: Record<string, MonsterStats> = {
       { "type": "selfheal", "below": 0.4, "amount": 50, "tell": "The mire surges up and knits the Bog Warden whole." }
     ],
     "drops": [
+      { item: "big_bones", chance: 1, tier: "always" },
       {
         "item": "pet_bog_warden",
         "chance": 0.002,
@@ -1117,7 +1131,7 @@ export const monsters: Record<string, MonsterStats> = {
       { item: "worn_coin", chance: 0.85, min: 1, max: 3, tier: "always" },
       { item: "bent_nail", chance: 0.25, tier: "common" },
       { item: "scrap_cloth", chance: 0.2, tier: "common" },
-      { item: "bones", chance: 0.3, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "dagger_1", chance: 0.06, tier: "uncommon" },
       { item: "ashfin_cooked", chance: 0.15, tier: "common" },
       { item: "plant_fiber", chance: 0.2, min: 1, max: 2, tier: "common" },
@@ -1131,6 +1145,7 @@ export const monsters: Record<string, MonsterStats> = {
     weakness: ["slash"],
     desc: "A pickpocket turned to the blade when purses got scarce. Light fingers, lighter conscience.",
     drops: [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.9, min: 1, max: 5, tier: "always" },
       { item: "scrap_cloth", chance: 0.2, tier: "common" },
       { item: "rusty_key", chance: 0.12, tier: "common" },
@@ -1150,7 +1165,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 0.95, min: 2, max: 7, tier: "always" },
       { item: "bent_nail", chance: 0.2, tier: "common" },
-      { item: "bones", chance: 0.3, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "sword_1", chance: 0.08, tier: "uncommon" },
       { item: "dagger_1", chance: 0.06, tier: "uncommon" },
       { item: "arrow_knucklestone", chance: 0.3, min: 5, max: 12, tier: "common" },
@@ -1167,6 +1182,7 @@ export const monsters: Record<string, MonsterStats> = {
     weakness: ["crush"],
     desc: "A wood-thief who hunts the Lodge's game and the Lodge's purse alike. Deadly with a bow.",
     drops: [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.7, min: 1, max: 5, tier: "always" },
       { item: "broken_arrow", chance: 0.35, tier: "common" },
       { item: "crude_shortbow", chance: 0.08, tier: "uncommon" },
@@ -1184,6 +1200,7 @@ export const monsters: Record<string, MonsterStats> = {
     weakness: ["stab", "ranged"],
     desc: "A mounted robber fallen on hard times and harder methods. Stands his ground for a fat purse.",
     drops: [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.95, min: 3, max: 9, tier: "always" },
       { item: "scrap_cloth", chance: 0.18, tier: "common" },
       { item: "rusty_key", chance: 0.12, tier: "common" },
@@ -1204,6 +1221,7 @@ export const monsters: Record<string, MonsterStats> = {
     weakness: ["crush"],
     desc: "A marksman gone over to the road gangs. Picks off the careless from cover.",
     drops: [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.9, min: 2, max: 8, tier: "always" },
       { item: "broken_arrow", chance: 0.4, tier: "common" },
       { item: "shortbow", chance: 0.06, tier: "uncommon" },
@@ -1227,7 +1245,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 0.95, min: 4, max: 12, tier: "always" },
       { item: "scrap_cloth", chance: 0.18, tier: "common" },
-      { item: "bones", chance: 0.3, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "sword_4", chance: 0.05, tier: "rare" },
       { item: "dagger_3", chance: 0.06, tier: "uncommon" },
       { item: "hammer_3", chance: 0.05, tier: "uncommon" },
@@ -1248,7 +1266,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 0.95, min: 5, max: 16, tier: "always" },
       { item: "bent_nail", chance: 0.15, tier: "common" },
-      { item: "big_bones", chance: 0.3, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "claymore_3", chance: 0.04, tier: "rare" },
       { item: "hammer_4", chance: 0.04, tier: "rare" },
       { item: "ashiron_bar", chance: 0.1, tier: "uncommon" },
@@ -1270,7 +1288,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 1, min: 10, max: 28, tier: "always" },
       { item: "rusty_key", chance: 0.2, tier: "common" },
-      { item: "big_bones", chance: 0.3, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "sword_6", chance: 0.03, tier: "rare" },
       { item: "claymore_4", chance: 0.03, tier: "rare" },
       { item: "ring_3", chance: 0.04, tier: "rare" },
@@ -1303,6 +1321,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "scaleguard", reduce: 0.4 },
     ],
     drops: [
+      { item: "big_bones", chance: 1, tier: "always" },
       // A hatchling that imprints on its parent's killer — the rarest drop.
       { item: "pet_ashen_wyrm", chance: 0.001, tier: "legendary" },
       // The Wyrmscale set + Wyrmfang: equal, high rates (Barrows-style).
@@ -1333,6 +1352,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "selfheal", below: 0.45, amount: 80, tell: "The Boneman cracks a bone and sucks the marrow — his wounds knit shut!" },
     ],
     drops: [
+      { item: "big_bones", chance: 1, tier: "always" },
       // A grim little echo of him that follows the victor — the rarest drop.
       { item: "pet_boneman", chance: 0.002, tier: "legendary" },
       // The Bonewrought set + the Bonesaw, equal Barrows-style rates.
@@ -1366,6 +1386,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "enrage", below: 0.3, mult: 1.5, tell: "The Baron laughs and stops playing the hero — every shot for the kill now!" },
     ],
     drops: [
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "pet_green_baron", chance: 0.002, tier: "legendary" },
       // The Greenhood set + the Baron's Yew, Barrows-style equal rates.
       { item: "greenhood_hood", chance: 0.04, tier: "rare" },
@@ -1397,6 +1418,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "selfheal", below: 0.4, amount: 75, tell: "The Prophet opens the hole in himself wider — Orun's stolen light knits his wounds shut!" },
     ],
     drops: [
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "pet_hollow_prophet", chance: 0.002, tier: "legendary" },
       // The Prophet's Regalia + the Hollow Staff, Barrows-style equal rates.
       { item: "prophet_hood", chance: 0.04, tier: "rare" },
@@ -1425,7 +1447,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A local watchman keeping the peace at the settlement's edge. Leave them be and they'll leave you be — raise a hand, and they raise one back.",
     drops: [
       { item: "worn_coin", chance: 1, min: 8, max: 20, tier: "always" },
-      { item: "bones", chance: 0.7, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "rusty_key", chance: 0.2, tier: "common" },
       { item: "scrap_cloth", chance: 0.15, tier: "common" },
       { item: "sword_3", chance: 0.05, tier: "uncommon" },
@@ -1446,7 +1468,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A drilled soldier of the Ironvale watch, mail-clad and unbothered. The city's law made flesh — not to be picked at lightly, but worth the trouble if you can take one.",
     drops: [
       { item: "worn_coin", chance: 1, min: 20, max: 55, tier: "always" },
-      { item: "bones", chance: 0.7, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "rusty_key", chance: 0.22, tier: "common" },
       { item: "sword_4", chance: 0.05, tier: "uncommon" },
       { item: "helm_3", chance: 0.05, tier: "uncommon" },
@@ -1474,7 +1496,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "A weathered farmhand working the settlement plots, pockets stuffed with seed for the next sowing. Rob them if you dare — the seeds are the prize.",
     drops: [
       { item: "worn_coin", chance: 0.6, min: 2, max: 8, tier: "common" },
-      { item: "bones", chance: 0.4, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "scrap_cloth", chance: 0.2, tier: "common" },
       { item: "seed_ashweed", chance: 0.35, min: 1, max: 3, tier: "common" },
       { item: "seed_thornroot", chance: 0.25, min: 1, max: 2, tier: "common" },
@@ -1495,7 +1517,7 @@ export const monsters: Record<string, MonsterStats> = {
     desc: "The one who runs the fields — decades of sowing in their hands and the rarest seeds in their satchel. A hard mark, but the seed is worth the sweat.",
     drops: [
       { item: "worn_coin", chance: 0.7, min: 6, max: 18, tier: "common" },
-      { item: "bones", chance: 0.5, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "seed_bloodberry", chance: 0.3, min: 1, max: 3, tier: "common" },
       { item: "seed_coldmoss", chance: 0.25, min: 1, max: 2, tier: "common" },
       { item: "seed_ironleaf", chance: 0.2, tier: "uncommon" },
@@ -1527,7 +1549,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 0.7, min: 3, max: 10, tier: "always" },
       { item: "hex_cloth", chance: 0.4, tier: "common" },
-      { item: "bones", chance: 0.6, tier: "common" },
+      { item: "bones", chance: 1, tier: "always" },
       { item: "herb_ashweed", chance: 0.15, tier: "common" },
       { item: "uncut_sapphire", chance: 0.05, tier: "uncommon" },
       { item: "mag_hood_1", chance: 0.02, tier: "rare" },
@@ -1544,7 +1566,7 @@ export const monsters: Record<string, MonsterStats> = {
     drops: [
       { item: "worn_coin", chance: 0.85, min: 6, max: 18, tier: "always" },
       { item: "hex_cloth", chance: 0.5, tier: "common" },
-      { item: "big_bones", chance: 0.5, tier: "common" },
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "rough_gem", chance: 0.12, tier: "uncommon" },
       { item: "uncut_emerald", chance: 0.06, tier: "uncommon" },
       { item: "mag_hood_2", chance: 0.025, tier: "rare" },
@@ -1560,6 +1582,7 @@ export const monsters: Record<string, MonsterStats> = {
     weakness: ["ranged"],
     desc: "A master of the cult, robed in hex-woven cloth and wreathed in Orun's stolen light.",
     drops: [
+      { item: "bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 0.95, min: 14, max: 40, tier: "always" },
       { item: "hex_cloth", chance: 0.6, min: 1, max: 2, tier: "common" },
       { item: "marrow_shard", chance: 0.12, tier: "uncommon" },
@@ -1605,6 +1628,7 @@ export const monsters: Record<string, MonsterStats> = {
       { type: "enrage", below: 0.25, mult: 1.5, tell: "The Greyback bleeds, and remembers how to be furious." },
     ],
     drops: [
+      { item: "big_bones", chance: 1, tier: "always" },
       { item: "worn_coin", chance: 1, min: 400, max: 900, tier: "always" },
       { item: "cloak_greyback", chance: 0.025, tier: "legendary" },
       { item: "hearthite_bar", chance: 0.35, min: 1, max: 2, tier: "uncommon" },
