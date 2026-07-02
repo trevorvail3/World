@@ -5351,6 +5351,7 @@ const MONSTER_SCALE: Record<string, number> = {
   vault_sentinel: 1.15, vault_warden: 1.35,
   court_reliquarist: 1.2, drowned_magistrate: 1.4,
   sky_warder: 1.2, storm_herald: 1.4, aerie_harpy: 1.12,
+  pale_wight: 1.1, pale_gatekeeper: 1.25, pale_herald: 1.25, pale_warden: 1.5,
 };
 
 /** A coloured ground-glow per boss — presence you can feel a screen away. */
@@ -5371,6 +5372,9 @@ const BOSS_AURA: Record<string, string> = {
   vault_warden: "184,163,122",     // mason's lamplight
   drowned_magistrate: "80,130,150", // black-water phosphor
   storm_herald: "120,160,220",     // storm-glow
+  pale_gatekeeper: "200,198,190",  // pale stone
+  pale_herald: "210,205,195",
+  pale_warden: "228,224,214",      // the last seal's cold light
 };
 
 /** Draw a monster, scaled up (about its planted foot) by MONSTER_SCALE. */
@@ -5525,6 +5529,14 @@ function drawMonsterBody(
       return H("#4a4e5e", "#9aa6c0"); // storm-iron watch plate
     case "storm_herald":
       return H("#33405a", "#b8d0f0"); // high-wind blues
+    case "pale_wight":
+      return drawWraith(g, cx, cy, now); // the north-folk's patient dead
+    case "pale_gatekeeper":
+      return H("#8d8a80", "#d8d4c8"); // pale masonry over old bone
+    case "pale_herald":
+      return H("#9a968a", "#e2ddd0"); // bleached herald's colours
+    case "pale_warden":
+      return H("#b8b4a8", "#f0ece0"); // the Warden: pale as the script
     case "court_wisp":
       return drawWisp(g, cx, cy, now, "#e8c87a"); // a hostile candle
     case "storm_wisp":

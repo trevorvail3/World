@@ -5615,6 +5615,8 @@ function monsterSwing(
         : stats.attackStyle === "magic" ? "magic" : "melee";
       if (bless.deflectStyle === incoming) dmg = Math.max(1, Math.ceil(dmg * 0.5));
     }
+    // The Warden's Pale Greaves (Undergate unique): every blow lands a tenth softer.
+    if (player.equipment.boots === "pale_greaves") dmg = Math.max(1, Math.round(dmg * 0.9));
     const before = player.hp;
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
@@ -5859,6 +5861,7 @@ function resolveSlams(
         : stats.attackStyle === "magic" ? "magic" : "melee";
       if (bless.deflectStyle === incoming) dmg = Math.max(1, Math.ceil(dmg * 0.5));
     }
+    if (player.equipment.boots === "pale_greaves") dmg = Math.max(1, Math.round(dmg * 0.9));
     player.hp -= dmg;
     events.push({ type: "DAMAGE", targetId: "player", amount: dmg });
     events.push({ type: "LOG", message: `${def.name}'s slam catches you square — ${dmg} damage!` });

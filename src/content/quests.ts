@@ -1809,6 +1809,35 @@ export const quests: QuestDef[] = [
       rep: [{ faction: "pale_record", amount: 15 }],
     },
   },
+
+  {
+    id: "q_undergate",
+    name: "The Wolf Runs Home",
+    act: 4,
+    giver: "maerwen",
+    requires: "q_last_watch",
+    intro: [
+      "It's there. Exactly where the psalm said — under the heart of the high pass, past the wind-shrine, a door on no map. My runner came back white as the script and wouldn't go within a league of it again.",
+      "Listen to me before you go. Five seals, and you have broken four of their keepers. The fifth is not a keeper of a ROOM, delver — it is the keeper of the ROAD. The Pale Warden. The psalm gives it one instruction: hold the door until the wolf runs home.",
+      "Whatever is on the far side has kept its own watch for a thousand years. Break the last seal. Open the north. And then come back to me alive, because I intend to be insufferable about this for the rest of my life.",
+    ],
+    steps: [
+      { type: "kill", monster: "pale_warden", count: 1, text: "Break the fifth seal: defeat the Pale Warden in the Undergate" },
+      { type: "talk", npc: "maerwen", text: "Bring Maerwen word: the north road stands open" },
+    ],
+    outro: [
+      "You did it. You actually — sit down. Tell me everything. The door, the hall, the Warden — everything, twice.",
+      "The pass is OPEN, delver. The first road out of Varath since before Varath had a name. Sera is already fighting the Record over who writes the first page.",
+      "And the lights beyond the pass are real — the watchmen have seen them. A city, delver. A living city of the north-folk, past the Spine. Rest. Provision. When the road is walked, it should be you who walks it first.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 15000 }],
+      gold: 3000,
+      items: [{ item: "marrow_shard", qty: 1 }],
+      flags: ["act2_pass_open"],
+      rep: [{ faction: "pale_record", amount: 25 }],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1820,8 +1849,8 @@ export const quests: QuestDef[] = [
 const MAIN_QUESTS = new Set<string>([
   "q_ash_and_knuckle", "q_first_shard", "q_worn_coin",
   "q_seam_question", "q_the_shard_returns", "q_the_four_positions", "q_the_last_choice",
-  // Act IV — The Silence Beyond the Spine (Maerwen's tablet chain)
-  "q_pale_script", "q_mountains_ledger", "q_drowned_verdict", "q_last_watch",
+  // Act IV — The Silence Beyond the Spine (Maerwen's tablet chain + finale)
+  "q_pale_script", "q_mountains_ledger", "q_drowned_verdict", "q_last_watch", "q_undergate",
 ]);
 const FACTION_QUESTS = new Set<string>([
   // Ashforge Brotherhood

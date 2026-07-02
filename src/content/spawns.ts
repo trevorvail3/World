@@ -364,6 +364,9 @@ const rawObjects: WorldObjectDef[] = [
       "Bring me a thing with a question on it and I'll give it a home instead of a shelf over a hearth.",
     ],
     reactiveLines: [
+      { requiresFlags: ["act2_pass_open"], lines: [
+        "The north road is open, and the Record has a new first shelf. Maerwen wants to call the volume 'The Silence Beyond the Spine'. I told her the silence is over — she said that's the point of the title.",
+      ] },
       { requiresFlags: ["act2_tablets_all"], lines: [
         "Maerwen hasn't slept since you brought the fourth verse. Four tablets, one psalm, and a door under the pass that no map will admit to. The Record was built for exactly this — and I'm still afraid of it.",
       ] },
@@ -391,6 +394,10 @@ const rawObjects: WorldObjectDef[] = [
       "Grow strong enough to walk into places that were sealed on purpose, and come find me. I'll have work for you.",
     ],
     reactiveLines: [
+      { requiresFlags: ["act2_pass_open"], lines: [
+        "The pass is open. I keep saying it out loud to see if it stops being extraordinary. It doesn't.",
+        "The Record is mapping the road north as fast as the watchmen dare walk it. A thousand years of silence, delver — and you're the one who ended it. The city past the Spine comes next.",
+      ] },
       { requiresFlags: ["act2_tablets_all"], lines: [
         "Four verses on my desk and I still hear them at night. 'Until the wolf runs home.' They're waiting for us, delver — whoever they are.",
         "The Undergate, under the mountain's heart. When you're provisioned, we open the north.",
@@ -2086,6 +2093,126 @@ function buildDungeonSites(): WorldObjectDef[] {
     },
     // The signal-shaft back down to the pass.
     { id: "ret_sky_b", kind: "portal", x: sx + 105, y: sy + 25, name: "Signal-Shaft", target: { x: smouth.x, y: smouth.y + 1 }, lines: ["A shaft the watch used to drop messages down the mountain. It fits a person, barely."] },
+  );
+
+  // --- SITE 5: THE UNDERGATE — the Act II finale, under the heart of the
+  //     pass. Hidden from the world (requiresFlag act2_tablets_all) until
+  //     Maerwen reads all four tablets; the longest crawl in the game — five
+  //     sealed chokes: the Seal Hall's five levers in the psalm's order, the
+  //     Gatewright's keyed door, the Echo Gallery's four watches, the
+  //     Herald's keyed door on the deep stair, and the wolf-road waymarks
+  //     before the Warden's Hall and the North Door itself.
+  const under = DUNGEONS.find((d) => d.id === "undergate")!;
+  const umouth = remap(57, 5); // under the heart of the high pass
+  const ux = under.x0, uy = under.y0;
+  const REVEAL = "act2_tablets_all";
+  out.push(
+    {
+      id: "portal_under", kind: "portal", x: umouth.x, y: umouth.y, name: "The Undergate",
+      requiresFlag: REVEAL,
+      dungeon: "undergate", target: { x: ux + under.entry.x, y: uy + under.entry.y },
+      lines: ["Exactly where Maerwen marked it: a door under the mountain's heart, on no map, off every road. The Pale script above the lintel reads simply: UNTIL. You go down."],
+    },
+    { id: "ret_under", kind: "portal", x: ux + under.exit.x, y: uy + under.exit.y, name: "The Long Climb", target: { x: umouth.x, y: umouth.y + 1 }, lines: ["You climb back toward the thin mountain daylight."] },
+    // The revealed mouth: pale masonry breaking the scree of the pass.
+    { id: "ruin_under_1", kind: "ruin_prop", x: umouth.x - 2, y: umouth.y - 1, name: "Pale Doorpost", requiresFlag: REVEAL, lines: ["A doorpost of pale stone, uncovered by no weather you can name. It was hidden yesterday. It is not hidden now."] },
+    { id: "ruin_under_2", kind: "ruin_prop", x: umouth.x + 2, y: umouth.y - 1, name: "Pale Doorpost", requiresFlag: REVEAL, lines: ["The twin post. Together they frame a dark that goes down a very long way."] },
+    { id: "ruin_under_3", kind: "ruin_prop", x: umouth.x + 3, y: umouth.y + 1, name: "Fallen Cornice", requiresFlag: REVEAL, lines: ["Carved with the running wolf — the same hand as the Barrows, a hundred leagues south. One builder. One order."] },
+    {
+      id: "under_verse", kind: "shrine", x: umouth.x - 3, y: umouth.y + 1, name: "The Fifth Verse", requiresFlag: REVEAL,
+      lines: ["Cut into the living rock beside the door: 'AND LAST AND LOWEST, THE UNDERGATE, UNDER THE MOUNTAIN'S HEART, AND THE PALE WARDEN UPON IT, UNTIL THE WOLF RUNS HOME.'"],
+    },
+    // Once the Warden falls and the pass is open: the road north, teased.
+    {
+      id: "north_road_sign", kind: "signpost", x: umouth.x, y: umouth.y - 3, name: "The North Road", requiresFlag: "act2_pass_open",
+      lines: ["NORTH — the letters new-cut over letters a thousand years old. The road runs up through the pass and out of Varath's maps. On a clear night, watchmen swear, there are lights on the far side."],
+    },
+
+    // === STAGE A — the Long Descent + the Seal Hall =========================
+    { id: "ug_wight_1", kind: "monster", monster: "pale_wight", x: ux + 30, y: uy + 4, name: "Pale Wight" },
+    { id: "ug_wight_2", kind: "monster", monster: "pale_wight", x: ux + 30, y: uy + 10, name: "Pale Wight" },
+    { id: "ug_wisp_1", kind: "monster", monster: "storm_wisp", x: ux + 50, y: uy + 16, name: "Seal-Light" },
+    // The five seals, thrown in the psalm's own order.
+    { id: "lev_under_s1", kind: "puzzle_lever", x: ux + 76, y: uy + 11, name: "Seal of the WOLF", puzzle: "under_seals", order: 0, lines: ["A seal-lever under the running wolf. 'First ran the WOLF...'"] },
+    { id: "lev_under_s2", kind: "puzzle_lever", x: ux + 100, y: uy + 11, name: "Seal of the MOUNTAIN", puzzle: "under_seals", order: 1, lines: ["A seal-lever under the split mountain. 'Second stands the MOUNTAIN...'"] },
+    { id: "lev_under_s3", kind: "puzzle_lever", x: ux + 76, y: uy + 19, name: "Seal of the TIDE", puzzle: "under_seals", order: 2, lines: ["A seal-lever under the rising waterline. 'Third sits the TIDE...'"] },
+    { id: "lev_under_s4", kind: "puzzle_lever", x: ux + 100, y: uy + 19, name: "Seal of the STORM", puzzle: "under_seals", order: 3, lines: ["A seal-lever under the beacon and the cloud. 'Fourth flies the STORM...'"] },
+    { id: "lev_under_s5", kind: "puzzle_lever", x: ux + 88, y: uy + 20, name: "Seal of the GATE", puzzle: "under_seals", order: 4, lines: ["A seal-lever under the door-glyph itself. 'And last and lowest, the UNDERGATE.'"] },
+    // The psalm entire, verse by verse — the order is the one Maerwen read you.
+    { id: "plq_under_1", kind: "signpost", x: ux + 84, y: uy + 15, name: "The First Verse", lines: ["'FIRST ran the WOLF, ahead of all the host, and the road closed behind her.'"] },
+    { id: "plq_under_2", kind: "signpost", x: ux + 86, y: uy + 15, name: "The Second Verse", lines: ["'SECOND stands the MOUNTAIN, and the mountain keeps the ledger shut.'"] },
+    { id: "plq_under_3", kind: "signpost", x: ux + 88, y: uy + 15, name: "The Third Verse", lines: ["'THIRD sits the TIDE, and the tide holds what the court condemned.'"] },
+    { id: "plq_under_4", kind: "signpost", x: ux + 90, y: uy + 15, name: "The Fourth Verse", lines: ["'FOURTH flies the STORM, and the storm watches the road.'"] },
+    { id: "plq_under_5", kind: "signpost", x: ux + 92, y: uy + 15, name: "The Fifth Verse", lines: ["'And LAST and LOWEST, the UNDERGATE — thrown in the psalm's own order, the five seals open.'"] },
+    {
+      id: "gate_under_1", kind: "dungeon_gate", x: ux + 106, y: uy + 15, name: "The First Seal",
+      hiddenByFlag: "pz_under_seals",
+      lines: ["A door of pale stone bearing all five sigils at once. The psalm is the key, and the hall recites it verse by verse."],
+    },
+
+    // === STAGE B — the Underway =============================================
+    { id: "ug_golem_1", kind: "monster", monster: "deep_golem", x: ux + 114, y: uy + 8, name: "Underway Golem" },
+    { id: "ug_wight_3", kind: "monster", monster: "pale_wight", x: ux + 124, y: uy + 22, name: "Pale Wight" },
+    { id: "ug_wisp_2", kind: "monster", monster: "storm_wisp", x: ux + 140, y: uy + 5, name: "Seal-Light" },
+    { id: "ug_gatekeeper", kind: "monster", monster: "pale_gatekeeper", x: ux + 146, y: uy + 12, name: "Gatewright of the Underway" },
+    {
+      id: "gate_under_2", kind: "dungeon_gate", x: ux + 112, y: uy + 26, name: "Gatewright's Door",
+      hiddenByFlag: "key_gate_under_2", keyItem: "undergate_key_1",
+      lines: ["A mason's door, plumb and true after a thousand years. Its maker walks the Underway still — and keeps his key."],
+    },
+
+    // === STAGE C — the Echo Gallery =========================================
+    { id: "ug_wight_4", kind: "monster", monster: "pale_wight", x: ux + 60, y: uy + 29, name: "Pale Wight" },
+    { id: "ug_wisp_3", kind: "monster", monster: "storm_wisp", x: ux + 100, y: uy + 35, name: "Seal-Light" },
+    { id: "ug_golem_2", kind: "monster", monster: "deep_golem", x: ux + 30, y: uy + 33, name: "Underway Golem" },
+    { id: "lev_under_e1", kind: "puzzle_lever", x: ux + 41, y: uy + 26, name: "Echo of DUSK", puzzle: "under_echo", order: 0, lines: ["A sounding-stone in the north-west cell. Struck, it answers from somewhere far below."] },
+    { id: "lev_under_e2", kind: "puzzle_lever", x: ux + 121, y: uy + 38, name: "Echo of MIDNIGHT", puzzle: "under_echo", order: 1, lines: ["A sounding-stone in the south-east cell, black as the hour it is named for."] },
+    { id: "lev_under_e3", kind: "puzzle_lever", x: ux + 121, y: uy + 26, name: "Echo of the LAST HOUR", puzzle: "under_echo", order: 2, lines: ["A sounding-stone in the north-east cell, carved with the sinking stars."] },
+    { id: "lev_under_e4", kind: "puzzle_lever", x: ux + 41, y: uy + 38, name: "Echo of DAWN", puzzle: "under_echo", order: 3, lines: ["A sounding-stone in the south-west cell, carved with the sun the deep never sees."] },
+    { id: "plq_under_e1", kind: "signpost", x: ux + 76, y: uy + 32, name: "Gallery Inscription", lines: ["'The gallery keeps the watches as the aerie kept them: DUSK sounds first —'"] },
+    { id: "plq_under_e2", kind: "signpost", x: ux + 80, y: uy + 32, name: "Gallery Inscription", lines: ["'— MIDNIGHT answers across the dark —'"] },
+    { id: "plq_under_e3", kind: "signpost", x: ux + 84, y: uy + 32, name: "Gallery Inscription", lines: ["'— the LAST HOUR calls back over the water —'"] },
+    { id: "plq_under_e4", kind: "signpost", x: ux + 88, y: uy + 32, name: "Gallery Inscription", lines: ["'— and DAWN closes the round, and the way west opens for honest ears.'"] },
+    {
+      id: "gate_under_3", kind: "dungeon_gate", x: ux + 16, y: uy + 32, name: "The Second Seal",
+      hiddenByFlag: "pz_under_echo",
+      lines: ["A seal of sounding-stone. Four echoes hang in the gallery's cells; the inscriptions keep the watches' order."],
+    },
+
+    // === STAGE D — the Deep Stair + the wolf-road ===========================
+    { id: "ug_herald", kind: "monster", monster: "pale_herald", x: ux + 70, y: uy + 40, name: "Herald of the Deep Stair" },
+    { id: "ug_wight_5", kind: "monster", monster: "pale_wight", x: ux + 120, y: uy + 41, name: "Pale Wight" },
+    {
+      id: "gate_under_4", kind: "dungeon_gate", x: ux + 99, y: uy + 41, name: "The Deepway Door",
+      hiddenByFlag: "key_gate_under_4", keyItem: "undergate_key_2",
+      lines: ["Pale iron, seamless, humming very faintly. The Herald of this stair holds its key — and its breath."],
+    },
+    { id: "lev_under_w1", kind: "puzzle_lever", x: ux + 131, y: uy + 44, name: "The FAR Waymark", puzzle: "under_road", order: 0, lines: ["A waymark stone: a wolf at the road's far end, looking back."] },
+    { id: "lev_under_w2", kind: "puzzle_lever", x: ux + 121, y: uy + 44, name: "The MIDDLE Waymark", puzzle: "under_road", order: 1, lines: ["A waymark stone: a wolf mid-stride on the long road."] },
+    { id: "lev_under_w3", kind: "puzzle_lever", x: ux + 111, y: uy + 44, name: "The HOME Waymark", puzzle: "under_road", order: 2, lines: ["A waymark stone: a wolf at a gate, home at last."] },
+    { id: "plq_under_w1", kind: "signpost", x: ux + 133, y: uy + 40, name: "Road-Verse", lines: ["'The wolf walks home from the FAR stone —'"] },
+    { id: "plq_under_w2", kind: "signpost", x: ux + 123, y: uy + 40, name: "Road-Verse", lines: ["'— by the MIDDLE stone —'"] },
+    { id: "plq_under_w3", kind: "signpost", x: ux + 113, y: uy + 40, name: "Road-Verse", lines: ["'— to the HOME stone, and the last door knows her step.'"] },
+    {
+      id: "gate_under_5", kind: "dungeon_gate", x: ux + 143, y: uy + 41, name: "The Last Seal",
+      hiddenByFlag: "pz_under_road",
+      lines: ["The fifth seal — the one the psalm was written to keep. Beyond it, a hall, and a keeper, and a door that faces north."],
+    },
+
+    // === THE WARDEN'S HALL ==================================================
+    { id: "ug_guard_1", kind: "monster", monster: "pale_wight", x: ux + 147, y: uy + 41, name: "Warden's Honour-Guard" },
+    { id: "ug_guard_2", kind: "monster", monster: "pale_wight", x: ux + 147, y: uy + 47, name: "Warden's Honour-Guard" },
+    { id: "ug_warden", kind: "monster", monster: "pale_warden", x: ux + 150, y: uy + 44, name: "The Pale Warden" },
+    {
+      id: "north_door", kind: "shrine", x: ux + 152, y: uy + 39, name: "The North Door",
+      lines: ["The Undergate itself: a door as wide as a street, barred from THIS side. Beyond it the road runs north, under the Spine and out the far slope — toward whoever has kept their own watch, all this time."],
+    },
+    {
+      id: "chest_under", kind: "dungeon_chest", x: ux + 152, y: uy + 47, name: "The Warden's Reliquary",
+      loot: [{ item: "pale_greaves", qty: 1 }, { item: "marrow_shard", qty: 2 }, { item: "cut_gem", qty: 4 }],
+      lines: ["The Warden's own reliquary, at the foot of the North Door. Whatever it kept, it kept for the day the wolf came home."],
+    },
+    { id: "ret_under_b", kind: "portal", x: ux + 146, y: uy + 45, name: "The Warden's Stair", target: { x: umouth.x, y: umouth.y + 1 }, lines: ["The Warden's own stair, straight and true, up to the pass."] },
   );
   return out;
 }

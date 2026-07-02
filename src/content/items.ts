@@ -5884,5 +5884,34 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🗝️",
     "cat": "Quest",
     "sell": 0
+  },
+  "pale_greaves": {
+    "id": "pale_greaves",
+    "name": "Warden's Pale Greaves",
+    "description": "UNIQUE. The Pale Warden stood on the last seal for a thousand years, and the standing is in the steel: while you wear them, every blow that lands on you lands a tenth softer.",
+    "icon": "🥾",
+    "cat": "Armour",
+    "slot": "boots",
+    "tier": 6,
+    "def": 8,
+    "equipLevel": 70,
+    "rarity": "rare",
+    "sell": 0
+  },
+  "undergate_key_1": {
+    "id": "undergate_key_1",
+    "name": "Gatewright's Key",
+    "description": "A mason's key of pale stone, heavy as guilt. The Underway's Gatewright carried it through the long silence.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
+  },
+  "undergate_key_2": {
+    "id": "undergate_key_2",
+    "name": "Deepway Key",
+    "description": "A sliver of pale iron that hums faintly, as if it remembers the psalm. The Herald of the deep stair kept it to the last verse.",
+    "icon": "🗝️",
+    "cat": "Quest",
+    "sell": 0
   }
 };
