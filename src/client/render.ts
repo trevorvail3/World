@@ -3264,6 +3264,31 @@ function drawSkillPet(
       eye(cx - 1.3, y - 2.2, 0.75); eye(cx + 1.3, y - 2.2, 0.75);
       break;
     }
+    case "pet_founder_wisp": { // THE FIRST EMBER — a warm lantern-mote that breathes light
+      const fl = 0.5 + 0.5 * Math.sin(now / 220);
+      // A soft outer glow.
+      const glow = g.createRadialGradient(cx, y - 1, 1, cx, y - 1, 11 + fl * 3);
+      glow.addColorStop(0, `rgba(255,190,90,${0.5 + 0.25 * fl})`);
+      glow.addColorStop(1, "rgba(255,150,60,0)");
+      g.fillStyle = glow;
+      g.beginPath(); g.arc(cx, y - 1, 12 + fl * 3, 0, Math.PI * 2); g.fill();
+      // The ember body: a small teardrop flame.
+      g.fillStyle = "#ffcf6a";
+      g.beginPath();
+      g.moveTo(cx, y - 7 - fl * 2);
+      g.quadraticCurveTo(cx + 5, y - 1, cx + 3.5, y + 4);
+      g.quadraticCurveTo(cx, y + 6.5, cx - 3.5, y + 4);
+      g.quadraticCurveTo(cx - 5, y - 1, cx, y - 7 - fl * 2);
+      g.fill();
+      // A hot white heart.
+      g.fillStyle = `rgba(255,245,210,${0.8 + 0.2 * fl})`;
+      g.beginPath(); g.ellipse(cx, y, 1.8, 2.6, 0, 0, Math.PI * 2); g.fill();
+      // A couple of rising sparks.
+      g.fillStyle = `rgba(255,200,120,${0.5 * fl})`;
+      g.fillRect(cx - 4, y - 8 - fl * 4, 1, 1);
+      g.fillRect(cx + 3, y - 6 - fl * 3, 1, 1);
+      break;
+    }
     default:
       drawCritter(g, undefined, cx, cy, now);
   }

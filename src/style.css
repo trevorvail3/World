@@ -2641,6 +2641,38 @@ button.inv-slot {
 .bugreport-send:disabled { opacity: 0.5; cursor: default; }
 .bugreport-cancel { color: #b3a382; background: none; border: 1px solid #5a4930; }
 .bugreport-msg { font-family: "EB Garamond", serif; font-size: 12.5px; color: #cbb890; margin-top: 8px; min-height: 16px; }
+
+/* --- Founder cosmetics --- */
+.hiscores-row.founder .hiscores-name { color: #f2cf6b; text-shadow: 0 0 6px rgba(242, 207, 107, 0.35); }
+.hiscores-founder {
+  margin-left: 6px; padding: 1px 6px; border-radius: 8px; vertical-align: middle;
+  font-family: "Cinzel", serif; font-size: 9px; letter-spacing: 0.5px;
+  color: #1a140d; background: linear-gradient(180deg, #f2cf6b, #d0a63c);
+}
+.founder-backdrop {
+  position: fixed; inset: 0; z-index: 320; display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 6, 4, 0.82);
+}
+.founder-box {
+  width: min(420px, 92vw); padding: 26px 26px 22px; border-radius: 12px; text-align: center;
+  background: radial-gradient(120% 90% at 50% 0%, #33220f, #1a130c 70%);
+  border: 1px solid #c8531f; box-shadow: 0 0 50px rgba(200, 83, 31, 0.35);
+}
+.founder-crest { font-size: 40px; filter: drop-shadow(0 0 12px rgba(255, 160, 70, 0.7)); }
+.founder-title { font-family: "Cinzel", serif; font-size: 22px; letter-spacing: 1px; color: #f2cf6b; margin: 6px 0 8px; }
+.founder-sub { font-family: "EB Garamond", serif; font-size: 14px; color: #d6c39c; margin-bottom: 12px; }
+.founder-list { list-style: none; padding: 0; margin: 0 0 12px; text-align: left; display: inline-block; }
+.founder-list li { font-family: "EB Garamond", serif; font-size: 14px; color: #e6dcc2; margin: 5px 0; padding-left: 18px; position: relative; }
+.founder-list li::before { content: "◆"; position: absolute; left: 0; color: #c8531f; font-size: 10px; top: 3px; }
+.founder-list b { color: #f2cf6b; }
+.founder-note { font-family: "EB Garamond", serif; font-style: italic; font-size: 12px; color: #a99372; margin-bottom: 16px; }
+.founder-claim {
+  padding: 12px 30px; border-radius: 7px; cursor: pointer;
+  font-family: "Cinzel", serif; font-size: 14px; letter-spacing: 1px; color: #1a140d;
+  background: linear-gradient(180deg, #f2cf6b, #d0932c); border: 1px solid #f2e2b8;
+}
+.founder-claim:disabled { opacity: 0.6; cursor: default; }
+.founder-box.claimed { border-color: #f2cf6b; }
 @keyframes playGlow {
   0%, 100% { box-shadow: 0 0 14px rgba(210, 160, 80, 0.18), inset 0 1px 0 rgba(255, 230, 180, 0.25); }
   50% { box-shadow: 0 0 30px rgba(210, 160, 80, 0.4), inset 0 1px 0 rgba(255, 230, 180, 0.25); }

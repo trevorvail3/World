@@ -33,6 +33,8 @@ export interface HiscoreEntry {
   trailLaps?: number;
   /** Per-skill level, keyed by skill id — shown on a player's profile. */
   skills?: Record<string, number>;
+  /** A cosmetic supporter — gold name + Founder tag on the board. */
+  founder?: boolean;
 }
 
 export interface SocialBackend {
@@ -73,6 +75,7 @@ export function entryFromSave(raw: unknown, _content: Content): HiscoreEntry | n
     goldEarned: num(stats["goldEarned"]),
     trailLaps: num(r["trailLaps"]),
     skills: skillLevels,
+    founder: Array.isArray(r["flags"]) && (r["flags"] as unknown[]).includes("founder"),
   };
 }
 
@@ -102,10 +105,13 @@ function rowToEntry(row: Record<string, unknown>): HiscoreEntry {
     goldEarned: num(row["gold_earned"]),
   };
   if (typeof row["user_id"] === "string") e.userId = row["user_id"] as string;
+  if (row["founder"] === true) e.founder = true;
   if (row["skills"] && typeof row["skills"] === "object") {
     const sk = { ...(row["skills"] as Record<string, number>) };
     e.trailLaps = num(sk["__trail_laps"]);
+    if (num(sk["__founder"]) > 0) e.founder = true;
     delete sk["__trail_laps"];
+    delete sk["__founder"];
     e.skills = sk;
   }
   return e;
@@ -141,7 +147,7 @@ class SupabaseSocialBackend implements SocialBackend {
           gold_earned: entry.goldEarned,
           // Trail laps ride in the skills JSON under a reserved key — no
           // schema change needed on the shared board.
-          skills: { ...(entry.skills ?? {}), __trail_laps: entry.trailLaps ?? 0 },
+          skills: { ...(entry.skills ?? {}), __trail_laps: entry.trailLaps ?? 0, __founder: entry.founder ? 1 : 0 },
         },
       });
     } catch { /* offline — try again next time the board opens */ }

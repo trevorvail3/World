@@ -115,9 +115,9 @@ export class HiscoresUI {
       return;
     }
     this.body.innerHTML = sorted.map((e, i) => `
-      <div class="hiscores-row${e.you ? " you" : ""}">
+      <div class="hiscores-row${e.you ? " you" : ""}${e.founder ? " founder" : ""}">
         <span class="hiscores-rank">${i + 1}</span>
-        <span class="hiscores-name">${escapeHtml(e.name)}</span>
+        <span class="hiscores-name">${escapeHtml(e.name)}${e.founder ? `<span class="hiscores-founder">Founder</span>` : ""}</span>
         <span class="hiscores-val">${m.fmt(e)}</span>
       </div>`).join("");
   }

@@ -270,6 +270,7 @@ export type ItemId =
   | "pet_green_baron"
   | "pet_hollow_prophet"
   | "pet_superior"
+  | "pet_founder_wisp"
   | "horror_lantern"
   | "mount_blanket"
   | "mount_plume"
@@ -424,6 +425,7 @@ export type ItemId =
   | "cape_agility"
   | "cape_max"
   | "cape_ironvale"
+  | "cape_founder"
   | "charcoal"
   | "raw_hide"
   | "tanned_leather"
@@ -1817,6 +1819,12 @@ export interface OpenNestIntent {
   slot: number;
 }
 
+/** "Claim my Founder's Cache" — grants the one-time cosmetic Founder items to a
+ *  player carrying the "founder" entitlement flag (cosmetic-only; see FOUNDER.md). */
+export interface FounderClaimIntent {
+  type: "FOUNDER_CLAIM";
+}
+
 /** "Resolve the pier tension minigame": land the hooked fish (success) or let
  *  the line go slack / snap (failure). Success commits the rolled catch; failure
  *  discards it. The core trusts the client's skill outcome — single-player, the
@@ -1893,6 +1901,7 @@ export type Intent =
   | GeMoveIntent
   | TradeApplyIntent
   | OpenNestIntent
+  | FounderClaimIntent
   | LandFishIntent
   | SwapSlotsIntent;
 

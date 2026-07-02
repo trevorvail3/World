@@ -741,6 +741,26 @@ function openNest(
   events.push({ type: "LOG", message: `You pick apart the nest and find ${qty}× ${content.items[pick].name}.` });
 }
 
+/** The Founder's Cache: the cosmetic-only items a supporter claims once. The
+ *  entitlement is the "founder" flag (stamped at login from the account's
+ *  purchase; see FOUNDER.md). Purely cosmetic — no XP, gold, stats, or space. */
+const FOUNDER_ITEMS: ItemId[] = ["pet_founder_wisp", "cape_founder"];
+
+function claimFounder(state: WorldState, events: WorldEvent[]): void {
+  const player = state.player;
+  // Only a founder may claim, and only once.
+  if (!player.flags.includes("founder")) return;
+  if (player.flags.includes("founder_claimed")) return;
+  player.flags.push("founder_claimed");
+  for (const id of FOUNDER_ITEMS) {
+    if (ownsItem(player, id)) continue; // never duplicate a claim
+    // A cosmetic must never be lost to a full pack — bank it if it won't fit.
+    if (canAddItem(player, id)) addItem(player, id, 1, events);
+    else { player.bank[id] = (player.bank[id] ?? 0) + 1; events.push({ type: "ITEM_GAINED", item: id, qty: 1 }); }
+  }
+  events.push({ type: "LOG", message: "The First Ember lights at your shoulder. Thank you for standing with Varath at the start." });
+}
+
 /**
  * Drop a whole inventory slot onto the player's tile. The pile lingers on the
  * floor (same TTL as loot), so a misclick can be picked back up.
@@ -1470,6 +1490,10 @@ export function applyIntent(
     }
     case "OPEN_NEST": {
       openNest(state, content, intent.slot, ctx, events);
+      break;
+    }
+    case "FOUNDER_CLAIM": {
+      claimFounder(state, events);
       break;
     }
     case "LAND_FISH": {

@@ -165,6 +165,7 @@ function colorFor(item: ItemDef, ladderKey: string, content: Content): Metal {
 }
 
 function capeColor(item: ItemDef): string {
+  if (item.id === "cape_founder") return "#c8531f"; // Founder's ember-orange
   if (/varath|master|legend/i.test(item.id)) return "#e8c45a"; // gold for the grandmaster cape
   let h = 0;
   for (let i = 0; i < item.id.length; i++) h = (h * 31 + item.id.charCodeAt(i)) >>> 0;

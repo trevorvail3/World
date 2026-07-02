@@ -1749,6 +1749,19 @@ export const items: Record<ItemId, ItemDef> = {
       "petSuperior": true
     }
   },
+  "pet_founder_wisp": {
+    "id": "pet_founder_wisp",
+    "name": "The First Ember",
+    "description": "A warm mote of lantern-light that keeps to your shoulder. It was lit for those who walked the Knuckle Hills before the roads were made — and it remembers. Purely a companion; it asks nothing and grants nothing but its light. A Founder's mark, and never sold, dropped, or given again.",
+    "icon": "🔥",
+    "cat": "Founder",
+    "slot": "companion",
+    "rarity": "legendary",
+    "sell": 0,
+    "meta": {
+      "founder": true
+    }
+  },
   "ribstone_arrow": {
     "id": "ribstone_arrow",
     "name": "Ribstone Arrow",
@@ -3483,6 +3496,18 @@ export const items: Record<ItemId, ItemDef> = {
     "sell": 0,
     "meta": {
       "skill": "ironvale"
+    }
+  },
+  "cape_founder": {
+    "id": "cape_founder",
+    "name": "Founder's Mantle",
+    "description": "A deep ember-and-black cape worn by those who backed Varath in its first days. It carries no power at all — it never will — only the standing of having been here at the start. Never sold, dropped, or given again.",
+    "icon": "🔥",
+    "cat": "Founder",
+    "slot": "cape",
+    "sell": 0,
+    "meta": {
+      "founder": true
     }
   },
   "charcoal": {

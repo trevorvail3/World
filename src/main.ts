@@ -46,6 +46,7 @@ import { LoginUI } from "./client/loginUI.ts";
 import { currentUser, signOut } from "./client/supabase.ts";
 import { audio } from "./client/audio.ts";
 import { ping, setStateProvider } from "./client/ops.ts";
+import { founderEntitled, loadFounderEntitlement, maybeShowFounderClaim } from "./client/founder.ts";
 import { loadCloud, saveCloud, deleteCloud } from "./client/cloudSave.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
@@ -111,6 +112,7 @@ async function afterLogin(): Promise<void> {
   setCurrentAccount(user.id); // saves now target this account's slot
 
   const cloud = await loadCloud();
+  await loadFounderEntitlement(); // supporter status for this account (fail-silent)
 
   // Cloud unreachable — its state is unknown. Play from a local copy if we have
   // one (cloudReady=false: we won't push and risk clobbering), else ask to retry.
@@ -178,6 +180,12 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   // A brand-new character stamps its full look (name, colours, styles).
   if (newChar) {
     state.player.appearance = { ...newChar };
+  }
+
+  // Founder entitlement → the "founder" flag (server-authoritative; see
+  // FOUNDER.md). Purely cosmetic; the one-time claim window opens after start.
+  if (founderEntitled() && !state.player.flags.includes("founder")) {
+    state.player.flags.push("founder");
   }
 
   // Walkability depends on story flags (a quest can remove a barrier — e.g. the
@@ -349,6 +357,9 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
         : `You set foot on the Knuckle Hills, ${state.player.appearance.name}. An old man waves from the clearing.`,
     );
     if (!restored) guide.start();
+    // A founder's one-time cache window — after the intro/primer, once the
+    // player is actually standing in the world.
+    maybeShowFounderClaim(app!, state, dispatch);
   };
   // New characters get the atmosphere intro, then the controls primer, then the
   // world (where the contextual guide takes over). Returning players drop in.
