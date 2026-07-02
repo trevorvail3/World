@@ -403,16 +403,19 @@ const REGION_BUILDINGS: Building[] = [
  * coordinates. The three fill Ironvale's north-west civic yard as one block of
  * trades, each entered from the lane it faces.
  */
+export type BuildingTrade = "forge" | "bank" | "workshop";
 export interface EnterableBuilding {
   x0: number; y0: number; x1: number; y1: number;
   roof: RoofStyle; floor: TileType; door: V; name: string;
+  /** Drives the hanging shop sign and the interior dressing. */
+  trade: BuildingTrade;
 }
 export const ENTERABLE: EnterableBuilding[] = [
   // Top row — doors onto the north forecourt lane (y68).
-  { x0: 69, y0: 69, x1: 73, y1: 72, roof: "slate", floor: "stone", door: { x: 71, y: 69 }, name: "The Ashforge" },
-  { x0: 74, y0: 69, x1: 78, y1: 72, roof: "tile",  floor: "stone", door: { x: 76, y: 69 }, name: "The Varath Vault" },
+  { x0: 69, y0: 69, x1: 73, y1: 72, roof: "slate", floor: "stone", door: { x: 71, y: 69 }, name: "The Ashforge", trade: "forge" },
+  { x0: 74, y0: 69, x1: 78, y1: 72, roof: "tile",  floor: "stone", door: { x: 76, y: 69 }, name: "The Varath Vault", trade: "bank" },
   // Bottom row — door onto the east–west high street (y77).
-  { x0: 69, y0: 73, x1: 77, y1: 76, roof: "slate", floor: "stone", door: { x: 73, y: 76 }, name: "The Craftworks" },
+  { x0: 69, y0: 73, x1: 77, y1: 76, roof: "slate", floor: "stone", door: { x: 73, y: 76 }, name: "The Craftworks", trade: "workshop" },
 ];
 
 /** The enterable building containing a tile (for the roof-lift check), or null. */

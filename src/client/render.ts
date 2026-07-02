@@ -22,7 +22,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
-import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
+import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
@@ -1560,13 +1560,35 @@ export function drawWorld(
   if (!region) {
     const ptx = Math.round(state.player.pos.x), pty = Math.round(state.player.pos.y);
     for (const b of ENTERABLE) {
-      if (ptx >= b.x0 && ptx <= b.x1 && pty >= b.y0 && pty <= b.y1) continue; // inside — roof up
+      if (ptx >= b.x0 && ptx <= b.x1 && pty >= b.y0 && pty <= b.y1) {
+        drawInteriorDressing(g, b, cam, now, lights); // inside — roof up, dress the room
+        continue;
+      }
       const belongs = (xx: number, yy: number) => xx >= b.x0 && xx <= b.x1 && yy >= b.y0 && yy <= b.y1;
       const door = (xx: number, yy: number) => xx === b.door.x && yy === b.door.y;
       for (let yy = b.y0; yy <= b.y1; yy++) for (let xx = b.x0; xx <= b.x1; xx++) {
         if (!inRegion(xx, yy) || outside(xx, yy)) continue;
         drawRoof(g, xx * TILE - cam.x, yy * TILE - cam.y, xx, yy, b.roof, { belongs, door });
       }
+      // A smithy announces itself: a chimney breathing smoke off the forge roof.
+      if (b.trade === "forge") {
+        const chx = (b.x1 - 0.5) * TILE - cam.x, chTop = b.y0 * TILE - cam.y;
+        g.fillStyle = "#3a3540"; g.fillRect(chx - 4, chTop - 6, 8, 12); // stack
+        g.fillStyle = "#2a262f"; g.fillRect(chx - 5, chTop - 8, 10, 3); // cap
+        g.save(); g.globalAlpha = 0.35;
+        for (let i = 0; i < 3; i++) {
+          const t = ((now / 900) + i / 3) % 1;
+          const sxp = chx + Math.sin((now / 500) + i) * 4;
+          g.fillStyle = "rgba(210,210,215,1)";
+          g.beginPath(); g.arc(sxp, chTop - 8 - t * 26, 3 + t * 5, 0, Math.PI * 2); g.fill();
+        }
+        g.restore();
+      }
+    }
+    // Hanging shop signs over every doorway (readable from the lane, roof or not).
+    for (const b of ENTERABLE) {
+      if (!inRegion(b.door.x, b.door.y) || outside(b.door.x, b.door.y)) continue;
+      drawShopSign(g, b, cam);
     }
   }
 
@@ -1657,6 +1679,123 @@ function drawHomeDressing(
     g.fillStyle = "#3b3e45"; g.fillRect(x - 1.5, y - 1, 3, 6); // iron bracket
     g.fillStyle = `rgba(255,200,110,${0.55 + 0.4 * fl})`; g.beginPath(); g.arc(x, y - 3, 3, 0, Math.PI * 2); g.fill();
     lights.push([x, y - 2]);
+  }
+}
+
+/** A stubby barrel with two iron hoops (forge slack-tub / general prop). */
+function drawBarrel(g: CanvasRenderingContext2D, x: number, y: number, r = 7): void {
+  g.fillStyle = "#6b4a2c"; g.beginPath(); g.ellipse(x, y, r, r * 0.55, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#7a5836"; g.fillRect(x - r, y - r * 1.2, r * 2, r * 1.2);
+  g.fillStyle = "#4f371f"; g.fillRect(x - r, y - r * 1.2, r * 2, 1.5); g.fillRect(x - r, y - 2, r * 2, 1.5);
+  g.fillStyle = "#3a2817"; g.beginPath(); g.ellipse(x, y - r * 1.2, r, r * 0.5, 0, 0, Math.PI * 2); g.fill();
+}
+
+/** Interior dressing for an enterable civic building, drawn while the player is
+ *  inside (roof lifted): a warm floor wash + wall sconces so it reads as indoors,
+ *  and trade-specific props (forge tools/coal, bank ledgers/coin, workshop lumber)
+ *  so the smithy/bank/workshop feels like a real, worked-in room. */
+function drawInteriorDressing(
+  g: CanvasRenderingContext2D,
+  b: EnterableBuilding,
+  cam: Camera,
+  now: number,
+  lights: Array<[number, number]>,
+): void {
+  const sx = (tx: number) => tx * TILE - cam.x;
+  const sy = (ty: number) => ty * TILE - cam.y;
+  const fl = 0.6 + 0.4 * Math.sin(now / 240);
+
+  // Warm floor wash so the lit room reads as indoors even at midday.
+  const cxp = ((b.x0 + b.x1 + 1) / 2) * TILE - cam.x;
+  const cyp = ((b.y0 + b.y1 + 1) / 2) * TILE - cam.y;
+  const rr = (Math.max(b.x1 - b.x0, b.y1 - b.y0) + 2) * TILE * 0.6;
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  const wash = g.createRadialGradient(cxp, cyp, 8, cxp, cyp, rr);
+  wash.addColorStop(0, "rgba(255,196,120,0.11)");
+  wash.addColorStop(1, "rgba(255,196,120,0)");
+  g.fillStyle = wash; g.beginPath(); g.arc(cxp, cyp, rr, 0, Math.PI * 2); g.fill();
+  g.restore();
+
+  // Wall sconces on the two top inner corners → warm light pools.
+  for (const s of [{ x: b.x0 + 1, y: b.y0 }, { x: b.x1 - 1, y: b.y0 }]) {
+    const x = sx(s.x) + TILE / 2, y = sy(s.y) + TILE - 6;
+    g.fillStyle = "#3b3e45"; g.fillRect(x - 1.5, y - 1, 3, 6);
+    g.fillStyle = `rgba(255,200,110,${(0.55 + 0.4 * fl).toFixed(2)})`;
+    g.beginPath(); g.arc(x, y - 3, 3, 0, Math.PI * 2); g.fill();
+    lights.push([x, y - 2]);
+  }
+
+  if (b.trade === "forge") {
+    // Tool rack on the top wall: a hanging hammer + tongs.
+    const rx = sx(b.x0 + 2) + 6, ry = sy(b.y0) + TILE - 6;
+    g.strokeStyle = "#2a2018"; g.lineWidth = 2; g.beginPath(); g.moveTo(rx - 6, ry); g.lineTo(rx + 14, ry); g.stroke();
+    g.fillStyle = "#8a8f98"; g.fillRect(rx - 4, ry, 3, 8); g.fillStyle = "#5a3f26"; g.fillRect(rx - 4, ry + 8, 3, 5); // hammer
+    g.strokeStyle = "#8a8f98"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(rx + 8, ry); g.lineTo(rx + 6, ry + 11); g.moveTo(rx + 11, ry); g.lineTo(rx + 13, ry + 11); g.stroke(); // tongs
+    // Slack-tub barrel in the far corner.
+    drawBarrel(g, sx(b.x1 - 1) + 12, sy(b.y1 - 1) + 16);
+    // Coal heap in the near corner.
+    g.fillStyle = "#181820";
+    for (let i = 0; i < 6; i++) g.fillRect(sx(b.x0 + 1) + 4 + (i % 3) * 5, sy(b.y1 - 1) + 14 + Math.floor(i / 3) * 4, 4, 3);
+  } else if (b.trade === "bank") {
+    // Ledger shelves on the top wall (planks with stacked books).
+    for (const shx of [b.x0 + 1, b.x1 - 2]) {
+      const x = sx(shx) + 4, y = sy(b.y0) + TILE - 8;
+      g.fillStyle = "#4a3520"; g.fillRect(x, y, 26, 3);
+      const cols = ["#7a3b2c", "#3c5a44", "#4a4a6a", "#8a6a2c"];
+      for (let i = 0; i < 5; i++) { g.fillStyle = cols[i % cols.length]!; g.fillRect(x + 1 + i * 4, y - 7, 3, 7); }
+    }
+    // A stack of coin sacks in the corner.
+    const cxp2 = sx(b.x0 + 1) + 14, cyp2 = sy(b.y1 - 1) + 18;
+    g.fillStyle = "#b8935a";
+    g.beginPath(); g.ellipse(cxp2, cyp2, 6, 5, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(cxp2 + 8, cyp2 + 1, 6, 5, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(cxp2 + 4, cyp2 - 6, 6, 5, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#8a6a3a"; g.fillRect(cxp2 - 2, cyp2 - 12, 4, 3); g.fillRect(cxp2 + 6, cyp2 - 11, 4, 3);
+    g.fillStyle = "#f2d878"; g.fillRect(cxp2 + 2, cyp2 - 8, 2, 2); // a glint of coin
+  } else { // workshop
+    // Lumber stack along a side wall (log ends).
+    const lx = sx(b.x0 + 1) + 6, ly = sy(b.y1 - 1) + 12;
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+      g.fillStyle = "#8a6a3c"; g.beginPath(); g.arc(lx + c * 9, ly - r * 8, 4, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#a5824c"; g.beginPath(); g.arc(lx + c * 9, ly - r * 8, 2, 0, Math.PI * 2); g.fill();
+    }
+    // A saw mounted on the top wall.
+    const swx = sx(b.x1 - 2) + 4, swy = sy(b.y0) + TILE - 6;
+    g.strokeStyle = "#c9ccd2"; g.lineWidth = 2; g.beginPath(); g.moveTo(swx, swy); g.lineTo(swx + 22, swy - 4); g.stroke();
+    g.fillStyle = "#5a3f26"; g.fillRect(swx - 3, swy - 2, 5, 4);
+    // Sawdust flecks near the benches.
+    g.fillStyle = "rgba(205,175,115,0.55)";
+    for (let i = 0; i < 8; i++) g.fillRect(sx(b.x0 + 3) + (hash(i, b.x0) * 40), sy(b.y1 - 1) + 6 + (hash(i * 3, b.y1) * 16), 2, 2);
+  }
+}
+
+/** A carved hanging shop sign over a building's doorway (visible from the lane),
+ *  with a small trade glyph so the smithy/bank/workshop reads at a glance. */
+function drawShopSign(
+  g: CanvasRenderingContext2D,
+  b: EnterableBuilding,
+  cam: Camera,
+): void {
+  const x = b.door.x * TILE + TILE / 2 - cam.x;
+  // The sign hangs just below the eave, over the doorway on the lane side.
+  const topDoor = b.door.y === b.y0;
+  const y = (topDoor ? b.door.y * TILE : (b.door.y + 1) * TILE) - cam.y + (topDoor ? -6 : 4);
+  // Bracket + board.
+  g.fillStyle = "#2a2018"; g.fillRect(x - 14, y - 2, 2, 4); // bracket arm
+  g.fillStyle = "#3a2c1c"; g.fillRect(x - 13, y, 26, 13);
+  g.strokeStyle = "#1c150f"; g.lineWidth = 1; g.strokeRect(x - 13, y, 26, 13);
+  g.strokeStyle = "#5a4630"; g.lineWidth = 1; g.strokeRect(x - 11, y + 2, 22, 9);
+  // Trade glyph.
+  const gx = x, gy = y + 6.5;
+  if (b.trade === "forge") { // an anvil silhouette
+    g.fillStyle = "#c9ccd2"; g.fillRect(gx - 6, gy - 2, 12, 3); g.fillRect(gx - 2, gy + 1, 4, 3); g.fillRect(gx - 4, gy + 4, 8, 2);
+  } else if (b.trade === "bank") { // a coin
+    g.fillStyle = "#f2d060"; g.beginPath(); g.arc(gx, gy + 1, 5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#c9a020"; g.font = "bold 8px serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("$", gx, gy + 1.5);
+  } else { // crossed hammer + saw for the workshop
+    g.strokeStyle = "#c9ccd2"; g.lineWidth = 2; g.beginPath(); g.moveTo(gx - 5, gy + 4); g.lineTo(gx + 5, gy - 4); g.stroke();
+    g.strokeStyle = "#a5824c"; g.beginPath(); g.moveTo(gx + 5, gy + 4); g.lineTo(gx - 5, gy - 4); g.stroke();
   }
 }
 
