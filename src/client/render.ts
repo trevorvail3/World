@@ -22,7 +22,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
-import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
+import { type RoofStyle, INTERIOR_TOP, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
@@ -834,9 +834,14 @@ function drawRoof(
   x: number,
   y: number,
   style: RoofStyle,
+  // For an enterable building's roof canopy: neighbour-awareness + door notch
+  // come from the footprint instead of the wall-tile roof map.
+  override?: { belongs: (x: number, y: number) => boolean; door: (x: number, y: number) => boolean },
 ): void {
   const [base, ridge, line] = ROOF_COLORS[style];
-  const sameRoof = (dx: number, dy: number) => cityRoof(x + dx, y + dy) === style;
+  const belongs = override ? override.belongs : (xx: number, yy: number) => cityRoof(xx, yy) === style;
+  const isDoor = override ? override.door : cityDoor;
+  const sameRoof = (dx: number, dy: number) => belongs(x + dx, y + dy);
   const topEdge = !sameRoof(0, -1);
   const botEdge = !sameRoof(0, 1);
   const leftEdge = !sameRoof(-1, 0);
@@ -908,7 +913,7 @@ function drawRoof(
   if (botEdge) {
     g.fillStyle = "rgba(0,0,0,0.35)";
     g.fillRect(px, roofBottom, TILE, 2);
-    if (cityDoor(x, y)) {
+    if (isDoor(x, y)) {
       g.fillStyle = "#1c150f";
       g.fillRect(px + TILE / 2 - 4, roofBottom + 1, 8, 6);
       g.fillStyle = "rgba(210,160,90,0.4)"; // a warm sliver of lamplight
@@ -1545,6 +1550,24 @@ export function drawWorld(
     // A warm light the player carries — added after the bloom pass so it only
     // punches a night pool (no daytime halo), via drawDaylight's light list.
     if (!region) playerGlow = [plCx, plCy - 4];
+  }
+
+  // --- Roof canopies (OSRS-style roof-lift): draw each enterable building's
+  //     roof over its whole footprint — hiding the room within — and LIFT it
+  //     (skip it) the moment the player stands inside, so a smithy/bank/workshop
+  //     reads as a real room you walk into through an open doorway. Drawn after
+  //     the player so a raised roof still occludes everything beneath it.
+  if (!region) {
+    const ptx = Math.round(state.player.pos.x), pty = Math.round(state.player.pos.y);
+    for (const b of ENTERABLE) {
+      if (ptx >= b.x0 && ptx <= b.x1 && pty >= b.y0 && pty <= b.y1) continue; // inside — roof up
+      const belongs = (xx: number, yy: number) => xx >= b.x0 && xx <= b.x1 && yy >= b.y0 && yy <= b.y1;
+      const door = (xx: number, yy: number) => xx === b.door.x && yy === b.door.y;
+      for (let yy = b.y0; yy <= b.y1; yy++) for (let xx = b.x0; xx <= b.x1; xx++) {
+        if (!inRegion(xx, yy) || outside(xx, yy)) continue;
+        drawRoof(g, xx * TILE - cam.x, yy * TILE - cam.y, xx, yy, b.roof, { belongs, door });
+      }
+    }
   }
 
   // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;

@@ -394,6 +394,35 @@ const REGION_BUILDINGS: Building[] = [
 ];
 (BUILDINGS as Building[]).push(...REGION_BUILDINGS);
 
+/**
+ * Enterable buildings (OSRS-style): a hollow room you WALK INTO — a wall
+ * perimeter, a walkable floor, and one open doorway (a gap in the wall, no door
+ * object). Its stations sit on the interior floor; the renderer draws the roof
+ * as a canopy over the whole footprint and LIFTS it the instant the player
+ * steps inside, so the interior reads as a real room. Authored in final canvas
+ * coordinates. The three fill Ironvale's north-west civic yard as one block of
+ * trades, each entered from the lane it faces.
+ */
+export interface EnterableBuilding {
+  x0: number; y0: number; x1: number; y1: number;
+  roof: RoofStyle; floor: TileType; door: V; name: string;
+}
+export const ENTERABLE: EnterableBuilding[] = [
+  // Top row — doors onto the north forecourt lane (y68).
+  { x0: 69, y0: 69, x1: 73, y1: 72, roof: "slate", floor: "stone", door: { x: 71, y: 69 }, name: "The Ashforge" },
+  { x0: 74, y0: 69, x1: 78, y1: 72, roof: "tile",  floor: "stone", door: { x: 76, y: 69 }, name: "The Varath Vault" },
+  // Bottom row — door onto the east–west high street (y77).
+  { x0: 69, y0: 73, x1: 77, y1: 76, roof: "slate", floor: "stone", door: { x: 73, y: 76 }, name: "The Craftworks" },
+];
+
+/** The enterable building containing a tile (for the roof-lift check), or null. */
+export function enterableAt(x: number, y: number): EnterableBuilding | null {
+  for (const b of ENTERABLE) {
+    if (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) return b;
+  }
+  return null;
+}
+
 /** Roof style at a tile (so the renderer knows which walls are buildings). */
 const roofCells = new Map<string, RoofStyle>();
 const doorCells = new Set<string>();
@@ -527,6 +556,15 @@ function decode(): WorldMap {
   cc(49, 55, 55, 61, "dirt");
   //    The buildings: each footprint becomes blocking masonry (roofed by the renderer).
   for (const b of BUILDINGS) carve(b.x0, b.y0, b.x1, b.y1, "wall");
+  //    Enterable buildings: hollow rooms (wall perimeter + walkable floor) with
+  //    one open doorway — carved AFTER the solid slabs so the room floor wins.
+  for (const b of ENTERABLE) {
+    for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) {
+      const edge = x === b.x0 || x === b.x1 || y === b.y0 || y === b.y1;
+      set(x, y, edge ? "wall" : b.floor);
+    }
+    set(b.door.x, b.door.y, b.floor); // open the doorway in the wall
+  }
   //    A flagged town square around the crossroads, for the fountain + crowds.
   cc(58, 50, 62, 54, "stone");
 

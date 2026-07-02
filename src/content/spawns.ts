@@ -158,6 +158,15 @@ const SPAWN_FIXUP: Record<string, { x: number; y: number }> = {
   out_smugglers_landing_0: { x: 151, y: 96 }, // outlaw archers + marauder → NE
   out_smugglers_landing_1: { x: 153, y: 97 },
   out_smugglers_landing_2: { x: 150, y: 99 },
+  // Enterable civic buildings (map.ts ENTERABLE): the stations live on the
+  // interior floor of their room, entered through an open doorway. Pinned to
+  // final canvas tiles inside each footprint.
+  //   The Ashforge (x69-73,y69-72): furnace + anvil + Vorn.
+  furnace_1: { x: 70, y: 70 }, anvil_1: { x: 72, y: 70 }, vorn: { x: 71, y: 71 },
+  //   The Varath Vault (x74-78,y69-72): the bank chest.
+  bank_1: { x: 76, y: 71 },
+  //   The Craftworks (x69-77,y73-76): the maker's benches.
+  workbench_1: { x: 71, y: 74 }, crafting_1: { x: 73, y: 74 }, sawmill_1: { x: 75, y: 74 },
   // The Knuckle field farmer (lvl 18) remapped onto (47,44) — ~5 tiles from the
   // tutorial spawn AND stacked on a Gallows Oak footpad. Push it east onto open
   // ground so the opening clearing stays calm and no two foes share a tile.
