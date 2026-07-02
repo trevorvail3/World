@@ -889,7 +889,12 @@ const rawObjects: WorldObjectDef[] = [
     ],
   },
   { id: "lm_knuckle", kind: "shrine", x: 22, y: 12, name: "The Knuckle", lines: ["The bald stone fist the hills are named for. Old scratch-marks are worked into the rock — a mason's tally, or something older. Sera would copy them and still not pretend to know."] },
+  // Two rocks make the outcrop: mining depletes a rock for a few seconds, and
+  // the opening quest needs three ores — a lone rock strands a newcomer at a
+  // bare stone with no idea why. A pair lets the natural response (tap the
+  // other one) always work.
   { id: "rock_knuckle", kind: "rock", x: 20, y: 14, name: "Knucklestone Rock", resource: "mine_knucklestone" },
+  { id: "rock_knuckle_2", kind: "rock", x: 19, y: 13, name: "Knucklestone Rock", resource: "mine_knucklestone" },
   // A hill kiln by the starting clearing, so the opening quest (mine -> smelt ->
   // bring Aldric a bar) can be done right where you begin.
   { id: "furnace_hill", kind: "furnace", x: 21, y: 17, name: "Hill Kiln" },

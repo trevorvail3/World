@@ -33,7 +33,7 @@ const FIRST_QUEST = "q_ash_and_knuckle";
 // One line per opening-coach phase. Each names the next action + the system it teaches.
 const TEXT: Record<Exclude<Phase, "off" | "graduate">, string> = {
   greet: "Aldric is waving you over — tap him to hear what the old man needs.",
-  mine: "Follow the gold arrow and tap the Knucklestone rock. Every swing trains your Mining.",
+  mine: "Follow the gold arrow and mine the Knucklestone rocks — Aldric needs three ores. A stripped rock refills in a few breaths; tap its neighbour meanwhile.",
   smelt: "Ore in hand. Now tap the kiln to smelt it into a bar — your first crafting station.",
   deliver: "Carry the bar back to Aldric. The gold arrow always points to your current task.",
 };
