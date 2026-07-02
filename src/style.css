@@ -65,6 +65,7 @@ body {
   border: 1px solid var(--panel-edge);
   border-radius: 6px;
   padding: 6px 8px;
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -1550,6 +1551,7 @@ body {
 
 .primer-card {
   width: min(440px, 94vw);
+  max-height: 90vh;
   max-height: 90vh;
   max-height: min(90vh, 90dvh);
   overflow-y: auto;
@@ -3617,6 +3619,7 @@ button.inv-slot {
   .dock-body {
     height: 346px;
     height: min(346px, calc(100vh - 150px));
+    height: min(346px, calc(100vh - 150px));
     height: min(346px, calc(100dvh - 150px));
     width: 188px;
   }
@@ -3627,6 +3630,7 @@ button.inv-slot {
   .hud-log { width: min(260px, 40vw); }
   .log-lines {
     max-height: 96px;
+    max-height: min(96px, calc(100vh - 250px));
     max-height: min(96px, calc(100dvh - 250px));
   }
 
@@ -3643,9 +3647,10 @@ button.inv-slot {
   .run-control { right: 96px; }
   .dock-body {
     height: min(320px, calc(100vh - 130px));
+    height: min(320px, calc(100vh - 130px));
     height: min(320px, calc(100dvh - 130px));
   }
-  .log-lines { max-height: min(72px, calc(100dvh - 200px)); }
+  .log-lines { max-height: min(72px, calc(100vh - 200px)); max-height: min(72px, calc(100dvh - 200px)); }
 }
 
 /* ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@
  * built and the chosen save laid onto it.
  */
 
+import "./client/compat.ts"; // runtime polyfills — must load first
 import "./style.css";
 import { content, playerStart } from "./content/index.ts";
 import type { Ctx, Intent } from "./core/types.ts";
