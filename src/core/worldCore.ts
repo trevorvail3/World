@@ -2712,7 +2712,9 @@ function occupiedHomeTiles(player: Player, content: Content, except = -1): Set<s
   player.home.placed.forEach((p, i) => {
     if (i === except) return;
     const f = content.furniture[p.item];
-    if (!f || f.category === "rug") return; // rugs are walk-over coverings
+    // Rugs are walk-over coverings; wall-hung art sits against the wall behind
+    // furniture — neither blocks its tile.
+    if (!f || f.category === "rug" || f.wall) return;
     for (const t of footTiles(f, p.x, p.y, p.rot)) out.add(t);
   });
   return out;
@@ -2761,7 +2763,7 @@ function canPlaceAt(state: WorldState, content: Content, f: FurnitureDef, x: num
   if (floor.size === 0) return false;
   const tiles = footTiles(f, x, y, rot);
   for (const t of tiles) if (!floor.has(t)) return false; // must sit wholly on the room floor
-  if (f.category !== "rug") {
+  if (f.category !== "rug" && !f.wall) {
     const occ = occupiedHomeTiles(state.player, content, exceptIndex);
     for (const t of tiles) if (occ.has(t)) return false; // no blocking overlap
   }
@@ -2809,8 +2811,15 @@ function storeFurniture(state: WorldState, content: Content, index: number, even
   const p = player.home.placed[index];
   if (!p) return;
   const f = content.furniture[p.item];
+  const wasSpawnBed = !!f?.bed && player.spawn.x === p.x && player.spawn.y === p.y;
   player.home.placed.splice(index, 1);
   player.home.storage[p.item] = (player.home.storage[p.item] ?? 0) + 1;
+  // If you pack up the bed you sleep in, move your respawn to another bed you
+  // still own, so you don't wake on a bare patch of floor.
+  if (wasSpawnBed) {
+    const other = player.home.placed.find((q) => content.furniture[q.item]?.bed);
+    if (other) player.spawn = { x: other.x, y: other.y };
+  }
   refreshHomeStanding(player, content);
   if (f) events.push({ type: "LOG", message: `You pack up the ${f.name}.` });
 }
@@ -2822,12 +2831,13 @@ function upgradeFurniture(state: WorldState, content: Content, index: number, ev
   if (!p) return;
   const cur = content.furniture[p.item];
   if (!cur) return;
-  // The next tier is the next-higher-level piece in the same category.
-  const ladder = Object.values(content.furniture)
-    .filter((g) => g.category === cur.category)
-    .sort((a, b) => a.levelReq - b.levelReq);
-  const at = ladder.findIndex((g) => g.id === cur.id);
-  const next = at >= 0 ? ladder[at + 1] : undefined;
+  // The next tier is the lowest-comfort piece in the same category AND of the
+  // same kind (decor upgrades among decor, a station among stations) whose
+  // comfort strictly exceeds the current piece — so an "upgrade" always improves
+  // the home and never crosses the decor/station line (Crate ⇏ bank Oak Chest).
+  const next = Object.values(content.furniture)
+    .filter((g) => g.category === cur.category && !!g.station === !!cur.station && g.comfort > cur.comfort)
+    .sort((a, b) => a.comfort - b.comfort || a.levelReq - b.levelReq)[0];
   if (!next) { events.push({ type: "LOG", message: `The ${cur.name} is already the finest of its kind.` }); return; }
   if (skillLvl(player, "construction") < next.levelReq) {
     events.push({ type: "LOG", message: `You need Construction level ${next.levelReq} to upgrade to the ${next.name}.` });

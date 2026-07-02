@@ -2237,8 +2237,35 @@ export class Game {
       this.interactObject(obj.id, this.liveTile(obj));
       return;
     }
+    // A placed home station (cooking hearth, oak chest, anvil, cauldron, bench)
+    // — tap it to cook / bank / smith / brew at home, just like a town station.
+    const station = this.placedStationAt(tile);
+    if (station) { this.useHomeStation(station.station, station.item); return; }
     if (this.groundAt(tile)) { this.pickupTopAt(tile); return; }
     this.walkTo(tile);
+  }
+
+  /** A placed furniture piece with a `station` covering this tile, or null. */
+  private placedStationAt(tile: Vec2): { station: string; item: string } | null {
+    const placed = this.bridge.state.player.home.placed;
+    const content = this.bridge.content;
+    for (let i = placed.length - 1; i >= 0; i--) {
+      const pc = placed[i]!;
+      const f = content.furniture[pc.item];
+      if (!f?.station) continue;
+      const [fw, fh] = f.footprint ?? [1, 1];
+      const [w, h] = (pc.rot & 1) === 1 ? [fh, fw] : [fw, fh];
+      if (tile.x >= pc.x && tile.x < pc.x + w && tile.y >= pc.y && tile.y < pc.y + h) {
+        return { station: f.station, item: pc.item };
+      }
+    }
+    return null;
+  }
+
+  /** Open a home station's menu — the bank vault, or a cook/craft recipe list. */
+  private useHomeStation(station: string, item: string): void {
+    if (station === "bank") { audio.play("bank"); this.bank.show(this.bridge.state); return; }
+    this.openCraft(station as ObjKind, `home_${item}`);
   }
 
   /** Is there loot on this tile? */

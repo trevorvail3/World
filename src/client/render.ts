@@ -2932,20 +2932,20 @@ function drawPlacedFurniture(
 ): void {
   const placed = state.player.home.placed;
   if (!placed || placed.length === 0) return;
-  // Rugs (floor coverings) under everything; then the rest, back-to-front by y.
+  // Rugs (floor coverings) and wall-hung art (against the wall behind) draw
+  // first, under the standing furniture; then the rest, back-to-front by y.
+  const backLayer = (id: string): boolean => { const f = content.furniture[id]; return f?.category === "rug" || !!f?.wall; };
   const order = placed
     .map((p, i) => ({ p, i }))
-    .sort((a, b) => {
-      const ra = content.furniture[a.p.item]?.category === "rug" ? 0 : 1;
-      const rb = content.furniture[b.p.item]?.category === "rug" ? 0 : 1;
-      return ra - rb || a.p.y - b.p.y;
-    });
+    .sort((a, b) => (backLayer(a.p.item) ? 0 : 1) - (backLayer(b.p.item) ? 0 : 1) || a.p.y - b.p.y);
   for (const { p } of order) {
     const f = content.furniture[p.item];
     if (!f) continue;
     const [w, h] = placedFootprint(f, p.rot);
     const cx = (p.x + w / 2) * TILE - cam.x;
-    const cy = (p.y + h / 2) * TILE - cam.y;
+    // Wall-hung pieces ride up toward the wall behind their tile so they read as
+    // mounted rather than standing on the floor.
+    const cy = (p.y + h / 2) * TILE - cam.y - (f.wall ? TILE * 0.4 : 0);
     if (cx < -TILE * 2 || cy < -TILE * 2 || cx > g.canvas.width + TILE * 2 || cy > g.canvas.height + TILE * 2) continue;
     const [w0, h0] = f.footprint ?? [1, 1];
     g.save();

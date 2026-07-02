@@ -280,9 +280,12 @@ export class DecorateUI {
 
   // --- helpers ------------------------------------------------------------
   private nextTier(f: FurnitureDef): FurnitureDef | undefined {
-    const ladder = Object.values(this.d.content.furniture).filter((g) => g.category === f.category).sort((a, b) => a.levelReq - b.levelReq);
-    const at = ladder.findIndex((g) => g.id === f.id);
-    return at >= 0 ? ladder[at + 1] : undefined;
+    // The lowest-comfort piece in the same category + kind (decor vs station)
+    // whose comfort beats this one — so an upgrade always improves the home and
+    // never crosses the decor/station line.
+    return Object.values(this.d.content.furniture)
+      .filter((g) => g.category === f.category && !!g.station === !!f.station && g.comfort > f.comfort)
+      .sort((a, b) => a.comfort - b.comfort || a.levelReq - b.levelReq)[0];
   }
   private canAfford(f: FurnitureDef): boolean {
     const inv = this.d.state().player.inventory;
