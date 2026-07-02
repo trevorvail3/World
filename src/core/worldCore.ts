@@ -78,7 +78,10 @@ const AGILITY_REGEN_AT_CAP = 2.2;
 const AGILITY_LAP_BONUS_MULT = 1.0;
 // The Varathian Trail (whole-map circuit): a lap pays this flat XP dump on top of
 // the standard lap bonus, plus this many Agility Marks toward the Trailblazer kit.
-const TRAIL_LAP_XP = 7000;
+// A full lap crosses the entire country — it must out-pay camping the best
+// fixed course (Ashfen ~1.8k/min-lap). 20k/lap ≈ 180-260k xp/hr at a 5-7min
+// lap: the premier Agility training, and it moves you across the world.
+const TRAIL_LAP_XP = 20000;
 const TRAIL_LAP_MARKS = 1;
 // The Trailblazer outfit: each worn piece eases run-energy this much (drain scaled
 // down, regen scaled up); wearing the full set adds a bonus on top.
@@ -1050,7 +1053,7 @@ function grantXp(
   if (comp?.meta?.["petSkill"] === skill && typeof comp.meta["bonusAmt"] === "number") {
     amount = amount * (1 + (comp.meta["bonusAmt"] as number));
   }
-  // A smoked-fish XP boost lifts all XP gains while it lasts.
+  // An XP-boost tincture (Herblore) lifts all XP gains while it lasts.
   amount = amount * (1 + buffVal(state.player, "xp_boost"));
   s.xp = Math.min(s.xp + amount, XP_CAP); // level caps at 100; XP still climbs to 100M
   events.push({ type: "XP_GAINED", skill, amount });
@@ -1479,6 +1482,13 @@ export function applyIntent(
       }
       grantXp(state, content, "fishing", f.xp, events);
       if (f.gold > 0) { player.gold += f.gold; player.stats.goldEarned += f.gold; }
+      // Jacob cuts an Angler's Chit per ~2kg weighed in (min 1) — spend them at
+      // his fish racks by the pier for fresh raw catch.
+      const chits = Math.max(1, Math.round(f.weight / 2));
+      if (canAddItem(player, "pier_chit")) {
+        addItem(player, "pier_chit", chits, events);
+        events.push({ type: "LOG", message: `Jacob cuts you ${chits} Angler's Chit${chits === 1 ? "" : "s"}.` });
+      }
       // Whoever topped the board before this catch — if it wasn't the player and
       // now is, they've just become a NEW pier champion (worth announcing).
       const prevChamp = player.fishingRecords[0]?.angler;
@@ -2320,7 +2330,9 @@ function startInteraction(
     }
 
     case "trail_board": {
-      events.push({ type: "DIALOGUE", npc: "The Varathian Trail", lines: trailBoardLines(player, content) });
+      // The standings board is multiplayer status: the client fetches the
+      // shared hiscores and shows every runner ranked by total laps.
+      events.push({ type: "OPEN_TRAIL_BOARD" });
       break;
     }
 
@@ -3226,10 +3238,26 @@ function moveFishingSpots(
     obj.nextWanderAt = ctx.now + randRange(ctx, FISH_MOVE_MIN, FISH_MOVE_MAX);
     if (cands.length === 0) continue;
     obj.pos = cands[Math.floor(ctx.rng() * cands.length)]!;
-    // If the player was fishing this spot, it swam off — stop and tell them.
+    // If the player was fishing this spot, follow it: walk to a stand tile
+    // beside its new water and recast on arrival (via pendingInteract), so a
+    // drifting spot never silently ends the session — no manual re-click.
     if (state.player.activity.kind === "fishing" && state.player.activity.targetId === def.id) {
       clearActivity(state.player);
-      events.push({ type: "LOG", message: `The ${def.name} moves off down the shore.` });
+      const p = obj.pos;
+      const stands: Vec2[] = [];
+      for (const [sx, sy] of [[p.x, p.y - 1], [p.x, p.y + 1], [p.x - 1, p.y], [p.x + 1, p.y]] as const) {
+        if (!blocked(sx, sy) && !isWater(sx, sy)) stands.push({ x: sx, y: sy });
+      }
+      if (stands.length > 0) {
+        const cur = state.player.pos;
+        stands.sort((a, b) => Math.hypot(a.x - cur.x, a.y - cur.y) - Math.hypot(b.x - cur.x, b.y - cur.y));
+        state.player.path = [stands[0]!];
+        state.player.pendingInteractId = def.id;
+        state.player.pendingInteractMode = null;
+        events.push({ type: "LOG", message: `The ${def.name} drifts down the shore — you follow it.` });
+      } else {
+        events.push({ type: "LOG", message: `The ${def.name} moves off down the shore.` });
+      }
     }
   }
 }
@@ -3485,6 +3513,20 @@ function processActivity(
   const { player } = state;
   const act = player.activity;
   if (act.kind === "idle" || act.targetId === null) return;
+
+  // Cooking at a player-lit campfire: the fire is transient state, not a world
+  // object, so it can't be looked up in content — validate it directly and run
+  // the craft loop as long as it still burns.
+  if (act.kind === "crafting" && act.targetId === "campfire") {
+    if (!state.campfire) {
+      events.push({ type: "LOG", message: "Your fire has burnt out." });
+      clearActivity(player);
+      return;
+    }
+    if (ctx.now < act.nextActionAt) return;
+    processCraft(state, content, ctx, events);
+    return;
+  }
 
   const obj = state.objects[act.targetId];
   const def = findObjectDef(content, act.targetId);
@@ -3821,6 +3863,13 @@ function handleNpcTalk(
       "Every lap the old wardens struck a single Mark for — one, no more, no matter how you ran it. Bring me enough of them and the Trailblazer's gear is yours: gear that a runner scarcely tires in.",
       "The path is open now. Watch the marker — it'll point you to the next leg. Off you go.",
     ];
+  }
+
+  // 3d) Cael carries the Trail's ledger himself: his talk always ends with your
+  //     laps, Marks and Trailblazer progress (the billboard is now the shared
+  //     standings, not an info board).
+  if (npcId === "trail_keeper") {
+    return [...(npcDef.lines ?? []), ...trailBoardLines(player, content)];
   }
 
   // 4) The world reacts: if any reactive-chatter entry's conditions are met, the

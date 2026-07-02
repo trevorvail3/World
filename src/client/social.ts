@@ -29,6 +29,8 @@ export interface HiscoreEntry {
   userId?: string;
   /** True for the entry that is the player's own. */
   you?: boolean;
+  /** Varathian Trail laps run — the trail billboard ranks by this. */
+  trailLaps?: number;
   /** Per-skill level, keyed by skill id — shown on a player's profile. */
   skills?: Record<string, number>;
 }
@@ -69,6 +71,7 @@ export function entryFromSave(raw: unknown, _content: Content): HiscoreEntry | n
     diaries: Array.isArray(r["diariesClaimed"]) ? (r["diariesClaimed"] as unknown[]).length : 0,
     monstersSlain: num(stats["monstersSlain"]),
     goldEarned: num(stats["goldEarned"]),
+    trailLaps: num(r["trailLaps"]),
     skills: skillLevels,
   };
 }
@@ -100,7 +103,10 @@ function rowToEntry(row: Record<string, unknown>): HiscoreEntry {
   };
   if (typeof row["user_id"] === "string") e.userId = row["user_id"] as string;
   if (row["skills"] && typeof row["skills"] === "object") {
-    e.skills = row["skills"] as Record<string, number>;
+    const sk = { ...(row["skills"] as Record<string, number>) };
+    e.trailLaps = num(sk["__trail_laps"]);
+    delete sk["__trail_laps"];
+    e.skills = sk;
   }
   return e;
 }
@@ -133,7 +139,9 @@ class SupabaseSocialBackend implements SocialBackend {
           diaries: entry.diaries,
           monsters_slain: entry.monstersSlain,
           gold_earned: entry.goldEarned,
-          skills: entry.skills ?? {},
+          // Trail laps ride in the skills JSON under a reserved key — no
+          // schema change needed on the shared board.
+          skills: { ...(entry.skills ?? {}), __trail_laps: entry.trailLaps ?? 0 },
         },
       });
     } catch { /* offline — try again next time the board opens */ }

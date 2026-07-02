@@ -50,6 +50,7 @@ import { resolveGear } from "./gearLook.ts";
 import { OVERWORLD_HEIGHT } from "../content/map.ts";
 import { objectPos, objectHidden, travelFare, equipRequirement } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent, pathToWithin } from "./pathfinding.ts";
+import { getSocial } from "./social.ts";
 
 /**
  * The bridge to the core. main.ts builds this so the loop never imports the
@@ -673,6 +674,9 @@ export class Game {
           break;
         case "DIALOGUE":
           this.dialogue.show(ev.npc, ev.lines);
+          break;
+        case "OPEN_TRAIL_BOARD":
+          void this.showTrailStandings();
           break;
         case "MONSTER_KILLED": {
           // A death poof: a shockwave ring and a scatter of dark debris.
@@ -2212,6 +2216,33 @@ export class Game {
     if (opts?.qty !== undefined) target.qty = opts.qty;
     this.pickupTarget = target;
     if (path.length) this.dispatch({ type: "MOVE", path });
+  }
+
+  /** The Trail billboard: every runner on the shared board ranked by laps —
+   *  multiplayer standings (Cael carries your own ledger in his dialogue). */
+  private async showTrailStandings(): Promise<void> {
+    const you = this.bridge.state.player;
+    const yourLaps = you.trailLaps ?? 0;
+    const yourName = you.appearance?.name ?? "You";
+    let entries: { name: string; laps: number }[] = [];
+    try {
+      const rows = await getSocial(this.bridge.content).hiscores();
+      entries = rows.map((r) => ({ name: r.name, laps: r.trailLaps ?? 0 }));
+    } catch { /* offline — show just your own line below */ }
+    if (!entries.some((e) => e.name === yourName)) entries.push({ name: yourName, laps: yourLaps });
+    entries.sort((a, b) => b.laps - a.laps);
+    const ranked = entries.filter((e) => e.laps > 0).slice(0, 10);
+    const lines = ["— TRAIL STANDINGS — laps run, all of Varath —"];
+    if (ranked.length === 0) lines.push("No laps chalked up yet. The Trail waits for its first runner.");
+    for (let i = 0; i < ranked.length; i++) {
+      const e = ranked[i]!;
+      const yours = e.name === yourName;
+      lines.push(`${i + 1}. ${e.name} — ${e.laps} lap${e.laps === 1 ? "" : "s"}${yours ? "  ← you" : ""}`);
+    }
+    if (!ranked.some((e) => e.name === yourName)) {
+      lines.push(`You: ${yourLaps} lap${yourLaps === 1 ? "" : "s"} — run one and take your place.`);
+    }
+    this.dialogue.show("The Varathian Trail", lines);
   }
 
   /** Walk beside the campfire (if not already) and open its cook menu on arrival. */

@@ -379,4 +379,20 @@ export const shops: ShopDef[] = [
       { item: "potion_grace", price: 220, qty: 1, max: 1, restockMs: 600000, requiresFlag: "endgame_shard_used" },
     ],
   },
+  {
+    id: "shop_pier",
+    npc: "pier_warden",
+    name: "Jacob's Fish Racks",
+    greeting: "Chits for catch, catch for chits — that's the pier's whole economy. What'll you take off the racks?",
+    // The Drowned Pier's reward loop: minigame catches pay Angler's Chits by
+    // weight; the racks trade them straight back into raw cooking fish.
+    stock: [
+      { item: "copperling_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 1 },
+      { item: "ribperch_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 2 },
+      { item: "bristlepike_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 3 },
+      { item: "redgill_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 4 },
+      { item: "runestout_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 6 },
+      { item: "deepscale_raw", price: 0, qty: 1, costItem: "pier_chit", costQty: 8 },
+    ],
+  },
 ];

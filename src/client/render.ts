@@ -5166,9 +5166,14 @@ function drawPlayer(
   if (mount) {
     // Mounted: the steed is drawn first, then the rider sits into the saddle
     // (legs tucked — the avatar knows it's riding). One shared shadow.
+    // NOTE the rig's forward is -x while the avatar's is +x, so the rig takes
+    // the INVERTED flip — otherwise the horse gallops facing backwards.
     shadow(g, cx, cy + TILE / 2 - 2, 14, 4.5);
-    drawMountRig(g, cx, cy + 5, now, moving, flip, mount);
-    drawAvatar(g, cx, cy - 8, 1, withDefaults(look), { now, moving, flip, riding: true, ...(action ? { action } : {}) }, gear);
+    drawMountRig(g, cx, cy + 5, now, moving, !flip, mount);
+    // Seat the rider over the saddle (rig-local x −1 → mirrored when facing
+    // left), hips at the saddle's height.
+    const seatX = cx + (flip ? 1 : -1);
+    drawAvatar(g, seatX, cy - 10, 1, withDefaults(look), { now, moving, flip, riding: true, ...(action ? { action } : {}) }, gear);
     return;
   }
   shadow(g, cx, cy + TILE / 2 - 4, 9, 3.5); // grounds the player on the terrain

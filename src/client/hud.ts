@@ -364,6 +364,12 @@ export class Hud {
     tabsCol.className = "dock-tabs";
     const body = document.createElement("div");
     body.className = "dock-body";
+    // Fixed tabs (Pack, Skills) hide overflow, but the browser can still nudge
+    // the container's scrollTop when a slot near the edge takes focus — leaving
+    // the grid shifted up with no scrollbar to pull it back. Pin it at 0.
+    body.addEventListener("scroll", () => {
+      if (this.dock.classList.contains("dock-fixed") && body.scrollTop !== 0) body.scrollTop = 0;
+    });
 
     for (const t of TABS) {
       const btn = document.createElement("button");
@@ -880,6 +886,12 @@ export class Hud {
       "dock-fixed",
       !this.collapsed && (this.activeTab === "inventory" || this.activeTab === "skills"),
     );
+    // Entering a fixed tab: clear any scroll a previous tab (or a stray focus
+    // scroll) left behind, so the grid always sits at the top.
+    if (this.dock.classList.contains("dock-fixed")) {
+      const body = this.dock.querySelector(".dock-body");
+      if (body) body.scrollTop = 0;
+    }
     this.tabPanels.forEach((p, key) =>
       p.classList.toggle("active", key === this.activeTab && !this.collapsed),
     );

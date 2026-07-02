@@ -1817,9 +1817,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🥩",
     "cat": "Food",
     "heals": 10,
-    "buff": "xp_boost",
-    "buffAmt": 0.05,
-    "buffMs": 180000,
     "sell": 45
   },
   "smoked_greyfin": {
@@ -1829,9 +1826,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🥩",
     "cat": "Food",
     "heals": 14,
-    "buff": "xp_boost",
-    "buffAmt": 0.05,
-    "buffMs": 240000,
     "sell": 80
   },
   "smoked_ribperch": {
@@ -1841,9 +1835,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🥩",
     "cat": "Food",
     "heals": 19,
-    "buff": "xp_boost",
-    "buffAmt": 0.08,
-    "buffMs": 300000,
     "sell": 120
   },
   "smoked_redgill": {
@@ -1853,9 +1844,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🥩",
     "cat": "Food",
     "heals": 26,
-    "buff": "xp_boost",
-    "buffAmt": 0.1,
-    "buffMs": 360000,
     "sell": 200
   },
   "hill_stew": {
@@ -1865,9 +1853,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🍲",
     "cat": "Food",
     "heals": 13,
-    "buff": "melee_dmg",
-    "buffAmt": 3,
-    "buffMs": 240000,
     "sell": 80
   },
   "forest_roast": {
@@ -1877,9 +1862,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🍖",
     "cat": "Food",
     "heals": 18,
-    "buff": "melee_dmg",
-    "buffAmt": 5,
-    "buffMs": 300000,
     "sell": 140
   },
   "bone_broth": {
@@ -1889,9 +1871,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🥣",
     "cat": "Food",
     "heals": 22,
-    "buff": "defence",
-    "buffAmt": 8,
-    "buffMs": 360000,
     "sell": 200
   },
   "redrun_chowder": {
@@ -1901,9 +1880,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🍲",
     "cat": "Food",
     "heals": 28,
-    "buff": "melee_acc",
-    "buffAmt": 10,
-    "buffMs": 360000,
     "sell": 320
   },
   "deepmeat_stew": {
@@ -1913,9 +1889,6 @@ export const items: Record<ItemId, ItemDef> = {
     "icon": "🍲",
     "cat": "Food",
     "heals": 35,
-    "buff": "melee_dmg",
-    "buffAmt": 12,
-    "buffMs": 480000,
     "sell": 500
   },
   "battle_ration": {
@@ -3293,6 +3266,15 @@ export const items: Record<ItemId, ItemDef> = {
   },
 
   // --- Agility Marks + the Trailblazer outfit (earned on the Varathian Trail) ---
+  "pier_chit": {
+    "id": "pier_chit",
+    "name": "Angler's Chit",
+    "description": "Jacob's tally token, cut for every catch weighed off the Drowned Pier — the heavier the fish, the more chits. Trade them at his fish racks for fresh raw catch.",
+    "icon": "🎫",
+    "cat": "Finds",
+    "stackable": true,
+    "sell": 0
+  },
   "agility_mark": {
     "id": "agility_mark",
     "name": "Agility Mark",
@@ -4807,12 +4789,12 @@ export const items: Record<ItemId, ItemDef> = {
   // are the "rare drop table" spice shared across many foes.
   "bones": {
     "id": "bones", "name": "Bones", "icon": "🦴", "cat": "Drops", "sell": 3,
-    "buryXp": 12,
+    "buryXp": 30,
     "description": "A pile of picked-clean bones. Bury them for Devotion, or grind them into bonemeal for potions."
   },
   "big_bones": {
     "id": "big_bones", "name": "Big Bones", "icon": "🦴", "cat": "Drops", "sell": 14,
-    "buryXp": 40,
+    "buryXp": 110,
     "description": "The heavy bones of a large beast. Bury for a big lump of Devotion, or grind into bonemeal."
   },
   "chipped_tooth": {

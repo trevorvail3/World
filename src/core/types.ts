@@ -400,6 +400,7 @@ export type ItemId =
   | "farmer_legs"
   | "farmer_boots"
   | "agility_mark"
+  | "pier_chit"
   | "trail_hood"
   | "trail_vest"
   | "trail_legs"
@@ -1903,6 +1904,8 @@ export type WorldEvent =
   | { type: "OPEN_TRAVEL"; objId: string }
   /** Open the pier's records board (top five catches by weight). */
   | { type: "OPEN_RECORDS"; objId: string }
+  /** Open the Varathian Trail standings — players ranked by laps run. */
+  | { type: "OPEN_TRAIL_BOARD" }
   /** A fish is on the line at the pier — the client opens the tension minigame.
    *  `strength` (0..1) drives how hard it fights. */
   | { type: "HOOKED_FISH"; species: string; weight: number; length: number; strength: number }

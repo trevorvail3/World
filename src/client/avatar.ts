@@ -152,10 +152,13 @@ function drawAvatarInner(
   // While acting the figure is planted; otherwise it walks or idles.
   const moving = (anim.moving ?? false) && !acting;
   const step = t / 110;
-  const bob = acting ? Math.sin(t / 280) * 0.5
-    : moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
-  const swing = moving ? Math.sin(step) * 0.5 : (!acting ? Math.sin(t / 340) * 0.05 : 0);
   const riding = anim.riding ?? false;
+  // In the saddle the rider doesn't walk: no walk-bounce (the mount's gallop
+  // carries them) and no arm swing — hands stay on the reins.
+  const bob = riding ? -(moving ? Math.abs(Math.sin(t / 130)) * 1.6 : Math.sin(t / 460) * 0.6)
+    : acting ? Math.sin(t / 280) * 0.5
+    : moving ? -Math.abs(Math.sin(step)) * 1.4 : Math.sin(t / 200) * 0.9;
+  const swing = moving && !riding ? Math.sin(step) * 0.5 : (!acting ? Math.sin(t / 340) * 0.05 : 0);
   const liftL = moving && !riding ? Math.max(0, Math.sin(step)) * 1.8 : 0;
   const liftR = moving && !riding ? Math.max(0, -Math.sin(step)) * 1.8 : 0;
   // The near arm swings the action, or holds the equipped weapon while idle.
@@ -181,11 +184,15 @@ function drawAvatarInner(
   const flip = anim.flip === true;
   if (flip) { g.save(); g.translate(2 * cx, 0); g.scale(-1, 1); }
 
-  // --- Shadow (planted) ---
-  g.fillStyle = "rgba(0,0,0,0.32)";
-  g.beginPath();
-  g.ellipse(cx, cy + 12.5 * s, 10 * s, 3.6 * s, 0, 0, Math.PI * 2);
-  g.fill();
+  // --- Shadow (planted) --- (a rider casts no shadow of their own; the mount's
+  // ground shadow already anchors the pair — a second ellipse mid-horse reads
+  // as someone standing behind the animal.)
+  if (!riding) {
+    g.fillStyle = "rgba(0,0,0,0.32)";
+    g.beginPath();
+    g.ellipse(cx, cy + 12.5 * s, 10 * s, 3.6 * s, 0, 0, Math.PI * 2);
+    g.fill();
+  }
 
   // --- Cape (behind the body, drapes from the shoulders with a faint sway) ---
   if (gear.cape) {
