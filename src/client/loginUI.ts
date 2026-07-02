@@ -1,10 +1,15 @@
 /**
  * src/client/loginUI.ts
  * ---------------------
- * The front door. Shown before anything else: you sign in (or create an account)
- * with the SAME credentials as the idle game — Varath shares one Supabase
- * project, so one identity spans both. Only once you're signed in does the game
- * continue to character creation (new) or load your character (returning).
+ * The front door, in two beats:
+ *
+ *   1. A landing screen — the title and one "Play now" button. That single
+ *      click is the real user gesture browsers demand before any audio may
+ *      play, so the moment it's pressed the Varath theme comes up...
+ *   2. ...over the sign-in screen: sign in (or create an account) with the
+ *      SAME credentials as the idle game — Varath shares one Supabase project,
+ *      so one identity spans both. Only once you're signed in does the game
+ *      continue to character creation (new) or load your character (returning).
  *
  * Signing in syncs your character to the cloud (same account as the idle game).
  * You can also "Play offline" for a purely local character saved in this
@@ -21,6 +26,29 @@ export class LoginUI {
   constructor(root: HTMLElement, private onDone: () => void, private onOffline?: () => void) {
     this.backdrop = document.createElement("div");
     this.backdrop.className = "login-backdrop";
+    root.appendChild(this.backdrop);
+    this.showLanding();
+  }
+
+  /** Beat one: the title and a single Play button — the click that wakes the
+   *  audio engine (autoplay policy), so the theme carries into sign-in. */
+  private showLanding(): void {
+    this.backdrop.innerHTML = `
+      <div class="login-box">
+        <div class="login-title">VARATH</div>
+        <div class="login-sub">The stone remembers being a god.</div>
+        <button class="login-play" type="button">▶ Play now</button>
+        <div class="login-foot">A world of the Knuckle Hills — free to play in your browser.</div>
+      </div>`;
+    const play = this.backdrop.querySelector(".login-play") as HTMLButtonElement;
+    play.addEventListener("click", () => {
+      audio.unlock(); // the gesture the browser was waiting for — theme up
+      this.showSignIn();
+    });
+  }
+
+  /** Beat two: the sign-in screen proper, with the theme already playing. */
+  private showSignIn(): void {
     this.backdrop.innerHTML = `
       <div class="login-box">
         <div class="login-title">VARATH</div>
@@ -36,23 +64,7 @@ export class LoginUI {
         </form>
         <button class="login-offline" type="button">Play offline</button>
         <div class="login-foot">Same account as the idle game. Offline play saves only in this browser.</div>
-        <div class="login-sound">♪ click anywhere to enable sound</div>
       </div>`;
-    root.appendChild(this.backdrop);
-
-    // Browsers keep audio locked until a real gesture; the hint tells the
-    // player their first click brings the theme up, then quietly leaves.
-    const soundHint = this.backdrop.querySelector(".login-sound") as HTMLElement;
-    if (audio.isUnlocked()) soundHint.remove();
-    else {
-      const watch = window.setInterval(() => {
-        if (audio.isUnlocked()) {
-          soundHint.classList.add("gone");
-          window.clearInterval(watch);
-          window.setTimeout(() => soundHint.remove(), 900);
-        }
-      }, 300);
-    }
 
     const form = this.backdrop.querySelector(".login-form") as HTMLFormElement;
     const email = this.backdrop.querySelector(".login-email") as HTMLInputElement;
