@@ -20,4 +20,9 @@ export const CRIER_SHOUTS: string[] = [
   "The map-stone marks every settlement — you'll never be truly lost in Varath!",
   "A bow trains your Draw, a staff your Devotion, a blade your Edge — try all three, say I!",
   "Toss a coin in the fountain for luck! The moon is watching, and she never blinks!",
+  "A home of your own! Reeve Tamsin at the Drover's Rest signs a cottage over to any willing hand!",
+  "Furnish your home as you please — beds, hearths and gilded thrones, in every wood and cloth under the sun!",
+  "Raise your roof, homesteader! Cottage to manor to estate, room by room, by your own Construction!",
+  "Cook, bank and smith under your own roof! A hearth in the kitchen, a strongbox in the corner!",
+  "Once your house is a manor, your pets roam its backyard — a paddock all their own!",
 ];

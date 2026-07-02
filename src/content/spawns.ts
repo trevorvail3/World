@@ -493,6 +493,8 @@ const rawObjects: WorldObjectDef[] = [
       "The roads: the wilds have been driven back from every town's gates. No more wolves nor cutthroats at your heels while you shop — a fight in the wilds is a thing you choose now, not a thing that chooses you.",
       "The Faithful walk among us: Devotion is prayer and magic as one skill now. Bury bones for its favour, wield a staff to cast, and fill your Grace at any shrine or altar — you'll see the bar under your health.",
       "For the green and the wandering: talk to the folk you meet — reeves, wardens, delvers and fishwives all keep a task for a willing hand, though they'll not always wear it on their sleeve. And your own words carry now — speak, and the world sees you say it, over your very head.",
+      "And a roof of your own! Reeve Tamsin at the Drover's Rest will sign an empty lot over to any willing hand — a cottage with the ground. Step inside, tap Decorate, and furnish it how you please: hundreds of pieces in every wood and cloth, and floors and walls to recolour to taste. Raise it room by room as your Construction grows — cottage, homestead, manor, estate — and it'll grow on its lot for all the road to see.",
+      "Once it's raised, set a hearth, a strongbox and a bench inside, and you'll cook, bank and build under your own roof, never troubling the town. Keep a bed, and the road always carries you home — and a manor earns a backyard where your collected pets may roam. Ask Tamsin to begin, once you've a few adventures behind you.",
       "That's the news! Toss a coin in the fountain for luck and mind the moon — she's watching, as she always is.",
     ],
   },
