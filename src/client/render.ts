@@ -124,6 +124,8 @@ const TILE_COLORS: Record<TileType, [string, string]> = {
   wall: ["#6b6157", "#7c7165"],
   // Player-home interiors — a warm timber plank floor.
   plank: ["#6a4e30", "#79593a"],
+  // Strand sand — the estuary beach and pond shores, warm against the water.
+  sand: ["#b3996a", "#c4ab79"],
 };
 
 /** A cheap, stable pseudo-noise so tiles get a fixed bit of texture. */
@@ -154,7 +156,7 @@ function tileRGB(t: TileType): [number, number, number] {
 
 /** Ground types that blend into one another (organic terrain). Masonry, water
  *  and walls keep crisp edges — their borders are drawn deliberately. */
-const BLEND_GROUND = new Set<TileType>(["grass", "dirt", "moss", "ash", "snow", "bog", "path", "cave", "stone"]);
+const BLEND_GROUND = new Set<TileType>(["grass", "dirt", "moss", "ash", "snow", "bog", "path", "cave", "stone", "sand"]);
 /** Open water blends within itself (shallows → deep) for smooth depth. */
 const BLEND_WATER = new Set<TileType>(["water", "deep"]);
 
@@ -564,6 +566,7 @@ function paintTile(
       break;
     }
     case "dirt":
+    case "sand":
     case "ash": {
       // Clods / cracked warm ground: a few light and dark flecks.
       for (let i = 0; i < 5; i++) {
@@ -2246,6 +2249,12 @@ function drawObject(
     case "boat":
       drawBoat(g, cx, cy, now);
       break;
+    case "reeds":
+      drawReeds(g, cx, cy, now, def.id.length);
+      break;
+    case "deadfall":
+      drawDeadfall(g, cx, cy, def.species === "snag" ? "snag" : "log");
+      break;
     case "signpost":
       scaled(g, cx, cy, 1.25, () => drawSignpost(g, 0, 0));
       break;
@@ -2632,6 +2641,38 @@ function drawObstacle(
       g.strokeRect(cx - 11, cy - 9, 22, 20);
       g.beginPath(); g.moveTo(cx - 11, cy - 2); g.lineTo(cx + 11, cy - 2); g.moveTo(cx - 11, cy + 5); g.lineTo(cx + 11, cy + 5);
       g.moveTo(cx, cy - 9); g.lineTo(cx, cy - 2); g.moveTo(cx - 5, cy - 2); g.lineTo(cx - 5, cy + 5); g.moveTo(cx + 5, cy + 5); g.lineTo(cx + 5, cy + 11); g.stroke();
+      break;
+    }
+    case "logbridge": { // a whole fallen greyoak spanning the river
+      g.fillStyle = "rgba(10,14,20,0.25)";
+      g.beginPath(); g.ellipse(cx + TILE * 2.5, cy + 9, TILE * 2.8, 4, 0, 0, Math.PI * 2); g.fill();
+      const L = TILE * 5; // spans the water to the far-bank anchor
+      g.fillStyle = "#4e3d29";
+      g.beginPath();
+      g.moveTo(cx - 14, cy - 1); g.quadraticCurveTo(cx + L / 2, cy - 7, cx + L + 14, cy);
+      g.lineTo(cx + L + 13, cy + 7); g.quadraticCurveTo(cx + L / 2, cy + 1, cx - 13, cy + 6);
+      g.closePath(); g.fill();
+      g.fillStyle = "#5d4a33";
+      g.beginPath();
+      g.moveTo(cx - 14, cy - 1); g.quadraticCurveTo(cx + L / 2, cy - 7, cx + L + 14, cy);
+      g.lineTo(cx + L + 13, cy + 2.4); g.quadraticCurveTo(cx + L / 2, cy - 4.4, cx - 13, cy + 1.6);
+      g.closePath(); g.fill();
+      g.fillStyle = "#caa56a"; // root-torn end
+      g.beginPath(); g.ellipse(cx - 13.5, cy + 2.5, 3, 4.2, 0.1, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(74,105,62,0.7)"; // moss along the top
+      for (let i = 0; i < 4; i++) {
+        g.beginPath(); g.ellipse(cx + 16 + i * (L / 4.4), cy - 2.4 + (i % 2), 5, 1.6, 0.1, 0, Math.PI * 2); g.fill();
+      }
+      break;
+    }
+    case "stump": { // the far-bank landing of the log crossing
+      shadow(g, cx, cy + 8, 7, 2.5);
+      g.fillStyle = "#5d4a33";
+      g.fillRect(cx - 5, cy - 1, 10, 8);
+      g.fillStyle = "#caa56a";
+      g.beginPath(); g.ellipse(cx, cy - 1, 5, 2.6, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#8a6a40"; g.lineWidth = 0.8;
+      g.beginPath(); g.ellipse(cx, cy - 1, 2.6, 1.3, 0, 0, Math.PI * 2); g.stroke();
       break;
     }
     case "stones": { // stepping stones across a gap
@@ -3260,6 +3301,73 @@ function drawBoat(g: CanvasRenderingContext2D, cx: number, cy: number, now: numb
   // Mooring rope off the bow.
   g.strokeStyle = "rgba(180,160,120,0.7)"; g.lineWidth = 1;
   g.beginPath(); g.moveTo(cx - 16, y - 3); g.quadraticCurveTo(cx - 20, y + 1, cx - 19, y + 7); g.stroke();
+}
+
+/** A clump of cattail reeds at the pond edge — tall stalks, brown seed heads,
+ *  swaying gently. `seed` staggers the sway between clumps. */
+function drawReeds(g: CanvasRenderingContext2D, cx: number, cy: number, now: number, seed: number): void {
+  g.fillStyle = "rgba(10,18,14,0.2)";
+  g.beginPath(); g.ellipse(cx, cy + 9, 9, 3, 0, 0, Math.PI * 2); g.fill();
+  const stalks: [number, number][] = [[-6, 18], [-2, 23], [2, 20], [6, 16], [0, 15]];
+  for (let i = 0; i < stalks.length; i++) {
+    const [dx, h] = stalks[i]!;
+    const sway = Math.sin(now / 900 + seed + i * 1.7) * 1.6;
+    g.strokeStyle = i % 2 ? "#5d7042" : "#4e6038";
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(cx + dx, cy + 9);
+    g.quadraticCurveTo(cx + dx + sway * 0.5, cy + 9 - h * 0.6, cx + dx + sway, cy + 9 - h);
+    g.stroke();
+    if (i !== 4) { // the brown cattail head on most stalks
+      g.fillStyle = "#6b4a2a";
+      g.beginPath(); g.ellipse(cx + dx + sway, cy + 9 - h - 3, 1.7, 4.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#7d5832";
+      g.beginPath(); g.ellipse(cx + dx + sway - 0.5, cy + 9 - h - 4.4, 0.9, 2, 0, 0, Math.PI * 2); g.fill();
+    }
+  }
+}
+
+/** A dead tree: a fallen mossy log ("log") or a standing barkless snag ("snag")
+ *  — the deadfall that makes a wood read as old. */
+function drawDeadfall(g: CanvasRenderingContext2D, cx: number, cy: number, kind: "log" | "snag"): void {
+  if (kind === "log") {
+    shadow(g, cx, cy + 8, 15, 4);
+    // The trunk lying across the tile, bark split, moss on top.
+    g.fillStyle = "#4e3d29";
+    g.beginPath();
+    g.moveTo(cx - 16, cy + 2); g.quadraticCurveTo(cx, cy - 3, cx + 16, cy + 4);
+    g.lineTo(cx + 15, cy + 9); g.quadraticCurveTo(cx, cy + 4, cx - 15, cy + 7);
+    g.closePath(); g.fill();
+    g.fillStyle = "#5d4a33"; // top light
+    g.beginPath(); g.moveTo(cx - 16, cy + 2); g.quadraticCurveTo(cx, cy - 3, cx + 16, cy + 4);
+    g.lineTo(cx + 15, cy + 6); g.quadraticCurveTo(cx, cy - 1, cx - 15, cy + 4); g.closePath(); g.fill();
+    g.fillStyle = "#caa56a"; // cut/broken end rings
+    g.beginPath(); g.ellipse(cx - 15.5, cy + 4.5, 2.6, 3.4, 0.15, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#8a6a40"; g.lineWidth = 0.8;
+    g.beginPath(); g.ellipse(cx - 15.5, cy + 4.5, 1.3, 1.8, 0.15, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = "rgba(74,105,62,0.75)"; // moss patches
+    g.beginPath(); g.ellipse(cx - 4, cy, 4.5, 1.8, 0.2, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(cx + 8, cy + 2.5, 3.2, 1.4, -0.15, 0, Math.PI * 2); g.fill();
+    // A shelf fungus on the flank.
+    g.fillStyle = "#b0854e";
+    g.beginPath(); g.arc(cx + 3, cy + 6.5, 2.2, 0, Math.PI); g.fill();
+  } else {
+    shadow(g, cx, cy + 12, 8, 3);
+    // A standing snag: pale barkless trunk, broken crown, one dead limb.
+    g.fillStyle = "#8f8272";
+    g.beginPath();
+    g.moveTo(cx - 3.4, cy + 12); g.lineTo(cx - 2, cy - 14); g.lineTo(cx + 1, cy - 18);
+    g.lineTo(cx + 2.6, cy - 8); g.lineTo(cx + 3.6, cy + 12);
+    g.closePath(); g.fill();
+    g.fillStyle = "#a5988a"; // lit side
+    g.beginPath(); g.moveTo(cx - 3.4, cy + 12); g.lineTo(cx - 2, cy - 14); g.lineTo(cx - 0.4, cy - 16.5);
+    g.lineTo(cx - 0.4, cy + 12); g.closePath(); g.fill();
+    g.strokeStyle = "#8f8272"; g.lineWidth = 2.4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(cx + 1, cy - 6); g.quadraticCurveTo(cx + 8, cy - 10, cx + 11, cy - 9); g.stroke();
+    g.lineCap = "butt";
+    g.strokeStyle = "#6e6355"; g.lineWidth = 0.9; // weather checks
+    g.beginPath(); g.moveTo(cx - 1, cy + 8); g.lineTo(cx - 0.4, cy - 8); g.stroke();
+  }
 }
 
 /** A Crafting table: a tanning frame with a stretched hide and a jeweller's lamp. */

@@ -1705,6 +1705,34 @@ const newPois: WorldObjectDef[] = [
   { id: "fzn_ore_2", kind: "rock", x: 100, y: 18, name: "Ashiron Vein", resource: "mine_ashiron" },
   { id: "fzn_ore_3", kind: "rock", x: 130, y: 16, name: "Silica Deposit", resource: "mine_silica" },
   { id: "fzn_lion_1", kind: "monster", monster: "mountain_lion", x: 20, y: 22, name: "Mountain Lion" },
+
+  // === WATERSIDE + WOODLAND DRESSING — cattails at pond edges, dead trees in
+  // the old woods, so wild ground reads lived-in by nature itself. ============
+  { id: "reed_lake_1", kind: "reeds", x: 64, y: 104, name: "Cattails" },
+  { id: "reed_lake_2", kind: "reeds", x: 62, y: 108, name: "Cattails" },
+  { id: "reed_lake_3", kind: "reeds", x: 58, y: 109, name: "Cattails" },
+  { id: "reed_tarn_1", kind: "reeds", x: 49, y: 61, name: "Cattails" },
+  { id: "reed_tarn_2", kind: "reeds", x: 53, y: 60, name: "Cattails" },
+  { id: "reed_moor_1", kind: "reeds", x: 8, y: 140, name: "Cattails" },
+  { id: "reed_moor_2", kind: "reeds", x: 24, y: 145, name: "Cattails" },
+  { id: "reed_estuary_1", kind: "reeds", x: 132, y: 108, name: "Cattails" },
+  { id: "reed_estuary_2", kind: "reeds", x: 139, y: 112, name: "Cattails" },
+  { id: "dead_gw_1", kind: "deadfall", species: "log", x: 8, y: 80, name: "Fallen Greyoak" },
+  { id: "dead_gw_2", kind: "deadfall", species: "snag", x: 22, y: 76, name: "Dead Snag" },
+  { id: "dead_gw_3", kind: "deadfall", species: "log", x: 16, y: 86, name: "Fallen Greyoak" },
+  { id: "dead_ww_1", kind: "deadfall", species: "snag", x: 12, y: 58, name: "Dead Snag" },
+  { id: "dead_ww_2", kind: "deadfall", species: "log", x: 28, y: 68, name: "Mossy Deadfall" },
+  { id: "dead_ww_3", kind: "deadfall", species: "log", x: 18, y: 112, name: "Mossy Deadfall" },
+  { id: "dead_ww_4", kind: "deadfall", species: "snag", x: 32, y: 122, name: "Dead Snag" },
+  { id: "dead_ww_5", kind: "deadfall", species: "log", x: 10, y: 128, name: "Fallen Greyoak" },
+  { id: "dead_e_1", kind: "deadfall", species: "snag", x: 120, y: 92, name: "Dead Snag" },
+  { id: "dead_e_2", kind: "deadfall", species: "log", x: 128, y: 74, name: "Mossy Deadfall" },
+
+  // === THE ESTUARY LOG CROSSING — a whole fallen greyoak spans the Redrun's
+  // last quiet stretch before the sea. A free-standing Agility obstacle: cross
+  // from either bank (lvl 15), no course, a shortcut the trail runners love.
+  { id: "log_cross_w", kind: "agility_obstacle", obstacle: "logbridge", x: 133, y: 120, exit: { x: 138, y: 120 }, xp: 120, levelReq: 15, name: "Fallen Greyoak Crossing", lines: ["A whole greyoak lies over the Redrun, worn smooth down its spine by crossing boots."] },
+  { id: "log_cross_e", kind: "agility_obstacle", obstacle: "stump", x: 138, y: 120, exit: { x: 133, y: 120 }, xp: 120, levelReq: 15, name: "Fallen Greyoak Crossing", lines: ["The old log's landing — the far bank is a few sure steps away."] },
 ];
 
 /** The world's objects: every hand-authored spawn re-homed onto the doubled

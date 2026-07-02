@@ -2879,8 +2879,20 @@ function traverseObstacle(
   const { player } = state;
   const course = def.course;
   const order = def.order ?? 0;
-  if (!course) return;
   if (player.agilityHop) return; // already mid-climb
+  // A free-standing crossing (no course): anyone meeting the level requirement
+  // may traverse it any time, either direction — a shortcut, not a lap leg.
+  if (!course) {
+    const freeReq = def.levelReq ?? 1;
+    if (skillLvl(player, "agility") < freeReq) {
+      events.push({ type: "LOG", message: `You need Agility level ${freeReq} to cross here.` });
+      return;
+    }
+    player.path = [];
+    player.pendingInteractId = null;
+    player.agilityHop = { objId: def.id, at: ctx.now + OBSTACLE_MS };
+    return;
+  }
 
   // The Varathian Trail is sealed until you've spoken with Cael the Trailkeeper
   // at the trail head and learned its story (mirrors the pier's warden gate).
@@ -2920,7 +2932,16 @@ function finishObstacle(
   const { player } = state;
   const course = def.course;
   const order = def.order ?? 0;
-  if (!course) return;
+  // Free-standing crossing: XP + the hop to the far bank, no lap bookkeeping.
+  if (!course) {
+    grantXp(state, content, "agility", def.xp ?? 10, events);
+    if (def.exit) {
+      player.pos = { x: def.exit.x, y: def.exit.y };
+      player.path = [];
+    }
+    events.push({ type: "LOG", message: "You cross the fallen log, sure-footed over the water." });
+    return;
+  }
 
   const legs = content.objects.filter((o) => o.kind === "agility_obstacle" && o.course === course);
   const lastOrder = legs.reduce((m, o) => Math.max(m, o.order ?? 0), 0);

@@ -837,7 +837,9 @@ export type TileType =
   // Ironvale: dressed-stone city walls and buildings (impassable).
   | "wall"
   // Player housing interiors: a warm timber plank floor (walkable).
-  | "plank";
+  | "plank"
+  /** Warm strand sand — beaches at the estuary and pond shores. */
+  | "sand";
 
 /** The hand-made zone, decoded from the text map in src/content/map.ts. */
 export interface WorldMap {
@@ -906,6 +908,10 @@ export type ObjKind =
   | "fence"
   /** A small clinker rowboat — moored on water or hauled out on the strand. */
   | "boat"
+  /** A clump of cattail reeds at a pond edge (decorative; examine-only). */
+  | "reeds"
+  /** A dead tree — fallen mossy log or standing snag (`species`: "log"/"snag"). */
+  | "deadfall"
   /** A directional signpost at a junction (examine for the way). */
   | "signpost"
   /** A cairn of bones and skulls — grim dressing for the Boneman's lair. */

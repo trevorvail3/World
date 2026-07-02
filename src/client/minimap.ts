@@ -74,6 +74,7 @@ const MM_TILE: Record<TileType, string> = {
   deep: "#101d30",
   wall: "#736857",
   plank: "#5e4326",
+  sand: "#a08a5c",
 };
 
 const MM_OBJ: Record<ObjKind, string> = {
@@ -108,6 +109,8 @@ const MM_OBJ: Record<ObjKind, string> = {
   lamppost: "", // street dressing — not marked
   fence: "", // pen rails — not marked
   boat: "", // moored dressing — not marked
+  reeds: "", // pond dressing — not marked
+  deadfall: "", // wood dressing — not marked
   signpost: "#caa05a",
   bone_cairn: "", // grim dressing — not marked on the minimap
   waystone: "#d2742c",

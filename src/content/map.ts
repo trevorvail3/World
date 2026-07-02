@@ -582,6 +582,41 @@ function decode(): WorldMap {
     for (let x = rx - 1; x <= rx + 2; x++) set(x, y, "water");
   }
 
+  // 4e-ii) THE STRAND: a great sandy beach where the Redrun meets the Eyeless
+  //   Sea. Soft ground only (grass/dirt/moss becomes sand) so roads, rock and
+  //   the water itself are untouched.
+  const SOFT = new Set<TileType>(["grass", "dirt", "moss"]);
+  const sandIf = (x: number, y: number): void => {
+    if (x < 0 || y < 0 || x >= WIDTH || y >= OVERWORLD_HEIGHT) return;
+    if (SOFT.has(tiles[y * WIDTH + x]!)) set(x, y, "sand");
+  };
+  //   A wide strand backing the whole south-east coastline…
+  for (let x = 96; x < WIDTH; x++) {
+    const cyTop = coastY(x);
+    for (let y = cyTop - 5; y < cyTop; y++) sandIf(x, y);
+  }
+  //   …opening into the big estuary beach south of the river mouth.
+  for (let y = 110; y < 132; y++) {
+    const rx = riverX(y);
+    for (let x = rx - 6; x <= rx + 7; x++) sandIf(x, y);
+  }
+  //   And a few PARTIAL pond shores inland — sand on some banks, not all (the
+  //   lake's south-east curve, the hill tarn's sunny side), noise-thinned so it
+  //   reads as strands, not a ring.
+  const fringe = (x0: number, y0: number, x1: number, y1: number, keep: (x: number, y: number) => boolean): void => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const t = tiles[y * WIDTH + x]!;
+      if (!SOFT.has(t)) continue;
+      const touchesWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+        const nt = tiles[(y + dy!) * WIDTH + (x + dx!)];
+        return nt === "water";
+      });
+      if (touchesWater && keep(x, y) && noise(x * 3.1, y * 2.7) > 0.35) set(x, y, "sand");
+    }
+  };
+  fringe(52, 94, 66, 110, (x, y) => x + y > 158);  // the lake: SE banks only
+  fringe(46, 53, 56, 62, (_x, y) => y >= 57);      // the hill tarn: south side
+
   // 4f) Biome frontiers: repaint the OPEN HEATH (grass/moss only — so roads,
   //     clearings, water, regions and settlements are untouched) at the map's
   //     edges into real terrain — a northern mountain range, north-east mining
