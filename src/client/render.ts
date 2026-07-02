@@ -23,7 +23,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
-import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, homeLayout, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
+import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, homeLayout, HOMES, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
@@ -1660,6 +1660,15 @@ export function drawWorld(
       if (!inRegion(b.door.x, b.door.y) || outside(b.door.x, b.door.y)) continue;
       drawShopSign(g, b, cam);
     }
+    // The player's homestead: a real house on its lot that grows with the house
+    // tier (Cottage → Estate). Drawn after the player so you walk behind it.
+    for (const h of HOMES) {
+      if (!state.objects[h.plot]?.owned) continue; // unclaimed lots keep the stake
+      const d = h.lot.door;
+      if (!inRegion(d.x, d.y) || outside(d.x, d.y)) continue;
+      const nm = content.objects.find((o) => o.id === h.plot)?.name ?? "Home";
+      drawHomeExterior(g, d.x * TILE - cam.x + TILE / 2, d.y * TILE - cam.y + TILE, state.player.home.tier, now, sv.night, nm);
+    }
   }
 
   // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;
@@ -2630,6 +2639,130 @@ function drawHouseDoor(g: CanvasRenderingContext2D, cx: number, cy: number): voi
   g.strokeStyle = "#4f351f"; g.lineWidth = 1; // plank seams
   for (let i = 1; i < 3; i++) { g.beginPath(); g.moveTo(cx - 6 + i * 4, cy - 10); g.lineTo(cx - 6 + i * 4, cy + 12); g.stroke(); }
   g.fillStyle = "#caa05a"; g.beginPath(); g.arc(cx + 3.5, cy + 1, 1.6, 0, Math.PI * 2); g.fill(); // ring handle
+}
+
+/**
+ * The player's homestead, rendered on its overworld lot. The house visibly
+ * grows with the house tier: a one-gable Cottage, a chimneyed Homestead, a
+ * cross-gabled Manor, then a wide Estate with a wing and twin chimneys — plus a
+ * nameplate, a stone path, a little garden, and warm window-glow after dark.
+ * `fx` is the door-centre x, `fy` the ground line (bottom of the door tile).
+ */
+function drawHomeExterior(
+  g: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  tier: number,
+  now: number,
+  night: number,
+  name: string,
+): void {
+  const t = Math.max(0, Math.min(3, tier));
+  const halfW = [26, 32, 38, 46][t]!;        // body half-width
+  const bodyH = [30, 34, 40, 46][t]!;        // wall height
+  const eave = 6;                             // roof overhang
+  const top = fy - bodyH;                     // wall top / roof spring line
+  const lit = night > 0.28;                   // windows glow after dusk
+  const glow = 0.35 + 0.5 * night;
+  // Roof palette warms/darkens by tier: thatch → clay tile → slate.
+  const roof: [string, string] = [["#9c7a40", "#7a5c2c"], ["#8a6438", "#684627"], ["#7c3f30", "#5a2c22"], ["#5b5560", "#403b45"]][t] as [string, string];
+
+  // Ground shadow across the whole footprint.
+  g.fillStyle = "rgba(0,0,0,0.28)";
+  g.beginPath(); g.ellipse(fx, fy + 2, halfW + eave, 7, 0, 0, Math.PI * 2); g.fill();
+
+  // A little front garden: a stone path down from the door, a shrub each side.
+  g.fillStyle = "rgba(150,140,120,0.5)";
+  for (let i = 0; i < 3; i++) g.fillRect(fx - 4, fy + 3 + i * 5, 8, 3);
+  for (const sx of [-halfW - 2, halfW + 2]) {
+    g.fillStyle = "#3f5a34"; g.beginPath(); g.arc(fx + sx, fy - 2, 5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#4d6b3f"; g.beginPath(); g.arc(fx + sx - 1, fy - 3, 3, 0, Math.PI * 2); g.fill();
+    if (t >= 2) { g.fillStyle = "#e0b8d0"; for (let k = 0; k < 3; k++) g.fillRect(fx + sx - 3 + k * 3, fy - 4, 1.5, 1.5); } // flowers
+  }
+
+  // --- Body: plaster with a timber frame. ---
+  const wallL = fx - halfW, wallR = fx + halfW;
+  g.fillStyle = "#c3b088"; g.fillRect(wallL, top, halfW * 2, bodyH);
+  g.fillStyle = "rgba(0,0,0,0.10)"; g.fillRect(wallL, fy - 6, halfW * 2, 6); // base shading
+  g.strokeStyle = "#5a4630"; g.lineWidth = 2;
+  g.strokeRect(wallL + 1, top + 1, halfW * 2 - 2, bodyH - 2);
+  // corner posts + a mid stud or two
+  g.fillStyle = "#5a4630";
+  g.fillRect(wallL, top, 3, bodyH); g.fillRect(wallR - 3, top, 3, bodyH);
+  g.fillRect(fx - 1.5, top, 3, bodyH);
+  if (t >= 2) { g.fillRect(fx - halfW * 0.5, top, 2, bodyH); g.fillRect(fx + halfW * 0.5, top, 2, bodyH); }
+
+  // Windows (glow at night). Count grows with tier.
+  const winY = top + bodyH * 0.34;
+  const wx = t === 0 ? [fx - halfW * 0.5] : t === 1 ? [fx - halfW * 0.5, fx + halfW * 0.5]
+    : [fx - halfW * 0.62, fx + halfW * 0.62, fx - halfW * 0.28, fx + halfW * 0.28].slice(0, t === 2 ? 3 : 4);
+  for (const cxw of wx) {
+    if (Math.abs(cxw - fx) < 8) continue; // don't sit a window on the doorway
+    g.fillStyle = "#3a2c1c"; g.fillRect(cxw - 6, winY - 6, 12, 12);
+    g.fillStyle = lit ? `rgba(255,206,120,${glow})` : "rgba(150,180,210,0.5)";
+    g.fillRect(cxw - 4.5, winY - 4.5, 9, 9);
+    g.strokeStyle = "#3a2c1c"; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(cxw, winY - 5); g.lineTo(cxw, winY + 5); g.moveTo(cxw - 5, winY); g.lineTo(cxw + 5, winY); g.stroke();
+  }
+
+  // Door (aligned to the door tile) + a hanging nameplate.
+  const doorW = 12, doorH = Math.min(18, bodyH * 0.5);
+  g.fillStyle = "#4a3320"; g.fillRect(fx - doorW / 2, fy - doorH, doorW, doorH);
+  g.fillStyle = "#5c4126"; g.fillRect(fx - doorW / 2 + 1.5, fy - doorH + 1.5, doorW - 3, doorH - 2);
+  g.strokeStyle = "#2e2013"; g.lineWidth = 1; g.beginPath(); g.moveTo(fx, fy - doorH + 2); g.lineTo(fx, fy - 1); g.stroke();
+  g.fillStyle = "#d8b24a"; g.beginPath(); g.arc(fx + doorW / 2 - 3, fy - doorH * 0.5, 1.2, 0, Math.PI * 2); g.fill(); // handle
+
+  // --- Roof: a gable over the body, overhanging the eaves. ---
+  const ridge = top - [14, 16, 19, 20][t]!;
+  const drawGable = (l: number, r: number, springY: number, peakX: number, peakY: number): void => {
+    g.fillStyle = roof[0];
+    g.beginPath(); g.moveTo(l - eave, springY); g.lineTo(peakX, peakY); g.lineTo(r + eave, springY); g.closePath(); g.fill();
+    g.fillStyle = roof[1]; // shaded right slope
+    g.beginPath(); g.moveTo(peakX, peakY); g.lineTo(r + eave, springY); g.lineTo(peakX, springY); g.closePath(); g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.25)"; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(l - eave, springY); g.lineTo(peakX, peakY); g.lineTo(r + eave, springY); g.stroke();
+  };
+  drawGable(wallL, wallR, top, fx, ridge);
+  // Manor+ gets a cross-gable dormer over the doorway; Estate a side wing roof.
+  if (t >= 2) drawGable(fx - halfW * 0.4, fx + halfW * 0.4, top - bodyH * 0.1, fx, ridge - 6);
+  if (t >= 3) {
+    g.fillStyle = "#c3b088"; g.fillRect(wallR - 2, top + bodyH * 0.25, 16, bodyH * 0.75); // wing wall
+    g.strokeStyle = "#5a4630"; g.lineWidth = 1.5; g.strokeRect(wallR - 2, top + bodyH * 0.25, 16, bodyH * 0.75);
+    drawGable(wallR, wallR + 14, top + bodyH * 0.25, wallR + 7, top + bodyH * 0.25 - 12);
+  }
+
+  // Chimney(s) with drifting smoke — one from Homestead, two at Estate.
+  const stacks = t >= 3 ? [wallL + halfW * 0.5, wallR - 6] : t >= 1 ? [wallL + halfW * 0.55] : [];
+  for (const chx of stacks) {
+    const chTop = ridge + 6;
+    g.fillStyle = "#6a5140"; g.fillRect(chx - 4, chTop, 8, top - chTop + 4);
+    g.fillStyle = "#4e3b2d"; g.fillRect(chx - 5, chTop - 2, 10, 3);
+    g.save(); g.globalAlpha = 0.3;
+    for (let i = 0; i < 3; i++) {
+      const s = ((now / 1100) + i / 3) % 1;
+      g.fillStyle = "rgba(210,210,215,1)";
+      g.beginPath(); g.arc(chx + Math.sin((now / 600) + i) * 3, chTop - 4 - s * 22, 2.5 + s * 4, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+  }
+  // Estate finial: a little pennant at the peak.
+  if (t >= 3) {
+    g.strokeStyle = "#4e3b2d"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(fx, ridge - 6); g.lineTo(fx, ridge - 16); g.stroke();
+    g.fillStyle = "#b8452f"; g.beginPath(); g.moveTo(fx, ridge - 16); g.lineTo(fx + 10, ridge - 13); g.lineTo(fx, ridge - 10); g.closePath(); g.fill();
+  }
+
+  // Nameplate: a compact plaque above the door, sized to its text.
+  const label = name.replace(/^the /i, "").replace(/ Homestead$/i, "").slice(0, 12);
+  g.font = "7px 'EB Garamond', serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  const plW = Math.min(halfW * 2 - 6, g.measureText(label).width + 8);
+  const plX = fx, plY = fy - doorH - 8;
+  g.fillStyle = "#e6d6a8"; g.fillRect(plX - plW / 2, plY - 5, plW, 10);
+  g.strokeStyle = "#7a5c34"; g.lineWidth = 1; g.strokeRect(plX - plW / 2, plY - 5, plW, 10);
+  g.fillStyle = "#4a3a22"; g.fillText(label, plX, plY + 0.5);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+
+  // A lantern glow by the door at night.
+  if (lit) { g.fillStyle = `rgba(255,196,110,${0.5 * night})`; g.beginPath(); g.arc(fx - doorW / 2 - 4, fy - doorH * 0.7, 6, 0, Math.PI * 2); g.fill(); }
 }
 
 /** A homestead plot marker: a corner stake with a board (gold once claimed). */
