@@ -1520,14 +1520,15 @@ export const quests: QuestDef[] = [
     id: "q_roof_of_your_own",
     name: "A Roof of Your Own",
     giver: "drover_tamsin",
+    requiresLevel: { level: 40 },
     intro: [
       "You've the look of someone tired of sleeping under hedgerows. Sit. As reeve here I keep the rolls — and the lot east of the yard has stood empty a year.",
       "It's yours, if you'll have it. Find the plot marker on it and claim it; the cottage comes with the ground, and its door opens onto your own four walls to do with as you please.",
-      "A bed comes first of all. Fell an ashwood and mill the logs to planks at any builder's bench — there's one in Ironvale's artisans' yard — then build the bed inside. After that, a home is only as bare as you leave it.",
+      "A bed comes first of all. Fell an ashwood and mill the logs to planks at any builder's bench — there's one in Ironvale's artisans' yard — then step inside and tap Decorate to craft the bed and set it down. After that, a home is only as bare as you leave it.",
     ],
     steps: [
       { type: "claim", text: "Claim the empty homestead lot east of the Rest" },
-      { type: "build", category: "bed", text: "Mill Ashwood Planks at a bench, then build a bed inside your home" },
+      { type: "build", category: "bed", text: "Inside your home, tap Decorate → Beds and build a bed from your planks" },
       { type: "talk", npc: "drover_tamsin", text: "Tell Tamsin you've settled in" },
     ],
     outro: [

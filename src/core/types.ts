@@ -2182,6 +2182,10 @@ export interface QuestDef {
   giver: string;
   /** A quest id that must be completed before this one is offered. */
   requires?: string;
+  /** A level the player must reach before the quest is offered — a specific
+   *  skill, or (skill omitted) the total level across all skills. Lets a quest
+   *  wait until the player has found their feet. */
+  requiresLevel?: { skill?: SkillId; level: number };
   /** Story flags ALL of which must be set before this quest is offered. */
   requiresFlags?: string[];
   /** Story flags NONE of which may be set (mutually-exclusive branches). */

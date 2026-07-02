@@ -4404,6 +4404,12 @@ function applyRep(
 function questAvailable(player: Player, q: QuestDef): boolean {
   if (player.quests[q.id] || player.questsDone.includes(q.id)) return false;
   if (q.requires && !player.questsDone.includes(q.requires)) return false;
+  if (q.requiresLevel) {
+    const have = q.requiresLevel.skill
+      ? skillLvl(player, q.requiresLevel.skill)
+      : (Object.keys(player.skills) as SkillId[]).reduce((n, s) => n + skillLvl(player, s), 0);
+    if (have < q.requiresLevel.level) return false;
+  }
   if (q.requiresFlags && !q.requiresFlags.every((f) => player.flags.includes(f))) return false;
   if (q.blockedByFlags && q.blockedByFlags.some((f) => player.flags.includes(f))) return false;
   return true;
@@ -4768,13 +4774,15 @@ function ownsAnyPlot(state: WorldState): boolean {
   return Object.values(state.objects).some((o) => o.owned);
 }
 
-/** True once a piece (optionally of `category`) is built at any home footing. */
+/** True once the player has built a piece (optionally of `category`) for their
+ *  home — placed in a room or waiting in home storage. Reads the free-placement
+ *  model (player.home), so a quest "build a bed" step completes the moment the
+ *  bed is crafted or set down. */
 function hasBuilt(state: WorldState, content: Content, category?: string): boolean {
-  for (const o of Object.values(state.objects)) {
-    if (!o.furniture) continue;
-    if (!category) return true;
-    if (content.furniture[o.furniture]?.category === category) return true;
-  }
+  const { home } = state.player;
+  const match = (id: string): boolean => !category || content.furniture[id]?.category === category;
+  for (const p of home.placed) if (match(p.item)) return true;
+  for (const [id, n] of Object.entries(home.storage)) if ((n ?? 0) > 0 && match(id)) return true;
   return false;
 }
 
