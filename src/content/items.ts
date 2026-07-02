@@ -4700,7 +4700,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A heavy tooth from an old warrior of the deep. Carved into talismans and trophies."
   },
   "tarnished_ring": {
-    "id": "tarnished_ring", "name": "Tarnished Ring", "icon": "💍", "cat": "Drops", "sell": 18,
+    "id": "tarnished_ring", "name": "Tarnished Ring", "icon": "💍", "cat": "Drops", "sell": 40,
     "description": "A stolen ring gone dull. Not worth wearing, but any fence will take it."
   },
   "marrow_shard": {
@@ -4751,7 +4751,7 @@ export const items: Record<ItemId, ItemDef> = {
     "description": "A rough white gem of the first water. The prize of the rare drop table."
   },
   "tarnished_amulet": {
-    "id": "tarnished_amulet", "name": "Tarnished Amulet", "icon": "📿", "cat": "Drops", "sell": 34,
+    "id": "tarnished_amulet", "name": "Tarnished Amulet", "icon": "📿", "cat": "Drops", "sell": 60,
     "description": "A looted amulet gone dull and green. No power left in it, but a fence will pay."
   },
   "gold_ring": {
