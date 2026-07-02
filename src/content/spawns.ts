@@ -270,8 +270,14 @@ function buildHousing(): WorldObjectDef[] {
       { id: h.plot, kind: "housing_plot", x: h.lot.marker.x, y: h.lot.marker.y, name: `${name} Homestead`, target: plan.entry },
       { id: `door_${suffix}`, kind: "house_door", x: h.lot.door.x, y: h.lot.door.y, name: `${name} Home`, plot: h.plot, target: plan.entry, lines: ["You step inside your home."] },
       { id: `exit_${suffix}`, kind: "house_door", x: plan.exitDoor.x, y: plan.exitDoor.y, name: "the Door Out", target: h.lot.exit, lines: ["You step back out onto the lot."] },
-      { id: `seal_${suffix}`, kind: "room_seal", x: plan.sealDoor.x, y: plan.sealDoor.y, name: "Unfinished Wall (Workshop)", plot: h.plot },
     );
+    // Tiered room seals: each doorway that opens as the house is upgraded.
+    for (const s of plan.seals) {
+      out.push({
+        id: `seal_${suffix}_${s.room}`, kind: "room_seal", x: s.x, y: s.y,
+        name: `Unfinished Wall (${cap(s.room)})`, plot: h.plot, tier: s.tier,
+      });
+    }
     for (const f of plan.footings) {
       out.push({
         id: `hs_${suffix}_${f.category}_${f.room}`, kind: "build_hotspot",

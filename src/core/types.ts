@@ -1037,8 +1037,11 @@ export interface WorldObjectDef {
   loreId?: string;
   /** build_hotspot only: the furniture category this footing accepts. */
   category?: string;
-  /** build_hotspot only: the id of the housing_plot this footing belongs to. */
+  /** build_hotspot / room_seal only: the id of the housing_plot it belongs to. */
   plot?: string;
+  /** room_seal only: the house tier that unseals this doorway (1=Homestead,
+   *  2=Manor, 3=Estate). The seal is open once player.home.tier >= this. */
+  tier?: number;
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -2004,8 +2007,9 @@ export type WorldEvent =
   | { type: "OPEN_CRAFT"; station: ObjKind; objId: string }
   /** Open the furniture build/replace menu for a housing hotspot. */
   | { type: "OPEN_BUILD"; hotspotId: string; category: string; current: string | null }
-  /** Offer to build an add-on room: its name, Construction req, and material cost. */
-  | { type: "OPEN_EXTENSION"; sealId: string; name: string; levelReq: number; materials: Record<string, number> }
+  /** Offer to upgrade the house a tier: the new structure name, the room it
+   *  adds, the Construction req, and the gold + material cost. */
+  | { type: "OPEN_EXTENSION"; sealId: string; name: string; room: string; levelReq: number; gold: number; materials: Record<string, number> }
   | { type: "QUEST_STARTED"; quest: string }
   | { type: "QUEST_ADVANCED"; quest: string }
   | { type: "QUEST_COMPLETED"; quest: string }
@@ -2368,6 +2372,10 @@ export interface HomeState {
   wall?: string;
   /** Chosen floor surface id (a SurfaceDef of kind "floor"). */
   floor?: string;
+  /** House structure tier: 0 Cottage (living only), 1 Homestead (+kitchen),
+   *  2 Manor (+bedroom), 3 Estate (+workshop, +backyard). Each step unseals a
+   *  room for a Construction level + gold + materials. */
+  tier: number;
 }
 
 /** A species catchable from the deep-water pier minigame. Each landed fish rolls

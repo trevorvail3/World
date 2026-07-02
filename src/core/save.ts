@@ -100,7 +100,7 @@ export interface SavedProgress {
   /** Player housing: claimed plot ids + built furniture (hotspot id -> piece id). */
   housing: { plots: string[]; furniture: Record<string, string> };
   /** Free-placement home: unplaced storage + placed pieces (positions/rotations). */
-  home?: { storage: Record<string, number>; placed: { item: string; x: number; y: number; rot: number }[]; wall?: string; floor?: string };
+  home?: { storage: Record<string, number>; placed: { item: string; x: number; y: number; rot: number }[]; wall?: string; floor?: string; tier?: number };
   hp: number;
   /** The pier's top-five catches by weight (the records board). */
   fishingRecords?: FishRecord[];
@@ -132,6 +132,7 @@ export function serializePlayer(state: WorldState): SavedProgress {
     home: {
       storage: { ...player.home.storage },
       placed: player.home.placed.map((p) => ({ item: p.item, x: p.x, y: p.y, rot: p.rot })),
+      tier: player.home.tier,
       ...(player.home.wall ? { wall: player.home.wall } : {}),
       ...(player.home.floor ? { floor: player.home.floor } : {}),
     },
@@ -517,8 +518,14 @@ export function hydratePlayer(
     const wall = savedHome["wall"], floor = savedHome["floor"];
     if (typeof wall === "string" && wall in content.surfaces) player.home.wall = wall;
     if (typeof floor === "string" && floor in content.surfaces) player.home.floor = floor;
+    // House tier. A save from before tiers existed (no `tier` field) predates
+    // room-gating and had every room open, so grant the full Estate rather than
+    // walling an existing player out of rooms they built in.
+    const tier = savedHome["tier"];
+    player.home.tier = typeof tier === "number" ? Math.max(0, Math.min(3, Math.floor(tier))) : 3;
   } else if (isRecord(savedHousing) && isRecord(savedHousing["furniture"])) {
-    // One-time migration from the fixed-slot era.
+    // One-time migration from the fixed-slot era — also a pre-tier home, so open
+    // it fully.
     const furn = savedHousing["furniture"] as Record<string, unknown>;
     for (const hotspotId of Object.keys(furn)) {
       const fid = furn[hotspotId];
@@ -527,6 +534,7 @@ export function hydratePlayer(
         player.home.placed.push({ item: fid, x: def.x, y: def.y, rot: 0 });
       }
     }
+    player.home.tier = 3;
   }
 
   const savedQuests = raw["quests"];

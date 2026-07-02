@@ -109,6 +109,10 @@ export interface HomeLayout {
   exitDoor: V;
   /** The sealed workshop-wing doorway (a room_seal stands here until built). */
   sealDoor: V;
+  /** Tiered room seals: each interior doorway that opens at a house tier. You
+   *  enter into the living room (tier 0); the kitchen (1), bedroom (2) and
+   *  workshop (3) unseal in turn as you upgrade the house. */
+  seals: { x: number; y: number; tier: number; room: string }[];
   /** Every furniture footing, with its category and room. */
   footings: { category: string; room: string; x: number; y: number }[];
 }
@@ -132,6 +136,11 @@ export function homeLayout(ox: number): HomeLayout {
     entry: { x: ox + 11, y: oy + 9 },
     exitDoor: { x: ox + 11, y: oy + 10 },
     sealDoor: { x: ox + 11, y: oy + 5 },
+    seals: [
+      { x: ox + 7, y: oy + 7, tier: 1, room: "kitchen" },   // living ↔ kitchen (Homestead)
+      { x: ox + 3, y: oy + 5, tier: 2, room: "bedroom" },   // kitchen ↔ bedroom (Manor)
+      { x: ox + 11, y: oy + 5, tier: 3, room: "workshop" }, // living ↔ workshop (Estate)
+    ],
     footings: [
       { category: "bed", room: "bedroom", x: ox + 2, y: oy + 2 },
       { category: "display", room: "bedroom", x: ox + 5, y: oy + 1 },

@@ -422,7 +422,7 @@ export function buildWalkability(
   const blocked = new Set<string>();
   // Sealed add-on doorways block until their extension is built — keyed live, so
   // the wing opens for pathfinding the moment you build it (no rebuild needed).
-  const seals = new Map<string, string>();
+  const seals = new Map<string, number>(); // doorway tile → tier that unseals it
   for (const obj of content.objects) {
     // Story-gated objects that aren't present for this player don't block — a
     // barrier a quest removes (the pier gate) stops blocking once its flag is
@@ -432,7 +432,7 @@ export function buildWalkability(
     // Rug footings are floor coverings — you walk over them, so they don't block.
     if (obj.kind === "build_hotspot" && obj.category === "rug") continue;
     if (BLOCKING_KINDS.has(obj.kind)) blocked.add(`${obj.x},${obj.y}`);
-    else if (obj.kind === "room_seal") seals.set(`${obj.x},${obj.y}`, obj.id);
+    else if (obj.kind === "room_seal") seals.set(`${obj.x},${obj.y}`, obj.tier ?? 1);
   }
   const { map } = content;
   return (x: number, y: number): boolean => {
@@ -443,8 +443,10 @@ export function buildWalkability(
     }
     const key = `${x},${y}`;
     if (blocked.has(key)) return false;
-    const seal = seals.get(key);
-    if (seal && !state.objects[seal]?.owned) return false; // wing not built yet
+    const sealTier = seals.get(key);
+    // Read the tier live (not captured) so an in-place upgrade opens the doorway
+    // immediately, the way the old per-seal `owned` check did.
+    if (sealTier !== undefined && state.player.home.tier < sealTier) return false;
     if (state.creatureTiles.has(key)) return false;
     // A lit campfire occupies its tile — you cook beside it, not on it.
     if (state.campfire && state.campfire.x === x && state.campfire.y === y) return false;
@@ -538,7 +540,7 @@ export function createWorld(
       hairStyle: "short", facial: "none", top: "plain", legs: "trousers", shoes: "boots",
     },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0, blocked: [], unlocks: [] },
-    home: { storage: {}, placed: [] },
+    home: { storage: {}, placed: [], tier: 0 },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
@@ -2561,14 +2563,22 @@ function startInteraction(
     }
 
     case "room_seal": {
-      if (obj.owned) { // already built — the doorway stands open
-        events.push({ type: "LOG", message: "The doorway to your workshop wing stands open." });
+      const sealTier = def.tier ?? 1;
+      const tier = state.player.home.tier;
+      if (sealTier <= tier) { // already unsealed — the doorway stands open
+        events.push({ type: "LOG", message: "This doorway already stands open." });
         break;
       }
+      if (sealTier > tier + 1) { // a further room — build the ones before it first
+        const prev = HOUSE_TIERS[tier + 1];
+        events.push({ type: "LOG", message: `Raise your ${prev?.name ?? "next room"} first — you can only extend the house one room at a time.` });
+        break;
+      }
+      const up = HOUSE_TIERS[sealTier]; // the tier this seal unlocks
+      if (!up) break;
       events.push({
         type: "OPEN_EXTENSION", sealId: def.id,
-        name: WORKSHOP_EXTENSION.name, levelReq: WORKSHOP_EXTENSION.levelReq,
-        materials: WORKSHOP_EXTENSION.materials,
+        name: up.name, room: up.room, levelReq: up.levelReq, gold: up.gold, materials: up.materials,
       });
       break;
     }
@@ -2598,22 +2608,29 @@ function interactPlot(
     return;
   }
   const comfort = homeComfort(state, content, def.id);
+  const tier = state.player.home.tier;
+  const structure = homeStructureName(tier);
+  const next = HOUSE_TIERS[tier + 1];
+  const nextHint = next
+    ? ` A ${next.name} (adding the ${next.room}) awaits at Construction ${next.levelReq} — extend it from the sealed doorway inside.`
+    : " It stands complete — every room raised.";
   events.push({
     type: "LOG",
     message: comfort > 0
-      ? `${def.name} — by its comforts, ${comfortTitle(comfort)} (comfort ${comfort}). Keep upgrading the furnishings to raise its standing.`
-      : `${def.name} — your home, bare as yet. Step inside and build to furnish it.`,
+      ? `${def.name} — a ${structure}, ${comfortTitle(comfort)} (comfort ${comfort}).${nextHint}`
+      : `${def.name} — a bare ${structure}. Step inside and build to furnish it.${nextHint}`,
   });
 }
 
-/** A home's "rating" from its total comfort — the visible reward for furnishing. */
+/** A home's furnishing quality from its total comfort (distinct from its
+ *  structure tier) — the visible reward for decorating. */
 function comfortTitle(comfort: number): string {
-  if (comfort >= 280) return "a Palace";
-  if (comfort >= 190) return "an Estate";
-  if (comfort >= 120) return "a Manor";
-  if (comfort >= 60) return "a Fine Home";
-  if (comfort >= 25) return "a Cottage";
-  return "a Hovel";
+  if (comfort >= 280) return "sumptuously furnished";
+  if (comfort >= 190) return "richly furnished";
+  if (comfort >= 120) return "handsomely furnished";
+  if (comfort >= 60) return "comfortably furnished";
+  if (comfort >= 25) return "modestly furnished";
+  return "sparsely furnished";
 }
 
 /** Set comfort-tier story flags for a home (drive the housing achievements). */
@@ -2625,15 +2642,10 @@ function markHomeStanding(player: Player, content: Content, state: WorldState, p
   if (c >= 280) set("home_palace");
 }
 
-/** Sum the comfort of every built piece across one plot's hotspots. */
-function homeComfort(state: WorldState, content: Content, plotId: string): number {
+/** Sum the comfort of every placed piece in the player's home (free-placement). */
+function homeComfort(state: WorldState, content: Content, _plotId: string): number {
   let total = 0;
-  for (const d of content.objects) {
-    if (d.kind !== "build_hotspot" || d.plot !== plotId) continue;
-    const fid = state.objects[d.id]?.furniture;
-    const f = fid ? content.furniture[fid] : undefined;
-    if (f) total += f.comfort;
-  }
+  for (const p of state.player.home.placed) total += content.furniture[p.item]?.comfort ?? 0;
   return total;
 }
 
@@ -2649,9 +2661,18 @@ function homeComfort(state: WorldState, content: Content, plotId: string): numbe
 function homeFloorSet(state: WorldState): Set<string> {
   const out = new Set<string>();
   const { map } = state;
+  // Sealed doorways (tier not yet reached) act as walls, so the flood — and
+  // thus furniture placement — is bounded to the rooms you've unlocked.
+  const closedSeals = new Set<string>();
+  for (const obj of activeContent?.objects ?? []) {
+    if (obj.kind === "room_seal" && state.player.home.tier < (obj.tier ?? 1)) {
+      closedSeals.add(`${obj.x},${obj.y}`);
+    }
+  }
   const px = Math.round(state.player.pos.x), py = Math.round(state.player.pos.y);
   const at = (x: number, y: number): boolean =>
-    x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y * map.width + x] === "plank";
+    x >= 0 && y >= 0 && x < map.width && y < map.height &&
+    map.tiles[y * map.width + x] === "plank" && !closedSeals.has(`${x},${y}`);
   if (!at(px, py)) return out; // not standing on a home floor
   const q: [number, number][] = [[px, py]];
   out.add(`${px},${py}`);
@@ -2924,14 +2945,26 @@ function buildFurniture(
   events.push({ type: "LOG", message: `You build the ${f.name}.` });
 }
 
-/** The one add-on wing you can build onto a home: the Workshop (forge/alch/bench). */
-const WORKSHOP_EXTENSION = {
-  name: "Workshop",
-  levelReq: 15,
-  materials: { plank_stonewood: 6, timber_frame: 4, mortar_basic: 4, stone_block: 4 } as Record<string, number>,
-};
+/**
+ * The house-tier ladder. Index = the tier reached once built (0 = the base
+ * Cottage you claim). Each step unseals one room for a Construction level + gold
+ * + materials — the Construction money-sink, and the spine the exterior (curb
+ * appeal) and the backyard read off. Costs climb steeply so a full Estate is a
+ * genuine long-haul goal.
+ */
+export const HOUSE_TIERS: { name: string; room: string; levelReq: number; gold: number; xp: number; materials: Record<string, number> }[] = [
+  { name: "Cottage", room: "living", levelReq: 0, gold: 0, xp: 0, materials: {} },
+  { name: "Homestead", room: "kitchen", levelReq: 10, gold: 2000, xp: 200, materials: { plank_greyoak: 8, timber_frame: 4, mortar_basic: 4 } },
+  { name: "Manor", room: "bedroom", levelReq: 30, gold: 8000, xp: 480, materials: { plank_ironbark: 10, timber_frame: 6, stone_block: 6, mortar_basic: 6 } },
+  { name: "Estate", room: "workshop", levelReq: 50, gold: 25000, xp: 1100, materials: { plank_heartoak: 12, plank_stonewood: 8, stone_block: 10, ashiron_bar: 4, cut_gem: 1 } },
+];
 
-/** Build an add-on room: consume the materials, open the sealed doorway. */
+/** The structure name for a house at a given tier (Cottage → Estate). */
+export function homeStructureName(tier: number): string {
+  return (HOUSE_TIERS[tier] ?? HOUSE_TIERS[HOUSE_TIERS.length - 1]!).name;
+}
+
+/** Upgrade the house one tier: spend the level + gold + materials, unseal the room. */
 function buildRoom(
   state: WorldState,
   content: Content,
@@ -2939,31 +2972,38 @@ function buildRoom(
   events: WorldEvent[],
 ): void {
   const { player } = state;
-  const obj = state.objects[sealId];
   const def = findObjectDef(content, sealId);
-  if (!obj || !def || def.kind !== "room_seal") return;
-  if (obj.owned) { events.push({ type: "LOG", message: "That wing is already built." }); return; }
+  if (!def || def.kind !== "room_seal") return;
   if (def.plot && !state.objects[def.plot]?.owned) {
     events.push({ type: "LOG", message: "You don't own this homestead." });
     return;
   }
-  const ext = WORKSHOP_EXTENSION;
-  if (skillLvl(player, "construction") < ext.levelReq) {
-    events.push({ type: "LOG", message: `Building the ${ext.name} wing needs Construction level ${ext.levelReq}.` });
+  const sealTier = def.tier ?? 1;
+  if (sealTier <= player.home.tier) { events.push({ type: "LOG", message: "That room is already part of your house." }); return; }
+  if (sealTier !== player.home.tier + 1) { events.push({ type: "LOG", message: "You must extend the house one room at a time." }); return; }
+  const up = HOUSE_TIERS[sealTier];
+  if (!up) return;
+  if (skillLvl(player, "construction") < up.levelReq) {
+    events.push({ type: "LOG", message: `Raising your ${up.name} needs Construction level ${up.levelReq}.` });
     return;
   }
-  for (const [item, qty] of Object.entries(ext.materials)) {
+  if (player.gold < up.gold) {
+    events.push({ type: "LOG", message: `Your ${up.name} costs ${up.gold} gold — you're short.` });
+    return;
+  }
+  for (const [item, qty] of Object.entries(up.materials)) {
     if (countItem(player, item as ItemId) < qty) {
-      events.push({ type: "LOG", message: `You're short of materials to raise the ${ext.name} wing.` });
+      events.push({ type: "LOG", message: `You're short of materials to raise your ${up.name}.` });
       return;
     }
   }
-  for (const [item, qty] of Object.entries(ext.materials)) {
+  player.gold -= up.gold;
+  for (const [item, qty] of Object.entries(up.materials)) {
     for (let i = 0; i < qty; i++) removeOneItem(player, item as ItemId);
   }
-  obj.owned = true; // the doorway opens (walkability reads this live)
-  grantXp(state, content, "construction", 220, events);
-  events.push({ type: "LOG", message: `You raise the ${ext.name} wing. The doorway opens onto your new room.` });
+  player.home.tier = sealTier; // the doorway opens (walkability reads this live)
+  grantXp(state, content, "construction", up.xp, events);
+  events.push({ type: "LOG", message: `You raise your home to a ${up.name}. The ${up.room} opens onto the house.` });
 }
 
 /** Use a built functional piece as a station — bank / cook / build, at home. */

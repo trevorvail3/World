@@ -23,7 +23,7 @@ import type {
   WorldState,
 } from "../core/types.ts";
 import { objectPos, objectHidden } from "../core/worldCore.ts";
-import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
+import { type RoofStyle, type EnterableBuilding, INTERIOR_TOP, homeLayout, cityDoor, cityRoof, ENTERABLE, instanceRectAt, tileAt, REGIONS, CITY } from "../content/map.ts";
 import { type AvatarAnim, actionArmAngle, drawAvatar, drawTool, withDefaults } from "./avatar.ts";
 import type { Ghost } from "./presence.ts";
 import { type GearLook, resolveGear } from "./gearLook.ts";
@@ -1407,7 +1407,8 @@ export function drawWorld(
       // Free-placement homes own furniture now (drawn from player.home.placed
       // below); the fixed footings render nothing.
     } else if (def.kind === "room_seal") {
-      if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
+      // Boarded-up doorway until the house tier that unseals it is reached.
+      if (state.player.home.tier < (def.tier ?? 1)) drawRoomSeal(g, px + TILE / 2, py + TILE / 2);
     } else {
       // A soft contact shadow under living things (and not under a slain, mid-
       // respawn monster) so they sit on the ground and read against the terrain.
@@ -1507,7 +1508,16 @@ export function drawWorld(
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
   // whichever home the player is standing in (so a bare house still feels lived-in).
   if (region && region.y0 === INTERIOR_TOP) {
-    drawHomeDressing(g, region.x0, cam, now, lights);
+    // Rooms not yet unlocked at this house tier sit in shadow — a clear "not
+    // yours yet" read behind the boarded doorways. Compute them once, use them to
+    // skip lit sconces in locked wings and to lay the shadow scrim on top.
+    const locked = lockedRoomRects(state, region.x0);
+    drawHomeDressing(g, region.x0, cam, now, lights, locked);
+    for (const r of locked) {
+      const x = (r.x0 + 1) * TILE - cam.x, y = (r.y0 + 1) * TILE - cam.y;
+      g.fillStyle = "rgba(6,5,9,0.72)";
+      g.fillRect(x, y, (r.x1 - r.x0 - 1) * TILE, (r.y1 - r.y0 - 1) * TILE);
+    }
     // Free-placement furniture (the Homestead): everything the player has set
     // down in their home, drawn at its own tile + rotation, under the player.
     drawPlacedFurniture(g, state, content, cam, now, lights, trophy);
@@ -1709,13 +1719,26 @@ function trophyGlyph(state: WorldState, content: Content): string | undefined {
 }
 
 /** Windows + glowing wall sconces baked into a home's rooms (decorative). */
+/** The interior rects of rooms this house tier hasn't unlocked (tier > current). */
+function lockedRoomRects(state: WorldState, ox: number): { x0: number; y0: number; x1: number; y1: number }[] {
+  const tier = state.player.home.tier;
+  if (tier >= 3) return [];
+  const plan = homeLayout(ox);
+  const roomTier = new Map<string, number>();
+  for (const s of plan.seals) roomTier.set(s.room, s.tier);
+  return plan.rooms.filter((rm) => (roomTier.get(rm.name) ?? 0) > tier);
+}
+
 function drawHomeDressing(
   g: CanvasRenderingContext2D,
   ox: number,
   cam: Camera,
   now: number,
   lights: Array<[number, number]>,
+  locked: { x0: number; y0: number; x1: number; y1: number }[] = [],
 ): void {
+  const inLocked = (tx: number, ty: number): boolean =>
+    locked.some((r) => tx >= r.x0 && tx <= r.x1 && ty >= r.y0 && ty <= r.y1);
   const sx = (tx: number) => tx * TILE - cam.x;
   const sy = (ty: number) => ty * TILE - cam.y;
   const fl = 0.6 + 0.4 * Math.sin(now / 240);
@@ -1735,6 +1758,7 @@ function drawHomeDressing(
     { x: ox, y: INTERIOR_TOP + 3 },      // bedroom outer wall
   ];
   for (const s of sconces) {
+    if (inLocked(s.x, s.y)) continue; // a locked wing stays dark — no lit sconce
     const x = sx(s.x) + TILE / 2, y = sy(s.y) + TILE / 2;
     g.fillStyle = "#3b3e45"; g.fillRect(x - 1.5, y - 1, 3, 6); // iron bracket
     g.fillStyle = `rgba(255,200,110,${0.55 + 0.4 * fl})`; g.beginPath(); g.arc(x, y - 3, 3, 0, Math.PI * 2); g.fill();
