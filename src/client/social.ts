@@ -51,9 +51,11 @@ export function entryFromSave(raw: unknown, _content: Content): HiscoreEntry | n
   const ids = Object.keys(skills) as SkillId[];
   if (ids.length === 0) return null;
   const totalLevel = ids.reduce((n, id) => n + lvl(id), 0);
+  // Mirrors combatLevel() in worldCore: base (ward+vitality) plus the strongest
+  // offensive style — melee (edge+vigour), ranged (draw) or magic/Devotion (faith).
   const combat = Math.floor(
     (lvl("ward") + lvl("vitality")) / 4 +
-      Math.max((lvl("edge") + lvl("vigour")) / 4, lvl("draw") / 2),
+      Math.max((lvl("edge") + lvl("vigour")) / 4, lvl("draw") / 2, lvl("faith") / 2),
   );
   const app = (r["appearance"] ?? {}) as Record<string, unknown>;
   const stats = (r["stats"] ?? {}) as Record<string, unknown>;

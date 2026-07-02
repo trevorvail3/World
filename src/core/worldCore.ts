@@ -1907,14 +1907,28 @@ function allSkillsMaxed(player: Player): boolean {
   return (Object.keys(player.skills) as SkillId[]).every((id) => skillLvl(player, id) >= 100);
 }
 
-/** The player's combat level (idle game formula). */
+/** The player's combat level, from all six combat skills (OSRS-shaped).
+ *
+ *   combat = floor( base + max(melee, ranged, magic) )
+ *     base   = (ward + vitality) / 4        — defence + life, always counted
+ *     melee  = (edge + vigour) / 4          — the two melee skills, averaged
+ *     ranged = draw / 2                     — one skill; accuracy AND damage
+ *     magic  = faith / 2                    — Devotion, likewise one skill
+ *
+ * The three offensive styles are symmetric: because Ranged (draw) and Devotion
+ * (faith) each cover their own accuracy and damage in a single skill, they're
+ * weighted /2, matching two melee skills at /4 — so a pure archer, a pure
+ * caster and a pure warrior of equal investment reach the same combat level.
+ * You're credited for your STRONGEST style, as OSRS does. (Bounty and Agility
+ * are non-combat, like Slayer/Agility in OSRS, so they don't count.) */
 function combatLevel(player: Player): number {
   const e = skillLvl(player, "edge");
   const v = skillLvl(player, "vigour");
   const w = skillLvl(player, "ward");
   const d = skillLvl(player, "draw");
+  const f = skillLvl(player, "faith");
   const vit = skillLvl(player, "vitality");
-  return Math.floor((w + vit) / 4 + Math.max((e + v) / 4, d / 2));
+  return Math.floor((w + vit) / 4 + Math.max((e + v) / 4, d / 2, f / 2));
 }
 
 /** Wear the gear in an inventory slot, swapping out anything already worn. */
