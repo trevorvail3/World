@@ -37,7 +37,7 @@ export class LoginUI {
       <div class="login-box">
         <div class="login-title">VARATH</div>
         <div class="login-sub">The stone remembers.</div>
-        <button class="login-play" type="button">▶ Play now</button>
+        <button class="login-play" type="button">Play now</button>
         <div class="login-foot">An old-school adventure — free to play in your browser.</div>
       </div>`;
     const play = this.backdrop.querySelector(".login-play") as HTMLButtonElement;
@@ -64,6 +64,7 @@ export class LoginUI {
         </form>
         <button class="login-offline" type="button">Play offline</button>
         <div class="login-foot">Same account as the idle game. Offline play saves only in this browser.</div>
+        <button class="login-mute" type="button"></button>
       </div>`;
 
     const form = this.backdrop.querySelector(".login-form") as HTMLFormElement;
@@ -99,6 +100,13 @@ export class LoginUI {
         })
         .catch((ex) => { say(ex?.message ?? "Sign-up failed"); busy(false); });
     });
+
+    // The sound toggle: mute persists from the game, so a returning player who
+    // muted in the HUD sees why the theme is silent — and can flip it back on.
+    const mute = this.backdrop.querySelector(".login-mute") as HTMLButtonElement;
+    const syncMute = (): void => { mute.textContent = audio.getMuted() ? "Sound: Off" : "Sound: On"; mute.classList.toggle("off", audio.getMuted()); };
+    syncMute();
+    mute.addEventListener("click", () => { audio.setMuted(!audio.getMuted()); syncMute(); });
 
     const offline = this.backdrop.querySelector(".login-offline") as HTMLButtonElement;
     if (this.onOffline) {

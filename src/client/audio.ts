@@ -161,7 +161,7 @@ class AudioManager {
     this.sfxBus = ctx.createGain(); this.sfxBus.gain.value = 1.0; this.sfxBus.connect(this.master);
     this.ambFilter = ctx.createBiquadFilter();
     this.ambFilter.type = "lowpass"; this.ambFilter.frequency.value = 20000;
-    this.ambBus = ctx.createGain(); this.ambBus.gain.value = 1.15;
+    this.ambBus = ctx.createGain(); this.ambBus.gain.value = 0.8;
     this.ambBus.connect(this.ambFilter).connect(this.master);
     this.musBus = ctx.createGain(); this.musBus.gain.value = 1.7; this.musBus.connect(this.master);
   }
@@ -630,7 +630,7 @@ class AudioManager {
         this.ambFilter.frequency.linearRampToValueAtTime(indoor ? 550 : 20000, t + 0.6);
         this.ambBus.gain.cancelScheduledValues(t);
         this.ambBus.gain.setValueAtTime(this.ambBus.gain.value, t);
-        this.ambBus.gain.linearRampToValueAtTime(indoor ? 0.55 : 1.15, t + 0.6);
+        this.ambBus.gain.linearRampToValueAtTime(indoor ? 0.4 : 0.8, t + 0.6);
       }
     }
     if (!this.unlocked || this.muted || this.mode !== "world") return;
