@@ -897,6 +897,15 @@ export type ObjKind =
   | "house_door"
   /** A sealed doorway to an add-on room (a wing) — build the extension to open it. */
   | "room_seal"
+  /** A dungeon's sealed slab/portcullis: blocks until its puzzle flag is set
+   *  (spawned with hiddenByFlag = the flag; it vanishes — and stops blocking —
+   *  the moment the puzzle completes). */
+  | "dungeon_gate"
+  /** One lever/plinth of an ordered dungeon puzzle: throw the group in the
+   *  right order (hinted by nearby plaques) or the mechanism resets. */
+  | "puzzle_lever"
+  /** A dungeon reward chest: one-time loot, remembered by a player flag. */
+  | "dungeon_chest"
   /** A Herblore cauldron: brew tinctures, elixirs and draughts. */
   | "cauldron"
   /** A Construction workbench: cut, frame and fit building components. */
@@ -1042,6 +1051,12 @@ export interface WorldObjectDef {
   /** room_seal only: the house tier that unseals this doorway (1=Homestead,
    *  2=Manor, 3=Estate). The seal is open once player.home.tier >= this. */
   tier?: number;
+  /** puzzle_lever only: the puzzle group this lever belongs to. Throwing every
+   *  lever of a group in `order` sets the flag `pz_<puzzle>`; a wrong throw
+   *  resets the group. (`order` doubles as this lever's place in the sequence.) */
+  puzzle?: string;
+  /** dungeon_chest only: what the chest holds. Granted once per player. */
+  loot?: { item: ItemId; qty: number }[];
 }
 
 /** One possible drop from a monster: an item with an independent roll chance. */
@@ -1137,6 +1152,10 @@ export interface WorldObjectState {
   pos?: Vec2;
   /** The tile this creature is currently stepping toward (null = standing). */
   wanderTarget?: Vec2 | null;
+  /** puzzle_lever only: thrown as part of the current (correct) sequence.
+   *  Transient — a reload resets an unfinished puzzle; the finished flag
+   *  (`pz_<group>`) is what persists. */
+  thrown?: boolean;
   /** When standing still, the time (ms) at which it picks its next step. */
   nextWanderAt?: number;
   /** Shrine/altar: no Grace refill from THIS stone until this time (ms). A
@@ -1332,6 +1351,10 @@ export interface Player {
   bank: Partial<Record<ItemId, number>>;
   /** Free-placement home: owned-but-unplaced furniture + everything placed. */
   home: HomeState;
+  /** Live progress through each dungeon lever puzzle: group id → how many of
+   *  its sequence are correctly thrown. Transient (an unfinished puzzle resets
+   *  on reload); a COMPLETED puzzle persists as the flag `pz_<group>`. */
+  puzzles: Record<string, number>;
   /** Worn gear: one item id per equipment slot (absent slots are empty). */
   equipment: Partial<Record<EquipSlot, ItemId>>;
   /**

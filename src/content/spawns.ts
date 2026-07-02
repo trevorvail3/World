@@ -13,7 +13,7 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, BACKYARDS, homeLayout, remap, map, CITY, PIER } from "./map.ts";
+import { HOMES, BACKYARDS, DUNGEONS, homeLayout, remap, map, CITY, PIER } from "./map.ts";
 
 const SCATTER_BLOCKED = new Set(["water", "mountain", "cave_wall", "deep", "wall", "plank"]);
 function tileWalkable(x: number, y: number): boolean {
@@ -756,18 +756,13 @@ const rawObjects: WorldObjectDef[] = [
   { id: "cultist_heart_1", kind: "monster", monster: "cult_acolyte", x: 20, y: 86, name: "Cult Acolyte" },
   { id: "cultist_heart_2", kind: "monster", monster: "cult_zealot", x: 23, y: 88, name: "Cult Zealot" },
 
-  // --- The Hollow Barrows portal, up in the grove (arena at x=2) ---
-  {
-    // Moved out to the remote eastern woods edge — a cave mouth you only find by
-    // exploring, not a landmark beside the city. (Return portal target follows.)
-    id: "portal_hollow", kind: "portal", x: 108, y: 24, name: "The Hollow Barrows",
-    dungeon: "hollow_barrows", target: { x: 8, y: 118 },
-    lines: ["You descend into the Hollow Barrows."],
-  },
-  { id: "ret_hollow", kind: "portal", x: 8, y: 119, name: "Barrow Exit", target: { x: 108, y: 25 }, lines: ["You climb back into the daylight."] },
-  { id: "boss_hollow", kind: "monster", monster: "hollow_warden", x: 8, y: 115, name: "The Hollow Warden" },
-  { id: "hollow_add1", kind: "monster", monster: "wild_boar", x: 5, y: 117, name: "Barrow Boar" },
-  { id: "hollow_add2", kind: "monster", monster: "forest_bear", x: 11, y: 117, name: "Barrow Bear" },
+  // --- The Hollow Warden, moved OUT of its single-room arena to an open lair
+  //     in the eastern woods by the barrow mouth — a grindable overworld boss
+  //     now (Act II turned its old arena's portal into a real dungeon; see
+  //     buildDungeonSites below for the new Hollow Barrows crawl).
+  { id: "boss_hollow", kind: "monster", monster: "hollow_warden", x: 104, y: 27, name: "The Hollow Warden" },
+  { id: "hollow_add1", kind: "monster", monster: "wild_boar", x: 102, y: 25, name: "Barrow Boar" },
+  { id: "hollow_add2", kind: "monster", monster: "forest_bear", x: 106, y: 29, name: "Barrow Bear" },
 
   // === GREYOAK WOOD (west) ==================================================
   { id: "gw_pine_1", kind: "tree", x: 11, y: 47, name: "Coldpine", resource: "fell_coldpine", species: "coldpine" },
@@ -1812,10 +1807,54 @@ const pierObjects: WorldObjectDef[] = [
   },
 ];
 
+/**
+ * The Act II dungeon sites' furniture, in FINAL map coordinates (the sites are
+ * carved below the remapped world, so nothing here passes through remap()).
+ * Geometry lives in content/dungeons.ts; the mouth of each site stands where
+ * its old single-room arena portal stood, so discovery geography is unchanged.
+ */
+function buildDungeonSites(): WorldObjectDef[] {
+  const out: WorldObjectDef[] = [];
+
+  // --- SITE 1: The Hollow Barrows — the old grove cave-mouth, now a true
+  //     barrow-crawl. Three carved levers (wolf → moon → crown, recited by the
+  //     funeral plaques) unseal the slab before the resting hall.
+  const barrow = DUNGEONS.find((d) => d.id === "hollow_barrows")!;
+  const mouth = remap(108, 24); // the grove cave-mouth (same spot as the old portal)
+  out.push(
+    {
+      id: "portal_hollow", kind: "portal", x: mouth.x, y: mouth.y, name: "The Hollow Barrows",
+      dungeon: "hollow_barrows", target: { x: barrow.x0 + barrow.entry.x, y: barrow.y0 + barrow.entry.y },
+      lines: ["Cold, still air breathes up from the dark. You climb down into the Hollow Barrows."],
+    },
+    { id: "ret_hollow", kind: "portal", x: barrow.x0 + barrow.exit.x, y: barrow.y0 + barrow.exit.y, name: "Barrow Exit", target: { x: mouth.x, y: mouth.y + 1 }, lines: ["You climb back into the daylight."] },
+    // The sealed slab: the only way east, until the levers are thrown in order.
+    {
+      id: "gate_barrow", kind: "dungeon_gate", x: 45, y: 207, name: "Sealed Slab",
+      hiddenByFlag: "pz_barrow_levers",
+      lines: ["A slab of grave-stone, fitted so close a knife wouldn't pass. Three carved lever-mounts run back along the halls — the burial plaques will know their order."],
+    },
+    // The levers, scattered so the halls must be explored.
+    { id: "lev_barrow_wolf", kind: "puzzle_lever", x: 40, y: 205, name: "Wolf-Carved Lever", puzzle: "barrow_levers", order: 0, lines: ["An iron lever set in a wolf's gaping jaw."] },
+    { id: "lev_barrow_moon", kind: "puzzle_lever", x: 37, y: 201, name: "Moon-Carved Lever", puzzle: "barrow_levers", order: 1, lines: ["An iron lever under a waning moon, up a dead-end stair."] },
+    { id: "lev_barrow_crown", kind: "puzzle_lever", x: 33, y: 213, name: "Crown-Carved Lever", puzzle: "barrow_levers", order: 2, lines: ["An iron lever beneath a graven crown, down in the flooded nook."] },
+    // The funeral plaques that recite the order.
+    { id: "plq_barrow_1", kind: "signpost", x: 31, y: 204, name: "Funeral Plaque", lines: ["'FIRST ran the WOLF, ahead of all the host, and the dark parted before her.'"] },
+    { id: "plq_barrow_2", kind: "signpost", x: 35, y: 204, name: "Funeral Plaque", lines: ["'SECOND rose the MOON, that followed the wolf across the ice, and kept her.'"] },
+    { id: "plq_barrow_3", kind: "signpost", x: 39, y: 204, name: "Funeral Plaque", lines: ["'And LAST of all came the CROWN, borne behind wolf and moon, to the gate that waits under the mountains.'"] },
+    // The Barrow-King's chest, in the resting hall past the slab. (D2 dresses
+    // the hall with its dead and seats the mini-boss; the chest's true prizes —
+    // the unique and the first tablet — arrive with the quest chain.)
+    { id: "chest_barrow", kind: "dungeon_chest", x: 70, y: 212, name: "Barrow-King's Chest", loot: [{ item: "cut_gem", qty: 1 }], lines: ["A long chest of black oak, banded in silver gone dark."] },
+  );
+  return out;
+}
+
 export const objects: WorldObjectDef[] = [
   ...rawObjects.map(remapObject),
   ...newPois.map(scatterFill),
   ...buildHousing(),
+  ...buildDungeonSites(),
   ...pierObjects,
 ].map(snapSpawn);
 

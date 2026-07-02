@@ -23,6 +23,7 @@ import type {
   WorldState,
 } from "./types.ts";
 import { LEVEL_CAP } from "../content/xpCurve.ts";
+import { OVERWORLD_HEIGHT } from "../content/map.ts";
 
 /** Bump this whenever the save shape changes; older saves are then ignored. */
 export const SAVE_VERSION = 1;
@@ -611,7 +612,10 @@ export function hydratePlayer(
   // saved OVERWORLD spawn is that legacy default, so snap it to the current
   // respawn point; a home spawn (down in the hidden interior band) is kept.
   const sp = raw["spawn"];
-  const bandTop = state.map.height - 30; // arenas + home interiors live below this
+  // The hidden bands (arenas, home interiors, dungeons) all sit below the
+  // overworld — anchored to the constant, NOT height arithmetic, so adding new
+  // bands (e.g. the dungeon band) can't silently shift this boundary.
+  const bandTop = OVERWORLD_HEIGHT;
   if (isRecord(sp) && typeof sp["x"] === "number" && typeof sp["y"] === "number") {
     const x = Math.round(sp["x"]);
     const y = Math.round(sp["y"]);

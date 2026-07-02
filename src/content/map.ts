@@ -25,6 +25,7 @@
  */
 
 import type { TileType, WorldMap } from "../core/types.ts";
+import { DUNGEON_LAYOUTS, type DungeonLayout } from "./dungeons.ts";
 
 const WIDTH = 160;
 /** The overworld is rows 0–163; below it are sealed bands of boss arenas and,
@@ -33,7 +34,25 @@ const WIDTH = 160;
 export const OVERWORLD_HEIGHT = 164;
 const ARENA_BAND = 16;
 const INTERIOR_BAND = 14;
-const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND;
+/** The Act II dungeon band: long hand-authored crawls (see content/dungeons.ts),
+ *  carved below the home interiors and reached only by their entrance portals. */
+const DUNGEON_BAND = 26;
+const HEIGHT = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND + DUNGEON_BAND;
+export const DUNGEON_TOP = OVERWORLD_HEIGHT + ARENA_BAND + INTERIOR_BAND;
+
+/** The dungeon sites resolved to absolute map coordinates (origin + entry/exit),
+ *  for the carver, spawns and the instance mask alike. */
+export interface DungeonSite extends DungeonLayout {
+  y0: number;
+  w: number;
+  h: number;
+}
+export const DUNGEONS: DungeonSite[] = DUNGEON_LAYOUTS.map((l) => ({
+  ...l,
+  y0: DUNGEON_TOP + l.row0,
+  w: Math.max(...l.rows.map((r) => r.length)),
+  h: l.rows.length,
+}));
 
 export { WIDTH as MAP_WIDTH };
 
@@ -815,6 +834,22 @@ function decode(): WorldMap {
     for (const d of plan.doorways) set(d.x, d.y, "plank"); // openings (incl. the sealed wing doorway)
   }
 
+  // 7c) Carve the Act II dungeon sites from their hand-authored ASCII layouts
+  //     (content/dungeons.ts). Each site's bounding box is first set to cave
+  //     wall so the halls read as hewn rock, then the floors are carved.
+  const DUNGEON_TILE: Record<string, TileType> = { "#": "cave_wall", ".": "cave", ",": "dirt", "~": "water" };
+  for (const site of DUNGEONS) {
+    for (let ty = site.y0 - 1; ty <= site.y0 + site.h; ty++) {
+      for (let tx = site.x0 - 1; tx <= site.x0 + site.w; tx++) set(tx, ty, "cave_wall");
+    }
+    site.rows.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        const t = DUNGEON_TILE[row[c]!];
+        if (t) set(site.x0 + c, site.y0 + r, t);
+      }
+    });
+  }
+
   // 7b) Carve each home's backyard paddock: a grass yard with a solid border
   //     (rendered as a fence) so pets roam a bounded, outdoor-looking pen.
   for (const y of BACKYARDS) {
@@ -880,6 +915,11 @@ export function instanceRectAt(x: number, y: number): InstanceRect | null {
   for (const b of BACKYARDS) {
     if (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) {
       return { x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 };
+    }
+  }
+  for (const d of DUNGEONS) {
+    if (x >= d.x0 - 1 && x <= d.x0 + d.w && y >= d.y0 - 1 && y <= d.y0 + d.h) {
+      return { x0: d.x0 - 1, y0: d.y0 - 1, x1: d.x0 + d.w, y1: d.y0 + d.h };
     }
   }
   for (const a of ARENAS) {

@@ -1412,6 +1412,12 @@ export function drawWorld(
     } else if (def.kind === "room_seal") {
       // Boarded-up doorway until the house tier that unseals it is reached.
       if (state.player.home.tier < (def.tier ?? 1)) drawRoomSeal(g, px + TILE / 2, py + TILE / 2);
+    } else if (def.kind === "dungeon_gate") {
+      drawDungeonGate(g, px, py);
+    } else if (def.kind === "puzzle_lever") {
+      drawPuzzleLever(g, px + TILE / 2, py + TILE / 2, !!obj.thrown || state.player.flags.includes(`pz_${def.puzzle ?? def.id}`), now);
+    } else if (def.kind === "dungeon_chest") {
+      drawDungeonChest(g, px + TILE / 2, py + TILE / 2, state.player.flags.includes(`looted_${def.id}`));
     } else {
       // A soft contact shadow under living things (and not under a slain, mid-
       // respawn monster) so they sit on the ground and read against the terrain.
@@ -2842,6 +2848,60 @@ function drawBackyard(
     g.fillStyle = "rgba(0,0,0,0.4)"; g.font = "italic 11px 'EB Garamond', serif"; g.textAlign = "center";
     g.fillText("A quiet paddock — find a pet, and it will roam here.", hx, hy);
     g.textAlign = "left";
+  }
+}
+
+/** A dungeon's sealed slab: fitted grave-stone filling its tile, faintly graven.
+ *  (Only drawn while sealed — the object vanishes when its puzzle flag is set.) */
+function drawDungeonGate(g: CanvasRenderingContext2D, px: number, py: number): void {
+  g.fillStyle = "#4e4a52";
+  g.fillRect(px + 1, py, TILE - 2, TILE);
+  g.fillStyle = "#3c3944";
+  g.fillRect(px + 3, py + 2, TILE - 6, TILE - 4);
+  g.strokeStyle = "#635f6b"; g.lineWidth = 1.4;
+  g.strokeRect(px + 3, py + 2, TILE - 6, TILE - 4);
+  // graven rings, worn near to nothing
+  g.strokeStyle = "rgba(160,150,175,0.35)"; g.lineWidth = 1;
+  g.beginPath(); g.arc(px + TILE / 2, py + TILE / 2, 8, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(px + TILE / 2, py + TILE / 2, 4, 0, Math.PI * 2); g.stroke();
+}
+
+/** An iron puzzle lever on a stone mount; the arm swings over once thrown. */
+function drawPuzzleLever(g: CanvasRenderingContext2D, cx: number, cy: number, thrown: boolean, now: number): void {
+  shadow(g, cx, cy + 8, 8, 3);
+  g.fillStyle = "#57525e"; g.fillRect(cx - 7, cy - 2, 14, 10); // stone mount
+  g.strokeStyle = "#3c3944"; g.lineWidth = 1; g.strokeRect(cx - 7, cy - 2, 14, 10);
+  g.strokeStyle = "#2c2a31"; g.lineWidth = 3;
+  g.beginPath();
+  if (thrown) { g.moveTo(cx, cy); g.lineTo(cx + 8, cy - 8); } // swung over
+  else { g.moveTo(cx, cy); g.lineTo(cx - 8, cy - 9); }
+  g.stroke();
+  g.fillStyle = thrown ? "#8fd07f" : "#c8574a"; // handle knob glints by state
+  const hx = thrown ? cx + 8 : cx - 8, hy = thrown ? cy - 8 : cy - 9;
+  g.beginPath(); g.arc(hx, hy, 2.5, 0, Math.PI * 2); g.fill();
+  if (thrown) { // a faint pulse while the sequence holds
+    g.fillStyle = `rgba(143,208,127,${0.25 + 0.15 * Math.sin(now / 300)})`;
+    g.beginPath(); g.arc(hx, hy, 5, 0, Math.PI * 2); g.fill();
+  }
+}
+
+/** A dungeon reward chest: black oak banded in dark silver; open once looted. */
+function drawDungeonChest(g: CanvasRenderingContext2D, cx: number, cy: number, looted: boolean): void {
+  shadow(g, cx, cy + 9, 11, 3.5);
+  g.fillStyle = "#2e2620"; g.fillRect(cx - 11, cy - 2, 22, 11); // body
+  g.fillStyle = "#3a3028"; g.fillRect(cx - 10, cy - 1, 20, 4);
+  g.strokeStyle = "#8b8fa0"; g.lineWidth = 1.4; // dark-silver bands
+  g.beginPath(); g.moveTo(cx - 6, cy - 2); g.lineTo(cx - 6, cy + 9); g.moveTo(cx + 6, cy - 2); g.lineTo(cx + 6, cy + 9); g.stroke();
+  if (looted) {
+    // lid thrown back, dark inside
+    g.fillStyle = "#241d18"; g.fillRect(cx - 10, cy - 1, 20, 4);
+    g.fillStyle = "#2e2620"; g.fillRect(cx - 11, cy - 9, 22, 6);
+    g.strokeStyle = "#8b8fa0"; g.beginPath(); g.moveTo(cx - 6, cy - 9); g.lineTo(cx - 6, cy - 3); g.moveTo(cx + 6, cy - 9); g.lineTo(cx + 6, cy - 3); g.stroke();
+  } else {
+    // closed lid + a pale clasp catching what light there is
+    g.fillStyle = "#352b23"; g.fillRect(cx - 11, cy - 6, 22, 5);
+    g.strokeStyle = "#8b8fa0"; g.beginPath(); g.moveTo(cx - 6, cy - 6); g.lineTo(cx - 6, cy - 1); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 6, cy - 1); g.stroke();
+    g.fillStyle = "#c9cede"; g.fillRect(cx - 1.5, cy - 3, 3, 4);
   }
 }
 

@@ -78,6 +78,9 @@ const MM_TILE: Record<TileType, string> = {
 };
 
 const MM_OBJ: Record<ObjKind, string> = {
+  dungeon_gate: "#6a6474",   // sealed stone
+  puzzle_lever: "#b9552f",   // iron fitting in the dark
+  dungeon_chest: "#c9cede",  // pale clasp — the prize
   tree: "#5d6e3e",
   rock: "#9a9080",
   fishing_spot: "#6fa0c0",

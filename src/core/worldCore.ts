@@ -398,6 +398,13 @@ const BLOCKING_KINDS = new Set([
   "record_board",
   "trail_board",
   "pier_gate",
+  // Dungeon furniture: gates bar the way until their puzzle flag opens them
+  // (a gate spawns with hiddenByFlag, so it stops blocking the moment the flag
+  // is set — objectHidden() above already skips hidden objects); levers and
+  // chests are solid fixtures you interact with from beside.
+  "dungeon_gate",
+  "puzzle_lever",
+  "dungeon_chest",
 ]);
 
 /** A creature's live tile if it's wandering, else its fixed def coordinates. */
@@ -541,6 +548,7 @@ export function createWorld(
     },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0, blocked: [], unlocks: [] },
     home: { storage: {}, placed: [], tier: 0 },
+    puzzles: {},
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
@@ -2591,7 +2599,92 @@ function startInteraction(
     case "portal":
       usePortal(state, def, events);
       break;
+
+    // --- Dungeon furniture (the Act II exploration sites) --------------------
+    case "puzzle_lever":
+      throwPuzzleLever(state, content, def, events);
+      break;
+
+    case "dungeon_gate":
+      // A gate object only exists while sealed (hiddenByFlag removes it — and
+      // its blocking — the moment its puzzle flag is set), so interacting with
+      // one always means: still locked.
+      events.push({ type: "LOG", message: def.lines?.[0] ?? "Sealed fast. Something in these halls must open it." });
+      break;
+
+    case "dungeon_chest":
+      openDungeonChest(state, content, def, events);
+      break;
   }
+}
+
+/**
+ * One lever of an ordered dungeon puzzle. Throw the group's levers in `order`
+ * (the plaques nearby recite it) and the flag `pz_<group>` is set — opening any
+ * gate hidden by that flag. A wrong lever springs the whole group back.
+ * Progress is transient (player.puzzles); completion persists as the flag.
+ */
+function throwPuzzleLever(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const group = def.puzzle ?? def.id;
+  const doneFlag = `pz_${group}`;
+  if (player.flags.includes(doneFlag)) {
+    events.push({ type: "LOG", message: "The lever is thrown, and whatever it once held shut stands open." });
+    return;
+  }
+  const levers = content.objects.filter((o) => o.kind === "puzzle_lever" && (o.puzzle ?? o.id) === group);
+  const progress = player.puzzles[group] ?? 0;
+  const order = def.order ?? 0;
+  if (order === progress) {
+    player.puzzles[group] = progress + 1;
+    const st = state.objects[def.id];
+    if (st) st.thrown = true;
+    if (player.puzzles[group] >= levers.length) {
+      player.flags.push(doneFlag); // walkability rebuilds off the flag change
+      events.push({ type: "LOG", message: "The last lever slams home. Deep in the rock, counterweights fall — a sealed way grinds OPEN." });
+    } else {
+      events.push({ type: "LOG", message: "The lever grinds over and holds. Somewhere, stone shifts its weight." });
+    }
+  } else if (order < progress) {
+    events.push({ type: "LOG", message: "This lever is already thrown. It waits on the others." });
+  } else {
+    // Wrong order: the mechanism springs the whole group back.
+    player.puzzles[group] = 0;
+    for (const l of levers) { const st = state.objects[l.id]; if (st) st.thrown = false; }
+    events.push({ type: "LOG", message: "A wrong pull — the levers spring back with a grinding CLACK. The order matters; the carvings will know it." });
+  }
+}
+
+/** A dungeon reward chest: grants its loot once, remembered by a player flag. */
+function openDungeonChest(
+  state: WorldState,
+  content: Content,
+  def: WorldObjectDef,
+  events: WorldEvent[],
+): void {
+  const { player } = state;
+  const flag = `looted_${def.id}`;
+  if (player.flags.includes(flag)) {
+    events.push({ type: "LOG", message: "The chest stands open and empty — you have already claimed what it kept." });
+    return;
+  }
+  player.flags.push(flag);
+  for (const l of def.loot ?? []) {
+    // Never lose dungeon loot to a full pack — overflow goes to the bank.
+    if (canAddItem(player, l.item)) {
+      addItem(player, l.item, l.qty, events);
+    } else {
+      player.bank[l.item] = (player.bank[l.item] ?? 0) + l.qty;
+      events.push({ type: "ITEM_GAINED", item: l.item, qty: l.qty });
+      events.push({ type: "LOG", message: `Your pack was full — ${content.items[l.item]?.name ?? l.item} was sent to your bank.` });
+    }
+  }
+  events.push({ type: "LOG", message: "The lid gives with a crack of old wax. You take what the dark kept." });
 }
 
 /**

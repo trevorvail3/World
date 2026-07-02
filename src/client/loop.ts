@@ -217,6 +217,9 @@ function readLootLabels(): boolean {
 
 /** The verb shown for interacting with each kind of object. */
 const VERB: Record<ObjKind, string> = {
+  dungeon_gate: "Inspect",
+  puzzle_lever: "Pull",
+  dungeon_chest: "Open",
   tree: "Chop",
   rock: "Mine",
   fishing_spot: "Fish",
@@ -283,6 +286,9 @@ const EXAMINE_OBJECT: Record<ObjKind, string> = {
   build_hotspot: "A space for furniture — build a piece here from your Construction materials.",
   house_door: "The door to a home. Step through to its own quiet interior.",
   room_seal: "A walled-off doorway. Upgrade your house to open the room beyond it.",
+  dungeon_gate: "A sealed slab of fitted stone. Something in these halls must open it.",
+  puzzle_lever: "An iron lever in a carved mount. The order of throwing matters — read the walls.",
+  dungeon_chest: "A heavy chest, banded and clasped. Whatever it keeps, it has kept a long time.",
   cauldron: "A blackened cauldron over coals. Flask in hand, you can brew here.",
   workbench: "A sturdy builder's bench, racked with saws and chisels.",
   crafting_table: "An artisan's table — tanning frame, glass-pipe and a jeweller's vice.",
