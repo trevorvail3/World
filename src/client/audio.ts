@@ -142,7 +142,12 @@ class AudioManager {
     const ctx = this.ctx;
     this.master = ctx.createGain();
     this.master.gain.value = this.muted ? 0 : this.volume;
-    this.master.connect(ctx.destination);
+    // A gentle safety compressor between the mix and the speakers: the hotter
+    // music/ambience levels stay clean even when a fanfare lands on a drum hit.
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 24; comp.ratio.value = 4;
+    comp.attack.value = 0.004; comp.release.value = 0.24;
+    this.master.connect(comp).connect(ctx.destination);
     // Long, dark reverb send: a decaying noise impulse so everything echoes as
     // if in one big space.
     this.reverbIn = ctx.createConvolver();
@@ -156,9 +161,9 @@ class AudioManager {
     this.sfxBus = ctx.createGain(); this.sfxBus.gain.value = 1.0; this.sfxBus.connect(this.master);
     this.ambFilter = ctx.createBiquadFilter();
     this.ambFilter.type = "lowpass"; this.ambFilter.frequency.value = 20000;
-    this.ambBus = ctx.createGain(); this.ambBus.gain.value = 0.9;
+    this.ambBus = ctx.createGain(); this.ambBus.gain.value = 1.15;
     this.ambBus.connect(this.ambFilter).connect(this.master);
-    this.musBus = ctx.createGain(); this.musBus.gain.value = 0.8; this.musBus.connect(this.master);
+    this.musBus = ctx.createGain(); this.musBus.gain.value = 1.7; this.musBus.connect(this.master);
   }
 
   private makeNoise(sec: number): AudioBuffer {
@@ -625,7 +630,7 @@ class AudioManager {
         this.ambFilter.frequency.linearRampToValueAtTime(indoor ? 550 : 20000, t + 0.6);
         this.ambBus.gain.cancelScheduledValues(t);
         this.ambBus.gain.setValueAtTime(this.ambBus.gain.value, t);
-        this.ambBus.gain.linearRampToValueAtTime(indoor ? 0.45 : 0.9, t + 0.6);
+        this.ambBus.gain.linearRampToValueAtTime(indoor ? 0.55 : 1.15, t + 0.6);
       }
     }
     if (!this.unlocked || this.muted || this.mode !== "world") return;
@@ -853,26 +858,26 @@ class AudioManager {
     };
     const PROG = ["Am", "F", "C", "G", "Am", "F", "Dm", "Em"]; // 2 bars each
     // The identity toll, once, at the top.
-    this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.4, peak: 0.12, lp: 320, wet: true, bus: this.musBus });
+    this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.4, peak: 0.2, lp: 320, wet: true, bus: this.musBus });
     // Pads + bass.
     for (let i = 0; i < PROG.length; i++) {
       const c = CH[PROG[i]!]!;
       const at = bar(i * 2);
       for (const f of c.tri) {
-        this.note({ f, type: "triangle", dur: bar(2) + 1.2, peak: 0.045, delay: at, attack: 1.4 });
-        this.note({ f: f * 0.5, type: "sine", dur: bar(2) + 1.2, peak: 0.03, delay: at, attack: 1.4 });
+        this.note({ f, type: "triangle", dur: bar(2) + 1.2, peak: 0.075, delay: at, attack: 1.4 });
+        this.note({ f: f * 0.5, type: "sine", dur: bar(2) + 1.2, peak: 0.05, delay: at, attack: 1.4 });
       }
       for (const b of [0, 2]) { // bass on beats 1 + 3 of each chord's bars
-        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.09, delay: at + b * BEAT, attack: 0.03 });
-        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.07, delay: at + bar(1) + b * BEAT, attack: 0.03 });
+        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.15, delay: at + b * BEAT, attack: 0.03 });
+        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.12, delay: at + bar(1) + b * BEAT, attack: 0.03 });
       }
     }
     // The melody (bars 9–16): the Varath motif, bell-voiced (sine + 3rd partial).
     const bell = (f: number, atBeat: number, beats: number, vel = 1): void => {
       const at = bar(8) + atBeat * BEAT;
-      this.note({ f, type: "sine", dur: beats * BEAT + 0.9, peak: 0.1 * vel, delay: at, attack: 0.015 });
-      this.note({ f: f * 2.0, type: "sine", dur: beats * BEAT * 0.6, peak: 0.014 * vel, delay: at, attack: 0.015 });
-      this.note({ f: f * 3.01, type: "sine", dur: beats * BEAT * 0.5, peak: 0.014 * vel, delay: at, attack: 0.015 });
+      this.note({ f, type: "sine", dur: beats * BEAT + 0.9, peak: 0.17 * vel, delay: at, attack: 0.015 });
+      this.note({ f: f * 2.0, type: "sine", dur: beats * BEAT * 0.6, peak: 0.024 * vel, delay: at, attack: 0.015 });
+      this.note({ f: f * 3.01, type: "sine", dur: beats * BEAT * 0.5, peak: 0.024 * vel, delay: at, attack: 0.015 });
     };
     // over Am
     bell(440, 0, 2); bell(523.25, 2, 1); bell(493.88, 3, 1); bell(659.25, 4, 3, 1.15);
@@ -905,7 +910,7 @@ class AudioManager {
       this.musBus.gain.setValueAtTime(this.musBus.gain.value, t);
       this.musBus.gain.linearRampToValueAtTime(0.0001, t + 2.5);
       const bus = this.musBus;
-      window.setTimeout(() => { try { bus.gain.setValueAtTime(0.8, this.ctx!.currentTime); } catch { /* */ } }, 3000);
+      window.setTimeout(() => { try { bus.gain.setValueAtTime(1.7, this.ctx!.currentTime); } catch { /* */ } }, 3000);
     }
   }
 
@@ -944,6 +949,9 @@ class AudioManager {
   }
 
   // --- settings -------------------------------------------------------------
+  /** Whether the browser has allowed audio yet (first user gesture). */
+  isUnlocked(): boolean { return this.unlocked; }
+
   getVolume(): number { return this.volume; }
   setVolume(v: number): void {
     this.volume = clamp01(v);

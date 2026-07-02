@@ -13,6 +13,7 @@
  */
 
 import { signIn, signUp } from "./supabase.ts";
+import { audio } from "./audio.ts";
 
 export class LoginUI {
   private backdrop: HTMLElement;
@@ -35,8 +36,23 @@ export class LoginUI {
         </form>
         <button class="login-offline" type="button">Play offline</button>
         <div class="login-foot">Same account as the idle game. Offline play saves only in this browser.</div>
+        <div class="login-sound">♪ click anywhere to enable sound</div>
       </div>`;
     root.appendChild(this.backdrop);
+
+    // Browsers keep audio locked until a real gesture; the hint tells the
+    // player their first click brings the theme up, then quietly leaves.
+    const soundHint = this.backdrop.querySelector(".login-sound") as HTMLElement;
+    if (audio.isUnlocked()) soundHint.remove();
+    else {
+      const watch = window.setInterval(() => {
+        if (audio.isUnlocked()) {
+          soundHint.classList.add("gone");
+          window.clearInterval(watch);
+          window.setTimeout(() => soundHint.remove(), 900);
+        }
+      }, 300);
+    }
 
     const form = this.backdrop.querySelector(".login-form") as HTMLFormElement;
     const email = this.backdrop.querySelector(".login-email") as HTMLInputElement;

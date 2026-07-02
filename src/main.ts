@@ -54,6 +54,12 @@ const INTRO_LINES = [
   "You come to the Knuckle Hills with empty hands, and a road that asks only that you walk it.",
 ];
 
+// Test seam (?test=1), armed before the sign-in screen so an automated run can
+// verify the theme really sounds on the very first screen.
+if (new URLSearchParams(location.search).has("test")) {
+  (window as unknown as Record<string, unknown>)["__varathAudio"] = audio;
+}
+
 // --- The client supplies time + randomness (the core never does). ---
 // `now` is monotonic (resets per reload); `epoch` is wall-clock, for farming.
 function ctxAt(nowMs: number): Ctx {

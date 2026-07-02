@@ -2597,6 +2597,13 @@ button.inv-slot {
 }
 .login-offline:hover { color: var(--ink); border-color: var(--ember); }
 .login-foot { font-family: "EB Garamond", serif; font-size: 11px; color: var(--ink-dim); margin-top: 14px; font-style: italic; }
+.login-sound {
+  font-family: "EB Garamond", serif; font-size: 12px; color: #cbb890;
+  margin-top: 10px; opacity: 0.9; animation: soundPulse 2.2s ease-in-out infinite;
+  transition: opacity 0.8s ease;
+}
+.login-sound.gone { opacity: 0; animation: none; }
+@keyframes soundPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.95; } }
 .settings-signout {
   display: block; width: 100%; margin-top: 8px;
   font-family: "EB Garamond", serif; font-size: 13px; cursor: pointer;
