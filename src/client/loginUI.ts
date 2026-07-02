@@ -36,9 +36,9 @@ export class LoginUI {
     this.backdrop.innerHTML = `
       <div class="login-box">
         <div class="login-title">VARATH</div>
-        <div class="login-sub">The stone remembers being a god.</div>
+        <div class="login-sub">The stone remembers.</div>
         <button class="login-play" type="button">▶ Play now</button>
-        <div class="login-foot">A world of the Knuckle Hills — free to play in your browser.</div>
+        <div class="login-foot">An old-school adventure — free to play in your browser.</div>
       </div>`;
     const play = this.backdrop.querySelector(".login-play") as HTMLButtonElement;
     play.addEventListener("click", () => {
