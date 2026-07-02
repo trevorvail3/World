@@ -43,7 +43,7 @@ import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
 import { biomeAt, Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
 import { CRIER_SHOUTS } from "./crier.ts";
-import { audio, type Sfx } from "./audio.ts";
+import { audio, type CreatureVoice, type Sfx } from "./audio.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
@@ -128,6 +128,25 @@ const SPARK_COLOR: Record<string, string> = {
   woodcraft: "#9a7a4a",
   farming: "#7fae6a",
 };
+
+/** Which throat a monster speaks with, from its id (see audio.creature). */
+const VOICE_KEYS: [string, CreatureVoice][] = [
+  ["wyrm", "dragon"], ["dragon", "dragon"],
+  ["wolf", "wolf"], ["hound", "wolf"], ["greyback", "bear"],
+  ["boar", "boar"], ["deer", "boar"],
+  ["bear", "bear"], ["lion", "cat"],
+  ["rat", "small"], ["bat", "small"],
+  ["crawler", "insect"], ["lurker", "insect"], ["horror", "insect"],
+  ["serpent", "serpent"],
+  ["wraith", "undead"], ["boneman", "undead"], ["hollow", "undead"],
+  ["ferryman", "undead"], ["prophet", "undead"],
+  ["golem", "brute"], ["troll", "brute"], ["keeper", "brute"], ["knight", "brute"],
+  ["orc", "orc"], ["warlord", "orc"],
+];
+function voiceFor(monsterKey: string): CreatureVoice {
+  for (const [k, v] of VOICE_KEYS) if (monsterKey.includes(k)) return v;
+  return "human"; // outlaws, cultists, guards, farmers — anyone on two legs
+}
 
 /** Each trade's own voice, played on its XP beat (see audio.ts for the sounds). */
 const SKILL_SFX: Record<string, Sfx> = {
@@ -379,6 +398,8 @@ export class Game {
   /** Throttle so the gather "tick" SFX doesn't machine-gun on fast actions. */
   private lastGatherSfx = 0;
   private lastSceneCheck = 0;
+  private lastFoeVocal = 0;
+  private combatTargetId: string | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -541,6 +562,22 @@ export class Game {
       const px = Math.round(p.x), py = Math.round(p.y);
       const indoor = instanceRectAt(px, py) !== null || enterableAt(px, py) !== null;
       audio.setScene(biomeAt(px, py), indoor);
+    }
+    // Combat engagement: the moment a fight starts the foe speaks (and a named
+    // boss brings its own battle music); leaving the fight cuts the music.
+    const act2 = this.bridge.state.player.activity;
+    const curTarget = act2.kind === "combat" ? (act2.targetId ?? null) : null;
+    if (curTarget !== this.combatTargetId) {
+      if (curTarget) {
+        const mkey = this.monsterKeyOf(curTarget);
+        if (mkey) {
+          audio.creature(voiceFor(mkey), "aggro");
+          if (this.bridge.content.monsters[mkey]?.boss) audio.bossStart();
+        }
+      } else {
+        audio.bossEnd(false); // fled or finished — a won fight already ended it
+      }
+      this.combatTargetId = curTarget;
     }
     this.checkPickup();
     this.checkCampfire();
@@ -730,6 +767,11 @@ export class Game {
             this.sparks.push({ x: kp.x, y: kp.y, born: now + 40, color: "#5a4038", n: 7 });
           }
           audio.play("kill");
+          const mkey = this.monsterKeyOf(ev.objId);
+          if (mkey) {
+            audio.creature(voiceFor(mkey), "die");
+            if (this.bridge.content.monsters[mkey]?.boss) audio.bossEnd(true);
+          }
           break;
         }
         case "PLAYER_DIED":
@@ -875,6 +917,11 @@ export class Game {
               const frac = Math.min(1, ev.amount / Math.max(1, this.bridge.state.player.maxHp));
               this.shake = { born: now, mag: 2 + frac * 6, dur: 280 };
               audio.play("hurt");
+              // The thing hitting you has a voice too (kept sparse).
+              if (now - this.lastFoeVocal > 1400) {
+                const foe = this.combatTargetId && this.monsterKeyOf(this.combatTargetId);
+                if (foe) { this.lastFoeVocal = now; audio.creature(voiceFor(foe), "attack"); }
+              }
             }
           } else {
             // A blow we landed on something: a bow looses, a blade thuds, a miss
@@ -1347,6 +1394,12 @@ export class Game {
     }
     if (a.requiresAny && a.requiresAny.length) parts.push("any log");
     return parts.join(", ");
+  }
+
+  /** The monster key ("hill_wolf") behind a world object id, if it's a monster. */
+  private monsterKeyOf(objId: string): string | null {
+    const def = this.bridge.content.objects.find((o) => o.id === objId);
+    return def?.kind === "monster" && def.monster ? def.monster : null;
   }
 
   private positionOf(targetId: string): Vec2 | null {

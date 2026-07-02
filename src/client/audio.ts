@@ -64,6 +64,13 @@ export type SceneKey =
   | "hills" | "city" | "greyoak" | "spine" | "marrow"
   | "ashfen" | "heartmoor" | "redrun" | "menu";
 
+/** A monster's vocal cords. The client maps each monster to one of these
+ *  families; the engine gives the family an aggro snarl, an attack voice,
+ *  and a death cry — so a wolf sounds nothing like a wraith. */
+export type CreatureVoice =
+  | "wolf" | "boar" | "bear" | "cat" | "small" | "insect" | "serpent"
+  | "undead" | "brute" | "human" | "orc" | "dragon";
+
 interface ToneOpts {
   f0: number; f1?: number; type?: OscillatorType; dur: number; peak: number;
   lp?: number; wet?: boolean; delay?: number; bus?: GainNode | null;
@@ -87,6 +94,8 @@ class AudioManager {
   private sceneTimers: number[] = [];
   private themeTimer: number | null = null;
   private themePlaying = false;
+  private bossTimer: number | null = null;
+  private bossActive = false;
 
   private mode: "menu" | "world" = "menu";
   private worldScene: SceneKey = "hills";
@@ -470,6 +479,36 @@ class AudioManager {
   private gullMewl(): void {
     this.tone({ f0: 1250, f1: 720, type: "sawtooth", dur: 0.35, peak: 0.028, lp: 2200, wet: true, bus: this.ambBus });
   }
+  private woodpecker(): void { // a dry knocking burst off a far trunk
+    const n = 5 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) this.noise({ dur: 0.02, peak: 0.05, hp: 900, lp: 2400, delay: i * 0.07, wet: true, bus: this.ambBus });
+  }
+  private squirrelChitter(): void { // quick falling chirps in the canopy
+    for (let i = 0; i < 4; i++) {
+      this.tone({ f0: 3200 - i * 350, f1: 2300 - i * 300, type: "sine", dur: 0.05, peak: 0.03, delay: i * 0.09, bus: this.ambBus });
+    }
+  }
+  private distantHowl(): void { // a far wolf, rising then falling on the wind
+    this.tone({ f0: 320, f1: 520, type: "sine", dur: 0.9, peak: 0.035, lp: 900, wet: true, bus: this.ambBus });
+    this.tone({ f0: 520, f1: 300, type: "sine", dur: 1.1, peak: 0.03, lp: 900, wet: true, delay: 0.85, bus: this.ambBus });
+  }
+  private cicadaShimmer(): void { // a hot-afternoon pulse train
+    for (let i = 0; i < 14; i++) this.tone({ f0: 4600, type: "sine", dur: 0.03, peak: 0.014, delay: i * 0.06, bus: this.ambBus });
+  }
+  private ravenCaw(): void { // two harsh caws off the flats
+    this.tone({ f0: 950, f1: 620, type: "sawtooth", dur: 0.16, peak: 0.03, lp: 1800, wet: true, bus: this.ambBus });
+    this.tone({ f0: 900, f1: 580, type: "sawtooth", dur: 0.18, peak: 0.026, lp: 1800, wet: true, delay: 0.3, bus: this.ambBus });
+  }
+  private batFlutter(): void { // leathery wingbeats crossing the dark
+    for (let i = 0; i < 6; i++) this.noise({ dur: 0.03, peak: 0.035, hp: 600, lp: 2000, delay: i * 0.08, bus: this.ambBus });
+  }
+  private fishJump(): void { // something breaks the surface, then the plip
+    this.tone({ f0: 700, f1: 250, type: "sine", dur: 0.08, peak: 0.04, wet: true, bus: this.ambBus });
+    this.noise({ dur: 0.14, peak: 0.035, hp: 600, lp: 2400, delay: 0.03, wet: true, bus: this.ambBus });
+  }
+  private cityHammer(): void { // a smith at work somewhere across the roofs
+    for (let i = 0; i < 3; i++) this.tone({ f0: 1250, type: "triangle", dur: 0.12, peak: 0.022, wet: true, delay: i * 0.5, bus: this.ambBus });
+  }
   private distantToll(): void {
     this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.2, peak: 0.16, lp: 320, wet: true, bus: this.ambBus });
     this.tone({ f0: 73.5, type: "sine", dur: 2.6, peak: 0.06, lp: 400, wet: true, bus: this.ambBus });
@@ -492,18 +531,22 @@ class AudioManager {
         bed({ hp: 700, lp: 2000, gain: 0.028, lfoHz: 0.3, lfoDepth: 0.25 });   // fountain spray
         bed({ lp: 320, gain: 0.05, lfoHz: 0.11, lfoDepth: 0.5 });               // crowd murmur
         this.every(24000, 50000, () => this.distantToll());
+        this.every(14000, 34000, () => { if (day()) this.cityHammer(); });      // a far smithy
         break;
       case "greyoak": // deep forest: leaf wind, dense day birdsong, night owls
         bed({ hp: 250, lp: 1500, gain: 0.05, lfoHz: 0.16, lfoDepth: 0.55 });    // canopy wind
         this.every(2500, 7000, () => { if (day()) this.birdChirp(); });
+        this.every(8000, 20000, () => { if (day()) this.woodpecker(); });
+        this.every(10000, 26000, () => { if (day()) this.squirrelChitter(); });
         this.every(9000, 22000, () => { if (!day()) this.owlHoot(); });
         this.every(3000, 8000, () => { if (!day()) this.cricket(); });
+        this.every(30000, 80000, () => { if (!day()) this.distantHowl(); });    // the wood has teeth
         break;
       case "spine": // the high pass: a howling, sweeping wind and little else
         bed({ hp: 150, lp: 900, gain: 0.085, lfoHz: 0.07, lfoDepth: 500, lfoTarget: "filter" });
         bed({ hp: 400, lp: 2400, gain: 0.02, lfoHz: 0.13, lfoDepth: 0.7 });     // gusting top layer
         break;
-      case "marrow": { // the deeps: the old dark drone + echoing drips
+      case "marrow": { // the deeps: the old dark drone + echoing drips + bats
         const lp = ctx.createBiquadFilter();
         lp.type = "lowpass"; lp.frequency.value = 380; lp.Q.value = 1.2;
         lp.connect(bus);
@@ -513,21 +556,26 @@ class AudioManager {
           o.connect(og).connect(lp); o.start(); nodes.push(o);
         }
         this.every(2200, 7000, () => this.caveDrip());
+        this.every(12000, 30000, () => this.batFlutter());
         break;
       }
-      case "ashfen": // geothermal flats: steam hiss + mud bubbling
+      case "ashfen": // geothermal flats: steam hiss + mud bubbling + carrion birds
         bed({ hp: 3000, lp: 8000, gain: 0.016, lfoHz: 0.2, lfoDepth: 0.5 });    // steam vents
         bed({ lp: 260, gain: 0.035, lfoHz: 0.09, lfoDepth: 0.4 });               // deep heat rumble
         this.every(700, 2600, () => this.bubble());
+        this.every(14000, 36000, () => { if (day()) this.ravenCaw(); });
         break;
-      case "heartmoor": // the moor: soggy wind, frogs, night insects
+      case "heartmoor": // the moor: soggy wind, frogs, cicadas by day, ravens
         bed({ hp: 180, lp: 1100, gain: 0.04, lfoHz: 0.12, lfoDepth: 0.5 });
         this.every(3000, 9000, () => this.frogCroak());
+        this.every(9000, 24000, () => { if (day()) this.cicadaShimmer(); });
+        this.every(16000, 40000, () => { if (day()) this.ravenCaw(); });
         this.every(2500, 6000, () => { if (!day()) this.cricket(); });
         break;
-      case "redrun": // the river country: steady rush, day gulls near the sea
+      case "redrun": // the river country: steady rush, gulls, the odd jumping fish
         bed({ hp: 350, lp: 1600, gain: 0.05, lfoHz: 0.18, lfoDepth: 0.3 });     // river rush
         this.every(9000, 26000, () => { if (day()) this.gullMewl(); });
+        this.every(11000, 30000, () => this.fishJump());
         this.every(4000, 10000, () => { if (!day()) this.cricket(); });
         break;
       case "menu": { // under the theme: a thin, mysterious air
@@ -541,6 +589,7 @@ class AudioManager {
         drone(55, "sine", 0.022); drone(55.3, "sine", 0.022);                    // a faint floor
         this.every(5000, 14000, () => { if (day()) this.birdChirp(); });
         this.every(2500, 6000, () => { if (!day()) this.cricket(); });
+        this.every(35000, 90000, () => { if (!day()) this.distantHowl(); });
         this.every(30000, 70000, () => this.distantToll());
         break;
     }
@@ -585,6 +634,201 @@ class AudioManager {
       this.clearSceneTimers();
       this.scene?.stop();
       this.scene = this.buildScene(key);
+    } catch { /* */ }
+  }
+
+
+  // --- creature voices ---------------------------------------------------------
+  /** A monster speaks: `aggro` when it turns on you, `attack` as its blow lands,
+   *  `die` as it falls. Each family has its own throat. */
+  creature(v: CreatureVoice, kind: "aggro" | "attack" | "die"): void {
+    if (!this.unlocked || this.muted || !this.ctx) return;
+    try {
+      const K = kind;
+      switch (v) {
+        case "wolf":
+          if (K === "die") { // a falling whine
+            this.tone({ f0: 520, f1: 170, type: "sine", dur: 0.7, peak: 0.14, lp: 1200, wet: true });
+            this.tone({ f0: 530, f1: 180, type: "sawtooth", dur: 0.6, peak: 0.05, lp: 900, wet: true });
+          } else { // a chesty snarl (aggro longer than the bite)
+            const d = K === "aggro" ? 0.5 : 0.22;
+            this.tone({ f0: 210, f1: 150, type: "sawtooth", dur: d, peak: 0.16, lp: 650, wet: true });
+            this.tone({ f0: 216, f1: 154, type: "sawtooth", dur: d, peak: 0.1, lp: 650 });
+            this.noise({ dur: d * 0.7, peak: 0.09, hp: 200, lp: 900 });
+          }
+          break;
+        case "boar":
+          if (K === "die") { // the squeal
+            this.tone({ f0: 760, f1: 210, type: "sawtooth", dur: 0.55, peak: 0.13, lp: 1600, wet: true });
+          } else { // snorting grunts
+            this.tone({ f0: 115, f1: 75, type: "sawtooth", dur: 0.12, peak: 0.2, lp: 420 });
+            this.noise({ dur: 0.08, peak: 0.12, lp: 500 });
+            if (K === "aggro") this.tone({ f0: 120, f1: 78, type: "sawtooth", dur: 0.12, peak: 0.18, lp: 420, delay: 0.16 });
+          }
+          break;
+        case "bear":
+        case "cat": {
+          const base = v === "cat" ? 200 : 135; // the lion sits higher than the bear
+          if (K === "die") {
+            this.tone({ f0: base * 1.1, f1: base * 0.45, type: "sawtooth", dur: 0.9, peak: 0.16, lp: 600, wet: true });
+            this.noise({ dur: 0.7, peak: 0.08, hp: 100, lp: 600, wet: true });
+          } else {
+            const d = K === "aggro" ? 0.6 : 0.3;
+            this.tone({ f0: base, f1: base * 0.65, type: "sawtooth", dur: d, peak: 0.18, lp: 550, wet: true });
+            this.noise({ dur: d, peak: 0.1, hp: 120, lp: 700 });
+          }
+          break;
+        }
+        case "small": // rats and bats: squeaks
+          if (K === "die") {
+            this.tone({ f0: 3000, f1: 700, type: "sine", dur: 0.3, peak: 0.09, wet: true });
+          } else {
+            this.tone({ f0: 2800, f1: 2000, type: "sine", dur: 0.06, peak: 0.08 });
+            this.tone({ f0: 3100, f1: 2200, type: "sine", dur: 0.06, peak: 0.07, delay: 0.08 });
+          }
+          break;
+        case "insect": // crawlers and horrors: dry chittering clicks
+          if (K === "die") {
+            this.noise({ dur: 0.3, peak: 0.16, lp: 1200, wet: true });
+            for (let i = 0; i < 4; i++) this.tone({ f0: 2600 - i * 400, type: "square", dur: 0.02, peak: 0.05, delay: 0.05 + i * 0.07 });
+          } else {
+            const n = K === "aggro" ? 5 : 3;
+            for (let i = 0; i < n; i++) this.noise({ dur: 0.025, peak: 0.09, hp: 3000, delay: i * 0.055 });
+            this.tone({ f0: 1900, type: "square", dur: 0.03, peak: 0.04, delay: 0.03 });
+          }
+          break;
+        case "serpent": // hisses (and the river's rattle)
+          if (K === "die") {
+            this.noise({ dur: 0.6, peak: 0.1, hp: 2200, wet: true });
+            this.tone({ f0: 300, f1: 90, type: "sine", dur: 0.5, peak: 0.09, lp: 700, wet: true });
+          } else {
+            this.noise({ dur: K === "aggro" ? 0.5 : 0.25, peak: 0.11, hp: 2500 });
+            if (K === "aggro") for (let i = 0; i < 5; i++) this.noise({ dur: 0.02, peak: 0.06, hp: 4000, delay: 0.1 + i * 0.05 });
+          }
+          break;
+        case "undead": { // wraiths and hollow things: a beating, airless moan
+          if (K === "die") {
+            this.tone({ f0: 200, f1: 60, type: "sine", dur: 1.4, peak: 0.13, wet: true });
+            this.tone({ f0: 204, f1: 62, type: "sine", dur: 1.4, peak: 0.1, wet: true });
+            this.noise({ dur: 1.0, peak: 0.05, hp: 400, lp: 1600, wet: true });
+          } else {
+            const d = K === "aggro" ? 0.9 : 0.45;
+            this.tone({ f0: 175, f1: 120, type: "sine", dur: d, peak: 0.12, wet: true });
+            this.tone({ f0: 179, f1: 123, type: "sine", dur: d, peak: 0.09, wet: true });
+            this.noise({ dur: d * 0.8, peak: 0.04, hp: 500, lp: 1400, wet: true });
+          }
+          break;
+        }
+        case "brute": // golems, trolls, keepers: grinding stone
+          if (K === "die") { // the collapse — three falling rubble thuds
+            for (let i = 0; i < 3; i++) {
+              this.noise({ dur: 0.16, peak: 0.24 - i * 0.05, lp: 300, delay: i * 0.16, wet: true });
+              this.tone({ f0: 90 - i * 15, f1: 50, type: "sine", dur: 0.18, peak: 0.2, delay: i * 0.16 });
+            }
+          } else {
+            const d = K === "aggro" ? 0.7 : 0.35;
+            this.tone({ f0: 68, f1: 46, type: "sawtooth", dur: d, peak: 0.2, lp: 280, wet: true });
+            this.noise({ dur: d, peak: 0.12, lp: 260 });
+          }
+          break;
+        case "human": // outlaws, cultists, guards: a fighting shout
+          if (K === "die") {
+            this.tone({ f0: 340, f1: 140, type: "sawtooth", dur: 0.5, peak: 0.1, lp: 1000, wet: true });
+          } else {
+            this.tone({ f0: 195, f1: 145, type: "sawtooth", dur: K === "aggro" ? 0.3 : 0.16, peak: 0.11, lp: 800 });
+            this.noise({ dur: 0.08, peak: 0.06, lp: 900 });
+          }
+          break;
+        case "orc": // warlords and ancient orcs: a guttural bellow
+          if (K === "die") {
+            this.tone({ f0: 150, f1: 55, type: "sawtooth", dur: 0.9, peak: 0.18, lp: 500, wet: true });
+            this.noise({ dur: 0.5, peak: 0.12, lp: 500 });
+          } else {
+            const d = K === "aggro" ? 0.55 : 0.28;
+            this.tone({ f0: 98, f1: 66, type: "sawtooth", dur: d, peak: 0.2, lp: 480, wet: true });
+            this.tone({ f0: 196, f1: 132, type: "sawtooth", dur: d, peak: 0.07, lp: 700 });
+          }
+          break;
+        case "dragon": // the wyrm: a furnace roar
+          if (K === "die") {
+            this.tone({ f0: 130, f1: 45, type: "sawtooth", dur: 1.6, peak: 0.22, lp: 650, wet: true });
+            this.tone({ f0: 62, f1: 38, type: "sine", dur: 1.6, peak: 0.2, wet: true });
+            this.noise({ dur: 1.2, peak: 0.14, hp: 120, lp: 900, wet: true });
+            this.noise({ dur: 0.25, peak: 0.3, lp: 300, delay: 1.5, wet: true }); // the fall
+          } else {
+            const d = K === "aggro" ? 1.0 : 0.5;
+            this.tone({ f0: 120, f1: 72, type: "sawtooth", dur: d, peak: 0.22, lp: 650, wet: true });
+            this.tone({ f0: 58, f1: 42, type: "sine", dur: d, peak: 0.16, wet: true });
+            this.noise({ dur: d * 0.9, peak: 0.12, hp: 150, lp: 900 });
+          }
+          break;
+      }
+    } catch { /* never let audio break the frame */ }
+  }
+
+  // --- boss encounters -----------------------------------------------------------
+  /**
+   * The boss battle loop: a driving low ostinato over a tritone drone, war-drum
+   * hits and a high alarm bell — it starts the moment you engage a named boss
+   * and cuts out when the fight ends. ~9.6s pass, re-armed while the fight runs.
+   */
+  private scheduleBossLoop(): void {
+    if (!this.ctx || !this.musBus) return;
+    const BEAT = 0.6; // 100bpm
+    // Drone: the root and its tritone, breathing underneath the whole pass.
+    this.note({ f: 55, type: "sawtooth", dur: 16 * BEAT + 1, peak: 0.05, delay: 0, attack: 0.8 });
+    this.note({ f: 77.78, type: "sine", dur: 16 * BEAT + 1, peak: 0.04, delay: 0, attack: 0.8 });
+    for (let b = 0; b < 16; b++) {
+      const at = b * BEAT;
+      // War drums: a deep hit on every other beat, a harder accent to open each half.
+      if (b % 2 === 0) {
+        this.noise({ dur: 0.12, peak: b % 8 === 0 ? 0.3 : 0.18, lp: 150, delay: at, bus: this.musBus });
+        this.tone({ f0: 70, f1: 45, type: "sine", dur: 0.15, peak: b % 8 === 0 ? 0.24 : 0.14, delay: at, bus: this.musBus });
+      }
+      // The ostinato: eighth-note bass stabs walking the root, with tritone accents.
+      if ([0, 3, 6, 8, 11, 14].includes(b)) {
+        const f = b === 6 || b === 14 ? 77.78 : 55;
+        this.tone({ f0: f * 2, f1: f * 2 * 0.97, type: "sawtooth", dur: 0.22, peak: 0.09, lp: 700, delay: at, bus: this.musBus });
+      }
+      // A dry metallic tick keeps the pulse between drum hits.
+      this.noise({ dur: 0.02, peak: 0.03, hp: 5000, delay: at + BEAT / 2, bus: this.musBus });
+    }
+    // The alarm: a tritone bell pair late in the pass.
+    this.tone({ f0: 880, type: "triangle", dur: 0.5, peak: 0.05, wet: true, delay: 12 * BEAT, bus: this.musBus });
+    this.tone({ f0: 622.25, type: "triangle", dur: 0.7, peak: 0.05, wet: true, delay: 13 * BEAT, bus: this.musBus });
+    const loopMs = 16 * BEAT * 1000;
+    this.bossTimer = window.setTimeout(() => {
+      if (this.bossActive && !this.muted) this.scheduleBossLoop();
+    }, loopMs - 200);
+  }
+  /** A named boss turns on you: an engage sting, then the battle loop. */
+  bossStart(): void {
+    if (this.bossActive) return;
+    this.bossActive = true;
+    if (!this.unlocked || this.muted || !this.ctx) return;
+    try {
+      // The sting: a swelling minor-second cluster over a drum hit.
+      this.tone({ f0: 220, type: "sawtooth", dur: 1.2, peak: 0.09, lp: 1200, wet: true, bus: this.musBus });
+      this.tone({ f0: 233.08, type: "sawtooth", dur: 1.2, peak: 0.09, lp: 1200, wet: true, bus: this.musBus });
+      this.tone({ f0: 311.13, type: "sawtooth", dur: 1.1, peak: 0.06, lp: 1400, wet: true, delay: 0.15, bus: this.musBus });
+      this.noise({ dur: 0.2, peak: 0.3, lp: 160, bus: this.musBus });
+      this.bossTimer = window.setTimeout(() => { if (this.bossActive && !this.muted) this.scheduleBossLoop(); }, 1200);
+    } catch { /* */ }
+  }
+  /** The fight is over. `won` plays the defeat sting; fleeing just cuts the loop. */
+  bossEnd(won: boolean): void {
+    if (!this.bossActive) return;
+    this.bossActive = false;
+    if (this.bossTimer !== null) { try { window.clearTimeout(this.bossTimer); } catch { /* */ } this.bossTimer = null; }
+    if (!this.unlocked || this.muted || !this.ctx) return;
+    try {
+      if (won) { // the defeat sting: a great low hit resolving upward into light
+        this.noise({ dur: 0.3, peak: 0.34, lp: 200, wet: true, bus: this.musBus });
+        this.tone({ f0: 55, f1: 42, type: "sine", dur: 1.2, peak: 0.24, wet: true, bus: this.musBus });
+        this.tone({ f0: 110, type: "triangle", dur: 1.4, peak: 0.12, wet: true, delay: 0.5, bus: this.musBus });
+        this.tone({ f0: 220, type: "triangle", dur: 1.6, peak: 0.12, wet: true, delay: 0.8, bus: this.musBus });
+        this.tone({ f0: 1320, type: "sine", dur: 1.2, peak: 0.05, wet: true, delay: 1.0, bus: this.musBus });
+      }
     } catch { /* */ }
   }
 
@@ -694,6 +938,7 @@ class AudioManager {
   }
   private stopSoundscape(): void {
     this.stopTheme();
+    this.bossEnd(false);
     this.clearSceneTimers();
     if (this.scene) { this.scene.stop(); this.scene = null; }
   }
