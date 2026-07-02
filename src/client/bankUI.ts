@@ -18,7 +18,12 @@ export class BankUI {
   private countEl: HTMLElement;
   private valueEl: HTMLElement;
   private searchEl: HTMLInputElement;
+  private tabsEl!: HTMLElement;
   private filter = "";
+  /** Custom bank tabs — a client organisation layer (persisted per device).
+   *  "All" is implicit; each tab is a named set of item ids. */
+  private tabs: { name: string; items: ItemId[] }[] = [];
+  private activeTab = -1; // -1 = All
   private open = false;
   private state: WorldState | null = null;
   private infoEl!: HTMLElement;
@@ -39,6 +44,7 @@ export class BankUI {
           <span class="bank-value"></span>
           <button class="bank-close" type="button">✕</button>
         </div>
+        <div class="bank-tabs"></div>
         <div class="bank-label">Stored <span class="bank-count"></span>
           <input class="bank-search" type="text" placeholder="Search…" />
         </div>
@@ -56,6 +62,8 @@ export class BankUI {
     this.countEl = this.backdrop.querySelector(".bank-count") as HTMLElement;
     this.valueEl = this.backdrop.querySelector(".bank-value") as HTMLElement;
     this.searchEl = this.backdrop.querySelector(".bank-search") as HTMLInputElement;
+    this.tabsEl = this.backdrop.querySelector(".bank-tabs") as HTMLElement;
+    this.loadTabs();
     root.appendChild(this.backdrop);
 
     // Live search: filter the stored grid by item name as you type.
@@ -83,6 +91,90 @@ export class BankUI {
         this.depositAll();
       },
     );
+  }
+
+  // --- Custom tabs: stored on this device (they're an organisational view,
+  // not world state — the core never needs to know about them). -------------
+  private loadTabs(): void {
+    try {
+      const raw = JSON.parse(localStorage.getItem("varath-bank-tabs") ?? "[]");
+      if (Array.isArray(raw)) {
+        this.tabs = raw
+          .filter((t) => t && typeof t.name === "string" && Array.isArray(t.items))
+          .slice(0, 6)
+          .map((t) => ({ name: String(t.name).slice(0, 14), items: t.items.filter((i: unknown) => typeof i === "string") }));
+      }
+    } catch { this.tabs = []; }
+  }
+
+  private saveTabs(): void {
+    try { localStorage.setItem("varath-bank-tabs", JSON.stringify(this.tabs)); } catch { /* full/blocked */ }
+  }
+
+  private renderTabs(): void {
+    this.tabsEl.innerHTML = "";
+    const mk = (label: string, on: boolean, tap: () => void, hold?: () => void): void => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "bank-tab" + (on ? " on" : "");
+      b.textContent = label;
+      this.attachPress(b, hold ?? tap, tap);
+      this.tabsEl.appendChild(b);
+    };
+    mk("All", this.activeTab === -1, () => { this.activeTab = -1; this.render(); });
+    this.tabs.forEach((t, i) => {
+      mk(t.name, this.activeTab === i, () => { this.activeTab = i; this.render(); }, () => this.tabOptions(i));
+    });
+    if (this.tabs.length < 6) {
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "bank-tab bank-tab-add";
+      add.textContent = "+";
+      add.title = "New tab";
+      add.addEventListener("pointerdown", (e) => { e.stopPropagation(); this.newTab(); });
+      this.tabsEl.appendChild(add);
+    }
+  }
+
+  private newTab(): string | null {
+    const name = (window.prompt("Name the new tab:", "") ?? "").trim().slice(0, 14);
+    if (!name) return null;
+    this.tabs.push({ name, items: [] });
+    this.activeTab = this.tabs.length - 1;
+    this.saveTabs();
+    this.render();
+    return name;
+  }
+
+  /** Long-press a tab: rename or remove it (items just return to All). */
+  private tabOptions(i: number): void {
+    const t = this.tabs[i];
+    if (!t) return;
+    const choice = window.prompt(`Tab “${t.name}” — type a new name to rename it, or “delete” to remove it.`, t.name);
+    if (choice === null) return;
+    const v = choice.trim();
+    if (v.toLowerCase() === "delete") {
+      this.tabs.splice(i, 1);
+      if (this.activeTab >= this.tabs.length) this.activeTab = -1;
+    } else if (v) {
+      t.name = v.slice(0, 14);
+    }
+    this.saveTabs();
+    this.render();
+  }
+
+  private assignToTab(item: ItemId, tab: number): void {
+    for (const t of this.tabs) { // an item lives in at most one tab
+      const at = t.items.indexOf(item);
+      if (at >= 0) t.items.splice(at, 1);
+    }
+    if (tab >= 0 && this.tabs[tab]) this.tabs[tab]!.items.push(item);
+    this.saveTabs();
+    this.render();
+  }
+
+  private tabOf(item: ItemId): number {
+    return this.tabs.findIndex((t) => t.items.includes(item));
   }
 
   private depositAll(): void {
@@ -129,9 +221,13 @@ export class BankUI {
       0,
     );
     this.valueEl.textContent = value > 0 ? `${value.toLocaleString()}g` : "";
-    const entries = this.filter
-      ? stored.filter((id) => this.content.items[id]?.name.toLowerCase().includes(this.filter))
+    this.renderTabs();
+    const inTab = this.activeTab >= 0 && this.tabs[this.activeTab]
+      ? stored.filter((id) => this.tabs[this.activeTab]!.items.includes(id))
       : stored;
+    const entries = this.filter
+      ? inTab.filter((id) => this.content.items[id]?.name.toLowerCase().includes(this.filter))
+      : inTab;
     if (stored.length === 0) {
       const empty = document.createElement("div");
       empty.className = "bank-empty";
@@ -140,7 +236,9 @@ export class BankUI {
     } else if (entries.length === 0) {
       const empty = document.createElement("div");
       empty.className = "bank-empty";
-      empty.textContent = `No stored item matches “${this.filter}”.`;
+      empty.textContent = this.filter
+        ? `No stored item matches “${this.filter}”.`
+        : "Nothing filed under this tab yet — tap a stored item and “File under…” to add it.";
       this.bankGrid.appendChild(empty);
     } else {
       for (const id of entries) {
@@ -280,7 +378,7 @@ export class BankUI {
     const name = this.content.items[item]?.name ?? item;
     const wd = (qty: number, noted = false): void =>
       this.dispatchAndRender({ type: "WITHDRAW", item, qty, ...(noted ? { noted: true } : {}) });
-    if (!this.menu || have <= 1) { wd(1); return; }
+    if (!this.menu) { wd(1); return; }
     const items: MenuItem[] = [
       { label: "Withdraw", target: "1", tone: "action", onSelect: () => wd(1) },
       { label: "Withdraw", target: "amount…", onSelect: () => {
@@ -294,6 +392,21 @@ export class BankUI {
         if (n > 0) wd(n, true);
       } },
     ];
+    // Filing: move the item between custom tabs (or into a brand-new one).
+    const cur = this.tabOf(item);
+    for (let i = 0; i < this.tabs.length; i++) {
+      if (i === cur) continue;
+      items.push({ label: "File under", target: this.tabs[i]!.name, onSelect: () => this.assignToTab(item, i) });
+    }
+    if (this.tabs.length < 6) {
+      items.push({ label: "File under", target: "new tab…", onSelect: () => {
+        const made = this.newTab();
+        if (made !== null) this.assignToTab(item, this.tabs.length - 1);
+      } });
+    }
+    if (cur >= 0) {
+      items.push({ label: "Unfile", target: `from ${this.tabs[cur]!.name}`, onSelect: () => this.assignToTab(item, -1) });
+    }
     this.menu.show(x, y, name, items, "Take out of the bank chest. A note carries any amount in one slot.");
   }
 

@@ -1786,6 +1786,36 @@ body {
   color: #f0c187;
 }
 
+/* Custom bank tabs: an organisational strip above the stored grid. "All" plus
+   up to six named tabs; + makes a new one; long-press a tab to rename/delete. */
+.bank-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+.bank-tab {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  color: var(--ink-dim);
+  background: rgba(28, 23, 16, 0.6);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 2px 9px;
+  cursor: pointer;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bank-tab:hover { border-color: var(--ember); color: var(--ink); }
+.bank-tab.on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(201, 162, 74, 0.12);
+}
+.bank-tab-add { font-weight: 700; padding: 2px 7px; }
+
 .bank-grid {
   display: grid;
   grid-template-columns: repeat(6, 30px);
