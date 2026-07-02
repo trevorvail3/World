@@ -44,6 +44,7 @@ import { isNameAvailable, reserveName } from "./client/nameRegistry.ts";
 import { LoginUI } from "./client/loginUI.ts";
 import { currentUser, signOut } from "./client/supabase.ts";
 import { audio } from "./client/audio.ts";
+import { ping, setStateProvider } from "./client/ops.ts";
 import { loadCloud, saveCloud, deleteCloud } from "./client/cloudSave.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
@@ -318,6 +319,22 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
 
   audio.setMode("world"); // theme fades; the region's ambience takes over
   game.start();
+  // Launch ops: a one-line state snapshot rides on bug reports, and one
+  // session ping per page load charts daily players (fail-silent; see
+  // server/ops.sql for the tables).
+  setStateProvider(() => {
+    const p = state.player;
+    return {
+      name: p.appearance.name,
+      pos: { x: Math.round(p.pos.x), y: Math.round(p.pos.y) },
+      hp: `${p.hp}/${p.maxHp}`,
+      gold: p.gold,
+      activity: p.activity.kind,
+      questsDone: p.questsDone.length,
+      skills: Object.fromEntries(Object.entries(p.skills).map(([k, v]) => [k, (v as { level: number }).level])),
+    };
+  });
+  ping("session_start");
   // Test seam (?test=1): expose the live pieces so an automated gameplay run
   // can drive real intents and assert on what the player would hear/see.
   if (new URLSearchParams(location.search).has("test")) {

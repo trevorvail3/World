@@ -28,6 +28,7 @@ import type { ContextMenu, MenuItem } from "./contextMenu.ts";
 import { itemIconSVG } from "./itemIcon.ts";
 import { setPerfMode } from "./render.ts";
 import { audio } from "./audio.ts";
+import { reportBug } from "./ops.ts";
 import { glyph, iconize } from "./glyph.ts";
 import { bossMilestones, equipRequirement, evalAchievement } from "../core/worldCore.ts";
 import { SkillDetailModal } from "./skillDetail.ts";
@@ -845,6 +846,14 @@ export class Hud {
         help.title = "Show the controls primer again";
         help.addEventListener("click", () => this.onHelp());
         gameplay.appendChild(help);
+        // Report a bug: description in, game state bundled automatically.
+        const bug = document.createElement("button");
+        bug.type = "button";
+        bug.className = "settings-help";
+        bug.textContent = "Report a bug";
+        bug.title = "Tell us what broke — the game attaches its own state";
+        bug.addEventListener("click", () => this.openBugReport());
+        gameplay.appendChild(bug);
         const reset = document.createElement("button");
         reset.type = "button";
         reset.className = "settings-reset";
@@ -1158,6 +1167,44 @@ export class Hud {
         return `<div class="buff-chip" title="${meta.label} ${amt}"><span class="buff-ic">${iconize(meta.icon)}</span><span class="buff-amt">${amt}</span><span class="buff-time">${time}</span></div>`;
       })
       .join("");
+  }
+
+  /** The bug-report modal: one textarea, one send. State rides along on its own. */
+  private openBugReport(): void {
+    const back = document.createElement("div");
+    back.className = "bugreport-backdrop";
+    back.innerHTML = `
+      <div class="bugreport-box">
+        <div class="bugreport-title">Report a bug</div>
+        <div class="bugreport-sub">Say what happened and what you expected. Your position, levels and any recent errors are attached automatically.</div>
+        <textarea class="bugreport-text" rows="5" maxlength="2000" placeholder="What went wrong?"></textarea>
+        <div class="bugreport-row">
+          <button class="bugreport-send" type="button">Send report</button>
+          <button class="bugreport-cancel" type="button">Cancel</button>
+        </div>
+        <div class="bugreport-msg"></div>
+      </div>`;
+    document.body.appendChild(back);
+    const text = back.querySelector(".bugreport-text") as HTMLTextAreaElement;
+    const send = back.querySelector(".bugreport-send") as HTMLButtonElement;
+    const msg = back.querySelector(".bugreport-msg") as HTMLElement;
+    (back.querySelector(".bugreport-cancel") as HTMLElement).addEventListener("click", () => back.remove());
+    back.addEventListener("pointerdown", (e) => { if (e.target === back) back.remove(); });
+    send.addEventListener("click", () => {
+      const d = text.value.trim();
+      if (d.length < 5) { msg.textContent = "A few words, at least — what went wrong?"; return; }
+      send.disabled = true;
+      msg.textContent = "Sending…";
+      reportBug(d)
+        .then((r) => {
+          msg.textContent = r.how === "sent"
+            ? "Sent — thank you! It helps more than you know."
+            : "Couldn't reach the server, so the report was copied to your clipboard — paste it in the Discord or an email.";
+          window.setTimeout(() => back.remove(), r.how === "sent" ? 1800 : 6000);
+        })
+        .catch(() => { msg.textContent = "Couldn't send or copy — please describe it in the Discord."; send.disabled = false; });
+    });
+    text.focus();
   }
 
   /** A short tap on a slot: eat food, wear gear, otherwise just inspect it. */
