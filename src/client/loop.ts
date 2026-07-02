@@ -467,7 +467,15 @@ export class Game {
 
   /** Send an intent and immediately react to its events (for UI actions). */
   dispatch(intent: Intent): void {
+    const pre = this.bridge.state.player.pos;
+    const px = pre.x, py = pre.y;
     const events = this.bridge.send(intent);
+    // The waystone sweep — only when the ride actually happened (the core can
+    // refuse it over an unpaid fare, in which case nothing should sound).
+    if (intent.type === "TRAVEL") {
+      const p = this.bridge.state.player.pos;
+      if (p.x !== px || p.y !== py) audio.play("teleport");
+    }
     this.handleEvents(events, performance.now());
   }
 
@@ -1220,7 +1228,6 @@ export class Game {
             this.hud.log(`The toll to ${o.name} is ${fare}g — you can't cover it.`);
             return;
           }
-          audio.play("teleport");
           this.dispatch({ type: "TRAVEL", to: o.id });
         },
       };

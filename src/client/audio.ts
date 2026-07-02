@@ -239,15 +239,16 @@ class AudioManager {
           this.tone({ f0: 120, f1: 58, type: "sine", dur: 0.18, peak: 0.5, wet: true });
           break;
         case "miss": // an airy swish past
-          this.noise({ dur: 0.2, peak: 0.1, hp: 900, lp: 3000, wet: true });
+          this.noise({ dur: 0.2, peak: 0.18, hp: 900, lp: 3000, wet: true });
+          this.tone({ f0: 500, f1: 320, type: "sine", dur: 0.14, peak: 0.05, wet: true });
           break;
         case "bow": // a low loosing twang
           this.tone({ f0: 640, f1: 170, type: "triangle", dur: 0.18, peak: 0.28, wet: true });
           this.noise({ dur: 0.05, peak: 0.08, hp: 1600 });
           break;
         case "magic": // an arcane bolt: a falling zap under a rising shimmer
-          this.tone({ f0: 880, f1: 160, type: "sawtooth", dur: 0.2, peak: 0.2, lp: 2400, wet: true });
-          this.tone({ f0: 1320, f1: 2200, type: "sine", dur: 0.14, peak: 0.08, wet: true });
+          this.tone({ f0: 880, f1: 160, type: "sawtooth", dur: 0.2, peak: 0.26, lp: 2400, wet: true });
+          this.tone({ f0: 1320, f1: 2200, type: "sine", dur: 0.14, peak: 0.1, wet: true });
           break;
         case "kill": // a descending groan + thud
           this.tone({ f0: 150, f1: 46, type: "sawtooth", dur: 0.5, peak: 0.4, lp: 800, wet: true });
@@ -262,54 +263,66 @@ class AudioManager {
           break;
 
         // ---- skilling: one voice per trade ----
-        case "chop": // an axe biting wood: a thock + woody knock
-          this.noise({ dur: 0.09, peak: 0.4, hp: 150, lp: 900 });
-          this.tone({ f0: 240, f1: 90, type: "sine", dur: 0.1, peak: 0.3 });
-          this.tone({ f0: 480, f1: 300, type: "triangle", dur: 0.06, peak: 0.12, delay: 0.01 });
+        case "chop": // an axe biting wood: a sharp tick into a thock + woody knock
+          this.noise({ dur: 0.02, peak: 0.22, hp: 2000 });
+          this.noise({ dur: 0.09, peak: 0.42, hp: 150, lp: 900 });
+          this.tone({ f0: 240, f1: 90, type: "sine", dur: 0.1, peak: 0.32 });
+          this.tone({ f0: 480, f1: 300, type: "triangle", dur: 0.07, peak: 0.16, delay: 0.01 });
           break;
         case "mine": // a pick on stone: a bright tink over a low thud
-          this.tone({ f0: 2400, f1: 1900, type: "square", dur: 0.05, peak: 0.09, wet: true });
-          this.noise({ dur: 0.05, peak: 0.14, hp: 2400 });
+          this.tone({ f0: 2400, f1: 1900, type: "square", dur: 0.06, peak: 0.13, wet: true });
+          this.tone({ f0: 3170, f1: 2600, type: "sine", dur: 0.08, peak: 0.05, wet: true });
+          this.noise({ dur: 0.05, peak: 0.16, hp: 2400 });
           this.tone({ f0: 160, f1: 80, type: "sine", dur: 0.1, peak: 0.28 });
           break;
-        case "splash": // water taking something: a plip + spray
-          this.tone({ f0: 620, f1: 160, type: "sine", dur: 0.12, peak: 0.2, wet: true });
-          this.noise({ dur: 0.22, peak: 0.16, hp: 500, lp: 2200, wet: true });
+        case "splash": // water taking something: a plip + spray + late droplet
+          this.tone({ f0: 620, f1: 160, type: "sine", dur: 0.12, peak: 0.24, wet: true });
+          this.noise({ dur: 0.24, peak: 0.18, hp: 500, lp: 2200, wet: true });
+          this.tone({ f0: 900, f1: 320, type: "sine", dur: 0.07, peak: 0.09, wet: true, delay: 0.16 });
           break;
-        case "sizzle": // fat on a hot pan
-          this.noise({ dur: 0.4, peak: 0.11, hp: 3600 });
-          this.noise({ dur: 0.18, peak: 0.08, hp: 2400, delay: 0.12 });
+        case "sizzle": // fat on a hot pan: a wash with crackles riding it
+          this.noise({ dur: 0.45, peak: 0.14, hp: 3400 });
+          this.noise({ dur: 0.03, peak: 0.1, hp: 4500, delay: 0.09 });
+          this.noise({ dur: 0.03, peak: 0.09, hp: 5000, delay: 0.21 });
+          this.noise({ dur: 0.16, peak: 0.09, hp: 2400, delay: 0.3 });
           break;
-        case "smith": // the anvil: a struck clang with a metallic ring
-          this.tone({ f0: 1250, type: "triangle", dur: 0.4, peak: 0.22, wet: true });
+        case "smith": // the anvil: a hard strike into a long metallic ring
+          this.noise({ dur: 0.018, peak: 0.3, hp: 1500 });
+          this.tone({ f0: 1250, type: "triangle", dur: 0.4, peak: 0.24, wet: true });
           this.tone({ f0: 1875, type: "sine", dur: 0.3, peak: 0.1, wet: true });
           this.noise({ dur: 0.04, peak: 0.18, hp: 2000 });
           this.tone({ f0: 240, f1: 170, type: "sine", dur: 0.12, peak: 0.26 });
           break;
-        case "craft": // two quick wooden taps at the bench
-          this.tone({ f0: 330, f1: 260, type: "triangle", dur: 0.05, peak: 0.2 });
-          this.noise({ dur: 0.04, peak: 0.1, lp: 900 });
-          this.tone({ f0: 300, f1: 240, type: "triangle", dur: 0.05, peak: 0.16, delay: 0.09 });
+        case "craft": // two solid wooden knocks at the bench
+          this.tone({ f0: 330, f1: 250, type: "triangle", dur: 0.07, peak: 0.3 });
+          this.noise({ dur: 0.05, peak: 0.18, lp: 900 });
+          this.tone({ f0: 290, f1: 220, type: "triangle", dur: 0.07, peak: 0.24, delay: 0.1 });
+          this.noise({ dur: 0.04, peak: 0.12, lp: 800, delay: 0.1 });
           break;
         case "brew": // rising glugs out of the cauldron
-          this.tone({ f0: 130, f1: 240, type: "sine", dur: 0.09, peak: 0.2 });
-          this.tone({ f0: 160, f1: 300, type: "sine", dur: 0.09, peak: 0.18, delay: 0.11 });
-          this.tone({ f0: 200, f1: 380, type: "sine", dur: 0.08, peak: 0.14, delay: 0.22 });
+          this.tone({ f0: 130, f1: 240, type: "sine", dur: 0.1, peak: 0.28 });
+          this.tone({ f0: 160, f1: 300, type: "sine", dur: 0.1, peak: 0.24, delay: 0.12 });
+          this.tone({ f0: 200, f1: 380, type: "sine", dur: 0.09, peak: 0.2, delay: 0.24 });
+          this.noise({ dur: 0.06, peak: 0.05, hp: 900, lp: 2600, delay: 0.3 });
           break;
-        case "dig": // a spade of soil
-          this.noise({ dur: 0.14, peak: 0.26, lp: 500 });
-          this.tone({ f0: 130, f1: 70, type: "sine", dur: 0.1, peak: 0.2 });
+        case "dig": // a spade of soil: the cut, then the scatter
+          this.noise({ dur: 0.14, peak: 0.34, lp: 500 });
+          this.tone({ f0: 130, f1: 70, type: "sine", dur: 0.1, peak: 0.26 });
+          this.noise({ dur: 0.1, peak: 0.1, lp: 900, delay: 0.12 });
           break;
-        case "vault": // an airy pass over an obstacle
-          this.noise({ dur: 0.26, peak: 0.13, hp: 700, lp: 2600, wet: true });
+        case "vault": // an airy pass over an obstacle: rising, then landing
+          this.noise({ dur: 0.3, peak: 0.2, hp: 700, lp: 2600, wet: true });
+          this.tone({ f0: 280, f1: 560, type: "sine", dur: 0.22, peak: 0.07, wet: true });
+          this.noise({ dur: 0.06, peak: 0.14, lp: 700, delay: 0.28 });
           break;
         case "pray": // a soft devotional chime
           this.tone({ f0: 660, type: "sine", dur: 0.5, peak: 0.1, wet: true });
           this.tone({ f0: 990, type: "sine", dur: 0.4, peak: 0.05, wet: true, delay: 0.06 });
           break;
         case "rustle": // leaves / undergrowth giving something up
-          this.noise({ dur: 0.1, peak: 0.1, hp: 1200, lp: 4200 });
-          this.noise({ dur: 0.14, peak: 0.08, hp: 1400, lp: 3800, delay: 0.09 });
+          this.noise({ dur: 0.1, peak: 0.2, hp: 1000, lp: 4200 });
+          this.noise({ dur: 0.16, peak: 0.16, hp: 1200, lp: 3800, delay: 0.09 });
+          this.noise({ dur: 0.08, peak: 0.1, hp: 1400, lp: 3600, delay: 0.22 });
           break;
         case "gather": // the neutral soft tick (fallback for unmapped skills)
           this.noise({ dur: 0.05, peak: 0.16, hp: 300, lp: 1000 });
@@ -325,8 +338,9 @@ class AudioManager {
         }
         case "quest": { // a real jingle: a rising minor arpeggio landing home
           const notes: [number, number][] = [[440, 0], [523.25, 0.14], [659.25, 0.28], [880, 0.44]];
-          for (const [f, d] of notes) this.tone({ f0: f, type: "triangle", dur: 0.5, peak: 0.16, wet: true, delay: d });
-          this.tone({ f0: 220, type: "sine", dur: 1.0, peak: 0.14, wet: true, delay: 0.44 });
+          for (const [f, d] of notes) this.tone({ f0: f, type: "triangle", dur: 0.5, peak: 0.17, wet: true, delay: d });
+          this.tone({ f0: 220, type: "sine", dur: 1.1, peak: 0.15, wet: true, delay: 0.44 });
+          this.tone({ f0: 329.63, type: "sine", dur: 1.0, peak: 0.08, wet: true, delay: 0.5 });
           break;
         }
         case "achieve": // a bright two-note chime
@@ -341,8 +355,8 @@ class AudioManager {
 
         // ---- items + shops ----
         case "pickup": // a soft two-note blip
-          this.tone({ f0: 430, type: "sine", dur: 0.07, peak: 0.16 });
-          this.tone({ f0: 660, type: "sine", dur: 0.09, peak: 0.16, delay: 0.06 });
+          this.tone({ f0: 430, type: "sine", dur: 0.07, peak: 0.2 });
+          this.tone({ f0: 660, type: "sine", dur: 0.09, peak: 0.2, delay: 0.06 });
           break;
         case "heal": // a soft rising glow
           this.tone({ f0: 320, f1: 520, type: "sine", dur: 0.3, peak: 0.14, wet: true });
@@ -351,9 +365,11 @@ class AudioManager {
           this.tone({ f0: 260, f1: 140, type: "sine", dur: 0.11, peak: 0.2 });
           this.tone({ f0: 200, f1: 120, type: "sine", dur: 0.12, peak: 0.18, delay: 0.13 });
           break;
-        case "coin": // two quick metal ticks
-          this.tone({ f0: 2093, type: "square", dur: 0.04, peak: 0.05 });
-          this.tone({ f0: 2637, type: "square", dur: 0.05, peak: 0.05, delay: 0.05 });
+        case "coin": // a coin dropped on the counter: metal partials, two bounces
+          this.tone({ f0: 2093, type: "triangle", dur: 0.09, peak: 0.14 });
+          this.tone({ f0: 3311, type: "sine", dur: 0.07, peak: 0.07 });
+          this.tone({ f0: 2637, type: "triangle", dur: 0.08, peak: 0.11, delay: 0.08 });
+          this.tone({ f0: 4200, type: "sine", dur: 0.05, peak: 0.045, delay: 0.08 });
           break;
         case "bank": // a heavy chest: thud, then the latch
           this.noise({ dur: 0.18, peak: 0.28, lp: 420, wet: true });
@@ -363,11 +379,12 @@ class AudioManager {
 
         // ---- interface ----
         case "ui": // a tiny soft click
-          this.tone({ f0: 420, type: "sine", dur: 0.04, peak: 0.07 });
+          this.tone({ f0: 420, type: "sine", dur: 0.045, peak: 0.11 });
+          this.tone({ f0: 630, type: "sine", dur: 0.03, peak: 0.04 });
           break;
         case "open": // a soft whoosh as a panel slides open
-          this.noise({ dur: 0.14, peak: 0.07, hp: 500, lp: 2400 });
-          this.tone({ f0: 300, f1: 420, type: "sine", dur: 0.1, peak: 0.05 });
+          this.noise({ dur: 0.16, peak: 0.11, hp: 500, lp: 2400 });
+          this.tone({ f0: 300, f1: 440, type: "sine", dur: 0.12, peak: 0.08 });
           break;
       }
     } catch { /* never let audio break the frame */ }
@@ -609,8 +626,9 @@ class AudioManager {
     // The melody (bars 9–16): the Varath motif, bell-voiced (sine + 3rd partial).
     const bell = (f: number, atBeat: number, beats: number, vel = 1): void => {
       const at = bar(8) + atBeat * BEAT;
-      this.note({ f, type: "sine", dur: beats * BEAT + 0.9, peak: 0.085 * vel, delay: at, attack: 0.015 });
-      this.note({ f: f * 3.01, type: "sine", dur: beats * BEAT * 0.5, peak: 0.012 * vel, delay: at, attack: 0.015 });
+      this.note({ f, type: "sine", dur: beats * BEAT + 0.9, peak: 0.1 * vel, delay: at, attack: 0.015 });
+      this.note({ f: f * 2.0, type: "sine", dur: beats * BEAT * 0.6, peak: 0.014 * vel, delay: at, attack: 0.015 });
+      this.note({ f: f * 3.01, type: "sine", dur: beats * BEAT * 0.5, peak: 0.014 * vel, delay: at, attack: 0.015 });
     };
     // over Am
     bell(440, 0, 2); bell(523.25, 2, 1); bell(493.88, 3, 1); bell(659.25, 4, 3, 1.15);
@@ -618,8 +636,9 @@ class AudioManager {
     bell(698.46, 8, 2, 1.1); bell(659.25, 10, 1); bell(523.25, 11, 1); bell(587.33, 12, 3);
     // over Dm
     bell(587.33, 16, 2); bell(698.46, 18, 1); bell(659.25, 19, 1); bell(587.33, 20, 1.5); bell(523.25, 21.5, 1.5);
-    // over Em — resolve home
+    // over Em — resolve home, with a soft octave halo on the final note
     bell(493.88, 24, 2); bell(523.25, 26, 1); bell(493.88, 27, 1); bell(440, 28, 4, 1.2);
+    this.note({ f: 880, type: "sine", dur: 4 * BEAT + 1.5, peak: 0.03, delay: bar(8) + 28 * BEAT, attack: 1.2 });
 
     // Loop: re-arm just before the pass ends.
     const loopMs = bar(16) * 1000;

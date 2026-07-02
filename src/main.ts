@@ -312,6 +312,11 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
 
   audio.setMode("world"); // theme fades; the region's ambience takes over
   game.start();
+  // Test seam (?test=1): expose the live pieces so an automated gameplay run
+  // can drive real intents and assert on what the player would hear/see.
+  if (new URLSearchParams(location.search).has("test")) {
+    (window as unknown as Record<string, unknown>)["__varath"] = { game, bridge, audio, content };
+  }
 
   const enter = (): void => {
     hud.log(
