@@ -5406,21 +5406,21 @@ export const items: Record<ItemId, ItemDef> = {
   "potion_grace": {
       "id": "potion_grace",
       "name": "Grace Potion (2)",
-      "description": "Ashweed and bonemeal in blessed water. Each dose restores 30 Grace. Two doses.",
+      "description": "Ashweed and bonemeal in blessed water. Each dose restores 50 Grace. Two doses.",
       "icon": "🙏",
       "cat": "Potions",
       "sell": 60,
-      "graceRestore": 30,
+      "graceRestore": 50,
       "doseNext": "potion_grace_1"
     },
   "potion_grace_1": {
       "id": "potion_grace_1",
       "name": "Grace Potion (1)",
-      "description": "Ashweed and bonemeal in blessed water. Each dose restores 30 Grace. One dose left.",
+      "description": "Ashweed and bonemeal in blessed water. Each dose restores 50 Grace. One dose left.",
       "icon": "🙏",
       "cat": "Potions",
       "sell": 30,
-      "graceRestore": 30
+      "graceRestore": 50
     },
   "pot_gatherer": {
       "id": "pot_gatherer",
@@ -5513,21 +5513,21 @@ export const items: Record<ItemId, ItemDef> = {
   "pot_deepgrace": {
       "id": "pot_deepgrace",
       "name": "Deep Grace Potion (2)",
-      "description": "Greybloom steeped over double bonemeal. Each dose restores 80 Grace. Two doses.",
+      "description": "Greybloom steeped over double bonemeal. Each dose restores 120 Grace. Two doses.",
       "icon": "✨",
       "cat": "Potions",
       "sell": 260,
-      "graceRestore": 80,
+      "graceRestore": 120,
       "doseNext": "pot_deepgrace_1"
     },
   "pot_deepgrace_1": {
       "id": "pot_deepgrace_1",
       "name": "Deep Grace Potion (1)",
-      "description": "Greybloom steeped over double bonemeal. Each dose restores 80 Grace. One dose left.",
+      "description": "Greybloom steeped over double bonemeal. Each dose restores 120 Grace. One dose left.",
       "icon": "✨",
       "cat": "Potions",
       "sell": 130,
-      "graceRestore": 80
+      "graceRestore": 120
     },
   "pot_archer": {
       "id": "pot_archer",
