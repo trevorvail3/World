@@ -179,6 +179,24 @@ export const HOMES: {
 }));
 export { HOUSE_W as HOME_WIDTH };
 
+/** The backyard pet paddock: a fenced grass yard behind each home, in the free
+ *  right half of the hidden band. Reached by the Garden Door in the living room
+ *  once the house is a Manor (tier 2). Each home pairs with one yard. */
+export const BACKYARD_W = 18;
+export const BACKYARD_H = 12;
+export const BACKYARDS = HOMES.map((h, i) => {
+  const ox = 58 + i * 22;                 // 58,80,102 — clear of the homes (≤x52) and each other
+  const oy = INTERIOR_TOP;
+  return {
+    plot: h.plot,
+    ox, oy,
+    x0: ox, y0: oy, x1: ox + BACKYARD_W - 1, y1: oy + BACKYARD_H - 1,
+    entry: { x: ox + 3, y: oy + BACKYARD_H - 3 },   // where you land, by the gate
+    gate: { x: ox + 2, y: oy + BACKYARD_H - 3 },     // the return door back inside
+    homeDoor: { x: h.ox + 13, y: oy + 9 },           // the Garden Door tile in the living room
+  };
+});
+
 /** Tiles that block movement (mirrors the core's walkability check). */
 const BLOCKED = new Set<TileType>(["water", "mountain", "cave_wall", "deep", "wall"]);
 
@@ -797,6 +815,18 @@ function decode(): WorldMap {
     for (const d of plan.doorways) set(d.x, d.y, "plank"); // openings (incl. the sealed wing doorway)
   }
 
+  // 7b) Carve each home's backyard paddock: a grass yard with a solid border
+  //     (rendered as a fence) so pets roam a bounded, outdoor-looking pen.
+  for (const y of BACKYARDS) {
+    for (let ty = y.y0; ty <= y.y1; ty++) {
+      for (let tx = y.x0; tx <= y.x1; tx++) {
+        const edge = tx === y.x0 || tx === y.x1 || ty === y.y0 || ty === y.y1;
+        set(tx, ty, edge ? "wall" : "grass");
+      }
+    }
+    set(y.gate.x, y.gate.y, "grass"); // the return gate stands on grass
+  }
+
   // 8) The Drowned Pier: a plank jetty off the Redrun estuary, reaching from the
   //    SE shore out over the deep. A single-tile neck (its only land approach is
   //    from the north, water on both sides) lets one barrier gate the whole pier
@@ -845,6 +875,11 @@ export function instanceRectAt(x: number, y: number): InstanceRect | null {
   for (const h of HOMES) {
     if (x >= h.ox && x <= h.ox + HOUSE_W - 1 && y >= INTERIOR_TOP && y <= INTERIOR_TOP + 10) {
       return { x0: h.ox, y0: INTERIOR_TOP, x1: h.ox + HOUSE_W - 1, y1: INTERIOR_TOP + 10 };
+    }
+  }
+  for (const b of BACKYARDS) {
+    if (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) {
+      return { x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 };
     }
   }
   for (const a of ARENAS) {

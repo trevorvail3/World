@@ -2558,6 +2558,11 @@ function startInteraction(
         events.push({ type: "LOG", message: "You'd need to claim this homestead before you could go in." });
         break;
       }
+      // The Garden Door needs a house tier (the backyard unlocks at Manor).
+      if (def.tier && state.player.home.tier < def.tier) {
+        events.push({ type: "LOG", message: `Raise your home to a ${homeStructureName(def.tier)} to open the garden.` });
+        break;
+      }
       usePortal(state, def, events);
       break;
     }

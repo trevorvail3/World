@@ -13,7 +13,7 @@
  */
 
 import type { WorldObjectDef } from "../core/types.ts";
-import { HOMES, homeLayout, remap, map, CITY, PIER } from "./map.ts";
+import { HOMES, BACKYARDS, homeLayout, remap, map, CITY, PIER } from "./map.ts";
 
 const SCATTER_BLOCKED = new Set(["water", "mountain", "cave_wall", "deep", "wall", "plank"]);
 function tileWalkable(x: number, y: number): boolean {
@@ -277,6 +277,15 @@ function buildHousing(): WorldObjectDef[] {
         id: `seal_${suffix}_${s.room}`, kind: "room_seal", x: s.x, y: s.y,
         name: `Unfinished Wall (${cap(s.room)})`, plot: h.plot, tier: s.tier,
       });
+    }
+    // The backyard pet paddock: a Garden Door in the living room (Manor+), and
+    // the return gate out in the yard.
+    const yard = BACKYARDS.find((b) => b.plot === h.plot);
+    if (yard) {
+      out.push(
+        { id: `bdoor_${suffix}`, kind: "house_door", x: yard.homeDoor.x, y: yard.homeDoor.y, name: "the Garden Door", plot: h.plot, tier: 2, target: yard.entry, lines: ["You step out into your garden."] },
+        { id: `bgate_${suffix}`, kind: "house_door", x: yard.gate.x, y: yard.gate.y, name: "the Back Door", target: yard.homeDoor, lines: ["You step back inside."] },
+      );
     }
     for (const f of plan.footings) {
       out.push({

@@ -1259,8 +1259,11 @@ export function drawWorld(
   const region = instanceRectAt(Math.round(ppos.x), Math.round(ppos.y));
   const inRegion = (x: number, y: number) =>
     !region || (x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1);
+  // A backyard paddock is an instance in the interior band, but reads as an
+  // OUTDOOR grass yard — the homes sit left of x55, the yards right of it.
+  const backyard = !!(region && region.y0 === INTERIOR_TOP && region.x0 >= 55);
 
-  g.fillStyle = region ? "#07070a" : "#13100d";
+  g.fillStyle = backyard ? "#182415" : region ? "#07070a" : "#13100d";
   g.fillRect(0, 0, w, h);
 
   const { map } = state;
@@ -1282,7 +1285,7 @@ export function drawWorld(
   // --- Tiles ---
   // Home surfaces: when the player stands in their home, a chosen floor/wall
   // surface recolours the plank floor / stone walls of the room they're in.
-  const homeInterior = !!(region && region.y0 === INTERIOR_TOP);
+  const homeInterior = !!(region && region.y0 === INTERIOR_TOP && !backyard);
   const floorSurf = homeInterior ? content.surfaces[state.player.home.floor ?? ""] : undefined;
   const wallSurf = homeInterior ? content.surfaces[state.player.home.wall ?? ""] : undefined;
   for (let y = minY; y <= maxY; y++) {
@@ -1507,7 +1510,7 @@ export function drawWorld(
 
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
   // whichever home the player is standing in (so a bare house still feels lived-in).
-  if (region && region.y0 === INTERIOR_TOP) {
+  if (region && region.y0 === INTERIOR_TOP && !backyard) {
     // Rooms not yet unlocked at this house tier sit in shadow — a clear "not
     // yours yet" read behind the boarded doorways. Compute them once, use them to
     // skip lit sconces in locked wings and to lay the shadow scrim on top.
@@ -1521,6 +1524,11 @@ export function drawWorld(
     // Free-placement furniture (the Homestead): everything the player has set
     // down in their home, drawn at its own tile + rotation, under the player.
     drawPlacedFurniture(g, state, content, cam, now, lights, trophy);
+  }
+  // The backyard paddock: a fence over the bounding wall, troughs, and every
+  // companion pet you own wandering the grass — the collection log come alive.
+  if (backyard && region) {
+    drawBackyard(g, state, content, region, cam, now);
   }
 
   // --- Other players (ghosts): translucent snapshots from the shared world,
@@ -1674,7 +1682,7 @@ export function drawWorld(
   // --- Atmosphere. Outdoors each region gets a colour wash + its own weather;
   //     a vignette frames every view. Skipped inside sealed instances (homes /
   //     arenas), which keep their own controlled look.
-  const outdoor = !region;
+  const outdoor = !region || backyard; // the backyard is open-air, weather + all
   const biome = outdoor ? biomeAt(Math.round(ppos.x), Math.round(ppos.y)) : "city";
   // A soft bloom over fires and lamps (before the player's carried light, so it
   // never gets a daytime halo) — flames glow gently even by day.
@@ -2763,6 +2771,78 @@ function drawHomeExterior(
 
   // A lantern glow by the door at night.
   if (lit) { g.fillStyle = `rgba(255,196,110,${0.5 * night})`; g.beginPath(); g.arc(fx - doorW / 2 - 4, fy - doorH * 0.7, 6, 0, Math.PI * 2); g.fill(); }
+}
+
+/**
+ * The backyard pet paddock: a wooden fence over the bounding wall, a couple of
+ * feeding troughs and a kennel, and every companion pet the player owns drifting
+ * across the grass — the collection log brought to life in your own yard.
+ */
+function drawBackyard(
+  g: CanvasRenderingContext2D,
+  state: WorldState,
+  content: Content,
+  region: { x0: number; y0: number; x1: number; y1: number },
+  cam: Camera,
+  now: number,
+): void {
+  const { x0, y0, x1, y1 } = region;
+  const grass = TILE_COLORS.grass[0];
+  // Post-and-rail fence painted over the bounding wall.
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    if (tx !== x0 && tx !== x1 && ty !== y0 && ty !== y1) continue;
+    const px = tx * TILE - cam.x, py = ty * TILE - cam.y, cx = px + TILE / 2, cy = py + TILE / 2;
+    g.fillStyle = grass; g.fillRect(px, py, TILE, TILE); // hide the masonry beneath
+    const horiz = ty === y0 || ty === y1;
+    g.fillStyle = "#7a5c38";
+    if (horiz) { g.fillRect(px, cy - 4, TILE, 2.5); g.fillRect(px, cy + 2, TILE, 2.5); g.fillStyle = "#513a22"; g.fillRect(cx - 1.5, py + 4, 3, TILE - 8); }
+    else { g.fillRect(cx - 4, py, 2.5, TILE); g.fillRect(cx + 2, py, 2.5, TILE); g.fillStyle = "#513a22"; g.fillRect(px + 4, cy - 1.5, TILE - 8, 3); }
+  }
+
+  // A water trough, a feed trough, and a little kennel — the yard furniture.
+  const at = (tx: number, ty: number): [number, number] => [tx * TILE - cam.x + TILE / 2, ty * TILE - cam.y + TILE / 2];
+  const [wtx, wty] = at(x0 + 3, y1 - 2);
+  shadow(g, wtx, wty + 5, 11, 3);
+  g.fillStyle = "#5c4126"; g.fillRect(wtx - 11, wty - 4, 22, 9);
+  g.fillStyle = "#3f7c8a"; g.fillRect(wtx - 9, wty - 3, 18, 4); // water
+  g.fillStyle = "rgba(255,255,255,0.25)"; g.fillRect(wtx - 8, wty - 3, 6, 1.5);
+  const [ftx, fty] = at(x0 + 6, y1 - 2);
+  shadow(g, ftx, fty + 5, 10, 3);
+  g.fillStyle = "#5c4126"; g.fillRect(ftx - 10, fty - 4, 20, 9);
+  g.fillStyle = "#b78a3e"; g.fillRect(ftx - 8, fty - 3, 16, 4); // feed
+  // Kennel (a mini gabled dog house) in a far corner.
+  const [kx, ky] = at(x1 - 3, y0 + 3);
+  shadow(g, kx, ky + 8, 12, 3);
+  g.fillStyle = "#8a6a44"; g.fillRect(kx - 10, ky - 2, 20, 12);
+  g.fillStyle = "#6d5033"; g.beginPath(); g.moveTo(kx - 12, ky - 2); g.lineTo(kx, ky - 14); g.lineTo(kx + 12, ky - 2); g.closePath(); g.fill();
+  g.fillStyle = "#2e2013"; g.beginPath(); g.arc(kx, ky + 8, 5, Math.PI, 0); g.fill(); g.fillRect(kx - 5, ky + 3, 10, 6);
+
+  // Every companion pet the player owns, drifting the yard on a slow wander.
+  const owned: string[] = [];
+  const seen = new Set<string>();
+  const add = (id: string | undefined): void => {
+    if (id && content.items[id as ItemId]?.slot === "companion" && !seen.has(id)) { seen.add(id); owned.push(id); }
+  };
+  for (const s of state.player.inventory) if (s) add(s.item);
+  for (const k of Object.keys(state.player.bank)) add(k);
+  add(state.player.equipment.companion);
+
+  owned.forEach((id, i) => {
+    const ph = i * 1.7;
+    const wx = x0 + 2.5 + (x1 - x0 - 5) * (0.5 + 0.42 * Math.sin(now / 2600 + ph));
+    const wy = y0 + 3 + (y1 - y0 - 6) * (0.5 + 0.42 * Math.cos(now / 2200 + ph * 1.3));
+    const sx = wx * TILE - cam.x, sy = wy * TILE - cam.y;
+    shadow(g, sx, sy + 6, 7, 2.5);
+    drawCompanion(g, content, id as ItemId, sx, sy, now, true);
+  });
+
+  // A gentle hint when the paddock is empty.
+  if (owned.length === 0) {
+    const [hx, hy] = at((x0 + x1) / 2, y0 + 2);
+    g.fillStyle = "rgba(0,0,0,0.4)"; g.font = "italic 11px 'EB Garamond', serif"; g.textAlign = "center";
+    g.fillText("A quiet paddock — find a pet, and it will roam here.", hx, hy);
+    g.textAlign = "left";
+  }
 }
 
 /** A homestead plot marker: a corner stake with a board (gold once claimed). */
