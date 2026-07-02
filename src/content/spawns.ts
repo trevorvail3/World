@@ -364,6 +364,9 @@ const rawObjects: WorldObjectDef[] = [
       "Bring me a thing with a question on it and I'll give it a home instead of a shelf over a hearth.",
     ],
     reactiveLines: [
+      { requiresFlags: ["act2_tablets_all"], lines: [
+        "Maerwen hasn't slept since you brought the fourth verse. Four tablets, one psalm, and a door under the pass that no map will admit to. The Record was built for exactly this — and I'm still afraid of it.",
+      ] },
       { requiresFlags: ["endgame_shard_secured"], lines: [
         "It's in the inner vault, unread, and it will stay unread. You kept the question open. Holy, by staying unknown.",
         "People wanted you to answer it. You did the harder thing — you let it keep being a question. The Record will remember that longer than any answer.",
@@ -377,6 +380,29 @@ const rawObjects: WorldObjectDef[] = [
       ] },
       { requiresFlags: ["guild_pale_record_contacted"], lines: [
         "You gave the coin a home instead of a hearth-shelf. I knew then we'd work well. The Underloft's patient — it's waited this long for eyes like yours.",
+      ] },
+    ],
+  },
+  {
+    id: "maerwen", kind: "npc", x: 52, y: 47, name: "Maerwen the Antiquarian",
+    lines: [
+      "Sera keeps the Record's shelves. I fill them — barrows, vaults, anywhere the dust is old enough to argue with.",
+      "The old north-folk wrote in the Pale script, and everything they wrote points the same way: north, past the Spine, down a road no map has carried in a thousand years.",
+      "Grow strong enough to walk into places that were sealed on purpose, and come find me. I'll have work for you.",
+    ],
+    reactiveLines: [
+      { requiresFlags: ["act2_tablets_all"], lines: [
+        "Four verses on my desk and I still hear them at night. 'Until the wolf runs home.' They're waiting for us, delver — whoever they are.",
+        "The Undergate, under the mountain's heart. When you're provisioned, we open the north.",
+      ] },
+      { requiresFlags: ["act2_tide"], lines: [
+        "Three verses. Grave, vault, court — and the court named FIVE seals. I've had the aerie charts out all week. Go where the wind goes.",
+      ] },
+      { requiresFlags: ["act2_mountain"], lines: [
+        "A toll-house balanced and shut from the inside. People don't do that to a road they mean to use again... unless they were afraid of what might come DOWN it.",
+      ] },
+      { requiresFlags: ["act2_wolf"], lines: [
+        "The Wolf sits on my desk and I've read it forty times. Verse one of five. The vault in the pass will have the second — I'd stake the Record on it.",
       ] },
     ],
   },

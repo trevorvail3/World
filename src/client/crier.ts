@@ -25,4 +25,8 @@ export const CRIER_SHOUTS: string[] = [
   "Raise your roof, homesteader! Cottage to manor to estate, room by room, by your own Construction!",
   "Cook, bank and smith under your own roof! A hearth in the kitchen, a strongbox in the corner!",
   "Once your house is a manor, your pets roam its backyard — a paddock all their own!",
+  "The old boss lairs stand open! Barrow, vault, drowned court and sky-high ruin — true crawls now, with puzzles, locked doors, and worse below!",
+  "Diggers whisper of Pale-script tablets in the sealed places! Maerwen at the archive pays good coin for old stone!",
+  "The retired wardens roam free! Hollow, Spine and Bog — seek them in the wild places, if a grind is what you're after!",
+  "Wonders in the deep chests, they say! A signet that knits wounds, a lantern that never gutters, a seal that stretches every supper!",
 ];

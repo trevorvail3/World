@@ -1687,6 +1687,128 @@ export const quests: QuestDef[] = [
       gold: 300,
     },
   },
+
+  // ===========================================================================
+  // ACT IV — THE SILENCE BEYOND THE SPINE
+  // The second main arc: Maerwen, the Pale Record's field antiquarian, reads
+  // the four Pale Tablets out of the Act II dungeons one by one, and the
+  // warding psalm they spell out points at a fifth, unmapped seal — the
+  // Undergate beneath the high pass, and whatever the north has been keeping
+  // silent behind it. (The Undergate itself arrives with the next phase; this
+  // chain ends by naming it and setting `act2_tablets_all`.)
+  // ===========================================================================
+
+  {
+    id: "q_pale_script",
+    name: "The Pale Script",
+    act: 4,
+    giver: "maerwen",
+    requiresLevel: { skill: "vitality", level: 40 },
+    intro: [
+      "You have the look of someone who goes down into places. Good — sit. I'm Maerwen. Sera keeps the Record's shelves; I fill them.",
+      "A grave-digger out of the grove hamlets sold me a charcoal rubbing: Pale script, the old north-folk's hand, off a tablet in the Hollow Barrows. A running wolf, cut over and over, and a road going north.",
+      "The rubbing is worthless — I need the stone. It lies in the resting hall of the barrow's king, behind his levers and his locks and his honour-guard. Lay him down and bring me the Wolf.",
+    ],
+    steps: [
+      { type: "kill", monster: "barrow_king", count: 1, text: "Lay the Barrow-King to rest in the Hollow Barrows" },
+      { type: "deliver", npc: "maerwen", item: "tablet_barrow", count: 1, text: "Bring Maerwen the Wolf tablet" },
+    ],
+    outro: [
+      "Oh — oh, look at the cut of it. This isn't grave-verse. It's a PSALM. Listen: 'First ran the WOLF, ahead of all the host, and the road closed behind her.'",
+      "A warding psalm, in five verses — this is verse one. The wolf didn't flee down that road. She carried the ORDER to shut it. Someone closed the north on purpose.",
+      "The Record has rumours of a sealed vault high in the pass. If there's a second verse, it's there. I'll pay for it, and I'll pay better for what it says.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 4000 }],
+      gold: 800,
+      flags: ["act2_wolf", "delivered_tablet_barrow"],
+      rep: [{ faction: "pale_record", amount: 10 }],
+    },
+  },
+
+  {
+    id: "q_mountains_ledger",
+    name: "The Mountain's Ledger",
+    act: 4,
+    giver: "maerwen",
+    requires: "q_pale_script",
+    intro: [
+      "The Spine Vault. Dressed stone, shut from the inside, ward-stones older than the kingdom — every survey for a hundred years walked past it because the door wouldn't argue.",
+      "The old portal-mouth in the pass goes down into it now. Tally-stones, weigh-locks, a stair the masons warded — and somewhere in the treasury, verse two. The Vaultwright still tends the seals. You'll have to take it from him.",
+    ],
+    steps: [
+      { type: "kill", monster: "vault_warden", count: 1, text: "Put down the Vaultwright in the Spine Vault's treasury" },
+      { type: "deliver", npc: "maerwen", item: "tablet_vault", count: 1, text: "Bring Maerwen the Mountain tablet" },
+    ],
+    outro: [
+      "A ledger-stone. Of course it's a ledger — the vault was the north road's TOLL-HOUSE. Every cart, every head, every year, counted in Pale tallies... and then the entries stop.",
+      "The last line: 'The road is paid in full. Let no hand reopen the count.' Verse two: 'SECOND stands the MOUNTAIN, and the mountain keeps the ledger shut.'",
+      "They didn't abandon the toll-house, delver. They BALANCED it, sealed it from the inside, and the wright stayed with his work. Two verses. Three to find — and the Record's oldest maps drown the next one in the Heartmoor.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 5000 }],
+      gold: 1000,
+      flags: ["act2_mountain", "delivered_tablet_vault"],
+      rep: [{ faction: "pale_record", amount: 10 }],
+    },
+  },
+
+  {
+    id: "q_drowned_verdict",
+    name: "The Drowned Verdict",
+    act: 4,
+    giver: "maerwen",
+    requires: "q_mountains_ledger",
+    intro: [
+      "Under the Heartmoor there's a court. Not a barrow — a COURT, marble causeways and a bell-nave, drowned so long the moor grew a skin over it. The waymark by the old bog mouth wears its scales.",
+      "If the wolf carried the order and the mountain kept the ledger, then somewhere down there is the JUDGEMENT itself — the verdict that closed the road. Courts write everything down. Bring me verse three.",
+      "Mind the water. And mind the judge — the Record's notes say the Magistrate never adjourned.",
+    ],
+    steps: [
+      { type: "kill", monster: "drowned_magistrate", count: 1, text: "End the Drowned Magistrate's session in the Sunken Court" },
+      { type: "deliver", npc: "maerwen", item: "tablet_court", count: 1, text: "Bring Maerwen the Tide tablet" },
+    ],
+    outro: [
+      "Here it is. The verdict. 'THIRD sits the TIDE, and the tide holds what the court condemned.' And the sentence, delver — the sentence names the CONDEMNED. It isn't a person.",
+      "It's the ROAD. They tried the north road itself and sentenced it to closure — at FIVE seals. Grave. Vault. Court. Aerie. And a fifth: 'the gate beneath the pass, that no map shall carry.'",
+      "Five. There are FIVE. I have three verses and no map to the last two — but an aerie means high ground, and high ground means the east Spine. Go where the wind goes, and bring me the Storm.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 6000 }],
+      gold: 1200,
+      flags: ["act2_tide", "delivered_tablet_court"],
+      rep: [{ faction: "pale_record", amount: 10 }],
+    },
+  },
+
+  {
+    id: "q_last_watch",
+    name: "The Last Watch",
+    act: 4,
+    giver: "maerwen",
+    requires: "q_drowned_verdict",
+    intro: [
+      "Skyreach. The shoulder of the east Spine, past the wind-shrine — a toppled watchtower and a beacon-cradle rusted to lace. The Record wrote it off as a border fort. The Record was wrong.",
+      "It's the AERIE — the fourth seal, the watch over the closed road. Star-charts, counterweights, a warder on the traverse... and a signal-keeper who has waited a very long time for a fire that must never be lit.",
+      "Bring me the Storm tablet, and we'll have the psalm entire. Almost entire.",
+    ],
+    steps: [
+      { type: "kill", monster: "storm_herald", count: 1, text: "Bring down the Storm-Herald in Skyreach's eyrie" },
+      { type: "deliver", npc: "maerwen", item: "tablet_sky", count: 1, text: "Bring Maerwen the Storm tablet" },
+    ],
+    outro: [
+      "'FOURTH flies the STORM, and the storm watches the road; if ever the road wakes, the storm cries the warning.' A warning, delver — pointed NORTH. The beacons weren't for Varath. They were to warn the OTHER side.",
+      "You understand what that means. You don't post a thousand-year watch against an empty road. Something is still THERE, past the Spine. Listening. The psalm's last verse names the fifth seal outright:",
+      "'And LAST and LOWEST, the UNDERGATE, under the mountain's heart, and the Pale Warden upon it, until the wolf runs home.' I've marked where its door must stand — under the high pass. Rest, provision... and then we open the north, you and I.",
+    ],
+    reward: {
+      xp: [{ skill: "vitality", amount: 8000 }],
+      gold: 1500,
+      items: [{ item: "cut_gem", qty: 3 }],
+      flags: ["act2_storm", "act2_tablets_all", "delivered_tablet_sky"],
+      rep: [{ faction: "pale_record", amount: 15 }],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1698,6 +1820,8 @@ export const quests: QuestDef[] = [
 const MAIN_QUESTS = new Set<string>([
   "q_ash_and_knuckle", "q_first_shard", "q_worn_coin",
   "q_seam_question", "q_the_shard_returns", "q_the_four_positions", "q_the_last_choice",
+  // Act IV — The Silence Beyond the Spine (Maerwen's tablet chain)
+  "q_pale_script", "q_mountains_ledger", "q_drowned_verdict", "q_last_watch",
 ]);
 const FACTION_QUESTS = new Set<string>([
   // Ashforge Brotherhood

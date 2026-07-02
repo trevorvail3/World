@@ -789,6 +789,12 @@ function dropSlot(
   const player = state.player;
   const data = player.inventory[slot];
   if (!data) return;
+  // Quest relics don't hit the ground — dropped tablets and keys despawning is
+  // a softlock, not an inventory choice. Bank them if the pack needs the space.
+  if (content.items[data.item]?.cat === "Quest") {
+    events.push({ type: "LOG", message: `The ${content.items[data.item].name} feels too important to leave in the dirt. (Bank it if it's in the way.)` });
+    return;
+  }
   const x = Math.round(player.pos.x);
   const y = Math.round(player.pos.y);
   dropToGround(state, data.item, data.qty, x, y, ctx);
@@ -2687,6 +2693,19 @@ function openDungeonChest(
   const { player } = state;
   const flag = `looted_${def.id}`;
   if (player.flags.includes(flag)) {
+    // Anti-softlock: a quest relic (a Pale Tablet) that has gone missing — not
+    // in the pack, not in the bank, never handed to Maerwen — turns up again
+    // under the chest's false bottom. Everything else stays once-only.
+    for (const l of def.loot ?? []) {
+      const cat = content.items[l.item]?.cat;
+      if (cat !== "Quest") continue;
+      if (player.flags.includes(`delivered_${l.item}`)) continue;
+      if (countItem(player, l.item) > 0 || (player.bank[l.item] ?? 0) > 0) continue;
+      if (canAddItem(player, l.item)) addItem(player, l.item, 1, events);
+      else player.bank[l.item] = (player.bank[l.item] ?? 0) + 1;
+      events.push({ type: "LOG", message: `Under the chest's false bottom: the ${content.items[l.item]?.name ?? l.item}, right where you must have left it.` });
+      return;
+    }
     events.push({ type: "LOG", message: "The chest stands open and empty — you have already claimed what it kept." });
     return;
   }
