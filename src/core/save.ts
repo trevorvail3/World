@@ -99,6 +99,8 @@ export interface SavedProgress {
   farms: Record<string, { crop: string; plantedAt: number }>;
   /** Player housing: claimed plot ids + built furniture (hotspot id -> piece id). */
   housing: { plots: string[]; furniture: Record<string, string> };
+  /** Free-placement home: unplaced storage + placed pieces (positions/rotations). */
+  home?: { storage: Record<string, number>; placed: { item: string; x: number; y: number; rot: number }[] };
   hp: number;
   /** The pier's top-five catches by weight (the records board). */
   fishingRecords?: FishRecord[];
@@ -127,6 +129,10 @@ export function serializePlayer(state: WorldState): SavedProgress {
   return {
     farms,
     housing,
+    home: {
+      storage: { ...player.home.storage },
+      placed: player.home.placed.map((p) => ({ item: p.item, x: p.x, y: p.y, rot: p.rot })),
+    },
     spawn: { x: Math.round(player.spawn.x), y: Math.round(player.spawn.y) },
     version: SAVE_VERSION,
     skills,
@@ -480,6 +486,44 @@ export function hydratePlayer(
       }
     }
   }
+
+  // Free-placement home. A save from the new system restores directly; an older
+  // save (fixed-slot furniture only) is migrated once — each built hotspot piece
+  // becomes a placed piece at that hotspot's own tile, so a furnished house
+  // carries over intact.
+  const savedHome = raw["home"];
+  if (isRecord(savedHome)) {
+    const st = savedHome["storage"];
+    if (isRecord(st)) {
+      for (const id of Object.keys(st)) {
+        const n = st[id];
+        if (id in content.furniture && typeof n === "number" && n > 0) player.home.storage[id] = Math.floor(n);
+      }
+    }
+    const placed = savedHome["placed"];
+    if (Array.isArray(placed)) {
+      for (const p of placed) {
+        if (!isRecord(p)) continue;
+        const item = p["item"];
+        if (typeof item !== "string" || !(item in content.furniture)) continue;
+        const x = p["x"], y = p["y"], rot = p["rot"];
+        if (typeof x === "number" && typeof y === "number") {
+          player.home.placed.push({ item, x, y, rot: typeof rot === "number" ? ((rot % 4) + 4) % 4 : 0 });
+        }
+      }
+    }
+  } else if (isRecord(savedHousing) && isRecord(savedHousing["furniture"])) {
+    // One-time migration from the fixed-slot era.
+    const furn = savedHousing["furniture"] as Record<string, unknown>;
+    for (const hotspotId of Object.keys(furn)) {
+      const fid = furn[hotspotId];
+      const def = content.objects.find((o) => o.id === hotspotId);
+      if (def && def.kind === "build_hotspot" && typeof fid === "string" && fid in content.furniture) {
+        player.home.placed.push({ item: fid, x: def.x, y: def.y, rot: 0 });
+      }
+    }
+  }
+
   const savedQuests = raw["quests"];
   if (isRecord(savedQuests)) {
     const quests: Player["quests"] = {};

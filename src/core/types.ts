@@ -1327,6 +1327,8 @@ export interface Player {
   inventory: (InventorySlot | null)[];
   /** The bank chest: unlimited, stacked storage (item id -> quantity). */
   bank: Partial<Record<ItemId, number>>;
+  /** Free-placement home: owned-but-unplaced furniture + everything placed. */
+  home: HomeState;
   /** Worn gear: one item id per equipment slot (absent slots are empty). */
   equipment: Partial<Record<EquipSlot, ItemId>>;
   /**
@@ -1802,6 +1804,44 @@ export interface BuildRoomIntent {
   sealId: string;
 }
 
+// --- Free-placement housing (the Homestead) -------------------------------
+/** "Craft this furniture piece from materials" — the Construction sink. Made
+ *  inside your home; the finished piece lands in your home storage to place. */
+export interface CraftFurnitureIntent {
+  type: "CRAFT_FURNITURE";
+  furnitureId: string;
+}
+
+/** "Place a piece from home storage at this tile, turned this way." */
+export interface PlaceFurnitureIntent {
+  type: "PLACE_FURNITURE";
+  furnitureId: string;
+  x: number;
+  y: number;
+  rot: number;
+}
+
+/** "Move the placed piece at this index to a new tile / rotation." */
+export interface MoveFurnitureIntent {
+  type: "MOVE_FURNITURE";
+  index: number;
+  x: number;
+  y: number;
+  rot: number;
+}
+
+/** "Pick up the placed piece at this index, back into home storage." */
+export interface StoreFurnitureIntent {
+  type: "STORE_FURNITURE";
+  index: number;
+}
+
+/** "Upgrade the placed piece at this index to the next tier of its kind." */
+export interface UpgradeFurnitureIntent {
+  type: "UPGRADE_FURNITURE";
+  index: number;
+}
+
 /** "Pick up the loot lying on this tile" (honoured when the player is on/next to it). */
 export interface PickupIntent {
   type: "PICKUP";
@@ -1892,6 +1932,11 @@ export type Intent =
   | ClaimPlotIntent
   | BuildFurnitureIntent
   | RemoveFurnitureIntent
+  | CraftFurnitureIntent
+  | PlaceFurnitureIntent
+  | MoveFurnitureIntent
+  | StoreFurnitureIntent
+  | UpgradeFurnitureIntent
   | UseFurnitureIntent
   | BuildRoomIntent
   | PickupIntent
@@ -2251,6 +2296,27 @@ export interface FurnitureDef {
    * "furnace", "crafting_table") opens that station's recipes — at home.
    */
   station?: string;
+  /** Tile footprint [w, h] at rotation 0 (default [1, 1]). Free-placement homes
+   *  fit the piece to the floor and block those tiles (rugs excepted). */
+  footprint?: readonly [number, number];
+}
+
+/** One furniture piece placed in a free-placement home: its id, the top-left
+ *  tile of its footprint (absolute interior coords), and a 0–3 quarter-turn. */
+export interface PlacedFurniture {
+  item: string;
+  x: number;
+  y: number;
+  /** Rotation in quarter-turns clockwise (0, 1, 2, 3). Swaps the footprint w/h
+   *  when odd. */
+  rot: number;
+}
+
+/** A player's home: furniture crafted/bought but not yet placed (id → count),
+ *  and everything currently placed in the house (ESO/Animal-Crossing style). */
+export interface HomeState {
+  storage: Record<string, number>;
+  placed: PlacedFurniture[];
 }
 
 /** A species catchable from the deep-water pier minigame. Each landed fish rolls

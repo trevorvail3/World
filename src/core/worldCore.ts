@@ -27,6 +27,7 @@ import type {
   Ctx,
   EquipSlot,
   FishRecord,
+  FurnitureDef,
   HookedFish,
   Intent,
   ItemDef,
@@ -537,6 +538,7 @@ export function createWorld(
       hairStyle: "short", facial: "none", top: "plain", legs: "trousers", shoes: "boots",
     },
     bounty: { marks: 0, guideId: content.bountyGuides[0]?.id ?? "rook", task: null, streak: 0, blocked: [], unlocks: [] },
+    home: { storage: {}, placed: [] },
     buffs: {},
     activity: { kind: "idle", targetId: null, actionId: null, nextActionAt: 0, actionInterval: 0 },
     pendingInteractId: null,
@@ -1784,6 +1786,26 @@ export function applyIntent(
       buildRoom(state, content, intent.sealId, events);
       break;
     }
+    case "CRAFT_FURNITURE": {
+      craftFurniture(state, content, intent.furnitureId, events);
+      break;
+    }
+    case "PLACE_FURNITURE": {
+      placeFurniture(state, content, intent.furnitureId, intent.x, intent.y, intent.rot, events);
+      break;
+    }
+    case "MOVE_FURNITURE": {
+      moveFurniture(state, content, intent.index, intent.x, intent.y, intent.rot, events);
+      break;
+    }
+    case "STORE_FURNITURE": {
+      storeFurniture(state, content, intent.index, events);
+      break;
+    }
+    case "UPGRADE_FURNITURE": {
+      upgradeFurniture(state, content, intent.index, events);
+      break;
+    }
   }
   return events;
 }
@@ -2609,6 +2631,197 @@ function homeComfort(state: WorldState, content: Content, plotId: string): numbe
     if (f) total += f.comfort;
   }
   return total;
+}
+
+// ===========================================================================
+// Free-placement housing (the Homestead) — ESO/Animal-Crossing style: craft a
+// piece from materials (the Construction sink), then place / move / store /
+// upgrade it anywhere on your home's floor. All in the pure core (RULE 2).
+// ===========================================================================
+
+/** The set of floor tiles that make up the room the player is standing in —
+ *  a bounded flood-fill over connected interior "plank" tiles. Empty (size 0)
+ *  when the player isn't on a home floor. Bounds free placement to your house. */
+function homeFloorSet(state: WorldState): Set<string> {
+  const out = new Set<string>();
+  const { map } = state;
+  const px = Math.round(state.player.pos.x), py = Math.round(state.player.pos.y);
+  const at = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y * map.width + x] === "plank";
+  if (!at(px, py)) return out; // not standing on a home floor
+  const q: [number, number][] = [[px, py]];
+  out.add(`${px},${py}`);
+  while (q.length && out.size < 400) { // a house is small; cap for safety
+    const [x, y] = q.shift()!;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = x + dx, ny = y + dy, k = `${nx},${ny}`;
+      if (!out.has(k) && at(nx, ny)) { out.add(k); q.push([nx, ny]); }
+    }
+  }
+  return out;
+}
+
+/** A piece's footprint at a rotation: [w, h], swapped for an odd quarter-turn. */
+function effFootprint(f: FurnitureDef, rot: number): [number, number] {
+  const [w, h] = f.footprint ?? [1, 1];
+  return (rot & 1) === 1 ? [h, w] : [w, h];
+}
+
+/** The tiles a piece would cover if placed at (x, y) with rotation. */
+function footTiles(f: FurnitureDef, x: number, y: number, rot: number): string[] {
+  const [w, h] = effFootprint(f, rot);
+  const out: string[] = [];
+  for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) out.push(`${x + dx},${y + dy}`);
+  return out;
+}
+
+/** Floor tiles already occupied by placed BLOCKING pieces (rugs don't block, so
+ *  furniture can sit on a rug). `except` skips one placed index (for a move). */
+function occupiedHomeTiles(player: Player, content: Content, except = -1): Set<string> {
+  const out = new Set<string>();
+  player.home.placed.forEach((p, i) => {
+    if (i === except) return;
+    const f = content.furniture[p.item];
+    if (!f || f.category === "rug") return; // rugs are walk-over coverings
+    for (const t of footTiles(f, p.x, p.y, p.rot)) out.add(t);
+  });
+  return out;
+}
+
+/** Recompute comfort from placed pieces and stamp the cottage/manor/palace flags. */
+function refreshHomeStanding(player: Player, content: Content): void {
+  let c = 0;
+  for (const p of player.home.placed) c += content.furniture[p.item]?.comfort ?? 0;
+  const set = (flag: string): void => { if (!player.flags.includes(flag)) player.flags.push(flag); };
+  if (c >= 25) set("home_cottage");
+  if (c >= 120) set("home_manor");
+  if (c >= 280) set("home_palace");
+}
+
+/** CRAFT: spend materials + Construction level to make a piece into home storage. */
+function craftFurniture(state: WorldState, content: Content, furnitureId: string, events: WorldEvent[]): void {
+  const { player } = state;
+  const f = content.furniture[furnitureId];
+  if (!f) return;
+  if (homeFloorSet(state).size === 0) {
+    events.push({ type: "LOG", message: "You can only build furniture inside your home." });
+    return;
+  }
+  if (skillLvl(player, "construction") < f.levelReq) {
+    events.push({ type: "LOG", message: `You need Construction level ${f.levelReq} to build the ${f.name}.` });
+    return;
+  }
+  for (const [item, qty] of Object.entries(f.materials)) {
+    if (countItem(player, item as ItemId) < (qty ?? 0)) {
+      events.push({ type: "LOG", message: `You're short of materials for the ${f.name}.` });
+      return;
+    }
+  }
+  for (const [item, qty] of Object.entries(f.materials)) {
+    for (let i = 0; i < (qty ?? 0); i++) removeOneItem(player, item as ItemId);
+  }
+  player.home.storage[furnitureId] = (player.home.storage[furnitureId] ?? 0) + 1;
+  grantXp(state, content, "construction", f.xp, events);
+  events.push({ type: "LOG", message: `You build a ${f.name}. It's ready to place in your home.` });
+}
+
+/** Validate a placement footprint against the room + existing pieces. */
+function canPlaceAt(state: WorldState, content: Content, f: FurnitureDef, x: number, y: number, rot: number, exceptIndex: number): boolean {
+  const floor = homeFloorSet(state);
+  if (floor.size === 0) return false;
+  const tiles = footTiles(f, x, y, rot);
+  for (const t of tiles) if (!floor.has(t)) return false; // must sit wholly on the room floor
+  if (f.category !== "rug") {
+    const occ = occupiedHomeTiles(state.player, content, exceptIndex);
+    for (const t of tiles) if (occ.has(t)) return false; // no blocking overlap
+  }
+  return true;
+}
+
+/** PLACE: put a stored piece down at (x, y, rot). */
+function placeFurniture(state: WorldState, content: Content, furnitureId: string, x: number, y: number, rot: number, events: WorldEvent[]): void {
+  const { player } = state;
+  const f = content.furniture[furnitureId];
+  if (!f) return;
+  if ((player.home.storage[furnitureId] ?? 0) <= 0) {
+    events.push({ type: "LOG", message: `You have no ${f.name} to place.` });
+    return;
+  }
+  if (!canPlaceAt(state, content, f, x, y, rot & 3, -1)) {
+    events.push({ type: "LOG", message: "It won't fit there." });
+    return;
+  }
+  player.home.storage[furnitureId]! -= 1;
+  if (player.home.storage[furnitureId]! <= 0) delete player.home.storage[furnitureId];
+  player.home.placed.push({ item: furnitureId, x, y, rot: rot & 3 });
+  if (f.bed) player.spawn = { x, y };
+  refreshHomeStanding(player, content);
+}
+
+/** MOVE: reposition an already-placed piece. */
+function moveFurniture(state: WorldState, content: Content, index: number, x: number, y: number, rot: number, events: WorldEvent[]): void {
+  const { player } = state;
+  const p = player.home.placed[index];
+  if (!p) return;
+  const f = content.furniture[p.item];
+  if (!f) return;
+  if (!canPlaceAt(state, content, f, x, y, rot & 3, index)) {
+    events.push({ type: "LOG", message: "It won't fit there." });
+    return;
+  }
+  p.x = x; p.y = y; p.rot = rot & 3;
+  if (f.bed) player.spawn = { x, y };
+}
+
+/** STORE: pick a placed piece back up into home storage. */
+function storeFurniture(state: WorldState, content: Content, index: number, events: WorldEvent[]): void {
+  const { player } = state;
+  const p = player.home.placed[index];
+  if (!p) return;
+  const f = content.furniture[p.item];
+  player.home.placed.splice(index, 1);
+  player.home.storage[p.item] = (player.home.storage[p.item] ?? 0) + 1;
+  refreshHomeStanding(player, content);
+  if (f) events.push({ type: "LOG", message: `You pack up the ${f.name}.` });
+}
+
+/** UPGRADE: swap a placed piece for the next tier of its category, in place. */
+function upgradeFurniture(state: WorldState, content: Content, index: number, events: WorldEvent[]): void {
+  const { player } = state;
+  const p = player.home.placed[index];
+  if (!p) return;
+  const cur = content.furniture[p.item];
+  if (!cur) return;
+  // The next tier is the next-higher-level piece in the same category.
+  const ladder = Object.values(content.furniture)
+    .filter((g) => g.category === cur.category)
+    .sort((a, b) => a.levelReq - b.levelReq);
+  const at = ladder.findIndex((g) => g.id === cur.id);
+  const next = at >= 0 ? ladder[at + 1] : undefined;
+  if (!next) { events.push({ type: "LOG", message: `The ${cur.name} is already the finest of its kind.` }); return; }
+  if (skillLvl(player, "construction") < next.levelReq) {
+    events.push({ type: "LOG", message: `You need Construction level ${next.levelReq} to upgrade to the ${next.name}.` });
+    return;
+  }
+  for (const [item, qty] of Object.entries(next.materials)) {
+    if (countItem(player, item as ItemId) < (qty ?? 0)) {
+      events.push({ type: "LOG", message: `You're short of materials to upgrade to the ${next.name}.` });
+      return;
+    }
+  }
+  // A bigger tier might not fit where the old one stood — check before committing.
+  if (!canPlaceAt(state, content, next, p.x, p.y, p.rot, index)) {
+    events.push({ type: "LOG", message: `The ${next.name} is larger — clear space around it first.` });
+    return;
+  }
+  for (const [item, qty] of Object.entries(next.materials)) {
+    for (let i = 0; i < (qty ?? 0); i++) removeOneItem(player, item as ItemId);
+  }
+  p.item = next.id;
+  grantXp(state, content, "construction", next.xp, events);
+  if (next.bed) player.spawn = { x: p.x, y: p.y };
+  refreshHomeStanding(player, content);
+  events.push({ type: "LOG", message: `You upgrade the ${cur.name} into a ${next.name}.` });
 }
 
 /**

@@ -20,16 +20,16 @@ import type { FurnitureDef } from "../core/types.ts";
 
 export const furniture: Record<string, FurnitureDef> = {
   // ===== BED — sets your respawn ============================================
-  fur_bed_pallet: { id: "fur_bed_pallet", name: "Straw Pallet", category: "bed", levelReq: 1, xp: 30, comfort: 3, bed: true, materials: { plank_ashwood: 3 }, blurb: "Boards and a straw tick. Sleep here and the road carries you home." },
-  fur_bed_wood: { id: "fur_bed_wood", name: "Wooden Bed", category: "bed", levelReq: 25, xp: 110, comfort: 11, bed: true, materials: { plank_greyoak: 4, cured_leather: 2 }, blurb: "A solid greyoak bed with a leather-strung frame. A proper night's rest." },
-  fur_bed_carved: { id: "fur_bed_carved", name: "Carved Bed", category: "bed", levelReq: 50, xp: 250, comfort: 20, bed: true, materials: { plank_ironbark: 4, hardened_leather: 3, wolf_pelt: 2 }, blurb: "Ironbark, carved and pelt-dressed. The bed of a settled, prosperous house." },
-  fur_bed_canopy: { id: "fur_bed_canopy", name: "Heartoak Canopy Bed", category: "bed", levelReq: 75, xp: 380, comfort: 34, bed: true, materials: { plank_heartoak: 5, heartoak_beam: 1, master_leather: 2, cut_gem: 2 }, blurb: "Heartoak posts, drawn drapes, gem-headed nails. The bed of someone who has arrived." },
+  fur_bed_pallet: { id: "fur_bed_pallet", name: "Straw Pallet", category: "bed", footprint: [2, 1], levelReq: 1, xp: 30, comfort: 3, bed: true, materials: { plank_ashwood: 3 }, blurb: "Boards and a straw tick. Sleep here and the road carries you home." },
+  fur_bed_wood: { id: "fur_bed_wood", name: "Wooden Bed", category: "bed", footprint: [2, 1], levelReq: 25, xp: 110, comfort: 11, bed: true, materials: { plank_greyoak: 4, cured_leather: 2 }, blurb: "A solid greyoak bed with a leather-strung frame. A proper night's rest." },
+  fur_bed_carved: { id: "fur_bed_carved", name: "Carved Bed", category: "bed", footprint: [2, 1], levelReq: 50, xp: 250, comfort: 20, bed: true, materials: { plank_ironbark: 4, hardened_leather: 3, wolf_pelt: 2 }, blurb: "Ironbark, carved and pelt-dressed. The bed of a settled, prosperous house." },
+  fur_bed_canopy: { id: "fur_bed_canopy", name: "Heartoak Canopy Bed", category: "bed", footprint: [2, 1], levelReq: 75, xp: 380, comfort: 34, bed: true, materials: { plank_heartoak: 5, heartoak_beam: 1, master_leather: 2, cut_gem: 2 }, blurb: "Heartoak posts, drawn drapes, gem-headed nails. The bed of someone who has arrived." },
 
   // ===== TABLE — décor ======================================================
-  fur_table_wood: { id: "fur_table_wood", name: "Wooden Table", category: "table", levelReq: 1, xp: 45, comfort: 4, materials: { plank_ashwood: 4 }, blurb: "Four planks and four legs. Sits the household, and takes a knife-scar without complaint." },
-  fur_table_carved: { id: "fur_table_carved", name: "Carved Table", category: "table", levelReq: 25, xp: 130, comfort: 11, materials: { plank_greyoak: 5, ashiron_rivet: 2 }, blurb: "Greyoak with turned legs and a carved apron. Handsome enough to keep clean." },
-  fur_table_iron: { id: "fur_table_iron", name: "Iron-Bound Table", category: "table", levelReq: 50, xp: 240, comfort: 19, materials: { plank_ironbark: 5, ashiron_bar: 3 }, blurb: "Ironbark on iron straps — a banquet board that won't warp in a hundred winters." },
-  fur_table_gold: { id: "fur_table_gold", name: "Golden Table", category: "table", levelReq: 75, xp: 400, comfort: 30, materials: { plank_heartoak: 6, gold_bar: 3, cut_gem: 1 }, blurb: "Heartoak inlaid with gold and a single set gem. Set it, and the hall expects kings." },
+  fur_table_wood: { id: "fur_table_wood", name: "Wooden Table", category: "table", footprint: [2, 1], levelReq: 1, xp: 45, comfort: 4, materials: { plank_ashwood: 4 }, blurb: "Four planks and four legs. Sits the household, and takes a knife-scar without complaint." },
+  fur_table_carved: { id: "fur_table_carved", name: "Carved Table", category: "table", footprint: [2, 1], levelReq: 25, xp: 130, comfort: 11, materials: { plank_greyoak: 5, ashiron_rivet: 2 }, blurb: "Greyoak with turned legs and a carved apron. Handsome enough to keep clean." },
+  fur_table_iron: { id: "fur_table_iron", name: "Iron-Bound Table", category: "table", footprint: [2, 1], levelReq: 50, xp: 240, comfort: 19, materials: { plank_ironbark: 5, ashiron_bar: 3 }, blurb: "Ironbark on iron straps — a banquet board that won't warp in a hundred winters." },
+  fur_table_gold: { id: "fur_table_gold", name: "Golden Table", category: "table", footprint: [2, 1], levelReq: 75, xp: 400, comfort: 30, materials: { plank_heartoak: 6, gold_bar: 3, cut_gem: 1 }, blurb: "Heartoak inlaid with gold and a single set gem. Set it, and the hall expects kings." },
 
   // ===== SEATING — décor ====================================================
   fur_seat_stool: { id: "fur_seat_stool", name: "Wooden Stools", category: "seating", levelReq: 1, xp: 35, comfort: 3, materials: { plank_ashwood: 2 }, blurb: "Three-legged stools. Honest, hard, and they never wobble for long." },
@@ -38,10 +38,10 @@ export const furniture: Record<string, FurnitureDef> = {
   fur_seat_throne: { id: "fur_seat_throne", name: "Gilded Throne", category: "seating", levelReq: 75, xp: 400, comfort: 30, materials: { plank_heartoak: 4, gold_bar: 2, master_leather: 2 }, blurb: "A gold-leafed throne in master leather. Sit in it and try not to give orders." },
 
   // ===== RUG — a floor covering you walk over (footing doesn't block) ========
-  fur_rug_hide: { id: "fur_rug_hide", name: "Hide Mat", category: "rug", levelReq: 1, xp: 30, comfort: 3, materials: { raw_hide: 2 }, blurb: "A pegged-out hide. Keeps the cold of the boards off your feet, just." },
-  fur_rug_woven: { id: "fur_rug_woven", name: "Woven Rug", category: "rug", levelReq: 20, xp: 100, comfort: 9, materials: { tanned_leather: 2, glass_bead: 2 }, blurb: "A patterned rug worked in dyed wool and bead. The first thing a guest remarks on." },
-  fur_rug_fur: { id: "fur_rug_fur", name: "Fur Carpet", category: "rug", levelReq: 45, xp: 200, comfort: 17, materials: { bear_pelt: 2, greymane_pelt: 1 }, blurb: "Bear and greymane pelts seamed into one great carpet. Warm as a hearth underfoot." },
-  fur_rug_plush: { id: "fur_rug_plush", name: "Plush Carpet", category: "rug", levelReq: 70, xp: 320, comfort: 28, materials: { silver_wolf_pelt: 2, master_leather: 1, cut_gem: 1 }, blurb: "Silver-wolf plush bordered in gem-stitched leather. You'll feel guilty walking on it." },
+  fur_rug_hide: { id: "fur_rug_hide", name: "Hide Mat", category: "rug", footprint: [2, 2], levelReq: 1, xp: 30, comfort: 3, materials: { raw_hide: 2 }, blurb: "A pegged-out hide. Keeps the cold of the boards off your feet, just." },
+  fur_rug_woven: { id: "fur_rug_woven", name: "Woven Rug", category: "rug", footprint: [2, 2], levelReq: 20, xp: 100, comfort: 9, materials: { tanned_leather: 2, glass_bead: 2 }, blurb: "A patterned rug worked in dyed wool and bead. The first thing a guest remarks on." },
+  fur_rug_fur: { id: "fur_rug_fur", name: "Fur Carpet", category: "rug", footprint: [2, 2], levelReq: 45, xp: 200, comfort: 17, materials: { bear_pelt: 2, greymane_pelt: 1 }, blurb: "Bear and greymane pelts seamed into one great carpet. Warm as a hearth underfoot." },
+  fur_rug_plush: { id: "fur_rug_plush", name: "Plush Carpet", category: "rug", footprint: [2, 2], levelReq: 70, xp: 320, comfort: 28, materials: { silver_wolf_pelt: 2, master_leather: 1, cut_gem: 1 }, blurb: "Silver-wolf plush bordered in gem-stitched leather. You'll feel guilty walking on it." },
 
   // ===== LIGHTING — glows at night ==========================================
   fur_light_candle: { id: "fur_light_candle", name: "Candle Stand", category: "lighting", levelReq: 1, xp: 35, comfort: 4, light: true, materials: { knucklestone_bar: 1, plank_ashwood: 1 }, blurb: "A floor stand of tallow candles. Modest light, and the smell of warm wax." },
