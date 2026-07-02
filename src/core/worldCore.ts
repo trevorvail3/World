@@ -3259,26 +3259,11 @@ function moveFishingSpots(
     obj.nextWanderAt = ctx.now + randRange(ctx, FISH_MOVE_MIN, FISH_MOVE_MAX);
     if (cands.length === 0) continue;
     obj.pos = cands[Math.floor(ctx.rng() * cands.length)]!;
-    // If the player was fishing this spot, follow it: walk to a stand tile
-    // beside its new water and recast on arrival (via pendingInteract), so a
-    // drifting spot never silently ends the session — no manual re-click.
+    // If the player was fishing this spot, it swam off — stop and tell them
+    // (OSRS-style: moving to the new spot and recasting is the player's call).
     if (state.player.activity.kind === "fishing" && state.player.activity.targetId === def.id) {
       clearActivity(state.player);
-      const p = obj.pos;
-      const stands: Vec2[] = [];
-      for (const [sx, sy] of [[p.x, p.y - 1], [p.x, p.y + 1], [p.x - 1, p.y], [p.x + 1, p.y]] as const) {
-        if (!blocked(sx, sy) && !isWater(sx, sy)) stands.push({ x: sx, y: sy });
-      }
-      if (stands.length > 0) {
-        const cur = state.player.pos;
-        stands.sort((a, b) => Math.hypot(a.x - cur.x, a.y - cur.y) - Math.hypot(b.x - cur.x, b.y - cur.y));
-        state.player.path = [stands[0]!];
-        state.player.pendingInteractId = def.id;
-        state.player.pendingInteractMode = null;
-        events.push({ type: "LOG", message: `The ${def.name} drifts down the shore — you follow it.` });
-      } else {
-        events.push({ type: "LOG", message: `The ${def.name} moves off down the shore.` });
-      }
+      events.push({ type: "LOG", message: `The ${def.name} moves off down the shore.` });
     }
   }
 }
