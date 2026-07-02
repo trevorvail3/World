@@ -1168,8 +1168,10 @@ export class Hud {
     if (data.item === "bird_nest") {
       this.dispatch({ type: "OPEN_NEST", slot: index });
     } else if (def.heals || def.buff) {
+      if (def.cat === "Potions" || def.doseNext || def.graceRestore || def.energyRestore) audio.play("drink");
       this.dispatch({ type: "EAT", slot: index });
     } else if (def.slot && WEARABLE.has(def.slot)) {
+      audio.play("ui");
       this.dispatch({ type: "EQUIP", slot: index });
     } else {
       this.inspectItem(index, screenX, screenY);

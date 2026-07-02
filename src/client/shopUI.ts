@@ -11,6 +11,7 @@
  * and re-reads live state after each one.
  */
 
+import { audio } from "./audio.ts";
 import type {
   Content,
   Intent,
@@ -341,6 +342,7 @@ export class ShopUI {
   }
 
   private dispatchAndRender(intent: Intent): void {
+    if (intent.type === "BUY" || intent.type === "SELL") audio.play("coin");
     this.dispatch(intent);
     this.render();
   }

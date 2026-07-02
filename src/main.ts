@@ -43,6 +43,7 @@ import { CharacterCreator, type CreatedCharacter } from "./client/characterCreat
 import { isNameAvailable, reserveName } from "./client/nameRegistry.ts";
 import { LoginUI } from "./client/loginUI.ts";
 import { currentUser, signOut } from "./client/supabase.ts";
+import { audio } from "./client/audio.ts";
 import { loadCloud, saveCloud, deleteCloud } from "./client/cloudSave.ts";
 
 // The opening atmosphere lines — mood first, mechanics never. Framed as legend
@@ -71,6 +72,7 @@ if (!canvas || !hudRoot || !app) {
 //     before reaching character creation or your save. A live session is kept
 //     in localStorage, so returning visitors skip straight past the login. ---
 function start(): void {
+  audio.setMode("menu"); // the Varath theme plays over the menus
   if (currentUser()) { void afterLogin(); return; }
   new LoginUI(app!, () => void afterLogin(), playOffline);
 }
@@ -308,6 +310,7 @@ function boot(newChar: CreatedCharacter | null, cloudReady: boolean): void {
   persist();
   void cloudPersist();
 
+  audio.setMode("world"); // theme fades; the region's ambience takes over
   game.start();
 
   const enter = (): void => {

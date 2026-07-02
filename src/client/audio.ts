@@ -1,15 +1,21 @@
 /**
  * src/client/audio.ts
  * -------------------
- * Procedural DARK-AMBIENT audio for Varath, synthesized with the Web Audio API.
- * Nothing is loaded or licensed — every sound is generated from oscillators and
- * noise, matching the game's procedural art. Two layers:
- *   1. A slow, evolving low drone (the "cavern" the whole game sits in), built
- *      from detuned sub-oscillators through a breathing low-pass, with an
- *      occasional distant toll for unease.
- *   2. Short SFX fired from game events (a dull blade thud, a bow's loosing, a
- *      kill's descending groan, a level-up swell, pickups…), all run through a
- *      long reverb so they sit in the same dark space.
+ * Procedural audio for Varath, synthesized with the Web Audio API. Nothing is
+ * loaded or licensed — every sound is generated from oscillators and noise,
+ * matching the game's procedural art. Four layers, on three buses:
+ *
+ *   1. SFX — a distinct short sound for every activity and event: the axe has
+ *      a bite, the pick a ring, the anvil a clang, the line a splash, the
+ *      cauldron a glug. All run through a long reverb so they share one space.
+ *   2. AMBIENCE — each region plays its own generated soundscape (city fountain
+ *      and crowd murmur, forest birdsong and owls, the Spine's howling wind,
+ *      cave drips in the Marrow, geothermal bubbling on the Ashfen, moor frogs,
+ *      river rush and gulls on the Redrun), crossfaded as you cross a border,
+ *      muffled when you step indoors, and shifting with the day/night cycle.
+ *   3. MUSIC — a composed theme (the "Varath motif": slow aeolian pads with a
+ *      bell melody) that plays over the login / character screens and hands
+ *      off to the world's ambience when you enter the game.
  *
  * Resilience (the autoplay policy is what usually breaks browser audio):
  *   - The AudioContext is created + resumed ONLY on the first real user gesture
@@ -22,23 +28,70 @@
 const VOL_KEY = "varath-audio-vol";
 const MUTE_KEY = "varath-audio-mute";
 const readVol = (): number => {
-  const v = Number(localStorage.getItem(VOL_KEY));
+  // Number(null) is 0 — a missing key must fall to the default, not silence.
+  const raw = localStorage.getItem(VOL_KEY);
+  if (raw === null || raw === "") return 0.45;
+  const v = Number(raw);
   return Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.45;
 };
 const readMute = (): boolean => localStorage.getItem(MUTE_KEY) === "1";
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 
+/** Mirrors render.ts's day cycle so the soundscape agrees with the sky. */
+const DAY_CYCLE_MS = 420000;
+/** 0 by day … 1 at midnight (same curve the renderer's veil uses). */
+const nightNow = (): number => {
+  const phase = (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS;
+  return Math.max(0, -Math.sin(phase * Math.PI * 2 - Math.PI / 2));
+};
+
 export type Sfx =
-  | "hit" | "miss" | "bow" | "kill" | "hurt" | "death"
-  | "levelup" | "pickup" | "gather" | "heal" | "ui";
+  // combat
+  | "hit" | "miss" | "bow" | "magic" | "kill" | "hurt" | "death"
+  // skilling — one voice per trade
+  | "chop" | "mine" | "splash" | "sizzle" | "smith" | "craft" | "brew"
+  | "dig" | "vault" | "pray" | "rustle" | "gather"
+  // moments
+  | "levelup" | "quest" | "achieve" | "teleport"
+  // items + shops
+  | "pickup" | "heal" | "drink" | "coin" | "bank"
+  // interface
+  | "ui" | "open";
+
+/** Where the player is standing, for the ambient scene (render.ts's Biome +
+ *  "menu" for the title screens). */
+export type SceneKey =
+  | "hills" | "city" | "greyoak" | "spine" | "marrow"
+  | "ashfen" | "heartmoor" | "redrun" | "menu";
+
+interface ToneOpts {
+  f0: number; f1?: number; type?: OscillatorType; dur: number; peak: number;
+  lp?: number; wet?: boolean; delay?: number; bus?: GainNode | null;
+}
+interface NoiseOpts {
+  dur: number; peak: number; lp?: number; hp?: number; wet?: boolean;
+  delay?: number; bus?: GainNode | null;
+}
 
 class AudioManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private sfxBus: GainNode | null = null;
+  private ambBus: GainNode | null = null;   // scene layers (pre-muffle)
+  private ambFilter: BiquadFilterNode | null = null; // indoor muffle
+  private musBus: GainNode | null = null;
   private reverbIn: ConvolverNode | null = null;
   private noiseBuf: AudioBuffer | null = null;
-  private ambient: { stop(): void } | null = null;
-  private tollTimer: number | null = null;
+
+  private scene: { key: SceneKey; stop(): void } | null = null;
+  private sceneTimers: number[] = [];
+  private themeTimer: number | null = null;
+  private themePlaying = false;
+
+  private mode: "menu" | "world" = "menu";
+  private worldScene: SceneKey = "hills";
+  private indoor = false;
+
   private volume = 0.45;
   private muted = false;
   private unlocked = false;
@@ -56,14 +109,14 @@ class AudioManager {
   }
 
   // --- lifecycle ------------------------------------------------------------
-  /** Create + resume the context on a user gesture, then bring the drone up. */
+  /** Create + resume the context on a user gesture, then start the soundscape. */
   unlock(): void {
     try {
       if (!this.ctx) this.init();
       if (!this.ctx) return;
       if (this.ctx.state === "suspended") void this.ctx.resume();
       this.unlocked = true;
-      if (!this.muted) this.startAmbient();
+      if (!this.muted) this.startSoundscape();
       if (this.gestures) {
         for (const e of ["pointerdown", "keydown", "touchstart"] as const) {
           window.removeEventListener(e, this.gestures);
@@ -82,13 +135,21 @@ class AudioManager {
     this.master.gain.value = this.muted ? 0 : this.volume;
     this.master.connect(ctx.destination);
     // Long, dark reverb send: a decaying noise impulse so everything echoes as
-    // if underground.
+    // if in one big space.
     this.reverbIn = ctx.createConvolver();
     this.reverbIn.buffer = this.makeImpulse(2.6, 2.4);
     const wet = ctx.createGain();
     wet.gain.value = 0.85;
     this.reverbIn.connect(wet).connect(this.master);
-    this.noiseBuf = this.makeNoise(1);
+    this.noiseBuf = this.makeNoise(2);
+    // Buses: effects at full, ambience through the indoor-muffle filter, music
+    // a touch under the effects so a fanfare still cuts through the theme.
+    this.sfxBus = ctx.createGain(); this.sfxBus.gain.value = 1.0; this.sfxBus.connect(this.master);
+    this.ambFilter = ctx.createBiquadFilter();
+    this.ambFilter.type = "lowpass"; this.ambFilter.frequency.value = 20000;
+    this.ambBus = ctx.createGain(); this.ambBus.gain.value = 0.9;
+    this.ambBus.connect(this.ambFilter).connect(this.master);
+    this.musBus = ctx.createGain(); this.musBus.gain.value = 0.8; this.musBus.connect(this.master);
   }
 
   private makeNoise(sec: number): AudioBuffer {
@@ -115,70 +176,8 @@ class AudioManager {
     return buf;
   }
 
-  // --- the drone ------------------------------------------------------------
-  startAmbient(): void {
-    if (!this.ctx || !this.master || this.ambient) return;
-    const ctx = this.ctx;
-    const bus = ctx.createGain();
-    bus.gain.value = 0;
-    bus.connect(this.master);
-    if (this.reverbIn) bus.connect(this.reverbIn);
-    bus.gain.linearRampToValueAtTime(0.085, ctx.currentTime + 5); // slow fade-in
-
-    const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass"; lp.frequency.value = 380; lp.Q.value = 1.2;
-    lp.connect(bus);
-
-    const nodes: { stop(t: number): void }[] = [];
-    // Drone voices: a low A, its slightly detuned twin (slow beating), a fifth,
-    // and a faint upper voice a minor second up for the unease.
-    const voices: [number, OscillatorType, number][] = [
-      [55, "sine", 1], [55.3, "sine", 1], [82.41, "sine", 0.5], [116.5, "triangle", 0.18],
-    ];
-    for (const [f, type, g] of voices) {
-      const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
-      const og = ctx.createGain(); og.gain.value = g * 0.5;
-      o.connect(og).connect(lp); o.start(); nodes.push(o);
-    }
-    // Breathing filter sweep + a slow amplitude swell.
-    const flfo = ctx.createOscillator(); flfo.frequency.value = 0.05;
-    const flfoG = ctx.createGain(); flfoG.gain.value = 200;
-    flfo.connect(flfoG).connect(lp.frequency); flfo.start(); nodes.push(flfo);
-    const alfo = ctx.createOscillator(); alfo.frequency.value = 0.06;
-    const alfoG = ctx.createGain(); alfoG.gain.value = 0.03;
-    alfo.connect(alfoG).connect(bus.gain); alfo.start(); nodes.push(alfo);
-
-    this.ambient = {
-      stop: () => {
-        try {
-          bus.gain.cancelScheduledValues(ctx.currentTime);
-          bus.gain.setValueAtTime(bus.gain.value, ctx.currentTime);
-          bus.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.5);
-          for (const n of nodes) { try { n.stop(ctx.currentTime + 1.7); } catch { /* */ } }
-        } catch { /* */ }
-      },
-    };
-    // A distant toll every so often, for atmosphere.
-    this.scheduleToll();
-  }
-  private scheduleToll(): void {
-    if (typeof window === "undefined") return;
-    const next = 14000 + Math.random() * 26000;
-    this.tollTimer = window.setTimeout(() => {
-      if (this.ambient && !this.muted) {
-        this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.2, peak: 0.16, lp: 320, wet: true });
-        this.tone({ f0: 73.5, type: "sine", dur: 2.6, peak: 0.06, lp: 400, wet: true });
-      }
-      this.scheduleToll();
-    }, next);
-  }
-  stopAmbient(): void {
-    if (this.tollTimer !== null) { try { window.clearTimeout(this.tollTimer); } catch { /* */ } this.tollTimer = null; }
-    if (this.ambient) { this.ambient.stop(); this.ambient = null; }
-  }
-
   // --- synthesis primitives -------------------------------------------------
-  private tone(o: { f0: number; f1?: number; type?: OscillatorType; dur: number; peak: number; lp?: number; wet?: boolean; delay?: number }): void {
+  private tone(o: ToneOpts): void {
     if (!this.ctx || !this.master) return;
     const ctx = this.ctx;
     const t = ctx.currentTime + (o.delay ?? 0);
@@ -192,14 +191,31 @@ class AudioManager {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(o.peak, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
-    node.connect(g); g.connect(this.master);
+    node.connect(g); g.connect(o.bus === undefined ? this.sfxBus ?? this.master : o.bus ?? this.master);
     if (o.wet && this.reverbIn) g.connect(this.reverbIn);
     osc.start(t); osc.stop(t + o.dur + 0.05);
   }
-  private noise(o: { dur: number; peak: number; lp?: number; hp?: number; wet?: boolean }): void {
+  /** A musical note: soft attack, longer body — for pads and the bell melody. */
+  private note(o: { f: number; type?: OscillatorType; dur: number; peak: number; delay: number; attack?: number; wet?: boolean }): void {
+    if (!this.ctx || !this.musBus) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + o.delay;
+    const atk = o.attack ?? 0.02;
+    const osc = ctx.createOscillator();
+    osc.type = o.type ?? "sine";
+    osc.frequency.setValueAtTime(o.f, t);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(o.peak, t + atk);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    osc.connect(g); g.connect(this.musBus);
+    if (o.wet !== false && this.reverbIn) g.connect(this.reverbIn);
+    osc.start(t); osc.stop(t + o.dur + 0.05);
+  }
+  private noise(o: NoiseOpts): void {
     if (!this.ctx || !this.master || !this.noiseBuf) return;
     const ctx = this.ctx;
-    const t = ctx.currentTime;
+    const t = ctx.currentTime + (o.delay ?? 0);
     const src = ctx.createBufferSource(); src.buffer = this.noiseBuf;
     let node: AudioNode = src;
     if (o.hp != null) { const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = o.hp; src.connect(f); node = f; }
@@ -207,7 +223,7 @@ class AudioManager {
     const g = ctx.createGain();
     g.gain.setValueAtTime(o.peak, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
-    node.connect(g); g.connect(this.master);
+    node.connect(g); g.connect(o.bus === undefined ? this.sfxBus ?? this.master : o.bus ?? this.master);
     if (o.wet && this.reverbIn) g.connect(this.reverbIn);
     src.start(t); src.stop(t + o.dur + 0.02);
   }
@@ -217,6 +233,7 @@ class AudioManager {
     if (!this.unlocked || this.muted || !this.ctx) return;
     try {
       switch (id) {
+        // ---- combat ----
         case "hit": // a dull, heavy blade/club thud
           this.noise({ dur: 0.14, peak: 0.45, hp: 220, lp: 1100, wet: true });
           this.tone({ f0: 120, f1: 58, type: "sine", dur: 0.18, peak: 0.5, wet: true });
@@ -227,6 +244,10 @@ class AudioManager {
         case "bow": // a low loosing twang
           this.tone({ f0: 640, f1: 170, type: "triangle", dur: 0.18, peak: 0.28, wet: true });
           this.noise({ dur: 0.05, peak: 0.08, hp: 1600 });
+          break;
+        case "magic": // an arcane bolt: a falling zap under a rising shimmer
+          this.tone({ f0: 880, f1: 160, type: "sawtooth", dur: 0.2, peak: 0.2, lp: 2400, wet: true });
+          this.tone({ f0: 1320, f1: 2200, type: "sine", dur: 0.14, peak: 0.08, wet: true });
           break;
         case "kill": // a descending groan + thud
           this.tone({ f0: 150, f1: 46, type: "sawtooth", dur: 0.5, peak: 0.4, lp: 800, wet: true });
@@ -239,28 +260,423 @@ class AudioManager {
           this.tone({ f0: 180, f1: 38, type: "sawtooth", dur: 1.8, peak: 0.4, lp: 600, wet: true });
           this.tone({ f0: 184, f1: 41, type: "sine", dur: 1.8, peak: 0.2, wet: true });
           break;
+
+        // ---- skilling: one voice per trade ----
+        case "chop": // an axe biting wood: a thock + woody knock
+          this.noise({ dur: 0.09, peak: 0.4, hp: 150, lp: 900 });
+          this.tone({ f0: 240, f1: 90, type: "sine", dur: 0.1, peak: 0.3 });
+          this.tone({ f0: 480, f1: 300, type: "triangle", dur: 0.06, peak: 0.12, delay: 0.01 });
+          break;
+        case "mine": // a pick on stone: a bright tink over a low thud
+          this.tone({ f0: 2400, f1: 1900, type: "square", dur: 0.05, peak: 0.09, wet: true });
+          this.noise({ dur: 0.05, peak: 0.14, hp: 2400 });
+          this.tone({ f0: 160, f1: 80, type: "sine", dur: 0.1, peak: 0.28 });
+          break;
+        case "splash": // water taking something: a plip + spray
+          this.tone({ f0: 620, f1: 160, type: "sine", dur: 0.12, peak: 0.2, wet: true });
+          this.noise({ dur: 0.22, peak: 0.16, hp: 500, lp: 2200, wet: true });
+          break;
+        case "sizzle": // fat on a hot pan
+          this.noise({ dur: 0.4, peak: 0.11, hp: 3600 });
+          this.noise({ dur: 0.18, peak: 0.08, hp: 2400, delay: 0.12 });
+          break;
+        case "smith": // the anvil: a struck clang with a metallic ring
+          this.tone({ f0: 1250, type: "triangle", dur: 0.4, peak: 0.22, wet: true });
+          this.tone({ f0: 1875, type: "sine", dur: 0.3, peak: 0.1, wet: true });
+          this.noise({ dur: 0.04, peak: 0.18, hp: 2000 });
+          this.tone({ f0: 240, f1: 170, type: "sine", dur: 0.12, peak: 0.26 });
+          break;
+        case "craft": // two quick wooden taps at the bench
+          this.tone({ f0: 330, f1: 260, type: "triangle", dur: 0.05, peak: 0.2 });
+          this.noise({ dur: 0.04, peak: 0.1, lp: 900 });
+          this.tone({ f0: 300, f1: 240, type: "triangle", dur: 0.05, peak: 0.16, delay: 0.09 });
+          break;
+        case "brew": // rising glugs out of the cauldron
+          this.tone({ f0: 130, f1: 240, type: "sine", dur: 0.09, peak: 0.2 });
+          this.tone({ f0: 160, f1: 300, type: "sine", dur: 0.09, peak: 0.18, delay: 0.11 });
+          this.tone({ f0: 200, f1: 380, type: "sine", dur: 0.08, peak: 0.14, delay: 0.22 });
+          break;
+        case "dig": // a spade of soil
+          this.noise({ dur: 0.14, peak: 0.26, lp: 500 });
+          this.tone({ f0: 130, f1: 70, type: "sine", dur: 0.1, peak: 0.2 });
+          break;
+        case "vault": // an airy pass over an obstacle
+          this.noise({ dur: 0.26, peak: 0.13, hp: 700, lp: 2600, wet: true });
+          break;
+        case "pray": // a soft devotional chime
+          this.tone({ f0: 660, type: "sine", dur: 0.5, peak: 0.1, wet: true });
+          this.tone({ f0: 990, type: "sine", dur: 0.4, peak: 0.05, wet: true, delay: 0.06 });
+          break;
+        case "rustle": // leaves / undergrowth giving something up
+          this.noise({ dur: 0.1, peak: 0.1, hp: 1200, lp: 4200 });
+          this.noise({ dur: 0.14, peak: 0.08, hp: 1400, lp: 3800, delay: 0.09 });
+          break;
+        case "gather": // the neutral soft tick (fallback for unmapped skills)
+          this.noise({ dur: 0.05, peak: 0.16, hp: 300, lp: 1000 });
+          this.tone({ f0: 170, f1: 110, type: "sine", dur: 0.08, peak: 0.16, lp: 500 });
+          break;
+
+        // ---- moments ----
         case "levelup": { // a dark but rewarding swell (low fifth → octave)
           this.tone({ f0: 110, type: "triangle", dur: 0.6, peak: 0.22, wet: true });
           this.tone({ f0: 164.81, type: "triangle", dur: 0.6, peak: 0.2, wet: true, delay: 0.1 });
           this.tone({ f0: 220, type: "triangle", dur: 0.8, peak: 0.22, wet: true, delay: 0.22 });
           break;
         }
+        case "quest": { // a real jingle: a rising minor arpeggio landing home
+          const notes: [number, number][] = [[440, 0], [523.25, 0.14], [659.25, 0.28], [880, 0.44]];
+          for (const [f, d] of notes) this.tone({ f0: f, type: "triangle", dur: 0.5, peak: 0.16, wet: true, delay: d });
+          this.tone({ f0: 220, type: "sine", dur: 1.0, peak: 0.14, wet: true, delay: 0.44 });
+          break;
+        }
+        case "achieve": // a bright two-note chime
+          this.tone({ f0: 784, type: "sine", dur: 0.3, peak: 0.14, wet: true });
+          this.tone({ f0: 1046.5, type: "sine", dur: 0.5, peak: 0.12, wet: true, delay: 0.12 });
+          break;
+        case "teleport": // the waystone: a rising sweep into shimmer
+          this.tone({ f0: 220, f1: 880, type: "sine", dur: 0.5, peak: 0.16, wet: true });
+          this.noise({ dur: 0.5, peak: 0.06, hp: 1200, lp: 5000, wet: true });
+          this.tone({ f0: 1320, type: "sine", dur: 0.35, peak: 0.06, wet: true, delay: 0.3 });
+          break;
+
+        // ---- items + shops ----
         case "pickup": // a soft two-note blip
           this.tone({ f0: 430, type: "sine", dur: 0.07, peak: 0.16 });
           this.tone({ f0: 660, type: "sine", dur: 0.09, peak: 0.16, delay: 0.06 });
           break;
-        case "gather": // a soft muted tap
-          this.noise({ dur: 0.05, peak: 0.16, hp: 300, lp: 1000 });
-          this.tone({ f0: 170, f1: 110, type: "sine", dur: 0.08, peak: 0.16, lp: 500 });
-          break;
         case "heal": // a soft rising glow
           this.tone({ f0: 320, f1: 520, type: "sine", dur: 0.3, peak: 0.14, wet: true });
           break;
+        case "drink": // two descending glugs
+          this.tone({ f0: 260, f1: 140, type: "sine", dur: 0.11, peak: 0.2 });
+          this.tone({ f0: 200, f1: 120, type: "sine", dur: 0.12, peak: 0.18, delay: 0.13 });
+          break;
+        case "coin": // two quick metal ticks
+          this.tone({ f0: 2093, type: "square", dur: 0.04, peak: 0.05 });
+          this.tone({ f0: 2637, type: "square", dur: 0.05, peak: 0.05, delay: 0.05 });
+          break;
+        case "bank": // a heavy chest: thud, then the latch
+          this.noise({ dur: 0.18, peak: 0.28, lp: 420, wet: true });
+          this.tone({ f0: 95, f1: 60, type: "sine", dur: 0.22, peak: 0.3 });
+          this.noise({ dur: 0.03, peak: 0.1, hp: 1800, delay: 0.16 });
+          break;
+
+        // ---- interface ----
         case "ui": // a tiny soft click
           this.tone({ f0: 420, type: "sine", dur: 0.04, peak: 0.07 });
           break;
+        case "open": // a soft whoosh as a panel slides open
+          this.noise({ dur: 0.14, peak: 0.07, hp: 500, lp: 2400 });
+          this.tone({ f0: 300, f1: 420, type: "sine", dur: 0.1, peak: 0.05 });
+          break;
       }
     } catch { /* never let audio break the frame */ }
+  }
+
+  // --- ambience: per-region generated soundscapes -----------------------------
+  /** Track a scene timer so scene teardown can cancel it. */
+  private after(ms: number, fn: () => void): void {
+    const id = window.setTimeout(() => {
+      const i = this.sceneTimers.indexOf(id);
+      if (i >= 0) this.sceneTimers.splice(i, 1);
+      fn();
+    }, ms);
+    this.sceneTimers.push(id);
+  }
+  /** A repeating randomized scene event: fires, then re-arms itself. */
+  private every(minMs: number, maxMs: number, fire: () => void): void {
+    const arm = (): void => this.after(minMs + Math.random() * (maxMs - minMs), () => {
+      if (!this.muted) { try { fire(); } catch { /* */ } }
+      arm();
+    });
+    arm();
+  }
+  /** A continuous filtered-noise bed (wind, water, hiss) with a slow LFO wobble. */
+  private noiseBed(bus: GainNode, o: { hp?: number; lp: number; gain: number; lfoHz?: number; lfoDepth?: number; lfoTarget?: "gain" | "filter" }): { stop(t: number): void }[] {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf; src.loop = true;
+    let node: AudioNode = src;
+    if (o.hp != null) { const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = o.hp; src.connect(f); node = f; }
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = o.lp;
+    node.connect(lp);
+    const g = ctx.createGain(); g.gain.value = o.gain;
+    lp.connect(g).connect(bus);
+    const nodes: { stop(t: number): void }[] = [src];
+    if (o.lfoHz) {
+      const lfo = ctx.createOscillator(); lfo.frequency.value = o.lfoHz;
+      const lg = ctx.createGain();
+      if (o.lfoTarget === "filter") { lg.gain.value = o.lfoDepth ?? o.lp * 0.4; lfo.connect(lg).connect(lp.frequency); }
+      else { lg.gain.value = (o.lfoDepth ?? 0.4) * o.gain; lfo.connect(lg).connect(g.gain); }
+      lfo.start(); nodes.push(lfo);
+    }
+    src.start();
+    return nodes;
+  }
+  /** A sustained tonal voice for scene drones. */
+  private droneVoice(bus: GainNode, f: number, type: OscillatorType, gain: number): { stop(t: number): void }[] {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain(); g.gain.value = gain;
+    o.connect(g).connect(bus);
+    o.start();
+    return [o];
+  }
+
+  /** Small melodic/animal one-shots the scenes schedule (all through ambBus). */
+  private birdChirp(): void {
+    const base = 2200 + Math.random() * 1400;
+    const n = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < n; i++) {
+      this.tone({ f0: base + Math.random() * 300, f1: base * 0.72, type: "sine", dur: 0.08, peak: 0.045, delay: i * 0.12, wet: true, bus: this.ambBus });
+    }
+  }
+  private owlHoot(): void {
+    this.tone({ f0: 340, f1: 300, type: "sine", dur: 0.35, peak: 0.06, lp: 700, wet: true, bus: this.ambBus });
+    this.tone({ f0: 320, f1: 285, type: "sine", dur: 0.5, peak: 0.055, lp: 700, wet: true, delay: 0.45, bus: this.ambBus });
+  }
+  private cricket(): void {
+    for (let i = 0; i < 4; i++) {
+      this.tone({ f0: 4200, type: "sine", dur: 0.03, peak: 0.02, delay: i * 0.07, bus: this.ambBus });
+    }
+  }
+  private caveDrip(): void {
+    this.tone({ f0: 1900, f1: 800, type: "sine", dur: 0.09, peak: 0.06, wet: true, bus: this.ambBus });
+  }
+  private bubble(): void {
+    this.tone({ f0: 90 + Math.random() * 60, f1: 220 + Math.random() * 120, type: "sine", dur: 0.1, peak: 0.07, bus: this.ambBus });
+  }
+  private frogCroak(): void {
+    this.tone({ f0: 110, f1: 90, type: "sawtooth", dur: 0.09, peak: 0.05, lp: 500, bus: this.ambBus });
+    this.tone({ f0: 115, f1: 95, type: "sawtooth", dur: 0.11, peak: 0.045, lp: 500, delay: 0.14, bus: this.ambBus });
+  }
+  private gullMewl(): void {
+    this.tone({ f0: 1250, f1: 720, type: "sawtooth", dur: 0.35, peak: 0.028, lp: 2200, wet: true, bus: this.ambBus });
+  }
+  private distantToll(): void {
+    this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.2, peak: 0.16, lp: 320, wet: true, bus: this.ambBus });
+    this.tone({ f0: 73.5, type: "sine", dur: 2.6, peak: 0.06, lp: 400, wet: true, bus: this.ambBus });
+  }
+
+  /** Build and start the ambient scene for a region. Returns its teardown. */
+  private buildScene(key: SceneKey): { key: SceneKey; stop(): void } {
+    const ctx = this.ctx!;
+    const bus = ctx.createGain();
+    bus.gain.value = 0;
+    bus.connect(this.ambBus!);
+    bus.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5); // crossfade in
+    const nodes: { stop(t: number): void }[] = [];
+    const bed = (o: Parameters<AudioManager["noiseBed"]>[1]): void => { nodes.push(...this.noiseBed(bus, o)); };
+    const drone = (f: number, t: OscillatorType, g: number): void => { nodes.push(...this.droneVoice(bus, f, t, g)); };
+    const day = (): boolean => nightNow() < 0.25;
+
+    switch (key) {
+      case "city": // the fountain's steady water, a low crowd murmur, a far bell
+        bed({ hp: 700, lp: 2000, gain: 0.028, lfoHz: 0.3, lfoDepth: 0.25 });   // fountain spray
+        bed({ lp: 320, gain: 0.05, lfoHz: 0.11, lfoDepth: 0.5 });               // crowd murmur
+        this.every(24000, 50000, () => this.distantToll());
+        break;
+      case "greyoak": // deep forest: leaf wind, dense day birdsong, night owls
+        bed({ hp: 250, lp: 1500, gain: 0.05, lfoHz: 0.16, lfoDepth: 0.55 });    // canopy wind
+        this.every(2500, 7000, () => { if (day()) this.birdChirp(); });
+        this.every(9000, 22000, () => { if (!day()) this.owlHoot(); });
+        this.every(3000, 8000, () => { if (!day()) this.cricket(); });
+        break;
+      case "spine": // the high pass: a howling, sweeping wind and little else
+        bed({ hp: 150, lp: 900, gain: 0.085, lfoHz: 0.07, lfoDepth: 500, lfoTarget: "filter" });
+        bed({ hp: 400, lp: 2400, gain: 0.02, lfoHz: 0.13, lfoDepth: 0.7 });     // gusting top layer
+        break;
+      case "marrow": { // the deeps: the old dark drone + echoing drips
+        const lp = ctx.createBiquadFilter();
+        lp.type = "lowpass"; lp.frequency.value = 380; lp.Q.value = 1.2;
+        lp.connect(bus);
+        for (const [f, t, g] of [[55, "sine", 0.05], [55.3, "sine", 0.05], [82.41, "sine", 0.025]] as [number, OscillatorType, number][]) {
+          const o = ctx.createOscillator(); o.type = t; o.frequency.value = f;
+          const og = ctx.createGain(); og.gain.value = g;
+          o.connect(og).connect(lp); o.start(); nodes.push(o);
+        }
+        this.every(2200, 7000, () => this.caveDrip());
+        break;
+      }
+      case "ashfen": // geothermal flats: steam hiss + mud bubbling
+        bed({ hp: 3000, lp: 8000, gain: 0.016, lfoHz: 0.2, lfoDepth: 0.5 });    // steam vents
+        bed({ lp: 260, gain: 0.035, lfoHz: 0.09, lfoDepth: 0.4 });               // deep heat rumble
+        this.every(700, 2600, () => this.bubble());
+        break;
+      case "heartmoor": // the moor: soggy wind, frogs, night insects
+        bed({ hp: 180, lp: 1100, gain: 0.04, lfoHz: 0.12, lfoDepth: 0.5 });
+        this.every(3000, 9000, () => this.frogCroak());
+        this.every(2500, 6000, () => { if (!day()) this.cricket(); });
+        break;
+      case "redrun": // the river country: steady rush, day gulls near the sea
+        bed({ hp: 350, lp: 1600, gain: 0.05, lfoHz: 0.18, lfoDepth: 0.3 });     // river rush
+        this.every(9000, 26000, () => { if (day()) this.gullMewl(); });
+        this.every(4000, 10000, () => { if (!day()) this.cricket(); });
+        break;
+      case "menu": { // under the theme: a thin, mysterious air
+        drone(55, "sine", 0.035); drone(55.4, "sine", 0.035);
+        bed({ hp: 200, lp: 800, gain: 0.02, lfoHz: 0.06, lfoDepth: 0.5 });
+        break;
+      }
+      case "hills": // the open Knuckle Hills: soft wind, sparse birds, crickets
+      default:
+        bed({ hp: 200, lp: 1200, gain: 0.038, lfoHz: 0.1, lfoDepth: 0.5 });
+        drone(55, "sine", 0.022); drone(55.3, "sine", 0.022);                    // a faint floor
+        this.every(5000, 14000, () => { if (day()) this.birdChirp(); });
+        this.every(2500, 6000, () => { if (!day()) this.cricket(); });
+        this.every(30000, 70000, () => this.distantToll());
+        break;
+    }
+
+    return {
+      key,
+      stop: () => {
+        try {
+          bus.gain.cancelScheduledValues(ctx.currentTime);
+          bus.gain.setValueAtTime(bus.gain.value, ctx.currentTime);
+          bus.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.8);
+          for (const n of nodes) { try { n.stop(ctx.currentTime + 2); } catch { /* */ } }
+        } catch { /* */ }
+      },
+    };
+  }
+
+  private clearSceneTimers(): void {
+    for (const id of this.sceneTimers) { try { window.clearTimeout(id); } catch { /* */ } }
+    this.sceneTimers = [];
+  }
+
+  /** Swap to a region's soundscape (no-op if it's already playing). Called by
+   *  the game loop as the player moves; `indoor` muffles the outside world. */
+  setScene(key: SceneKey, indoor = false): void {
+    this.worldScene = key;
+    if (indoor !== this.indoor) {
+      this.indoor = indoor;
+      if (this.ctx && this.ambFilter && this.ambBus) {
+        const t = this.ctx.currentTime;
+        this.ambFilter.frequency.cancelScheduledValues(t);
+        this.ambFilter.frequency.setValueAtTime(this.ambFilter.frequency.value, t);
+        this.ambFilter.frequency.linearRampToValueAtTime(indoor ? 550 : 20000, t + 0.6);
+        this.ambBus.gain.cancelScheduledValues(t);
+        this.ambBus.gain.setValueAtTime(this.ambBus.gain.value, t);
+        this.ambBus.gain.linearRampToValueAtTime(indoor ? 0.45 : 0.9, t + 0.6);
+      }
+    }
+    if (!this.unlocked || this.muted || this.mode !== "world") return;
+    if (this.scene?.key === key) return;
+    try {
+      this.clearSceneTimers();
+      this.scene?.stop();
+      this.scene = this.buildScene(key);
+    } catch { /* */ }
+  }
+
+  // --- the theme -------------------------------------------------------------
+  /**
+   * "Varath" — the opening theme. Slow aeolian pads (Am F C G | Am F Dm Em)
+   * under a bell-voiced melody that enters halfway; a distant toll opens each
+   * pass. ~50s, loops until the world starts. All synthesized on the spot.
+   */
+  private scheduleTheme(): void {
+    if (!this.ctx || !this.musBus) return;
+    const BEAT = 0.78; // ~77bpm
+    const bar = (n: number): number => n * 4 * BEAT;
+    // Chord tones (root/third/fifth around octave 3–4) + bass root.
+    const CH: Record<string, { tri: number[]; bass: number }> = {
+      Am: { tri: [220, 261.63, 329.63], bass: 110 },
+      F:  { tri: [174.61, 220, 261.63], bass: 87.31 },
+      C:  { tri: [261.63, 329.63, 392], bass: 130.81 },
+      G:  { tri: [246.94, 293.66, 392], bass: 98 },
+      Dm: { tri: [146.83, 174.61, 220], bass: 73.42 },
+      Em: { tri: [164.81, 196, 246.94], bass: 82.41 },
+    };
+    const PROG = ["Am", "F", "C", "G", "Am", "F", "Dm", "Em"]; // 2 bars each
+    // The identity toll, once, at the top.
+    this.tone({ f0: 49, f1: 41, type: "sine", dur: 3.4, peak: 0.12, lp: 320, wet: true, bus: this.musBus });
+    // Pads + bass.
+    for (let i = 0; i < PROG.length; i++) {
+      const c = CH[PROG[i]!]!;
+      const at = bar(i * 2);
+      for (const f of c.tri) {
+        this.note({ f, type: "triangle", dur: bar(2) + 1.2, peak: 0.045, delay: at, attack: 1.4 });
+        this.note({ f: f * 0.5, type: "sine", dur: bar(2) + 1.2, peak: 0.03, delay: at, attack: 1.4 });
+      }
+      for (const b of [0, 2]) { // bass on beats 1 + 3 of each chord's bars
+        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.09, delay: at + b * BEAT, attack: 0.03 });
+        this.note({ f: c.bass, type: "sine", dur: 1.6, peak: 0.07, delay: at + bar(1) + b * BEAT, attack: 0.03 });
+      }
+    }
+    // The melody (bars 9–16): the Varath motif, bell-voiced (sine + 3rd partial).
+    const bell = (f: number, atBeat: number, beats: number, vel = 1): void => {
+      const at = bar(8) + atBeat * BEAT;
+      this.note({ f, type: "sine", dur: beats * BEAT + 0.9, peak: 0.085 * vel, delay: at, attack: 0.015 });
+      this.note({ f: f * 3.01, type: "sine", dur: beats * BEAT * 0.5, peak: 0.012 * vel, delay: at, attack: 0.015 });
+    };
+    // over Am
+    bell(440, 0, 2); bell(523.25, 2, 1); bell(493.88, 3, 1); bell(659.25, 4, 3, 1.15);
+    // over F
+    bell(698.46, 8, 2, 1.1); bell(659.25, 10, 1); bell(523.25, 11, 1); bell(587.33, 12, 3);
+    // over Dm
+    bell(587.33, 16, 2); bell(698.46, 18, 1); bell(659.25, 19, 1); bell(587.33, 20, 1.5); bell(523.25, 21.5, 1.5);
+    // over Em — resolve home
+    bell(493.88, 24, 2); bell(523.25, 26, 1); bell(493.88, 27, 1); bell(440, 28, 4, 1.2);
+
+    // Loop: re-arm just before the pass ends.
+    const loopMs = bar(16) * 1000;
+    this.themeTimer = window.setTimeout(() => {
+      if (this.themePlaying && !this.muted) this.scheduleTheme();
+    }, loopMs - 400);
+  }
+  private startTheme(): void {
+    if (this.themePlaying) return;
+    this.themePlaying = true;
+    try { this.scheduleTheme(); } catch { /* */ }
+  }
+  private stopTheme(): void {
+    this.themePlaying = false;
+    if (this.themeTimer !== null) { try { window.clearTimeout(this.themeTimer); } catch { /* */ } this.themeTimer = null; }
+    // Let sounding notes ring out under a music-bus fade, then restore the bus.
+    if (this.ctx && this.musBus) {
+      const t = this.ctx.currentTime;
+      this.musBus.gain.cancelScheduledValues(t);
+      this.musBus.gain.setValueAtTime(this.musBus.gain.value, t);
+      this.musBus.gain.linearRampToValueAtTime(0.0001, t + 2.5);
+      const bus = this.musBus;
+      window.setTimeout(() => { try { bus.gain.setValueAtTime(0.8, this.ctx!.currentTime); } catch { /* */ } }, 3000);
+    }
+  }
+
+  // --- modes ------------------------------------------------------------------
+  /** "menu" (login/creator: the theme plays) or "world" (region ambience). */
+  setMode(mode: "menu" | "world"): void {
+    if (this.mode === mode) return;
+    this.mode = mode;
+    if (!this.unlocked || this.muted) return;
+    this.startSoundscape();
+  }
+  private startSoundscape(): void {
+    try {
+      if (this.mode === "menu") {
+        if (this.scene?.key !== "menu") {
+          this.clearSceneTimers();
+          this.scene?.stop();
+          this.scene = this.buildScene("menu");
+        }
+        this.startTheme();
+      } else {
+        this.stopTheme();
+        if (this.scene?.key !== this.worldScene) {
+          this.clearSceneTimers();
+          this.scene?.stop();
+          this.scene = this.buildScene(this.worldScene);
+        }
+      }
+    } catch { /* */ }
+  }
+  private stopSoundscape(): void {
+    this.stopTheme();
+    this.clearSceneTimers();
+    if (this.scene) { this.scene.stop(); this.scene = null; }
   }
 
   // --- settings -------------------------------------------------------------
@@ -275,8 +691,8 @@ class AudioManager {
     this.muted = m;
     try { localStorage.setItem(MUTE_KEY, m ? "1" : "0"); } catch { /* */ }
     if (this.master) this.master.gain.value = m ? 0 : this.volume;
-    if (m) this.stopAmbient();
-    else if (this.unlocked) this.startAmbient();
+    if (m) this.stopSoundscape();
+    else if (this.unlocked) this.startSoundscape();
   }
 }
 

@@ -1864,8 +1864,9 @@ function drawDaylight(
 
 type Biome = "spine" | "marrow" | "redrun" | "ashfen" | "heartmoor" | "greyoak" | "city" | "hills";
 
-/** Which region the player is standing in (drives grading + which weather runs). */
-function biomeAt(x: number, y: number): Biome {
+/** Which region the player is standing in (drives grading + which weather runs).
+ *  Exported for the audio engine, which keys its ambient scene off the same map. */
+export function biomeAt(x: number, y: number): Biome {
   for (const r of REGIONS) {
     if (x >= r.nx && x < r.nx + r.w && y >= r.ny && y < r.ny + r.h) return r.key as Biome;
   }

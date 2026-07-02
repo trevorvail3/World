@@ -7,6 +7,7 @@
  * keep the character's pack in sync with what it deposits/withdraws.
  */
 
+import { audio } from "./audio.ts";
 import type { Content, Intent, ItemId, WorldState } from "../core/types.ts";
 import {
   allOrders, cancelOrder, depositGold, depositItem, items as geItems, myOrders,
@@ -232,9 +233,11 @@ export class ExchangeUI {
     return free;
   }
   private take(kind: "gold" | "item", amount: number, item?: ItemId): void {
+    audio.play("coin");
     this.dispatch({ type: "GE_MOVE", dir: "take", kind, amount, ...(item ? { item } : {}) });
   }
   private give(kind: "gold" | "item", amount: number, item?: ItemId, noted?: boolean): void {
+    audio.play("coin");
     this.dispatch({ type: "GE_MOVE", dir: "give", kind, amount, ...(item ? { item } : {}), ...(noted ? { noted: true } : {}) });
   }
   /** Room for a note of this item: any empty slot, or an existing note stack. */

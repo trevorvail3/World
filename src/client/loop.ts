@@ -41,13 +41,13 @@ import { Dialogue } from "./dialogue.ts";
 import type { Guide } from "./guide.ts";
 import { Hud } from "./hud.ts";
 import { Minimap, WorldMapModal } from "./minimap.ts";
-import { Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
+import { biomeAt, Camera, drawWorld, setCombatHits, setDrawDistance, setLootLabels, TILE, type HitFx } from "./render.ts";
 import { CRIER_SHOUTS } from "./crier.ts";
-import { audio } from "./audio.ts";
+import { audio, type Sfx } from "./audio.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
-import { OVERWORLD_HEIGHT } from "../content/map.ts";
+import { enterableAt, instanceRectAt, OVERWORLD_HEIGHT } from "../content/map.ts";
 import { objectPos, objectHidden, travelFare, equipRequirement } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent, pathToWithin } from "./pathfinding.ts";
 import { getSocial } from "./social.ts";
@@ -127,6 +127,23 @@ const SPARK_COLOR: Record<string, string> = {
   construction: "#a59a8c",
   woodcraft: "#9a7a4a",
   farming: "#7fae6a",
+};
+
+/** Each trade's own voice, played on its XP beat (see audio.ts for the sounds). */
+const SKILL_SFX: Record<string, Sfx> = {
+  forestry: "chop",
+  mining: "mine",
+  fishing: "splash",
+  hunter: "rustle",
+  smithing: "smith",
+  cooking: "sizzle",
+  crafting: "craft",
+  herblore: "brew",
+  construction: "craft",
+  woodcraft: "craft",
+  farming: "dig",
+  agility: "vault",
+  faith: "pray",
 };
 
 interface Marker {
@@ -361,6 +378,7 @@ export class Game {
   private shake: { born: number; mag: number; dur: number } | null = null;
   /** Throttle so the gather "tick" SFX doesn't machine-gun on fast actions. */
   private lastGatherSfx = 0;
+  private lastSceneCheck = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -506,6 +524,16 @@ export class Game {
     const events = this.bridge.tick(now);
     this.handleEvents(events, now);
     this.guide.update(this.bridge.state);
+    // Keep the soundscape on the player's region (throttled; setScene no-ops
+    // when nothing changed). Indoors — a home instance or under a lifted city
+    // roof — the outside world muffles.
+    if (now - this.lastSceneCheck > 400) {
+      this.lastSceneCheck = now;
+      const p = this.bridge.state.player.pos;
+      const px = Math.round(p.x), py = Math.round(p.y);
+      const indoor = instanceRectAt(px, py) !== null || enterableAt(px, py) !== null;
+      audio.setScene(biomeAt(px, py), indoor);
+    }
     this.checkPickup();
     this.checkCampfire();
     // "Cook all": once the current dish finishes (activity idle), start the next
@@ -659,10 +687,12 @@ export class Game {
           const tid = this.bridge.state.player.activity.targetId;
           const tp = tid ? this.positionOf(tid) : null;
           if (tp) this.sparks.push({ x: tp.x, y: tp.y, born: now, color: SPARK_COLOR[ev.skill] ?? "#caa05a", n: 5 });
-          // A soft tick for gathering/production skills (combat has its own hits).
-          if (SPARK_COLOR[ev.skill] && now - this.lastGatherSfx > 240) {
+          // Every trade has its own voice: the axe bites, the pick rings, the
+          // anvil clangs, the cauldron glugs (combat skills have their own hits).
+          const sfx = SKILL_SFX[ev.skill];
+          if (sfx && now - this.lastGatherSfx > 240) {
             this.lastGatherSfx = now;
-            audio.play("gather");
+            audio.play(sfx);
           }
           break;
         }
@@ -703,14 +733,16 @@ export class Game {
           this.hud.log("You wake up, dazed but alive.");
           break;
         case "OPEN_BANK":
+          audio.play("bank");
           this.bank.show(this.bridge.state);
           break;
         case "OPEN_EXCHANGE":
+          audio.play("open");
           void this.hud.openExchange();
           break;
         case "OPEN_SHOP": {
           const shopDef = this.bridge.content.shops.find((s) => s.id === ev.shop);
-          if (shopDef) this.shop.show(this.bridge.state, shopDef);
+          if (shopDef) { audio.play("open"); this.shop.show(this.bridge.state, shopDef); }
           break;
         }
         case "OPEN_PLANT":
@@ -723,9 +755,11 @@ export class Game {
           this.records.show(this.bridge.state);
           break;
         case "HOOKED_FISH":
+          audio.play("splash");
           this.tension.start({ species: ev.species, weight: ev.weight, length: ev.length, strength: ev.strength });
           break;
         case "FISH_LANDED": {
+          audio.play("splash");
           // A rising banner over the player; the core already logs the weigh-in.
           const p = this.bridge.state.player.pos;
           const label = ev.rank > 0 ? `${ev.species} — #${ev.rank}!` : `${ev.species} ${ev.weight.toFixed(1)}kg`;
@@ -771,6 +805,7 @@ export class Game {
           this.openTravel(ev.objId);
           break;
         case "QUEST_COMPLETED": {
+          audio.play("quest");
           const p = this.bridge.state.player.pos;
           this.floats.push({
             x: p.x,
@@ -793,12 +828,14 @@ export class Game {
         case "QUEST_ADVANCED":
           break;
         case "COMPANION_FOUND": {
+          audio.play("achieve");
           const p = this.bridge.state.player.pos;
           const name = this.bridge.content.items[ev.item]?.name ?? "A companion";
           this.floats.push({ x: p.x, y: p.y - 0.7, text: `${name} joins you!`, color: "#9fd07a", born: now, size: 17 });
           break;
         }
         case "ACHIEVEMENT": {
+          audio.play("achieve");
           const p = this.bridge.state.player.pos;
           this.floats.push({ x: p.x, y: p.y - 0.9, text: `Achievement: ${ev.name}`, color: "#f2cf6b", born: now, size: 16 });
           break;
@@ -835,8 +872,9 @@ export class Game {
             // A blow we landed on something: a bow looses, a blade thuds, a miss
             // whiffs. (The bow is read from the wielded mainhand.)
             const main = this.bridge.state.player.equipment.mainhand;
-            const ranged = !!(main && this.bridge.content.items[main]?.ranged);
-            audio.play(ev.amount > 0 ? (ranged ? "bow" : "hit") : "miss");
+            const mdef = main ? this.bridge.content.items[main] : undefined;
+            const style = mdef?.ranged ? "bow" : mdef?.magic ? "magic" : "hit";
+            audio.play(ev.amount > 0 ? style : "miss");
           }
           const pos = this.positionOf(ev.targetId);
           if (pos) {
@@ -1182,6 +1220,7 @@ export class Game {
             this.hud.log(`The toll to ${o.name} is ${fare}g — you can't cover it.`);
             return;
           }
+          audio.play("teleport");
           this.dispatch({ type: "TRAVEL", to: o.id });
         },
       };
