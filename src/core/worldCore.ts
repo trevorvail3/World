@@ -219,7 +219,7 @@ function fishingCapeWorn(player: Player, content: Content): boolean {
 
 function rollPierFish(player: Player, content: Content, rodTier: number, ctx: Ctx): HookedFish {
   const level = skillLvl(player, "fishing");
-  const skillFrac = Math.min(1, (level / 99) * 0.6 + (rodTier / 10) * 0.4);
+  const skillFrac = Math.min(1, (level / LEVEL_CAP) * 0.6 + (rodTier / 10) * 0.4);
   const pool = content.pierFish.filter((f) => level >= f.minLevel);
   const avail = pool.length > 0 ? pool : [content.pierFish[0]!];
 
@@ -4445,7 +4445,7 @@ function graceMax(player: Player): number {
   // A real combat resource: start with a 30-Grace pool so Devotion is a style you
   // can fight with (≈10 Sparks / 5 Emberbolts before you drop to the free bolt),
   // not a three-cast novelty. Each Devotion level adds two more, so the pool keeps
-  // pace as the spells get costlier — level 50 = 128, level 99 = 226.
+  // pace as the spells get costlier — level 50 = 128, level 100 = 228.
   return 28 + 2 * Math.max(1, skillLvl(player, "faith"));
 }
 

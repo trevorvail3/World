@@ -197,8 +197,8 @@ export const shops: ShopDef[] = [
     npc: "cape_master",
     name: "The Hall of Capes",
     greeting: "Bring a skill to one hundred and its cape is yours — a million gold, and well earned. Master every one, and the Cape of Varath is your right.",
-    // Mastery rewards: one cape per skill at level 99, and the all-99 max cape.
-    // The core gates each purchase on the level requirement (and all-99 for Varath).
+    // Mastery rewards: one cape per skill at level 100, and the all-100 max cape.
+    // The core gates each purchase on the level requirement (and all-100 for Varath).
     stock: [
       { item: "cape_mining", price: 1000000, qty: 1 },
       { item: "cape_smithing", price: 1000000, qty: 1 },

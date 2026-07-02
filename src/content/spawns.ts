@@ -406,7 +406,7 @@ const rawObjects: WorldObjectDef[] = [
   {
     id: "cape_master", kind: "npc", x: 74, y: 43, name: "Master of Capes",
     lines: [
-      "Every skill has a summit. Reach it — level ninety-nine — and I'll cut you the cape that says so. A million gold; you'll have it by then.",
+      "Every skill has a summit. Reach it — level one hundred — and I'll cut you the cape that says so. A million gold; you'll have it by then.",
       "Master all of them, and there is one cape left: the Cape of Varath. No coin truly buys it. You earn it, and I merely hand it over.",
     ],
   },
