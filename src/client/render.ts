@@ -1344,9 +1344,8 @@ export function drawWorld(
     } else if (def.kind === "housing_plot") {
       drawHousingPlot(g, px + TILE / 2, py + TILE / 2, !!obj.owned);
     } else if (def.kind === "build_hotspot") {
-      const f = obj.furniture ? content.furniture[obj.furniture] : undefined;
-      const { idx, last } = furnitureRank(content, f);
-      drawHotspot(g, px + TILE / 2, py + TILE / 2, f, idx, last, now, trophy);
+      // Free-placement homes own furniture now (drawn from player.home.placed
+      // below); the fixed footings render nothing.
     } else if (def.kind === "room_seal") {
       if (!obj.owned) drawRoomSeal(g, px + TILE / 2, py + TILE / 2); // unbuilt: boarded-up doorway
     } else {
@@ -1371,10 +1370,6 @@ export function drawWorld(
       lights.push([px + TILE / 2, py + TILE / 2]);
     } else if (def.kind === "lamppost") {
       lights.push([px + TILE / 2, py + TILE / 2 - 10]); // glow at the lantern
-    } else if (def.kind === "build_hotspot" && obj.furniture) {
-      const lf = content.furniture[obj.furniture];
-      // A built cooking hearth or any lighting piece warms/lights the home.
-      if (lf && (lf.category === "kitchen" || lf.light)) lights.push([px + TILE / 2, py + TILE / 2]);
     }
     // Name label — monsters show their combat level (OSRS-style). A slain
     // monster (respawning) drops its label until it's back.
@@ -1451,7 +1446,12 @@ export function drawWorld(
 
   // Baked-in home décor: windows on the outer wall + lit wall sconces, drawn for
   // whichever home the player is standing in (so a bare house still feels lived-in).
-  if (region && region.y0 === INTERIOR_TOP) drawHomeDressing(g, region.x0, cam, now, lights);
+  if (region && region.y0 === INTERIOR_TOP) {
+    drawHomeDressing(g, region.x0, cam, now, lights);
+    // Free-placement furniture (the Homestead): everything the player has set
+    // down in their home, drawn at its own tile + rotation, under the player.
+    drawPlacedFurniture(g, state, content, cam, now, lights, trophy);
+  }
 
   // --- Other players (ghosts): translucent snapshots from the shared world,
   //     drawn under the player and culled to the current view + instance. ---
@@ -2616,6 +2616,55 @@ function drawRug(g: CanvasRenderingContext2D, cx: number, cy: number, idx: numbe
 }
 
 /** A build footing: an empty marked square, or the polished furniture built on it. */
+/** A placed piece's footprint at a rotation: [w, h], swapped on an odd turn. */
+function placedFootprint(f: FurnitureDef, rot: number): [number, number] {
+  const [w, h] = f.footprint ?? [1, 1];
+  return (rot & 1) === 1 ? [h, w] : [w, h];
+}
+
+/** Draw every piece the player has placed in their home, at its own tile +
+ *  rotation (rugs first so furniture sits on top), reusing the hotspot art. */
+function drawPlacedFurniture(
+  g: CanvasRenderingContext2D,
+  state: WorldState,
+  content: Content,
+  cam: Camera,
+  now: number,
+  lights: Array<[number, number]>,
+  trophy: string | undefined,
+): void {
+  const placed = state.player.home.placed;
+  if (!placed || placed.length === 0) return;
+  // Rugs (floor coverings) under everything; then the rest, back-to-front by y.
+  const order = placed
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => {
+      const ra = content.furniture[a.p.item]?.category === "rug" ? 0 : 1;
+      const rb = content.furniture[b.p.item]?.category === "rug" ? 0 : 1;
+      return ra - rb || a.p.y - b.p.y;
+    });
+  for (const { p } of order) {
+    const f = content.furniture[p.item];
+    if (!f) continue;
+    const [w, h] = placedFootprint(f, p.rot);
+    const cx = (p.x + w / 2) * TILE - cam.x;
+    const cy = (p.y + h / 2) * TILE - cam.y;
+    if (cx < -TILE * 2 || cy < -TILE * 2 || cx > g.canvas.width + TILE * 2 || cy > g.canvas.height + TILE * 2) continue;
+    const { idx, last } = furnitureRank(content, f);
+    if (p.rot) {
+      g.save();
+      g.translate(cx, cy);
+      g.rotate((p.rot & 3) * Math.PI / 2);
+      drawHotspot(g, 0, 0, f, idx, last, now, trophy);
+      g.restore();
+    } else {
+      drawHotspot(g, cx, cy, f, idx, last, now, trophy);
+    }
+    // A cooking hearth or any lighting piece warms the room.
+    if (f.category === "kitchen" || f.light) lights.push([cx, cy]);
+  }
+}
+
 function drawHotspot(
   g: CanvasRenderingContext2D,
   cx: number,

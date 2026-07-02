@@ -47,7 +47,8 @@ import { audio, type CreatureVoice, type Sfx } from "./audio.ts";
 import { currentGhosts, startPresence } from "./presence.ts";
 import { getTrackedQuest } from "./questTrack.ts";
 import { resolveGear } from "./gearLook.ts";
-import { enterableAt, instanceRectAt, OVERWORLD_HEIGHT } from "../content/map.ts";
+import { enterableAt, instanceRectAt, INTERIOR_TOP, OVERWORLD_HEIGHT } from "../content/map.ts";
+import { DecorateUI } from "./decorate.ts";
 import { objectPos, objectHidden, travelFare, equipRequirement } from "../core/worldCore.ts";
 import { findPath, pathToAdjacent, pathToWithin } from "./pathfinding.ts";
 import { getSocial } from "./social.ts";
@@ -397,6 +398,7 @@ export class Game {
   private shake: { born: number; mag: number; dur: number } | null = null;
   /** Throttle so the gather "tick" SFX doesn't machine-gun on fast actions. */
   private lastGatherSfx = 0;
+  private decorate!: DecorateUI;
   private lastSceneCheck = 0;
   private lastFoeVocal = 0;
   private combatTargetId: string | null = null;
@@ -427,6 +429,14 @@ export class Game {
     this.tension = new TensionUI(uiRoot, (success) => this.dispatch({ type: "LAND_FISH", success }));
     this.levelUp = new LevelUp(uiRoot, bridge.content);
     this.activeSkill = new ActiveSkill(uiRoot, bridge.content);
+    this.decorate = new DecorateUI(uiRoot, {
+      state: () => this.bridge.state,
+      content: bridge.content,
+      dispatch: (i) => this.dispatch(i),
+      menu,
+      log: (m) => this.hud.log(m),
+      inHome: () => this.playerInHome(),
+    });
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
@@ -548,11 +558,21 @@ export class Game {
     return this.canvas.height / (this.zoom * this.dpr);
   }
 
+  /** True while the player stands on their own home's floor (the interior band). */
+  private playerInHome(): boolean {
+    const p = this.bridge.state.player.pos;
+    const x = Math.round(p.x), y = Math.round(p.y);
+    if (y < INTERIOR_TOP) return false; // homes live in the hidden interior band
+    const map = this.bridge.state.map;
+    return map.tiles[y * map.width + x] === "plank";
+  }
+
   private update(now: number): void {
     // 1) Advance the world and react to what happened.
     const events = this.bridge.tick(now);
     this.handleEvents(events, now);
     this.guide.update(this.bridge.state);
+    this.decorate.update();
     // Keep the soundscape on the player's region (throttled; setScene no-ops
     // when nothing changed). Indoors — a home instance or under a lifted city
     // roof — the outside world muffles.
@@ -846,7 +866,7 @@ export class Game {
           this.openCraft(ev.station, ev.objId);
           break;
         case "OPEN_BUILD":
-          this.openBuild(ev.hotspotId, ev.category, ev.current);
+          this.decorate.open(); // free-placement mode replaces the per-footing menu
           break;
         case "OPEN_EXTENSION":
           this.openExtension(ev.sealId, ev.name, ev.levelReq, ev.materials);
@@ -1161,72 +1181,6 @@ export class Game {
   }
 
   /** A homestead footing: pick a furniture piece to build (or clear it). */
-  private openBuild(hotspotId: string, category: string, current: string | null): void {
-    const content = this.bridge.content;
-    const player = this.bridge.state.player;
-    const conLvl = player.skills.construction.level;
-    const have = (id: string): number =>
-      player.inventory.reduce((n, s) => (s?.item === id ? n + s.qty : n), 0);
-    const hasMats = (f: { materials: Record<string, number | undefined> }): boolean =>
-      Object.entries(f.materials).every(([item, qty]) => have(item) >= (qty ?? 0));
-
-    const pieces = Object.values(content.furniture)
-      .filter((f) => f.category === category)
-      .sort((a, b) => a.levelReq - b.levelReq);
-
-    const items: MenuItem[] = [];
-
-    // If a functional piece is already built here, lead with using it (cook /
-    // bank / build at home) — the everyday action — then offer to re-furnish.
-    const built = current ? content.furniture[current] : undefined;
-    if (built?.station) {
-      const verbs: Record<string, string> = {
-        bank: "Open", workbench: "Build at", anvil: "Forge at",
-        cauldron: "Brew at", furnace: "Smelt at", fire: "Cook at",
-      };
-      items.push({
-        label: `${verbs[built.station] ?? "Use"} the ${built.name}`,
-        tone: "action",
-        onSelect: () => this.dispatch({ type: "USE_FURNITURE", hotspotId }),
-      });
-    }
-
-    items.push(...pieces.map((f): MenuItem => {
-      const isBuilt = current === f.id;
-      const leveled = conLvl >= f.levelReq;
-      const ready = leveled && hasMats(f);
-      const cost = Object.entries(f.materials)
-        .map(([item, qty]) => `${qty}× ${content.items[item as ItemId].name}`).join(", ");
-      return {
-        label: isBuilt ? `${f.name} ✓` : `${f.name}  ·  Con ${f.levelReq}`,
-        target: isBuilt ? "built here" : leveled ? cost : `needs Construction ${f.levelReq}`,
-        tone: ready && !isBuilt ? "action" : "normal",
-        onSelect: () => {
-          if (isBuilt) { this.hud.log(`The ${f.name} is already built here.`); return; }
-          if (!leveled) { this.hud.log(`You need Construction level ${f.levelReq} to build the ${f.name}.`); return; }
-          if (!hasMats(f)) { this.hud.log(`You're short of materials for the ${f.name}.`); return; }
-          this.dispatch({ type: "BUILD_FURNITURE", hotspotId, furnitureId: f.id });
-        },
-      };
-    }));
-
-    if (current) {
-      items.push({
-        label: "Clear this footing",
-        tone: "normal",
-        onSelect: () => this.dispatch({ type: "REMOVE_FURNITURE", hotspotId }),
-      });
-    }
-
-    const label = category[0]!.toUpperCase() + category.slice(1);
-    this.menu.show(
-      window.innerWidth / 2,
-      window.innerHeight / 2,
-      `Build — ${label}`,
-      items,
-      "Build from your Construction materials. Replace a piece any time to redecorate.",
-    );
-  }
 
   /** Offer to build an add-on room (a wing): show the cost, confirm to build. */
   private openExtension(sealId: string, name: string, levelReq: number, materials: Record<string, number>): void {
@@ -2243,6 +2197,8 @@ export class Game {
   }
 
   private defaultAction(tile: Vec2, sx: number, sy: number): void {
+    // Decorate mode swallows world taps (place / move / pick pieces).
+    if (this.decorate.isActive() && this.decorate.handleWorldTap(tile, sx, sy)) return;
     this.cookAll = null; // any deliberate tap ends a "Cook all" run
     const obj = this.objectAt(tile);
     // An item is armed with "Use": this tap picks the target.
