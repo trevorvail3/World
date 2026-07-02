@@ -1497,7 +1497,14 @@ export function drawWorld(
       g, pl.pos, cam, now, pl.appearance,
       pl.path.length > 0, playerAction(pl, content, now),
       resolveGear(pl.equipment, content), playerFaceLeft,
-      mountId ? { id: mountId, gold: ownsCosmetic("saddle_gold"), barding: ownsCosmetic("horse_armor") } : undefined,
+      mountId ? {
+        id: mountId,
+        gold: ownsCosmetic("saddle_gold"),
+        barding: ownsCosmetic("horse_armor"),
+        silver: !ownsCosmetic("saddle_gold") && ownsCosmetic("saddle_silver"),
+        blanket: ownsCosmetic("mount_blanket"),
+        plume: ownsCosmetic("mount_plume"),
+      } : undefined,
     );
     if (php) g.restore();
     // Strike particles: at the moment a swing lands (the activity clock just
@@ -5267,7 +5274,7 @@ function drawPlayer(
   action?: AvatarAnim["action"],
   gear: GearLook = {},
   flip = false,
-  mount?: { id: string; gold: boolean; barding: boolean },
+  mount?: MountDress,
 ): void {
   const cx = pos.x * TILE + TILE / 2 - cam.x;
   const cy = pos.y * TILE + TILE / 2 - cam.y;
@@ -5294,6 +5301,8 @@ function drawPlayer(
 // rest. A leather saddle always; gilded when the rider owns the Gilded
 // Saddle, plus steel barding (chest plate + chamfron) with the Steel Barding.
 interface MountLook { coat: string; mane: string; ears: "point" | "long" | "round" | "horn"; tusks?: boolean; bulky?: boolean }
+/** Everything a rider's cosmetics can hang on the rig. */
+export interface MountDress { id: string; gold: boolean; barding: boolean; silver?: boolean; blanket?: boolean; plume?: boolean }
 const MOUNT_LOOKS: Record<string, MountLook> = {
   mount_pony:         { coat: "#8a7a66", mane: "#5c5044", ears: "point" },
   mount_horse:        { coat: "#6b4a2e", mane: "#3a2818", ears: "point" },            // bay
@@ -5301,10 +5310,7 @@ const MOUNT_LOOKS: Record<string, MountLook> = {
   mount_courser:      { coat: "#8a5a30", mane: "#573418", ears: "point" },
   mount_dustrunner:   { coat: "#a3703c", mane: "#6b4522", ears: "point" },            // red dun
   mount_courier:      { coat: "#7a6a52", mane: "#4c4034", ears: "point" },
-  mount_galloper:     { coat: "#5c4632", mane: "#33251a", ears: "point" },
   mount_runemarked:   { coat: "#3a3634", mane: "#211e1c", ears: "point" },
-  mount_marshstrider: { coat: "#7c7668", mane: "#524e42", ears: "point" },
-  mount_spinecharger: { coat: "#59524c", mane: "#38332e", ears: "point" },
   mount_ferryman:     { coat: "#3c4048", mane: "#23262c", ears: "point" },
   mount_mule:         { coat: "#7a6a58", mane: "#4c4234", ears: "long" },
   mount_ox:           { coat: "#5a4a3a", mane: "#3a2f24", ears: "round", bulky: true },
@@ -5313,14 +5319,12 @@ const MOUNT_LOOKS: Record<string, MountLook> = {
   mount_bristleback:  { coat: "#6a5240", mane: "#42322a", ears: "round", tusks: true, bulky: true },
   mount_ironboar:     { coat: "#57504a", mane: "#332e2a", ears: "round", tusks: true, bulky: true },
   mount_greymane:     { coat: "#8b8b86", mane: "#5b5b57", ears: "round", tusks: true, bulky: true },
-  mount_craggoat:     { coat: "#b9b2a4", mane: "#8a8274", ears: "horn" },
   mount_hound:        { coat: "#4a4b52", mane: "#2c2d33", ears: "point" },
   mount_nighthound:   { coat: "#33343a", mane: "#1c1d22", ears: "point" },
   mount_stormhound:   { coat: "#5a616c", mane: "#3a3f48", ears: "point" },
   mount_ridgewolf:    { coat: "#6f7178", mane: "#4a4c52", ears: "point" },
   mount_silverwolf:   { coat: "#b4b8c0", mane: "#83878f", ears: "point" },
   mount_wraithsteed:  { coat: "#4e5258", mane: "#2e3136", ears: "point" },
-  mount_bogwisp:      { coat: "#6a705c", mane: "#474c3c", ears: "point" },
   mount_deepwing:     { coat: "#4c4650", mane: "#2e2a32", ears: "point" },
   mount_deepstrider:  { coat: "#5c5852", mane: "#3a3733", ears: "round", bulky: true },
   mount_palecrawler:  { coat: "#8a8578", mane: "#5e5a4e", ears: "round", bulky: true },
@@ -5333,7 +5337,7 @@ function drawMountRig(
   now: number,
   moving: boolean,
   flip: boolean,
-  mount: { id: string; gold: boolean; barding: boolean },
+  mount: MountDress,
 ): void {
   const look = MOUNT_LOOKS[mount.id] ?? MOUNT_LOOKS["mount_horse"]!;
   const coat = look.coat, mane = look.mane;
@@ -5415,17 +5419,37 @@ function drawMountRig(
     g.beginPath(); g.ellipse(-bodyW - 4, -16 - bob + dip, 3.4, 2.2, -0.25, 0, Math.PI * 2); g.fill();
     g.fillStyle = "#cdd3dc"; g.fillRect(-bodyW - 6.4, -16.6 - bob + dip, 4.6, 0.9);
   }
-  // --- Saddle: leather, or gilded (cosmetic) ---
-  const sBase = mount.gold ? "#c9992e" : "#5a3c22";
-  const sLit = mount.gold ? "#f2d060" : "#7a5432";
+  // --- Striped blanket (cosmetic): a woven pad under the saddle ---
+  if (mount.blanket) {
+    g.fillStyle = "#7d3a34";
+    g.beginPath(); g.ellipse(-1, -8.6 - bob, 8.6, 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#c8b78e";
+    g.fillRect(-6.6, -10.2 - bob, 2.2, 4.4);
+    g.fillRect(-1.4, -10.6 - bob, 2.2, 4.6);
+    g.fillRect(3.8, -10.2 - bob, 2.2, 4.4);
+  }
+  // --- Scarlet plume (cosmetic): a tall crest off the headstall ---
+  if (mount.plume) {
+    g.strokeStyle = "#a52f28"; g.lineWidth = 2.4; g.lineCap = "round";
+    g.beginPath();
+    g.moveTo(-bodyW - 2.6, -19 - bob + dip);
+    g.quadraticCurveTo(-bodyW - 1.6, -25 - bob + dip, -bodyW - 4.6, -27.5 - bob + dip);
+    g.stroke();
+    g.lineCap = "butt";
+    g.fillStyle = "#c8463c";
+    g.beginPath(); g.ellipse(-bodyW - 4.4, -26.5 - bob + dip, 2.2, 3.6, -0.5, 0, Math.PI * 2); g.fill();
+  }
+  // --- Saddle: leather, silvered, or gilded (cosmetic) ---
+  const sBase = mount.gold ? "#c9992e" : mount.silver ? "#9aa3ad" : "#5a3c22";
+  const sLit = mount.gold ? "#f2d060" : mount.silver ? "#d5dde6" : "#7a5432";
   g.fillStyle = sBase;
   g.beginPath(); g.ellipse(-1, -10 - bob, 6.2, 3, 0, 0, Math.PI * 2); g.fill();
   g.fillStyle = sLit;
   g.beginPath(); g.ellipse(-1, -10.8 - bob, 5, 1.7, 0, 0, Math.PI * 2); g.fill();
   g.strokeStyle = sBase; g.lineWidth = 2; // girth strap
   g.beginPath(); g.moveTo(-1, -5 - bob); g.lineTo(-1, 3 - bob); g.stroke();
-  if (mount.gold) { // gilded glint
-    g.fillStyle = "rgba(255,240,190,0.9)";
+  if (mount.gold || mount.silver) { // precious-metal glint
+    g.fillStyle = mount.gold ? "rgba(255,240,190,0.9)" : "rgba(235,245,255,0.9)";
     g.fillRect(-3.4, -11.6 - bob, 2, 1);
   }
   g.restore();

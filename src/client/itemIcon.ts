@@ -270,7 +270,11 @@ function paletteFor(def: ItemDef, shape: Shape): Pal {
     case "bread": return shadeFrom(hashColor(id, 22, 26, 38, 20, 50, 16));
     case "hide": return shadeFrom(hashColor(id, 14, 34, 30, 22, 32, 18));
     case "cape": return shadeFrom(hashColor(id, 0, 360, 44, 22, 38, 16));
-    case "mount": return shadeFrom(hashColor(id, 16, 26, 14, 26, 24, 28)); // natural coats: bay, chestnut, dun, grey
+    case "mount": {
+      // Icon coat = the SAME coat the rig wears in the world (natural tones).
+      const coat = MOUNT_COATS[id];
+      return coat ? shadeFrom(coat) : shadeFrom(hashColor(id, 16, 26, 14, 26, 24, 28));
+    }
     case "pet": return shadeFrom(hashColor(id, 0, 360, 32, 26, 42, 20));
     case "ring":
     case "amulet": return shadeFrom(tweak("#d2b24a", id, 6, 8, 8), hslHex(hash(id) % 360, 62, 56));
@@ -414,7 +418,50 @@ function draw(shape: Shape, p: Pal, id: string): string {
     case "bread": return `<path d="M6,18 Q6,11 16,11 Q26,11 26,18 Q26,23 16,23 Q6,23 6,18 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><line x1="11" y1="13" x2="9" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="16" y1="12.5" x2="16" y2="22" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/><line x1="21" y1="13" x2="23" y2="21" stroke="${p.dark}" stroke-width="0.8" opacity="0.5"/>`;
     case "hide": return `<path d="M16,5 Q21,7 20,12 Q26,14 24,19 Q26,24 20,24 Q18,28 16,24 Q14,28 12,24 Q6,24 8,19 Q6,14 12,12 Q11,7 16,5 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><ellipse cx="16" cy="16" rx="4" ry="6" fill="${p.light}" opacity="0.4"/>`;
     case "pet": return `<ellipse cx="16" cy="20" rx="8" ry="7" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><circle cx="16" cy="12" r="5.5" fill="${p.base}" stroke="${p.edge}" stroke-width="1"/><polygon points="11,8 12.5,13 14,10" fill="${p.dark}"/><polygon points="21,8 19.5,13 18,10" fill="${p.dark}"/><circle cx="14" cy="12" r="1" fill="#1a1a1a"/><circle cx="18" cy="12" r="1" fill="#1a1a1a"/><circle cx="16" cy="14" r="0.9" fill="${p.dark}"/>`;
-    case "mount": return `<path d="M10,27 L10,16 Q9,11 13,8 L14,4 L16,8 Q22,9 22,16 L21,27 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/><polygon points="13,9 11,4 14.5,8" fill="${p.dark}"/><circle cx="17" cy="12" r="1" fill="#1a1a1a"/><path d="M13,8 Q10,12 11,18" fill="none" stroke="${p.dark}" stroke-width="1.4"/>`;
+    case "mount": {
+      // Tack & cosmetics: their own glyphs, not a steed's head.
+      if (id === "mount_blanket") {
+        return `<rect x="7" y="10" width="18" height="14" rx="2" fill="#7d3a34" stroke="${p.edge}" stroke-width="1"/>`
+          + `<rect x="10" y="10" width="3" height="14" fill="#c8b78e"/><rect x="16" y="10" width="3" height="14" fill="#c8b78e"/><rect x="22" y="10" width="2" height="14" fill="#c8b78e"/>`
+          + `<path d="M7,24 L9,27 M13,24 L15,27 M19,24 L21,27 M23,24 L25,27" stroke="#8a5a4a" stroke-width="1.2"/>`;
+      }
+      if (id === "mount_plume") {
+        return `<path d="M16,27 Q13,18 15,8" fill="none" stroke="#6e5436" stroke-width="1.6"/>`
+          + `<path d="M15,8 Q10,12 13,20 Q16,14 15,8 Q20,11 17,20 Q14,15 15,8" fill="#c8463c" stroke="#a52f28" stroke-width="1"/>`
+          + `<ellipse cx="15" cy="9" rx="3.4" ry="5" fill="#c8463c" opacity="0.85"/>`;
+      }
+      if (id === "saddle_gold" || id === "saddle_silver") {
+        const m = id === "saddle_gold" ? ["#c9992e", "#f2d060"] : ["#9aa3ad", "#d5dde6"];
+        return `<path d="M8,14 Q16,8 24,14 L23,20 Q16,16 9,20 Z" fill="${m[0]}" stroke="${p.edge}" stroke-width="1"/>`
+          + `<path d="M8,14 Q16,8 24,14 L23.6,16 Q16,10.5 8.4,16 Z" fill="${m[1]}"/>`
+          + `<rect x="14.6" y="17" width="2.8" height="9" rx="1" fill="#5a3c22"/><rect x="14" y="25" width="4" height="2.4" rx="1" fill="${m[0]}"/>`;
+      }
+      const fam = mountFamily(id);
+      // Shared neck + head-profile base (facing left).
+      const head = `<path d="M22,28 L22,17 Q22,11 17,9 L11,11 Q8,12 8,15 L10,16 Q12,17 13,19 L14,28 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+        + `<circle cx="13.5" cy="13.6" r="1.1" fill="#171310"/>`;
+      if (fam === "wolf") {
+        return `<path d="M22,28 L22,16 Q22,10 16,9 L9,13 L12,14.5 Q14,15.5 14.5,18 L15,28 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+          + `<polygon points="17,9.5 15.5,4 19.5,7.5" fill="${p.dark}"/><polygon points="21,9.5 21.5,4.5 23.5,8.5" fill="${p.dark}"/>`
+          + `<circle cx="14.5" cy="13.2" r="1.1" fill="#171310"/><polygon points="9,13 7,13.6 9.6,14.6" fill="${p.dark}"/>`;
+      }
+      if (fam === "boar") {
+        return `<path d="M23,28 L23,16 Q23,10 16,10 L9,14 Q8,16 10,17.5 L13,18.5 Q14.5,19.5 15,22 L15,28 Z" fill="${p.base}" stroke="${p.edge}" stroke-width="1" stroke-linejoin="round"/>`
+          + `<circle cx="19" cy="9.4" r="2" fill="${p.dark}"/>`
+          + `<path d="M10,16.5 Q7.5,15.5 8,12.5" fill="none" stroke="#e8e2d0" stroke-width="1.6" stroke-linecap="round"/>`
+          + `<circle cx="14.5" cy="14" r="1.1" fill="#171310"/><rect x="8.4" y="14.2" width="2.6" height="2" rx="0.8" fill="${p.dark}"/>`;
+      }
+      if (fam === "heavy") {
+        return head
+          + `<path d="M18,9.6 Q15,6 11.5,7.2" fill="none" stroke="#d8d2c2" stroke-width="1.8" stroke-linecap="round"/>`
+          + `<path d="M21.5,9.6 Q23.5,6.4 26,7.6" fill="none" stroke="#d8d2c2" stroke-width="1.8" stroke-linecap="round"/>`
+          + `<ellipse cx="9.6" cy="14.8" rx="1.8" ry="1.3" fill="${p.dark}"/>`;
+      }
+      // horse: pricked ears + flowing mane down the neck
+      return head
+        + `<polygon points="17.5,9.5 16.5,4.5 19.5,8.5" fill="${p.dark}"/><polygon points="20.5,9 21.5,4.5 23,8.8" fill="${p.dark}"/>`
+        + `<path d="M21,9.5 Q23.5,14 22.5,20 L22,26" fill="none" stroke="${p.dark}" stroke-width="2.2" stroke-linecap="round"/>`;
+    }
     case "coin": return `<circle cx="16" cy="16" r="10" fill="${p.base}" stroke="${p.edge}" stroke-width="1.2"/><circle cx="16" cy="16" r="7.5" fill="none" stroke="${p.dark}" stroke-width="0.8"/><polygon points="16,10 18,15 23,15 19,18 21,23 16,20 11,23 13,18 9,15 14,15" fill="${p.light}" opacity="0.85"/>`;
     case "scroll": return `<rect x="9" y="7" width="14" height="18" rx="1" fill="#e3d4a8" stroke="#9a7a4a" stroke-width="1"/><rect x="7" y="6" width="18" height="3" rx="1.5" fill="${p.accent}"/><rect x="7" y="23" width="18" height="3" rx="1.5" fill="${p.accent}"/><line x1="12" y1="12" x2="20" y2="12" stroke="#9a7a4a" stroke-width="0.8"/><line x1="12" y1="15" x2="20" y2="15" stroke="#9a7a4a" stroke-width="0.8"/><line x1="12" y1="18" x2="18" y2="18" stroke="#9a7a4a" stroke-width="0.8"/>`;
     case "key": return `<circle cx="11" cy="12" r="5" fill="none" stroke="${p.base}" stroke-width="2.4"/><circle cx="11" cy="12" r="1.6" fill="${p.dark}"/><line x1="14" y1="15" x2="23" y2="24" stroke="${p.base}" stroke-width="2.4"/><line x1="20" y1="21" x2="23" y2="18" stroke="${p.base}" stroke-width="2.4"/>`;
@@ -509,4 +556,25 @@ export function itemIconSVG(def: ItemDef): string {
     `</svg>`;
   cache.set(def.id, svg);
   return svg;
+}
+
+/** Icon coats per mount id — the same natural tones the world rig wears. */
+const MOUNT_COATS: Record<string, string> = {
+  mount_pony: "#8a7a66", mount_horse: "#6b4a2e", mount_destrier: "#2e2a28",
+  mount_courser: "#8a5a30", mount_dustrunner: "#a3703c", mount_courier: "#7a6a52",
+  mount_runemarked: "#3a3634", mount_ferryman: "#3c4048",
+  mount_mule: "#7a6a58", mount_ox: "#5a4a3a", mount_aurochs: "#4a3a2e",
+  mount_packbear: "#5c4630", mount_deepstrider: "#5c5852", mount_palecrawler: "#8a8578",
+  mount_bristleback: "#6a5240", mount_ironboar: "#57504a", mount_greymane: "#8b8b86",
+  mount_hound: "#4a4b52", mount_nighthound: "#33343a", mount_stormhound: "#5a616c",
+  mount_ridgewolf: "#6f7178", mount_silverwolf: "#b4b8c0", mount_wraithsteed: "#4e5258",
+  mount_deepwing: "#4c4650", mount_lodgeoutrider: "#5c4632", mount_hollowsteed: "#6f655a",
+};
+
+/** Which head profile a mount icon draws. */
+function mountFamily(id: string): "horse" | "wolf" | "heavy" | "boar" {
+  if (/hound|wolf|wraith/.test(id)) return "wolf";
+  if (/boar|bristle|greymane/.test(id)) return "boar";
+  if (/\box|aurochs|packbear|strider|crawler/.test(id)) return "heavy";
+  return "horse";
 }

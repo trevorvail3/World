@@ -330,29 +330,31 @@ export const shops: ShopDef[] = [
     npc: "stablemaster",
     name: "The Ironvale Stables",
     greeting: "Every beast in the yard is broke to saddle. Pick by your purse — they all beat walking.",
-    // Every open-market mount, priced at its authored cost — a gold ladder of
-    // sinks from the plough ox to the Redrun Courser. Quest mounts (the pony,
-    // the Ironside Boar, the Silver Wolf, the Courier, the Destrier) are not
-    // for sale; the rarest steeds (Runemarked, Ferryman's, Wraith-Steed…) wait
-    // for the content that earns them.
+    // A tight roster: four steeds per family (horse / wolf / draft / boar),
+    // priced as a gold ladder, plus the cosmetics counter. Quest mounts (the
+    // pony, the Silver Wolf, the Courier, the Destrier) are not for sale; the
+    // rarest steeds (Runemarked, Ferryman's, Wraith-Steed…) are earned.
     stock: [
+      // HORSES — the classic ladder.
+      { item: "mount_horse", price: 2000, qty: 1 },
+      { item: "mount_dustrunner", price: 90000, qty: 1 },
+      // WOLVES & HOUNDS — the hunter's pick.
+      { item: "mount_ridgewolf", price: 5000, qty: 1 },
+      { item: "mount_nighthound", price: 6500, qty: 1 },
+      { item: "mount_stormhound", price: 30000, qty: 1 },
+      { item: "mount_hound", price: 80000, qty: 1 },
+      // DRAFT & HEAVY — slow money, honest work.
       { item: "mount_ox", price: 700, qty: 1 },
       { item: "mount_mule", price: 1200, qty: 1 },
-      { item: "mount_horse", price: 2000, qty: 1 },
-      { item: "mount_ridgewolf", price: 5000, qty: 1 },
-      { item: "mount_bristleback", price: 6000, qty: 1 },
-      { item: "mount_nighthound", price: 6500, qty: 1 },
-      { item: "mount_craggoat", price: 9000, qty: 1 },
-      { item: "mount_marshstrider", price: 12000, qty: 1 },
-      { item: "mount_bogwisp", price: 16000, qty: 1 },
       { item: "mount_aurochs", price: 22000, qty: 1 },
-      { item: "mount_galloper", price: 25000, qty: 1 },
-      { item: "mount_stormhound", price: 30000, qty: 1 },
-      { item: "mount_spinecharger", price: 60000, qty: 1 },
       { item: "mount_packbear", price: 75000, qty: 1 },
-      { item: "mount_hound", price: 80000, qty: 1 },
-      { item: "mount_dustrunner", price: 90000, qty: 1 },
+      // BOARS — all shoulder.
+      { item: "mount_bristleback", price: 6000, qty: 1 },
+      { item: "mount_ironboar", price: 14000, qty: 1 },
       // Cosmetics: worn by WHATEVER you ride, forever. Berta's real profit.
+      { item: "mount_blanket", price: 3500, qty: 1 },
+      { item: "mount_plume", price: 6000, qty: 1 },
+      { item: "saddle_silver", price: 12000, qty: 1 },
       { item: "saddle_gold", price: 25000, qty: 1 },
       { item: "horse_armor", price: 40000, qty: 1 },
     ],

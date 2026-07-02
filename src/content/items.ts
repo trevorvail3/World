@@ -2687,21 +2687,6 @@ export const items: Record<ItemId, ItemDef> = {
       "perkAmt": 0.4
     }
   },
-  "mount_galloper": {
-    "id": "mount_galloper",
-    "name": "Heartmoor Galloper",
-    "description": "Bred for speed on open moor. Scouts ahead — −20% expedition time.",
-    "icon": "🐎",
-    "cat": "Mounts",
-    "slot": "mount",
-    "sell": 10000,
-    "meta": {
-      "rideReq": 60,
-      "cost": 25000,
-      "perk": "expedition_time",
-      "perkAmt": 0.2
-    }
-  },
   "mount_hound": {
     "id": "mount_hound",
     "name": "Shadow Hound",
@@ -2743,21 +2728,6 @@ export const items: Record<ItemId, ItemDef> = {
       "cost": 1200,
       "perk": "descent_hazard",
       "perkAmt": 0.3
-    }
-  },
-  "mount_craggoat": {
-    "id": "mount_craggoat",
-    "name": "Cragstep Goat",
-    "description": "Climbs the Spine where horses won't. −40% Descent hazard.",
-    "icon": "🐐",
-    "cat": "Mounts",
-    "slot": "mount",
-    "sell": 4500,
-    "meta": {
-      "rideReq": 35,
-      "cost": 9000,
-      "perk": "descent_hazard",
-      "perkAmt": 0.4
     }
   },
   "mount_palecrawler": {
@@ -2889,21 +2859,6 @@ export const items: Record<ItemId, ItemDef> = {
       "perkAmt": 0.35
     }
   },
-  "mount_spinecharger": {
-    "id": "mount_spinecharger",
-    "name": "Spine Charger",
-    "description": "Sure-footed on broken ground, eager for the next fight. −50% respawn pause.",
-    "icon": "🐎",
-    "cat": "Mounts",
-    "slot": "mount",
-    "sell": 30000,
-    "meta": {
-      "rideReq": 70,
-      "cost": 60000,
-      "perk": "respawn_speed",
-      "perkAmt": 0.5
-    }
-  },
   "mount_silverwolf": {
     "id": "mount_silverwolf",
     "name": "Silver Wolf",
@@ -2930,21 +2885,6 @@ export const items: Record<ItemId, ItemDef> = {
       "cost": 3000,
       "perk": "expedition_time",
       "perkAmt": 0.1
-    }
-  },
-  "mount_marshstrider": {
-    "id": "mount_marshstrider",
-    "name": "Marsh Strider",
-    "description": "Crosses the Heartmoor at a pace others can't. −15% expedition time.",
-    "icon": "🐴",
-    "cat": "Mounts",
-    "slot": "mount",
-    "sell": 6000,
-    "meta": {
-      "rideReq": 40,
-      "cost": 12000,
-      "perk": "expedition_time",
-      "perkAmt": 0.15
     }
   },
   "mount_stormhound": {
@@ -3003,21 +2943,6 @@ export const items: Record<ItemId, ItemDef> = {
       "cost": 6500,
       "perk": "offline_boost",
       "perkAmt": 0.08
-    }
-  },
-  "mount_bogwisp": {
-    "id": "mount_bogwisp",
-    "name": "Bog Wisp",
-    "description": "A pale Heartmoor light that drifts ahead, working when you aren't. +10% offline progress.",
-    "icon": "🪼",
-    "cat": "Mounts",
-    "slot": "mount",
-    "sell": 8000,
-    "meta": {
-      "rideReq": 45,
-      "cost": 16000,
-      "perk": "offline_boost",
-      "perkAmt": 0.1
     }
   },
   "mount_deepwing": {
@@ -5642,6 +5567,30 @@ export const items: Record<ItemId, ItemDef> = {
     "sell": 120
   },
 
+  "mount_blanket": {
+    "id": "mount_blanket",
+    "name": "Striped Saddle Blanket",
+    "description": "A woven blanket in Ironvale stripes, laid under the saddle of any steed you ride. Keeps the beast warm and the rider proud.",
+    "icon": "🧣",
+    "cat": "Mounts",
+    "sell": 1000
+  },
+  "mount_plume": {
+    "id": "mount_plume",
+    "name": "Scarlet Plume",
+    "description": "A tall dyed crest fixed to the headstall of any steed you ride. Visible across a battlefield, which is rather the point.",
+    "icon": "🪶",
+    "cat": "Mounts",
+    "sell": 2000
+  },
+  "saddle_silver": {
+    "id": "saddle_silver",
+    "name": "Silvered Saddle",
+    "description": "Pale-worked leather chased with silver. Any steed you ride wears it — moonlight where the gilded saddle is sun.",
+    "icon": "🏇",
+    "cat": "Mounts",
+    "sell": 4000
+  },
   "saddle_gold": {
     "id": "saddle_gold",
     "name": "Gilded Saddle",
